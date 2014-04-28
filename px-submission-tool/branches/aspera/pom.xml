@@ -137,6 +137,13 @@
             <artifactId>ols-dialog</artifactId>
             <version>${ols.dialog.version}</version>
         </dependency>
+
+        <!--Aspera manager-->
+        <dependency>
+            <groupId>aspera</groupId>
+            <artifactId>aspera-faspmanager</artifactId>
+            <version>1.0</version>
+        </dependency>
     </dependencies>
 
     <build>
