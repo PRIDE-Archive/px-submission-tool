@@ -9,9 +9,7 @@ import uk.ac.ebi.pride.gui.blocker.DefaultGUIBlocker;
 import uk.ac.ebi.pride.gui.blocker.GUIBlocker;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
-import uk.ac.ebi.pride.gui.task.CompleteSubmissionTask;
-import uk.ac.ebi.pride.gui.task.CreateFTPDirectoryTask;
-import uk.ac.ebi.pride.gui.task.GetFTPDetailTask;
+import uk.ac.ebi.pride.gui.task.*;
 import uk.ac.ebi.pride.gui.task.ftp.*;
 import uk.ac.ebi.pride.gui.util.SubmissionRecordSerializer;
 import uk.ac.ebi.pride.prider.dataprovider.project.SubmissionType;
@@ -350,7 +348,6 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
 
         private void handleSuccessMessage(UploadSuccessMessage uploadMessage) {
             Task task = new AsperaUploadTask(appContext.getSubmissionRecord());
-            task.addTaskListener(ftpUploadTaskListener);
             task.addOwner(SubmissionDescriptor.this);
             task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
             appContext.addTask(task);

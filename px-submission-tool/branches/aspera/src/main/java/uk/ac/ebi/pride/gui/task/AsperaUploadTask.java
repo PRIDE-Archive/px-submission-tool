@@ -24,12 +24,9 @@ import java.util.*;
  * Created by ilias
  */
 
-public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implements TransferListener, TaskListener<Void, UploadMessage>
-{
+public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implements TransferListener {
 
     public static final Logger logger = LoggerFactory.getLogger(FTPUploadTask.class);
-
-    public static final int NUMBER_OF_CONCURRENT_UPLOAD = 3;
 
     private SubmissionRecord submissionRecord;
     /**
@@ -64,8 +61,7 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
      *
      * @param submissionRecord submission record
      */
-    public AsperaUploadTask(SubmissionRecord submissionRecord)
-    {
+    public AsperaUploadTask(SubmissionRecord submissionRecord) {
         this.submissionRecord = submissionRecord;
         this.fileToSubmit = Collections.synchronizedSet(new LinkedHashSet<DataFile>());
         this.fileFailToSubmit = Collections.synchronizedSet(new LinkedHashSet<DataFile>());
@@ -73,39 +69,15 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
         this.uploadFileSize = 0;
         this.ongoingSubTasks = 0;
         this.uploadFinished = false;
-        this.addTaskListener(this);
     }
 
     @Override
-    protected Void doInBackground() throws Exception
-    {
+    protected Void doInBackground() throws Exception {
         // save submission initial progress
         serializeSubmissionReport();
 
         // prepare for ftp upload
         prepareSubmission();
-
-//        if (fileToSubmit.size() == 0)
-//        {
-//            // all files has already been submitted
-//            uploadFinished = true;
-//            publish(new UploadSuccessMessage(this));
-//        }
-//        else
-//        {
-//            // upload submission files
-//            for (int i = 0; i < NUMBER_OF_CONCURRENT_UPLOAD; i++)
-//            {
-//                if (!fileToSubmit.isEmpty())
-//                {
-//                    ongoingSubTasks++;
-//                    uploadFile();
-//                }
-//            }
-//     }
-        /*************
-         Ilias
-         *************/
 
         String ascpLocation = "./src/main/lib/bin/linux-64/ascp";
         File executable = new File(ascpLocation);
@@ -118,8 +90,7 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
 
         List<File> uploadFiles = new ArrayList<File>(1);
 
-        for (DataFile dataFile : fileToSubmit)
-        {
+        for (DataFile dataFile : fileToSubmit) {
             uploadFiles.add(dataFile.getFile());
         }
         uploader.setListener(this);
@@ -135,16 +106,14 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
     /**
      * Prepare for upload an entire submission
      */
-    private void prepareSubmission()
-    {
+    private void prepareSubmission() {
         logger.debug("Preparing for uploading an entire submission");
 
         // add submission summary file
 //        if (!submissionRecord.isSummaryFileUploaded())
 //        {
         File submissionFile = createSubmissionFile(); //submission px file creation
-        if (submissionFile != null)
-        {
+        if (submissionFile != null) {
             DataFile dataFile = new DataFile();
             dataFile.setFile(submissionFile);
             fileToSubmit.add(dataFile); //add the submission px file to the upload list
@@ -152,11 +121,9 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
 //        }
 
         // prepare for submission
-        for (DataFile dataFile : submissionRecord.getSubmission().getDataFiles())
-        {
+        for (DataFile dataFile : submissionRecord.getSubmission().getDataFiles()) {
             totalFileSize += dataFile.getFile().length();
-            if (dataFile.isFile())
-            {
+            if (dataFile.isFile()) {
                 fileToSubmit.add(dataFile);
             }
 
@@ -172,10 +139,8 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
      *
      * @return boolean true indicates success
      */
-    private File createSubmissionFile()
-    {
-        try
-        {
+    private File createSubmissionFile() {
+        try {
             // create a random temporary directory
             SecureRandom random = new SecureRandom();
             File tempDir = new File(System.getProperty("java.io.tmpdir") + File.separator + random.nextLong());
@@ -189,9 +154,7 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
             SubmissionFileWriter.write(submissionRecord.getSubmission(), submissionFile);
 
             return submissionFile;
-        }
-        catch (SubmissionFileException ex)
-        {
+        } catch (SubmissionFileException ex) {
             String msg = "Failed to create submission file";
             logger.error(msg, ex);
             publish(new UploadErrorMessage(this, null, msg));
@@ -199,161 +162,21 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
         return null;
     }
 
-    /**
-     * Upload next file in the fileToUpload set
-     */
-//    private synchronized void uploadFile()
-//    {
-//        DataFile fileToUpload = fileToSubmit.iterator().next();
-//        fileToSubmit.remove(fileToUpload);
-//        logger.debug("Upload file: " + fileToUpload.getFile().getName());
-//        Task task = new FileFTPUploadTask(fileToUpload, submissionRecord.getFtpDetail());
-//        List<Object> owners = this.getOwners();
-//        for (Object owner : owners)
-//        {
-//            task.addOwner(owner);
-//        }
-//        task.addTaskListener(this);
-//        task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
-//        App.getInstance().getDesktopContext().addTask(task);
-//    }
-    private void serializeSubmissionReport()
-    {
-        try
-        {
+    private void serializeSubmissionReport() {
+        try {
             SubmissionRecordSerializer.serialize(submissionRecord);
-        }
-        catch (IOException ioe)
-        {
+        } catch (IOException ioe) {
             logger.error("Failed to save submission record");
         }
     }
 
-    @Override
-    public void started(TaskEvent<Void> event)
-    {
-
-    }
-
-    //@Override
-    public void process(TaskEvent<List<UploadMessage>> listTaskEvent)
-    {
-//        for (UploadMessage uploadMessage : listTaskEvent.getValue())
-//        {
-//            if (uploadMessage instanceof UploadProgressMessage)
-//            {
-//                if (!Constant.PX_SUBMISSION_SUMMARY_FILE.equals(uploadMessage.getDataFile().getFile().getName()))
-//                {
-//                    uploadFileSize += ((UploadProgressMessage) uploadMessage).getBytesTransferred();
-//                    int totalNumOfFiles = submissionRecord.getSubmission().getDataFiles().size();
-//                    int uploadedNumOfFiles = submissionRecord.getUploadedFiles().size();
-//                    publish(new UploadProgressMessage(this, uploadMessage.getDataFile(), totalFileSize, uploadFileSize, totalNumOfFiles, uploadedNumOfFiles));
-//                }
-//            }
-//            else if (uploadMessage instanceof UploadFileSuccessMessage)
-//            {
-//                ongoingSubTasks--;
-//                logger.debug("Finished upload file: " + uploadMessage.getDataFile().getFile().getName());
-//                if (Constant.PX_SUBMISSION_SUMMARY_FILE.equals(uploadMessage.getDataFile().getFile().getName()))
-//                {
-//                    submissionRecord.setSummaryFileUploaded(true);
-//                }
-//                else
-//                {
-//                    submissionRecord.addUploadedFiles(uploadMessage.getDataFile());
-//                }
-//
-//                // serialize submission progress report
-//                serializeSubmissionReport();
-//
-//                if (!fileToSubmit.isEmpty())
-//                {
-//                    ongoingSubTasks++;
-//                    // file ftp upload task
-////                    uploadFile();
-//                }
-//                else if (ongoingSubTasks == 0)
-//                {
-//                    if (fileFailToSubmit.isEmpty())
-//                    {
-//                        int totalNumOfFiles = submissionRecord.getSubmission().getDataFiles().size();
-//                        publish(new UploadProgressMessage(this, null, totalFileSize, totalFileSize, totalNumOfFiles, totalNumOfFiles));
-//                        if (!uploadFinished)
-//                        {
-//                            uploadFinished = true;
-//                            publish(new UploadSuccessMessage(this));
-//                        }
-//                    }
-//                    else
-//                    {
-//                        publish(new UploadStoppedMessage(this, submissionRecord));
-//                    }
-//                }
-//            }
-//            else if (uploadMessage instanceof UploadErrorMessage)
-//            {
-//                ongoingSubTasks--;
-//                logger.debug("Failed to upload file: " + uploadMessage.getDataFile().getFile().getName());
-//                publish(uploadMessage);
-//            }
-//            else if (uploadMessage instanceof UploadCancelMessage)
-//            {
-//                logger.debug("Cancelled upload: " + uploadMessage.getDataFile().getFile().getName());
-//                ongoingSubTasks--;
-//                logger.debug("Running submission sub tasks: " + ongoingSubTasks);
-//                if (ongoingSubTasks == 0)
-//                {
-//                    fileToSubmit.clear();
-//                    publish(new UploadStoppedMessage(this, submissionRecord));
-//                }
-//            }
-//        }
-    }
-
-    @Override
-    public void finished(TaskEvent<Void> event)
-    {
-
-    }
-
-    @Override
-    public void failed(TaskEvent<Throwable> event)
-    {
-
-    }
-
-    @Override
-    public void succeed(TaskEvent<Void> event)
-    {
-
-    }
-
-    @Override
-    public void cancelled(TaskEvent<Void> event)
-    {
-        FaspManager.destroy();
-    }
-
-    @Override
-    public void interrupted(TaskEvent<InterruptedException> iex)
-    {
-        FaspManager.destroy();
-    }
-
-    @Override
-    public void progress(TaskEvent<Integer> progress)
-    {
-
-    }
 
     //    @Override
-    public void fileSessionEvent(TransferEvent transferEvent, SessionStats sessionStats, FileInfo fileInfo)
-    {
+    public void fileSessionEvent(TransferEvent transferEvent, SessionStats sessionStats, FileInfo fileInfo) {
 //        UploadMessage uploadMessage = new UploadProgressMessage()
         int totalNumOfFiles = submissionRecord.getSubmission().getDataFiles().size();
 
-        if (transferEvent == TransferEvent.PROGRESS)
-        {
+        if (transferEvent == TransferEvent.PROGRESS) {
             System.out.println("Transfer in Progress");
             System.out.println("Total files: ");
 //            uploadFileSize += ((UploadProgressMessage) uploadMessage).getBytesTransferred();
@@ -365,16 +188,14 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
             publish(new UploadProgressMessage(this, null, totalFileSize, sessionStats.getTotalTransferredBytes(), totalNumOfFiles, uploadedNumOfFiles));
         }
 
-        if (transferEvent == TransferEvent.SESSION_STOP)
-        {
+        if (transferEvent == TransferEvent.SESSION_STOP) {
             publish(new UploadProgressMessage(this, null, totalFileSize, totalFileSize, totalNumOfFiles, totalNumOfFiles));
             publish(new UploadSuccessMessage(this));
             System.out.println("Session Stop");
             FaspManager.destroy();
         }
 
-        if (transferEvent == TransferEvent.SESSION_ERROR)
-        {
+        if (transferEvent == TransferEvent.SESSION_ERROR) {
             System.out.println("Session Error");
 //            logger.debug("Failed to upload file: " + uploadMessage.getDataFile().getFile().getName());
 
