@@ -107,7 +107,7 @@ public class FTPUploadTask extends TaskAdapter<Void, UploadMessage> implements T
         logger.debug("Preparing for uploading an entire submission");
 
         // add submission summary file
-        if (!submissionRecord.isSummaryFileUploaded()) { //check whether file is already uploaded, not needed for aspera
+        if (!submissionRecord.isSummaryFileUploaded()) {
             File submissionFile = createSubmissionFile();
             if (submissionFile != null) {
                 DataFile dataFile = new DataFile();
@@ -118,13 +118,14 @@ public class FTPUploadTask extends TaskAdapter<Void, UploadMessage> implements T
 
         // prepare for submission
         for (DataFile dataFile : submissionRecord.getSubmission().getDataFiles()) {
-            totalFileSize += dataFile.getFile().length();
-            if (dataFile.isFile() && !submissionRecord.isUploaded(dataFile)) {
+            long fileSize = dataFile.getFileSize();
+            totalFileSize += fileSize;
+            if (!submissionRecord.isUploaded(dataFile)) {
                 fileToSubmit.add(dataFile);
             }
 
-            if (dataFile.isFile() && submissionRecord.isUploaded(dataFile)) {
-                uploadFileSize += dataFile.getFile().length();
+            if (submissionRecord.isUploaded(dataFile)) {
+                uploadFileSize += fileSize;
             }
         }
     }
@@ -164,7 +165,7 @@ public class FTPUploadTask extends TaskAdapter<Void, UploadMessage> implements T
     private synchronized void uploadFile() {
         DataFile fileToUpload = fileToSubmit.iterator().next();
         fileToSubmit.remove(fileToUpload);
-        logger.debug("Upload file: " + fileToUpload.getFile().getName());
+        logger.debug("Upload file: " + fileToUpload.getFileName());
         Task task = new FileFTPUploadTask(fileToUpload, submissionRecord.getFtpDetail());
         List<Object> owners = this.getOwners();
         for (Object owner : owners) {
@@ -186,8 +187,9 @@ public class FTPUploadTask extends TaskAdapter<Void, UploadMessage> implements T
     @Override
     public void process(TaskEvent<List<UploadMessage>> listTaskEvent) {
         for (UploadMessage uploadMessage : listTaskEvent.getValue()) {
+            String fileName = uploadMessage.getDataFile().getFileName();
             if (uploadMessage instanceof UploadProgressMessage) {
-                if (!Constant.PX_SUBMISSION_SUMMARY_FILE.equals(uploadMessage.getDataFile().getFile().getName())) {
+                if (!Constant.PX_SUBMISSION_SUMMARY_FILE.equals(fileName)) {
                     uploadFileSize += ((UploadProgressMessage) uploadMessage).getBytesTransferred();
                     int totalNumOfFiles = submissionRecord.getSubmission().getDataFiles().size();
                     int uploadedNumOfFiles = submissionRecord.getUploadedFiles().size();
@@ -195,8 +197,8 @@ public class FTPUploadTask extends TaskAdapter<Void, UploadMessage> implements T
                 }
             } else if (uploadMessage instanceof UploadFileSuccessMessage) {
                 ongoingSubTasks--;
-                logger.debug("Finished upload file: " + uploadMessage.getDataFile().getFile().getName());
-                if (Constant.PX_SUBMISSION_SUMMARY_FILE.equals(uploadMessage.getDataFile().getFile().getName())) {
+                logger.debug("Finished upload file: " + fileName);
+                if (Constant.PX_SUBMISSION_SUMMARY_FILE.equals(fileName)) {
                     submissionRecord.setSummaryFileUploaded(true);
                 } else {
                     submissionRecord.addUploadedFiles(uploadMessage.getDataFile());
@@ -223,10 +225,10 @@ public class FTPUploadTask extends TaskAdapter<Void, UploadMessage> implements T
                 }
             } else if (uploadMessage instanceof UploadErrorMessage) {
                 ongoingSubTasks--;
-                logger.debug("Failed to upload file: " + uploadMessage.getDataFile().getFile().getName());
+                logger.debug("Failed to upload file: " + fileName);
                 publish(uploadMessage);
             } else if (uploadMessage instanceof UploadCancelMessage) {
-                logger.debug("Cancelled upload: " + uploadMessage.getDataFile().getFile().getName());
+                logger.debug("Cancelled upload: " + fileName);
                 ongoingSubTasks--;
                 logger.debug("Running submission sub tasks: " + ongoingSubTasks);
                 if (ongoingSubTasks == 0) {
