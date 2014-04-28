@@ -33,28 +33,11 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
      * Map contains files need to be submitted along with the folder name
      */
     private Set<DataFile> fileToSubmit;
-    /**
-     * Map contains files have failed submission
-     */
-    private Set<DataFile> fileFailToSubmit;
 
     /**
      * Total file size need to be uploaded
      */
     private long totalFileSize;
-    /**
-     * Total file size been uploaded
-     */
-    private long uploadFileSize;
-
-    /**
-     * Number of ongoing sub tasks
-     */
-    private int ongoingSubTasks;
-    /**
-     * indicates whether the upload has already finished
-     */
-    private boolean uploadFinished;
 
     /**
      * Constructor used for a new submission
@@ -64,11 +47,7 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
     public AsperaUploadTask(SubmissionRecord submissionRecord) {
         this.submissionRecord = submissionRecord;
         this.fileToSubmit = Collections.synchronizedSet(new LinkedHashSet<DataFile>());
-        this.fileFailToSubmit = Collections.synchronizedSet(new LinkedHashSet<DataFile>());
         this.totalFileSize = 0;
-        this.uploadFileSize = 0;
-        this.ongoingSubTasks = 0;
-        this.uploadFinished = false;
     }
 
     @Override
@@ -110,15 +89,12 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
         logger.debug("Preparing for uploading an entire submission");
 
         // add submission summary file
-//        if (!submissionRecord.isSummaryFileUploaded())
-//        {
         File submissionFile = createSubmissionFile(); //submission px file creation
         if (submissionFile != null) {
             DataFile dataFile = new DataFile();
             dataFile.setFile(submissionFile);
             fileToSubmit.add(dataFile); //add the submission px file to the upload list
         }
-//        }
 
         // prepare for submission
         for (DataFile dataFile : submissionRecord.getSubmission().getDataFiles()) {
@@ -126,11 +102,6 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
             if (dataFile.isFile()) {
                 fileToSubmit.add(dataFile);
             }
-
-//            if (dataFile.isFile() && submissionRecord.isUploaded(dataFile))
-//            {
-//                uploadFileSize += dataFile.getFile().length();
-//            }
         }
     }
 
@@ -171,41 +142,35 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
     }
 
 
-    //    @Override
+    @Override
     public void fileSessionEvent(TransferEvent transferEvent, SessionStats sessionStats, FileInfo fileInfo) {
-//        UploadMessage uploadMessage = new UploadProgressMessage()
         int totalNumOfFiles = submissionRecord.getSubmission().getDataFiles().size();
 
-        if (transferEvent == TransferEvent.PROGRESS) {
-            System.out.println("Transfer in Progress");
-            System.out.println("Total files: ");
+        switch (transferEvent) {
+            case PROGRESS:
+                System.out.println("Transfer in Progress");
+                System.out.println("Total files: ");
 //            uploadFileSize += ((UploadProgressMessage) uploadMessage).getBytesTransferred();
-            int uploadedNumOfFiles = (int) sessionStats.getFilesComplete();
-            System.out.println("Total files: " + totalNumOfFiles);
-            System.out.println("Files uploaded: " + uploadedNumOfFiles);
-            System.out.println("Total file size " + totalFileSize);
-            System.out.println("Uploaded file size " + sessionStats.getTotalTransferredBytes());
-            publish(new UploadProgressMessage(this, null, totalFileSize, sessionStats.getTotalTransferredBytes(), totalNumOfFiles, uploadedNumOfFiles));
-        }
-
-        if (transferEvent == TransferEvent.SESSION_STOP) {
-            publish(new UploadProgressMessage(this, null, totalFileSize, totalFileSize, totalNumOfFiles, totalNumOfFiles));
-            publish(new UploadSuccessMessage(this));
-            System.out.println("Session Stop");
-            FaspManager.destroy();
-        }
-
-        if (transferEvent == TransferEvent.SESSION_ERROR) {
-            System.out.println("Session Error");
+                int uploadedNumOfFiles = (int) sessionStats.getFilesComplete();
+                System.out.println("Total files: " + totalNumOfFiles);
+                System.out.println("Files uploaded: " + uploadedNumOfFiles);
+                System.out.println("Total file size " + totalFileSize);
+                System.out.println("Uploaded file size " + sessionStats.getTotalTransferredBytes());
+                publish(new UploadProgressMessage(this, null, totalFileSize, sessionStats.getTotalTransferredBytes(), totalNumOfFiles, uploadedNumOfFiles));
+                break;
+            case SESSION_STOP:
+                publish(new UploadProgressMessage(this, null, totalFileSize, totalFileSize, totalNumOfFiles, totalNumOfFiles));
+                publish(new UploadSuccessMessage(this));
+                System.out.println("Session Stop");
+                FaspManager.destroy();
+                break;
+            case SESSION_ERROR:
+                System.out.println("Session Error: " + transferEvent.getDescription());
 //            logger.debug("Failed to upload file: " + uploadMessage.getDataFile().getFile().getName());
 
 //            publish(new UploadErrorMessage())
-            FaspManager.destroy();
+                FaspManager.destroy();
+                break;
         }
-
-//        if (transferEvent == TransferEvent.FILE_STOP)
-//        {
-//            System.out.println(fileInfo.getName() + " DONE");
-//        }
     }
 }
