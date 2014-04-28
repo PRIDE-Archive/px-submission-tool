@@ -1,0 +1,297 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>uk.ac.ebi.pride</groupId>
+    <artifactId>px-submission-tool</artifactId>
+    <packaging>jar</packaging>
+    <version>2.0.2-SNAPSHOT</version>
+    <name>px-submission-tool</name>
+
+    <parent>
+        <groupId>uk.ac.ebi.pride.maven</groupId>
+        <artifactId>pride-base-master</artifactId>
+        <version>1.0.1</version>
+    </parent>
+
+    <licenses>
+        <license>
+            <name>Apache 2</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+            <comments>A business-friendly OSS license</comments>
+        </license>
+    </licenses>
+
+    <organization>
+        <name>European Bioinformatics Institute</name>
+        <url>http://www.ebi.ac.uk</url>
+    </organization>
+
+    <developers>
+        <developer>
+            <id>rwang</id>
+            <name>Rui Wang</name>
+            <organization>Proteomics Services Team, PANDA Group, EMBL-European Bioinformatics Institute</organization>
+            <organizationUrl>http://www.ebi.ac.uk/pride</organizationUrl>
+            <roles>
+                <role>developer</role>
+            </roles>
+            <timezone>0</timezone>
+        </developer>
+    </developers>
+
+    <properties>
+        <jmzidentml.version>1.1.4-SNAPSHOT</jmzidentml.version>
+        <pride.jaxb.version>1.0.8</pride.jaxb.version>
+        <pride.utilities.version>0.1.17</pride.utilities.version>
+        <swingx.version>1.6.1</swingx.version>
+        <balloontip.version>1.2</balloontip.version>
+        <apache.commons.net.version>3.3</apache.commons.net.version>
+        <apache.http.client>4.2.1</apache.http.client>
+        <java.mail.version>1.4.4</java.mail.version>
+        <java.webstart.version>1.5.0</java.webstart.version>
+        <java.help.version>2.0.02</java.help.version>
+        <px.submission.core.version>1.19</px.submission.core.version>
+        <prider.ws.model.version>0.1.5</prider.ws.model.version>
+        <pride.web.utils.version>1.3.8</pride.web.utils.version>
+        <ols.dialog.version>3.3.3</ols.dialog.version>
+        <assembly.dir>${name}-${version}</assembly.dir>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>uk.ac.ebi.pride.prider</groupId>
+            <artifactId>prider-ws-model</artifactId>
+            <version>${prider.ws.model.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>uk.ac.ebi.pride.web</groupId>
+            <artifactId>pride-web-utils</artifactId>
+            <version>${pride.web.utils.version}</version>
+        </dependency>
+
+        <!-- pride xml jaxb library-->
+        <dependency>
+            <groupId>uk.ac.ebi.pride.jaxb</groupId>
+            <artifactId>pride-jaxb</artifactId>
+            <version>${pride.jaxb.version}</version>
+        </dependency>
+
+        <!-- pride utility classes-->
+        <dependency>
+            <groupId>uk.ac.ebi.pride</groupId>
+            <artifactId>pride-utilities</artifactId>
+            <version>${pride.utilities.version}</version>
+        </dependency>
+
+        <!-- swing related libraries-->
+        <dependency>
+            <groupId>org.swinglabs</groupId>
+            <artifactId>swingx</artifactId>
+            <version>${swingx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.java.balloontip</groupId>
+            <artifactId>balloontip</artifactId>
+            <version>${balloontip.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-net</groupId>
+            <artifactId>commons-net</artifactId>
+            <version>${apache.commons.net.version}</version>
+        </dependency>
+        <!-- apache commons httpcomponents-->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>${apache.http.client}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.mail</groupId>
+            <artifactId>mail</artifactId>
+            <version>${java.mail.version}</version>
+        </dependency>
+        <dependency>
+            <!--Use the following command to add jnlp.jar file to your local maven repository-->
+            <!--mvn install:install-file -Dfile="path\to\jdk\sample\jnlp\servlet\jnlp.jar" -DgroupId=javax.jnlp -DartifactId=jnlp-api -Dversion=1.5.0 -Dpackaging=jar-->
+            <groupId>javax.jnlp</groupId>
+            <artifactId>jnlp-api</artifactId>
+            <version>${java.webstart.version}</version>
+        </dependency>
+        <!-- javaHelp -->
+        <dependency>
+            <groupId>javax.help</groupId>
+            <artifactId>javahelp</artifactId>
+            <version>${java.help.version}</version>
+        </dependency>
+        <!-- submission core -->
+        <dependency>
+            <groupId>uk.ac.ebi.pride</groupId>
+            <artifactId>px-submission-core</artifactId>
+            <version>${px.submission.core.version}</version>
+        </dependency>
+        <!-- ols -->
+        <dependency>
+            <groupId>no.uib</groupId>
+            <artifactId>ols-dialog</artifactId>
+            <version>${ols.dialog.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                            <overWriteReleases>true</overWriteReleases>
+                            <overWriteSnapshots>true</overWriteSnapshots>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <!-- comment exclusion section out if want to run batch dbtest -->
+                    <excludes>
+                        <exclude>**/test</exclude>
+                        <exclude>**/test/*.class</exclude>
+                    </excludes>
+                    <archive>
+                        <manifest>
+                            <mainClass>uk.ac.ebi.pride.AppBootstrap</mainClass>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>lib</classpathPrefix>
+                        </manifest>
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <profiles>
+        <profile>
+            <!-- To run this profile, you will have to use Maven command line -->
+            <!--mvn -P px-webstart-build,webstart clean package-->
+            <id>px-webstart-build</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo.webstart</groupId>
+                        <artifactId>webstart-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>jnlp-building</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>jnlp</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <!-- Include all the dependencies -->
+                            <excludeTransitive>false</excludeTransitive>
+                            <!-- The path where the libraries are stored -->
+                            <libPath>lib</libPath>
+                            <jnlp>
+                                <inputTemplate>webstart/jnlp-template.vm</inputTemplate>
+                                <outputFile>px-submission-tool.jnlp</outputFile>
+
+                                <mainClass>uk.ac.ebi.pride.App</mainClass>
+                            </jnlp>
+                            <sign>
+                                <keystore>${keystore.path}</keystore>
+                                <alias>${keystore.alias}</alias>
+                                <storepass>${keystore.store.password}</storepass>
+                                <keypass>${keystore.key.password}</keypass>
+
+                                <keystoreConfig>
+                                    <delete>false</delete>
+                                    <gen>false</gen>
+                                </keystoreConfig>
+                            </sign>
+                            <!-- building process -->
+                            <pack200>false</pack200>
+                            <verbose>true</verbose>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>px-desktop-build</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <configuration>
+                            <descriptors>
+                                <descriptor>${project.basedir}/assembly.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>assembly</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+    <repositories>
+        <!-- EBI repo -->
+        <repository>
+            <id>nexus-ebi-repo</id>
+            <name>The EBI internal repository</name>
+            <url>http://www.ebi.ac.uk/intact/maven/nexus/content/repositories/ebi-repo/</url>
+            <releases>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <!-- EBI SNAPSHOT repo -->
+        <repository>
+            <id>nexus-ebi-snapshot-repo</id>
+            <name>The EBI internal snapshot repository</name>
+            <url>http://www.ebi.ac.uk/intact/maven/nexus/content/repositories/ebi-repo-snapshots/</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+            </snapshots>
+        </repository>
+    </repositories>
+
+</project>

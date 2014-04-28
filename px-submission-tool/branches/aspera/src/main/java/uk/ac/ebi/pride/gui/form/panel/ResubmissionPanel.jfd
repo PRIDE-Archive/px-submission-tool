@@ -1,0 +1,47 @@
+JFDML JFormDesigner: "5.1.1.0.120" Java: "1.6.0_65" encoding: "UTF-8"
+
+new FormModel {
+	contentType: "form/swing"
+	root: new FormRoot {
+		add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class org.jdesktop.layout.GroupLayout ) {
+			"$horizontalGroup": "par l {comp separator1::l:::x, seq {space :::p, par l {seq {par l {comp userNameField:::p:156:p, comp userNameLabel::l:p:80:p}, par l {seq {space :p:21:p, comp passwordLabel:::p::p}, seq l {space s:::p, comp passwordField:::p:156:p}}}, comp pxDatasetLabel::l:p::p, comp pxDatasetComboBox::l:p:226:p, comp loginButton::t:p:92:p}, space :::x}}"
+			"$verticalGroup": "par l {seq l {space :::p, par b {comp passwordLabel::b:p::p, comp userNameLabel::b:p::p}, space :::p, par b {comp userNameField::b:p::p, comp passwordField::b:p::p}, space :::p, comp loginButton:::p::p, space u:::p, comp separator1:::p:5:p, space :::p, comp pxDatasetLabel:::p::p, space :::p, comp pxDatasetComboBox:::p:30:p, space ::18:x}}"
+		} ) {
+			name: "this"
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "userNameLabel"
+				"text": "Email"
+				"font": new com.jformdesigner.model.SwingDerivedFont( null, 1, 0, false )
+			} )
+			add( new FormComponent( "javax.swing.JTextField" ) {
+				name: "userNameField"
+			} )
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "passwordLabel"
+				"text": "Password"
+				"font": new com.jformdesigner.model.SwingDerivedFont( null, 1, 0, false )
+			} )
+			add( new FormComponent( "javax.swing.JPasswordField" ) {
+				name: "passwordField"
+			} )
+			add( new FormComponent( "javax.swing.JButton" ) {
+				name: "loginButton"
+				"text": "Login"
+			} )
+			add( new FormComponent( "javax.swing.JSeparator" ) {
+				name: "separator1"
+			} )
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "pxDatasetLabel"
+				"text": "Select the dataset to be replaced"
+				"font": new com.jformdesigner.model.SwingDerivedFont( null, 1, 0, false )
+			} )
+			add( new FormComponent( "javax.swing.JComboBox" ) {
+				name: "pxDatasetComboBox"
+			} )
+		}, new FormLayoutConstraints( null ) {
+			"location": new java.awt.Point( 0, 0 )
+			"size": new java.awt.Dimension( 350, 185 )
+		} )
+	}
+}

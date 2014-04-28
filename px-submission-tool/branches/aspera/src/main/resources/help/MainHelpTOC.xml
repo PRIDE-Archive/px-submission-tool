@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='ISO-8859-1'  ?>
+
+<!DOCTYPE toc
+        PUBLIC "-//Sun Microsystems Inc.//DTD JavaHelp TOC Version 1.0//EN"
+        "http://java.sun.com/products/javahelp/toc_1_0.dtd">
+
+<toc version="1.0">
+    <tocitem text="Welcome" target="help.welcome"/>
+    <tocitem text="Login" target="help.login"/>
+    <tocitem text="Dataset Details" target="help.meta.data"/>
+    <tocitem text="File Selection" target="help.file.selection"/>
+    <tocitem text="File Relations" target="help.file.mapping"/>
+    <tocitem text="Additional Details" target="help.additional.details"/>
+    <tocitem text="Experimental Details" target="help.exp.details"/>
+    <tocitem text="Lab Head" target="help.lab.head"/>
+    <tocitem text="Additional Dataset Details" target="help.additional.dataset.details"/>
+    <tocitem text="Submission Summary" target="help.submission.summary"/>
+    <tocitem text="Submission" target="help.submission"/>
+    <tocitem text="Resubmission" target="help.resubmission"/>
+    <tocitem text="Experimental Factor" target="help.experimental.factor"/>
+    <tocitem text="FAQ" target="help.faq"/>
+    <tocitem text="Feedback Page" target="help.feedback"/>
+</toc>

@@ -1,0 +1,362 @@
+x# proteomxchange logo
+px.logo = icon/logo/logo.png
+
+# welcome panel
+incomplete.submission.record.dialog.title = Incomplete submission found
+incomplete.submission.record.dialog.message = Your previous submission was terminated unexpectedly, would you like to continue?
+
+# file selection buttons
+add.file.button.title = Add Files
+add.file.button.tooltip = Select and add files to be submitted
+add.file.button.small.icon = icon/16x16/add.png
+add.file.dialog.message = Select files or folders contain files to be submitted
+add.summary.file.dialog.message = Select predefined submission summary file
+add.file.button.tooltip = Add URL represents file to be submitted
+add.url.button.title = Add URL
+add.url.dialog.message = Add URL
+add.url.button.small.icon = icon/16x16/url.png
+
+file.category.note.title = Please assign the correct file type to your files
+result.file.type.note = <html><b>RESULT</b> (required): Experimental results, either PRIDE XML or mzIdentML files are supported</html>
+raw.file.type.note = <html><b>RAW</b> (required): MS instrument raw output such as: BRUKER baf files or non-processed mzmL/mzXML files. If your raw outputs are directories, please zip them</html>
+search.file.type.optional.note = <html><b>SEARCH</b> (optional): Search engine output or analysis pipeline output files, such as Mascot .dat, X!Tandem XML files</html>
+search.file.type.required.note = <html><b>SEARCH</b> (required): Search engine output or analysis pipeline output, such as: pep.xml, prot.xml (from TPP), etc</html>
+peak.file.type.note = <html><b>PEAK</b> (required for mzIdentML/ optional for PRIDE XML): peak list files such as mgf, dta, ms2 or pkl, or processed mzML, mzXML files</html>
+quant.file.type.note = <html><b>QUANT</b> (optional): quantification analysis output files, such as: MaxQuant output files, mzQuantML, etc</html>
+gel.file.type.note = <html><b>GEL</b> (optional): gel image file such as: TIF, JPG, or PNG files</html>
+other.file.type.note = <html><b>OTHER</b> (optional): any other files related to the submission (e.g. scripts)</html>
+
+# mass spec experiment method
+experiment.method.combobox.default.selection = Choose experiment type here
+experiment.method.combobox.other.experiment.method = Other experiment type...
+experiment.method.combobox.default.experiment.method.file = cv/msmethod.cv
+
+# required and optional label
+required.label.title = (required)
+optional.label.title = (optional)
+
+# additional metadata
+apply.all.message = Tip: Tick "Apply to all" if you want the same values applied across all the experimental result files.
+apply.all.message.icon = icon/16x16/tip.png
+species.combobox.default.selection = Choose sample species here
+species.combobox.other.species = Other species...
+species.combobox.default.species.file = cv/species.cv
+
+instrument.combobox.default.selection = Choose MS instruments here
+instrument.combobox.other.instrument = Other instruments...
+instrument.combobox.default.instrument.file = cv/instrument.cv
+
+modification.combobox.default.selection = Choose modifications here
+modification.combobox.other.modification = Other modifications...
+modification.combobox.default.modification.file = cv/modification.cv
+
+quantification.combobox.default.selection = Choose quantification method here
+quantification.combobox.other.quantification = Other quantification methods...
+quantification.combobox.default.quantification.file = cv/quantification.cv
+
+tissue.combobox.default.selection = Choose tissue here
+tissue.combobox.other.tissue = Other tissues...
+tissue.combobox.default.tissue.file = cv/tissue.cv
+
+celltype.combobox.default.selection = Choose cell type here
+celltype.combobox.other.celltype = Other cell types...
+celltype.combobox.default.celltype.file = cv/celltype.cv
+
+disease.combobox.default.selection = Choose disease here
+disease.combobox.other.disease = Other diseases...
+disease.combobox.default.disease.file = cv/disease.cv
+
+combobox.tick.small.icon = icon/16x16/tick.png
+
+comment.default.text = Reasons for not be able to convert your result files to PRIDE XML, such as: MaxQuant output
+
+# project tag
+project.tag.tooltip = <html>If your project is part of a larger project, please select the parent project from the table below. <br/><br/> If you would like to propose a new parent project, please contact us at: <a href='mailto:pride-support@ebi.ac.uk'>pride-support@ebi.ac.uk</a></html>
+project.tag.label.title = Projects
+project.tag.default.tag.file = cv/projecttag.cv
+project.tag.desc.message = <html>If your project is part of a larger project, please select the parent project from the table below. If you would like to propose a new parent project, please contact us at: <a href='mailto:pride-support@ebi.ac.uk'>pride-support@ebi.ac.uk</a></html>
+
+# file mapping buttons
+add.file.mapping.button.title = Relation
+add.file.mapping.button.small.icon = icon/16x16/add_mapping.png
+
+# dialog for unsupported result files
+unsupported.result.file.dialog.message = <html><b>Partial submission option selected</b><br/><br/> Please be aware that your dataset will not be issued with a DOI number <br/>and can only be accessed via the ProteomeXchange FTP. <br/><br/> <b>Do you want to continue?</b></html>
+unsupported.result.file.dialog.title = Submission Option
+
+# load submission file button
+load.submission.file.button.title = Bulk submission
+load.submission.file.button.tooltip = Load an existing submission file with predefined submission details
+load.submission.file.button.small.icon = icon/16x16/submission.png
+
+# file mapping labels
+result.file.label.title = Result files
+result.file.description.title = Click on "Relation" button to add or remove related files
+mapping.file.label.title = Related files
+mapping.file.description.title = Files relate to the selected result file
+
+# project description labels
+copy.paste.tip.for.mac = Tip: Use Ctrl+C to copy, Ctrl+V to paste
+copy.paste.tip.for.mac.icon = icon/16x16/tip.png
+project.desc.label.title = Project Details
+project.title.error.message = Project title cannot be empty
+keyword.error.message = Keyword should be separated by comma and white space
+project.desc.error.message = Project description can neither be less than 50 characters nor more than 5000 characters
+sample.processing.error.message = Sample processing protocol can neither be less than 50 characters nor more than 5000 characters
+data.processing.error.message = Data processing protocol can neither be less than 50 characters nor more than 5000 characters
+mass.spec.experiment.method.error.message = Mass spectrometry experiment method should be selected
+project.title.tooltip = A short title describes your project
+keyword.tooltip = Keywords such as: species, instrument
+project.desc.tooltip = A detailed description about your project, such as: experiment design
+sample.processing.tooltip = A detailed description about your sample processing protocol
+data.processing.tooltip = A detailed description about your data processing protocol
+project.title.hint = i.e. Human liver LC-MSMS
+project.keywords.hint = i.e. Human, Liver, Plasma, LC-MSMS
+project.description.hint = Please provide an overall description of your study, think something similar in scope to the manuscript abstract
+sample.processing.hint = Please provide a short description on the sample preparation steps, separation, enrichment strategies and mass spectrometry protocols included
+data.processing.hint = Please provide a couple of sentences on the bioinformatics pipeline used, main search parameters, quantitative analysis, software tools and versions included. Think something similar in scope to the Data Analysis section of your manuscript
+additional.button.label.title = Additional
+additional.button.small.icon = icon/16x16/add_black.png
+
+# pride login labels and icons
+pride.login.button.title = Login
+pride.login.username.tooltip = Your user name
+pride.login.password.tooltip = Your password
+pride.login.username.error.message = User name cannot be empty
+pride.login.password.error.message = Password cannot be empty
+pride.login.error.title = Login
+pride.login.error.message = Failed to login. Please register first if you don't have an account.
+pride.login.resubmission.error.message = Failed to login. Please ensure you have the correct user name and password.
+pride.login.button.loading.small.icon = icon/16x16/loading.gif
+pride.login.create.account.title = Register New User
+
+# lab head labels and icons
+lab.head.explanation.desc = NOTE: We are collecting this information for grouping submissions by lab and as a contact backup.
+lab.head.name.hint = Lab head's first name, middle name and last name, i.e. John Arthur Smith
+lab.head.name.tooltip = Full name of the lab head
+lab.head.name.error.message = Name cannot be empty
+lab.head.email.hint = Lab head's email address
+lab.head.email.tooltip = Email address of the lab head
+lab.head.email.error.message = Email address must be valid
+lab.head.affiliation.hint = Lab head's affiliation, such as: department, lab, institute and country
+lab.head.affiliation.tooltip = Affiliation of the lab head
+lab.head.affiliation.error.message = Affiliation cannot be empty
+
+
+# sample metadata labels and icons
+sample.metadata.result.file.label.title = Result files
+sample.metadata.result.file.description.title = Click on "Annotate" button to add experimental details
+sample.metadata.label.title = Experimental details
+sample.metadata.description.title = Experimental details of the selected result file
+add.sample.metadata.button.title = Annotate
+add.sample.metadata.button.small.icon = icon/16x16/add_mapping.png
+
+# navigation control button label
+help.button.label = Help
+help.button.small.icon = icon/32x32/help.png
+next.button.label = Next
+next.button.small.icon = icon/16x16/next.png
+back.button.label = Back
+back.button.small.icon = icon/16x16/back.png
+cancel.button.label = Cancel
+cancel.button.small.icon = icon/16x16/cancel.png
+close.button.label = Close
+close.button.small.icon = icon/16x16/cancel.png
+cancel.submission.message = Are you sure you want to quit this tool?
+cancel.submission.title = Warning
+ok.button.label = OK
+ok.button.small.icon = icon/16x16/finish.png
+finish.button.label = Finish
+finish.button.small.icon = icon/16x16/finish.png
+new.submission.button.label = New
+new.submission.button.small.icon = icon/16x16/new.png
+
+# navigation descriptor details
+welcome.nav.desc.id = Welcome
+welcome.nav.desc.title = Welcome
+welcome.nav.desc.detail = ProteomeXchange Submission Tool
+
+file.selection.nav.desc.id = FileSelection
+file.selection.nav.desc.title = Add Files
+file.selection.nav.desc.detail = Add the files you want to submit
+file.selection.validation.dialog.title = File validation
+file.selection.validation.dialog.message = Checking your files, please wait...
+
+additional.metadata.nav.desc.id = AdditionalMetaData
+additional.metadata.nav.desc.title = Additional Details
+additional.metadata.nav.desc.detail = Please give additional details about your submission
+
+file.mapping.nav.desc.id = FileMapping
+file.mapping.nav.desc.title = Relationships between files
+file.mapping.nav.desc.detail = Specify and check the files used for producing the results
+
+# login screen
+pride.login.nav.desc.id = PrideLogin
+pride.login.nav.desc.title= Login
+pride.login.nav.desc.detail= Login to your ProteomeXchange/PRIDE account
+
+project.metadata.nav.desc.id = ProjectMetaData
+project.metadata.nav.desc.title = Dataset Details
+project.metadata.nav.desc.detail = Please provide some details about your dataset
+
+additional.project.metadata.nav.desc.id = AdditionalProjectMetaData
+additional.project.metadata.nav.desc.title = Additional dataset details
+additional.project.metadata.nav.desc.detail = Please provide additional details about your dataset
+
+summary.nav.desc.id = Summary
+summary.nav.desc.title = Submission Summary
+summary.nav.desc.detail = Please double-check before starting your submission
+
+submission.nav.desc.id = Submission
+submission.nav.desc.title = Submission
+submission.nav.desc.detail = Submission progress
+
+pride.labhead.nav.desc.id = Lab Head
+pride.labhead.nav.desc.title = Lab Head
+pride.labhead.nav.desc.detail = Please provide contact details of your lab head
+
+# sample metadata
+sample.metadata.nav.desc.id = SampleMetaData
+sample.metadata.nav.desc.title = Experimental Details
+sample.metadata.nav.desc.detail = Please provide additional experimental details for each result file
+
+# Table related details
+table.remove.row.small.icon = icon/16x16/remove.png
+
+# Warning message icon
+warning.message.icon = icon/32x32/warning.png
+
+# File mapping dialog
+file.mapping.table.title = Select related files from below
+add.file.mapping.button.label = Add
+add.file.mapping.dialog.button.small.icon = icon/16x16/add_black.png
+
+# Additional dataset metadata
+pubmed.id.hint = Provide the PubMedID(s) if the dataset is associated with an existing publication (comma separated)
+pubmed.id.tooltip = Provide PubMedIDs (comma separated)
+pubmed.id.error.message = Please provide valid PubMedIDs separated by either comma or space
+px.acc.reanalysis.hint = Only applicable if your results are based on the reprocessing of one or several previously submitted PX dataset(s)
+px.acc.reanalysis.tooltip = Please provide ProteomeXchange project accessions your reanalysis is based on, separated by either comma or space
+px.acc.reanalysis.error.message = Please input valid PX accessions separated by either comma or space
+other.omics.link.hint = Only applicable if proteomics results can be linked to other biological data submitted to other resources (e.g. ArrayExpress, GEO)
+other.omics.link.tooltip = Please provide URLs of the corresponding datasets in other resources (comma or space separated)
+other.omics.link.error.message = Links to other 'omics' datasets should not be more than 500 characters
+
+species.label.title = Species
+tissue.label.title = Tissue
+celltype.label.title = Cell type
+disease.label.title = Disease
+instrument.label.title = Instrument
+quantification.label.title = Quantification method
+modification.label.title = Modification
+experimental.factor.label.title = Experimental factor
+experimental.factor.label.help.icon = icon/16x16/help.png
+experimental.factor.default.text = Fill in your experimental factor, for example: Drug A at 10 mM, Technical replicate 2.
+experimental.factor.default.value = Not provided
+experimental.factor.tooltip = A short description of the experimental factor of the result file, such as: disease state, technical replicate and etc
+comment.label.title = Comment
+
+# Resubmission dialog
+resubmission.dialog.title = Resubmission
+resubmission.checkbox.label = Enable resubmission
+resubmission.login.button.lock.small.icon = icon/16x16/login_lock.png
+resubmission.login.button.loading.small.icon = icon/16x16/loading.gif
+resubmission.button.small.icon = icon/16x16/submission.png
+resubmission.button.label = Resubmission
+resubmission.dataset.selection.warning.message = Please select a ProteomeXchange dataset from below
+resubmission.private.dataset.warning.message = No private ProteomeXchange dataset found
+resubmission.user.name.warning.message = Please input PRIDE user name
+resubmission.password.warning.message = Please input PRIDE password
+resubmission.login.warning.message = Please login into PRIDE
+resubmission.no.private.px.label = No dataset available
+resubmission.select.px.dataset.label = Choose your dataset
+
+# ftp upload
+ftp.upload.detail.error.message = <html><b>Failed to get upload credentials.</b> <br/>Please ensure that you have Internet connection. </html>
+ftp.upload.detail.error.title = Upload Error
+ftp.upload.error.message = <html><b>There appears to be a problem with using FTP to upload your files.</b> <br/> This could due to the firewall restrictions on your local network.<br/> In which case you should contact your system administrator</html>
+ftp.upload.error.title = Upload Error
+ftp.upload.default.message = Submission in progress . . .
+ftp.upload.stop.message = Submission has stopped
+ftp.upload.success.message = All your files have been uploaded successfully
+ftp.progress.default.message = Preparing to upload
+ftp.upload.large.icon = icon/64x64/upload.png
+ftp.cancel.small.icon = icon/24x24/stop.png
+ftp.start.small.icon = icon/24x24/start.png
+ftp.success.small.icon = icon/24x24/tick.png
+stop.upload.dialog.title = Warning
+stop.upload.dialog.message = You are about to stop the current submission upload, are you sure?
+submission.complete.large.icon = icon/64x64/idea.png
+submission.complete.title = Your submission reference:
+submission.complete.message = <html>Please note: your submission reference is only a temporary identifier. <br/>You will receive an confirmation email shortly with all the relevant details, please reply to the email if you have any questions about your submission.</html>
+
+# welcome screen
+welcome.submission.tool.detail = <html>This tool guides you to submit dataset to members of the ProteomeXchange consortium.</html>
+welcome.submission.tool.more.detail = More about ProteomeXchange
+welcome.submission.tool.submission.guideline = Submission guidelines
+welcome.submission.tool.link.small.icon = icon/16x16/link.png
+
+welcome.before.start.title = Choose submission option below
+welcome.before.start.desc = Please choose one submission option below (Complete submission recommended)
+welcome.you.need.title = You need to provide
+welcome.you.need.desc = Please ensure the following information ready
+welcome.full.submission.button.title = Complete Submission
+welcome.full.submission.button.title.large.icon = icon/48x48/complete.png
+welcome.full.submission.button.title.selected.large.icon = icon/48x48/complete_highlight.png
+welcome.partial.submission.button.title = Partial Submission
+welcome.partial.submission.button.title.large.icon = icon/48x48/partial.png
+welcome.partial.submission.button.title.selected.large.icon = icon/48x48/partial_highlight.png
+welcome.minimum.submission.button.title = Minimum Submission
+welcome.minimum.submission.button.title.large.icon = icon/64x64/minimal_signal.png
+welcome.minimum.submission.button.title.selected.large.icon = icon/64x64/minimal_signal_selected.png
+
+welcome.result.file.title = Result Files
+welcome.result.file.desc = PRIDE XML or mzIdentML(+ spectra)
+welcome.result.file.small.icon = icon/128x128/result.png
+welcome.identification.file.title = Search Engine Results
+welcome.identification.file.desc = Protein/Peptide Identifications
+welcome.identification.file.small.icon = icon/128x128/identification.png
+welcome.raw.file.title = Raw Data
+welcome.raw.file.desc = MS instrument raw output
+welcome.raw.file.small.icon = icon/128x128/raw.png
+welcome.pride.login.title = PRIDE Login
+welcome.pride.login.desc = PRIDE user credentials
+welcome.pride.login.hyperlink.desc = Register
+welcome.pride.login.small.icon = icon/128x128/login.png
+
+# summary screen
+total.file.title = Total file count
+result.file.title = Result files
+raw.file.title = Raw files
+peak.file.title = Peak files
+search.file.title = Search files
+other.file.title = Other files
+file.non.zero.count.small.icon = icon/16x16/green_bullet.png
+file.zero.count.small.icon = icon/16x16/grey_bullet.png
+summary.submit.button.title = Submit
+
+# Help
+help.main.set=help/MainHelp.hs
+
+# Bulk submission
+bulk.submission.warning.title = Bulk Submission
+bulk.submission.warning.message = <html><p>Use this option only when you have a large number of files to submit (>100), and it is impractical to assign the file relations manually.</p> <br/> <p>In which case, you need to programatically generate a submission summary file according to the format definition below, then load the file from here.</p></html>
+bulk.submission.summary.file.format = Submission summary file format
+bulk.submission.summary.file.format.small.icon = icon/16x16/link.png
+bulk.submission.load.summary.file.button.label = Load
+bulk.submission.load.summary.file.button.small.icon = icon/16x16/add_black.png
+bulk.submission.loading.summary.file.small.icon = icon/16x16/loading.gif
+
+# export summary file
+export.summary.button.label = Export summary file
+export.summary.button.tooltip = Export a summary of your submission into a file
+export.summary.dialog.title = Export summary file
+export.summary.default.summary.file.name = submission.px
+export.summary.error.dialog.title = Warning
+export.summary.error.dialog.message = Failed to export summary file, please make sure you have the access permission.
+
+
+
+
+
+
