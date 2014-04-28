@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='ISO-8859-1' ?>
+<!DOCTYPE map
+        PUBLIC "-//Sun Microsystems Inc.//DTD JavaHelp Map Version 1.0//EN"
+        "http://java.sun.com/products/javahelp/map_1_0.dtd">
+
+<map version="1.0">
+    <mapID target="help_window_icon" url="icon/help.gif"/>
+    <mapID target="toc_icon" url="icon/toc.png"/>
+    <mapID target="index_icon" url="icon/index.png"/>
+    <mapID target="search_icon" url="icon/search.png"/>
+    <mapID target="previous_page_icon" url="icon/previous_page.png"/>
+    <mapID target="next_page_icon" url="icon/next_page.png"/>
+    <mapID target="home_page_icon" url="icon/home_page.png"/>
+    <mapID target="print_icon" url="icon/print.png"/>
+    <mapID target="print_setting_icon" url="icon/print_settings.png"/>
+
+    <mapID target="help.welcome" url="html/usage/welcome.html"/>
+    <mapID target="help.resubmission" url="html/usage/resubmission.html"/>
+    <mapID target="help.file.selection" url="html/usage/file_selection.html"/>
+    <mapID target="help.file.mapping" url="html/usage/file_mapping.html"/>
+    <mapID target="help.login" url="html/usage/login.html"/>
+    <mapID target="help.meta.data" url="html/usage/dataset_details.html"/>
+    <mapID target="help.exp.details" url="html/usage/experimental_details.html"/>
+    <mapID target="help.submission.summary" url="html/usage/summary.html"/>
+    <mapID target="help.submission" url="html/usage/submission.html"/>
+    <mapID target="help.faq" url="html/usage/faq.html"/>
+    <mapID target="help.feedback" url="html/usage/feedback.html"/>
+    <mapID target="help.lab.head" url="html/usage/lab_head.html"/>
+    <mapID target="help.additional.dataset.details" url="html/usage/additional_dataset_details.html"/>
+    <mapID target="help.additional.details" url="html/usage/additional_details.html"/>
+    <mapID target="help.experimental.factor" url="html/usage/experimental_factor.html"/>
+</map>

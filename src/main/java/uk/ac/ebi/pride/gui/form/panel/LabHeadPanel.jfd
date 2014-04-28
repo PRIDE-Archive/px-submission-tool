@@ -1,0 +1,64 @@
+JFDML JFormDesigner: "5.1.1.0.120" Java: "1.6.0_65" encoding: "UTF-8"
+
+new FormModel {
+	contentType: "form/swing"
+	root: new FormRoot {
+		add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class org.jdesktop.layout.GroupLayout ) {
+			"$horizontalGroup": "par l {seq t {space :::p, par t {comp scrollPane1:::::x, comp emailTextField::l:::x, comp nameTextField::l:::x, comp notificationLabel::l:::x, seq l {par l {comp nameLabel::l:p::p, comp emailLabel::l:p::p, comp affiliationLabel::l:p::p}, space :0:0:x}}, space :::p}}"
+			"$verticalGroup": "par l {seq l {space :::p, comp nameLabel:::p::p, space :::p, comp nameTextField:::p:37:p, space :p:16:p, comp emailLabel:::p::p, space :::p, comp emailTextField:::p:43:p, space s:::p, comp affiliationLabel:::p::p, space :::p, comp scrollPane1::::77:x, space :::p, comp notificationLabel::::42:x, space :::p}}"
+		} ) {
+			name: "this"
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "nameLabel"
+				"text": "Name*"
+				"font": new java.awt.Font( "sansserif", 0, 16 )
+				"foreground": sfield java.awt.Color white
+			} )
+			add( new FormComponent( "javax.swing.JTextField" ) {
+				name: "nameTextField"
+				auxiliary() {
+					"JavaCodeGenerator.customCreate": true
+				}
+			} )
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "emailLabel"
+				"text": "Email*"
+				"font": new java.awt.Font( "sansserif", 0, 16 )
+				"foreground": sfield java.awt.Color white
+			} )
+			add( new FormComponent( "javax.swing.JTextField" ) {
+				name: "emailTextField"
+				auxiliary() {
+					"JavaCodeGenerator.customCreate": true
+				}
+			} )
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "affiliationLabel"
+				"text": "Affiliation*"
+				"font": new java.awt.Font( "sansserif", 0, 16 )
+				"foreground": sfield java.awt.Color white
+			} )
+			add( new FormContainer( "javax.swing.JScrollPane", new FormLayoutManager( class javax.swing.JScrollPane ) ) {
+				name: "scrollPane1"
+				"horizontalScrollBarPolicy": 31
+				add( new FormComponent( "javax.swing.JTextArea" ) {
+					name: "affiliationTextArea"
+					"lineWrap": true
+					auxiliary() {
+						"JavaCodeGenerator.customCreate": true
+					}
+				} )
+			} )
+			add( new FormComponent( "javax.swing.JLabel" ) {
+				name: "notificationLabel"
+				"foreground": sfield java.awt.Color white
+				auxiliary() {
+					"JavaCodeGenerator.customCreate": true
+				}
+			} )
+		}, new FormLayoutConstraints( null ) {
+			"location": new java.awt.Point( 5, 0 )
+			"size": new java.awt.Dimension( 450, 345 )
+		} )
+	}
+}

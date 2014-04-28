@@ -1,0 +1,139 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" type="text/css" media="all" href="css/s.css">
+    <title>File Selection</title>
+</head>
+
+<body class="template">
+<div id="container">
+
+    <!-- header -->
+    <div id="header">
+        <h1>File Selection</h1>
+    </div>
+
+    <!-- navigation -->
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+        <tr>
+            <td align="left" class="topicpath">
+                <a href="dataset_details.html">Previous</a> | <a href="file_mapping.html">Next</a>
+            </td>
+            <td width="70%" class="topicpath"></td>
+        </tr>
+    </table>
+
+    <!-- table of contents -->
+    <div class="introduction">
+        <p>
+            The File Selection step allows to select the file your want to submit, we also encourage specify the right
+            file type for each file you want to submit, this will help us to process your datasets. Please see all
+            the predefined file types below.
+
+        <ul>
+            <li><a href="#usage">How to choose your files?</a></li>
+            <li><a href="#file_types">Supported File Types</a></li>
+        </ul>
+        </p>
+    </div>
+
+    <!-- content -->
+    <div id="content">
+        <div class="section">
+            <div class="piProcedureSteps">
+                <a name="usage"></a>
+
+                <h3>How to choose your files?</h3>
+
+                <p>
+                    To choose the file, you can do so by clicking on the buttom below:
+                    <br/>
+                    <img src="images/add_file_button.png" alt="'Add File' button">.
+                </p>
+
+                <p>
+                    After added your files, the ProteomeXchange Submission Tool will automatically assign a file type.
+                    Due to the complexity of the proteomics field and numerous possible file formats, you should
+                    double-check whether these types are in fact correct.
+                </p>
+
+                <p>
+                    You can change the file type by clicking the drop-down list highlighted below:
+                    <br/>
+                    <img src="images/select_file_type.png" alt="Select file type option in the file selection table">
+                </p>
+            </div>
+
+            <div class="piProcedureSteps">
+                <a name="file_types"></a>
+
+                <h3>Supported File Types</h3>
+
+                There are currently five predefined file type for the ProteomeXchange submissions. You see their
+                definitions in the table below:
+                <table class="piTable" width="100%" cellpadding="4" cellspacing="4">
+                    <tr class="piRowHead">
+                        <th width="20%">File Type</th>
+                        <th width="20%">Requirement</th>
+                        <th>Description</th>
+                    </tr>
+                    <tr class="piRowOdd">
+                        <td width="20%">Result</td>
+                        <td width="20%">Required for complete submissions</td>
+                        <td>Experiment result files, either PRIDE XML or mzIdentML are supported.</td>
+                    </tr>
+                    <tr class="piRowEven">
+                        <td width="20%">Raw</td>
+                        <td width="20%">Required</td>
+                        <td>MS instrument raw output such as: BRUKER baf files or non-processed mzML/mzXML files. if
+                            your raw outputs
+                            are directories, please zip them.
+                        </td>
+                    </tr>
+                    <tr class="piRowOdd">
+                        <td width="20%">Search</td>
+                        <td width="20%">Required for partial submission, optional for complete submission (recommend to
+                            include)
+                        </td>
+                        <td>Search engine output or analysis pipeline output files, such as: Mascot .dat, X!Tandem XML
+                            files.
+                        </td>
+                    </tr>
+                    <tr class="piRowEven">
+                        <td width="20%">Peak</td>
+                        <td width="20%">Required when mzIdentML is submitted, optional for partial submission (recommend
+                            to include)
+                        </td>
+                        <td>Processed peak list, such as: mgf, dta, ms2, pkl or processed mzML/mzXML files</td>
+                    </tr>
+                    <tr class="piRowOdd">
+                        <td width="20%">Quant</td>
+                        <td width="20%">Optional</td>
+                        <td>Quantification analysis output files, such as: MaxQuant output file, mzQuantML, etc</td>
+                    </tr>
+                    <tr class="piRowEven">
+                        <td width="20%">Gel</td>
+                        <td width="20%">Optional</td>
+                        <td>Gel image file such as: TIF, JPG, or PNG files</td>
+                    </tr>
+                    <tr class="piRowOdd">
+                        <td width="20%">Other</td>
+                        <td width="20%">Optional</td>
+                        <td>Any other files related to the submission (e.g. scripts)</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="footer">
+        <p>Comments, questions, suggestions? See the
+            <a href="feedback.html">Feedback</a> page to contact <strong>PRIDE HelpDesk</strong>
+        </p>
+    </div>
+</div>
+</body>
+</html>

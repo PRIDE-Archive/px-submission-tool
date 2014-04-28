@@ -1,0 +1,159 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" type="text/css" media="all" href="css/s.css">
+    <title>ProteomeXchange Submission Tool</title>
+</head>
+
+<body class="template">
+<div id="container">
+
+    <!-- header -->
+    <div id="header">
+        <h1>Welcome to the ProteomeXchange Submission Tool</h1>
+    </div>
+
+    <!-- navigation -->
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+        <tr>
+            <td align="left" class="topicpath">
+                <span style="color:#666666;">Previous</span> | <a href="login.html">Next</a> | <span
+                    style="color:#666666;">See Also</span>
+            </td>
+            <td width="70%" class="topicpath"></td>
+        </tr>
+    </table>
+
+    <!-- table of contents -->
+    <div class="introduction">
+        <p>
+            <a href="http://www.proteomexchange.org/">ProteomeXchange Submission Tool </a> assists you to
+            submit your MS/MS datasets to multiple key proteomics data repositories, such as:
+            <a href="http://wwww.ebi.ac.uk/pride">PRIDE</a> and <a href="http://www.peptideatlas.org/">PeptideAtlas</a>.
+        </p>
+
+        <br/>
+
+        <div class="warning">
+            Before start the submission, you need to decide on which type of submission to make:
+            <ul>
+                <li><a href="#complete">Complete submission</a></li>
+                <li><a href="#partial">Partial submission</a></li>
+                <li><a href="#bulk">Bulk submission</a></li>
+            </ul>
+        </div>
+
+        <div class="note">
+            You can select the type of submission by clicking the buttons highlighted below:
+            <br/>
+            <img src="images/submission_type.png" alt="Select submission type">
+        </div>
+    </div>
+
+    <!-- content -->
+    <div id="content">
+        <div class="section">
+            <div class="piProcedureSteps">
+                <a name="complete"/>
+
+                <h3> Complete submission</h3>
+
+                <p>
+                    This type is highly recommended. You will be issued with not only a ProteomeXchange accession but
+                    also
+                    a permanent DOI number to uniquely identify your submission in the future. With additional benefits
+                    that, PRIDE will show your data and allow private journal review support. Your data will also be
+                    available on the ProteomeXchange FTP to download once it has been made public.
+                </p>
+
+                <p>
+                    The complete submission requires three sets of information:
+                <li><b>Result Files</b>: they are either PRIDE XML contains both the spectra and the identifications or
+                    mzIdentML with spectrum files such as: MGF, mzML, most of the existing search engine outputs can be
+                    converted to PRIDE XML using the
+                    <a href="http://code.google.com/p/pride-converter-2/">PRIDE Converter</a>.
+                </li>
+
+                <li><b>Raw Files</b>: MS instrument outputs, such as: BRUKER .baf files. If your raw outputs are
+                    directories instead of files, please compress them into individual files before upload.
+                </li>
+
+                <li><b>PRIDE Login</b>: PRIDE user name and password. All submissions to the ProteomeXchange are
+                    private by default, the user name and password will help us to secure your submissions.
+                    You can register a new user account at <a href="http://www.ebi.ac.uk/pride/startRegistration.do">PRIDE</a>
+                </li>
+                </p>
+
+                <p>
+                    Although not required, we would also recommend you to submit the following data files:
+                <li><b>Search result files</b>: the original output from your search engine or your analysis
+                    pipeline, such as: Mascot .dat files. They should contain the peptide/protein identifications.
+                </li>
+                </p>
+            </div>
+
+            <div class="piProcedureSteps">
+                <a name="partial"/>
+
+                <h3>Partial submission</h3>
+
+                <p>
+                    This type is not recommended, since it will significantly reduce the visibility and reusability of
+                    your dataset. You should only choose this option if your search results cannot be converted by the
+                    <a href="http://www.ebi.ac.uk/pride/startRegistration.do">PRIDE Converter</a>. As a result, you will
+                    be only issued with a ProteomeXchange accession,
+                    and your dataset will only be available on the ProteomeXchange FTP to download.
+                </p>
+
+                <p>
+                <li><b>Search result files</b>: the original output from your search engine or your analysis
+                    pipeline, such as: Mascot .dat files. They should contain the peptide/protein identifications.
+                </li>
+                <li><b>Raw Files</b>: MS instrument outputs, such as: BRUKER .baf files. If your raw outputs are
+                    directories instead of files, please compress them into individual files before upload.
+                </li>
+
+                <li><b>PRIDE Login</b>: PRIDE user name and password. All submissions to the ProteomeXchange are
+                    private by default, the user name and password will help us to secure your submissions.
+                    You can register a new user account at <a href="http://www.ebi.ac.uk/pride/startRegistration.do">PRIDE</a>
+                </li>
+                </p>
+            </div>
+
+            <div class="piProcedureSteps">
+                <a name="bulk"/>
+
+                <h3>Bulk submission</h3>
+
+                <p>
+                    Bulk submission is mainly for submissions that contain a large set of data files,
+                    for example, more than 200 files. It helps to avoid manually assigning all the required information.
+                    Both complete submissions and partial submissions can be made used through option.
+                </p>
+
+                <p>
+                    The bulk submission requires three set of information:
+                <li><b>Experiment data files</b>: The files you want to submit to the ProteomeXchange, such as: raw
+                    instrument outputs, search engine outputs.
+                </li>
+                <li><b>Submission summary file</b>: This file captures the descriptive information about a
+                    ProteomeXchange submission, such as: experimental metadata, file relations, and etc. For the
+                    details,
+                    please refer to the <a href="http://www.proteomexchange.org/bulk-submission">file format</a>.
+                </li>
+                </p>
+            </div>
+        </div>
+    </div>
+
+
+    <div id="footer">
+        <p>Comments, questions, suggestions? See the
+            <a href="feedback.html">Feedback</a> page to contact <strong>PRIDE HelpDesk</strong>
+        </p>
+    </div>
+</div>
+</body>
+</html>

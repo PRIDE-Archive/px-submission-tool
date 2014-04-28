@@ -1,0 +1,8 @@
+#  Parameters for ProteomeXchange submission tool.
+#
+#  To set proxy, please uncomment both px.proxy.host and px.proxy.port
+#  by removing '#', and replace the default host and port values with
+#  your settings.
+
+#  px.proxy.host = localhost
+#  px.proxy.port = 8080
