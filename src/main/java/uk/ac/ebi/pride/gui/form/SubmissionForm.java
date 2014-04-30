@@ -59,7 +59,7 @@ public class SubmissionForm extends Form implements ActionListener {
         JPanel progressPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
         // uploading icon
-        Icon icon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("ftp.upload.large.icon"));
+        Icon icon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("upload.large.icon"));
         JLabel iconLabel = new JLabel(icon);
         progressPanel.add(iconLabel);
 
@@ -91,7 +91,7 @@ public class SubmissionForm extends Form implements ActionListener {
         c.gridy = 1;
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
-        Icon cancelIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("ftp.cancel.small.icon"));
+        Icon cancelIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("cancel.small.icon"));
         controlButton = GUIUtilities.createLabelLikeButton(cancelIcon, null);
         controlButton.setActionCommand(STOP_SUBMISSION_PROP);
         controlButton.addActionListener(this);
@@ -147,21 +147,21 @@ public class SubmissionForm extends Form implements ActionListener {
     }
 
     public void enableCancelButton(boolean enabled) {
-        Icon cancelIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("ftp.cancel.small.icon"));
+        Icon cancelIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("cancel.small.icon"));
         controlButton.setIcon(cancelIcon);
         controlButton.setEnabled(enabled);
         controlButton.setActionCommand(STOP_SUBMISSION_PROP);
     }
 
     public void enableStartButton(boolean enabled) {
-        Icon startIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("ftp.start.small.icon"));
+        Icon startIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("start.small.icon"));
         controlButton.setIcon(startIcon);
         controlButton.setEnabled(enabled);
         controlButton.setActionCommand(START_SUBMISSION_PROP);
     }
 
     public void enabledSuccessButton(boolean enabled) {
-        Icon successIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("ftp.success.small.icon"));
+        Icon successIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("success.small.icon"));
         controlButton.setIcon(successIcon);
         controlButton.setEnabled(enabled);
         controlButton.setActionCommand(null);

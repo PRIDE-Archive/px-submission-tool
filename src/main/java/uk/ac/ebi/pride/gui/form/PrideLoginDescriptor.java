@@ -1,6 +1,7 @@
 package uk.ac.ebi.pride.gui.form;
 
 import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.archive.submission.model.user.ContactDetail;
 import uk.ac.ebi.pride.data.model.Contact;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.gui.GUIUtilities;
@@ -14,7 +15,6 @@ import uk.ac.ebi.pride.gui.task.Task;
 import uk.ac.ebi.pride.gui.task.TaskEvent;
 import uk.ac.ebi.pride.gui.task.TaskListener;
 import uk.ac.ebi.pride.gui.util.ValidationState;
-import uk.ac.ebi.pride.prider.webservice.user.model.ContactDetail;
 
 import javax.help.HelpBroker;
 import javax.swing.*;

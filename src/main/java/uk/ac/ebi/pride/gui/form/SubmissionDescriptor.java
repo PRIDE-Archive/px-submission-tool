@@ -3,6 +3,9 @@ package uk.ac.ebi.pride.gui.form;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.archive.submission.model.submission.SubmissionReferenceDetail;
+import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
+import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
 import uk.ac.ebi.pride.data.model.Contact;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.gui.blocker.DefaultGUIBlocker;
@@ -11,10 +14,9 @@ import uk.ac.ebi.pride.gui.data.SubmissionRecord;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.task.*;
 import uk.ac.ebi.pride.gui.task.ftp.*;
+import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.gui.util.SubmissionRecordSerializer;
 import uk.ac.ebi.pride.prider.dataprovider.project.SubmissionType;
-import uk.ac.ebi.pride.prider.webservice.submission.model.FtpUploadDetail;
-import uk.ac.ebi.pride.prider.webservice.submission.model.SubmissionReferenceDetail;
 
 import javax.help.HelpBroker;
 import javax.swing.*;
@@ -34,12 +36,12 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
     /**
      * Listen to get ftp detail task
      */
-    private FTPDetailTaskListener ftpDetailTaskListener;
+    private UploadDetailTaskListener uploadDetailTaskListener;
 
     /**
      * Listen to ftp upload task
      */
-    private FTPUploadTaskListener ftpUploadTaskListener;
+    private UploadTaskListener uploadTaskListener;
 
     /**
      * Listen to create ftp directory task
@@ -59,8 +61,8 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
     public SubmissionDescriptor(String id, String title, String desc) {
         super(id, title, desc, new SubmissionForm());
 
-        this.ftpDetailTaskListener = new FTPDetailTaskListener();
-        this.ftpUploadTaskListener = new FTPUploadTaskListener();
+        this.uploadDetailTaskListener = new UploadDetailTaskListener();
+        this.uploadTaskListener = new UploadTaskListener();
         this.completeSubmissionTaskListener = new CompleteSubmissionTaskListener();
         this.createFTPDirectoryTaskListener = new CreateFTPDirectoryTaskListener();
 
@@ -88,22 +90,40 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         form.enableCancelButton(true);
 
         // get ftp details if null
-        if (appContext.getSubmissionRecord().getFtpDetail() == null) {
+        if (appContext.getSubmissionRecord().getUploadDetail() == null) {
             Submission submission = appContext.getSubmissionRecord().getSubmission();
 
             // get ftp details from PRIDE
-            Contact contact = submission.getProjectMetaData().getSubmitterContact();
-            Task task = new GetFTPDetailTask(contact.getUserName(), contact.getPassword());
-            task.addTaskListener(ftpDetailTaskListener);
-            task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
-            appContext.addTask(task);
+            getUploadDetail(submission);
         } else {
             firePropertyChange(BEFORE_DISPLAY_PANEL_PROPERTY, false, true);
         }
 
         // set the default upload message
-        form.setUploadMessage(appContext.getProperty("ftp.upload.default.message"));
-        form.setProgressMessage(appContext.getProperty("ftp.progress.default.message"));
+        form.setUploadMessage(appContext.getProperty("upload.default.message"));
+        form.setProgressMessage(appContext.getProperty("progress.default.message"));
+    }
+
+    private void getUploadDetail(Submission submission) {
+        // retrieve the upload protocol
+        final String uploadProtocol = System.getProperty("px.upload.protocol", Constant.ASPERA);
+        logger.debug("Configured upload protocol: {}", uploadProtocol);
+
+        // choose upload method
+        UploadMethod method;
+        if (uploadProtocol.equalsIgnoreCase(Constant.FTP)) {
+            method = UploadMethod.FTP;
+        } else {
+            // default is ASPERA
+            method = UploadMethod.ASPERA;
+        }
+        logger.debug("Chosen upload protocol: {}", method);
+
+        Contact contact = submission.getProjectMetaData().getSubmitterContact();
+        Task task = new GetUploadDetailTask(method, contact.getUserName(), contact.getPassword());
+        task.addTaskListener(uploadDetailTaskListener);
+        task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
+        appContext.addTask(task);
     }
 
     @Override
@@ -112,11 +132,25 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
 
         // upload files and folders
         // upload files
-        Task task = new CreateFTPDirectoryTask(appContext.getSubmissionRecord().getFtpDetail());
-        task.addTaskListener(createFTPDirectoryTaskListener);
-        task.addOwner(this);
-        task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
-        appContext.addTask(task);
+        final UploadDetail uploadDetail = appContext.getSubmissionRecord().getUploadDetail();
+        final UploadMethod uploadMethod = uploadDetail.getMethod();
+
+        Task task = null;
+        if (uploadMethod.equals(UploadMethod.FTP)) {
+            // create ftp directory before uploading
+            task = new CreateFTPDirectoryTask(uploadDetail);
+            task.addTaskListener(createFTPDirectoryTaskListener);
+        } else if (uploadMethod.equals(UploadMethod.ASPERA)) {
+            // start aspera upload straightaway
+            task = new AsperaUploadTask(appContext.getSubmissionRecord());
+            task.addTaskListener(uploadTaskListener);
+        }
+
+        if (task != null) {
+            task.addOwner(SubmissionDescriptor.this);
+            task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
+            appContext.addTask(task);
+        }
     }
 
     @Override
@@ -127,19 +161,23 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         if (isFinished) {
             app.restart();
         } else {
-            int n = JOptionPane.showConfirmDialog(((App) App.getInstance()).getMainFrame(),
-                    appContext.getProperty("stop.upload.dialog.message"),
-                    appContext.getProperty("stop.upload.dialog.title"),
-                    JOptionPane.YES_NO_OPTION,
-                    JOptionPane.QUESTION_MESSAGE);
-            if (n == 0) {
-                appContext.cancelTasksByOwner(this);
-                SubmissionRecord submissionRecord = appContext.getSubmissionRecord();
-                submissionRecord.setFtpDetail(null);
-                submissionRecord.setSummaryFileUploaded(false);
-                submissionRecord.setUploadedFiles(null);
-                firePropertyChange(BEFORE_HIDING_FOR_PREVIOUS_PANEL_PROPERTY, false, true);
-            }
+            cancelUpload();
+        }
+    }
+
+    private void cancelUpload() {
+        int n = JOptionPane.showConfirmDialog(((App) App.getInstance()).getMainFrame(),
+                appContext.getProperty("stop.upload.dialog.message"),
+                appContext.getProperty("stop.upload.dialog.title"),
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE);
+        if (n == 0) {
+            appContext.cancelTasksByOwner(this);
+            SubmissionRecord submissionRecord = appContext.getSubmissionRecord();
+            submissionRecord.setUploadDetail(null);
+            submissionRecord.setSummaryFileUploaded(false);
+            submissionRecord.setUploadedFiles(null);
+            firePropertyChange(BEFORE_HIDING_FOR_PREVIOUS_PANEL_PROPERTY, false, true);
         }
     }
 
@@ -159,41 +197,50 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             SubmissionRecord submissionRecord = appContext.getSubmissionRecord();
             logger.debug("Restart submission task: {} files", submissionRecord.getSubmission().getDataFiles().size() - submissionRecord.getUploadedFiles().size());
 
-            // start again the current ksubmission
-            Task task = new AsperaUploadTask(submissionRecord);
-//            task.addTaskListener();
-            task.addOwner(this);
-            task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
-            appContext.addTask(task);
+            // start again the current submission
+            Task task = null;
+            final UploadMethod method = submissionRecord.getUploadDetail().getMethod();
+            if (method.equals(UploadMethod.FTP)) {
+                task = new FTPUploadTask(submissionRecord);
+            } else if (method.equals(UploadMethod.ASPERA)) {
+                task = new AsperaUploadTask(appContext.getSubmissionRecord());
+            }
+
+            if (task != null) {
+                task.addTaskListener(uploadTaskListener);
+                task.addOwner(this);
+                task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
+                appContext.addTask(task);
+            }
 
             // enable cancel button
             SubmissionForm form = (SubmissionForm) SubmissionDescriptor.this.getNavigationPanel();
             form.enableCancelButton(true);
 
             // set uploading message
-            form.setUploadMessage(appContext.getProperty("ftp.upload.default.message"));
+            form.setUploadMessage(appContext.getProperty("upload.default.message"));
         }
     }
 
     /**
      * Task listener for getting ftp details
      */
-    private class FTPDetailTaskListener extends TaskListenerAdapter<FtpUploadDetail, String> {
+    private class UploadDetailTaskListener extends TaskListenerAdapter<UploadDetail, String> {
 
         @Override
-        public void succeed(TaskEvent<FtpUploadDetail> mapTaskEvent) {
+        public void succeed(TaskEvent<UploadDetail> mapTaskEvent) {
             // store ftp details
-            FtpUploadDetail ftpUploadDetails = mapTaskEvent.getValue();
+            UploadDetail ftpUploadDetails = mapTaskEvent.getValue();
 
             if (ftpUploadDetails != null) {
-                appContext.getSubmissionRecord().setFtpDetail(ftpUploadDetails);
+                appContext.getSubmissionRecord().setUploadDetail(ftpUploadDetails);
 
                 firePropertyChange(BEFORE_DISPLAY_PANEL_PROPERTY, false, true);
             } else {
                 // show error message dialog
                 JOptionPane.showConfirmDialog(app.getMainFrame(),
-                        appContext.getProperty("ftp.upload.detail.error.message"),
-                        appContext.getProperty("ftp.upload.detail.error.title"),
+                        appContext.getProperty("upload.detail.error.message"),
+                        appContext.getProperty("upload.detail.error.title"),
                         JOptionPane.CLOSED_OPTION, JOptionPane.ERROR_MESSAGE);
             }
         }
@@ -202,7 +249,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
     /**
      * Task listener for uploading submission files
      */
-    private class FTPUploadTaskListener extends TaskListenerAdapter<Void, UploadMessage> {
+    private class UploadTaskListener extends TaskListenerAdapter<Void, UploadMessage> {
 
         @Override
         public void process(TaskEvent<List<UploadMessage>> listTaskEvent) {
@@ -347,7 +394,8 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         }
 
         private void handleSuccessMessage(UploadSuccessMessage uploadMessage) {
-            Task task = new AsperaUploadTask(appContext.getSubmissionRecord());
+            Task task = new FTPUploadTask(appContext.getSubmissionRecord());
+            task.addTaskListener(uploadTaskListener);
             task.addOwner(SubmissionDescriptor.this);
             task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
             appContext.addTask(task);

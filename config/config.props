@@ -6,3 +6,8 @@
 
 #  px.proxy.host = localhost
 #  px.proxy.port = 8080
+
+#  To set upload protocol, please uncomment both px.upload.protocol
+#  by removing '#', and use either aspera or ftp in your settings
+
+px.upload.protocol = aspera

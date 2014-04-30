@@ -10,9 +10,6 @@ import uk.ac.ebi.pride.gui.navigation.NavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.navigation.Navigator;
 import uk.ac.ebi.pride.gui.util.Constant;
 
-import javax.jnlp.ServiceManager;
-import javax.jnlp.SingleInstanceService;
-import javax.jnlp.UnavailableServiceException;
 import javax.swing.*;
 import javax.swing.text.DefaultEditorKit;
 import java.awt.*;
@@ -38,20 +35,12 @@ public class App extends Desktop {
      */
     private Navigator navigator;
 
-    /**
-     * Java Web Start
-     */
-    private SingleInstanceService sis;
-
     public static void main(String[] args) {
         Desktop.launch(App.class, AppContext.class, args);
     }
 
     @Override
     public void init(String[] args) {
-        // register this instance as a single instance service listener for jnlp
-        registerJnlpListener();
-
         // load properties
         loadProps();
 
@@ -66,18 +55,6 @@ public class App extends Desktop {
 
         // build navigation
         buildNavigation();
-    }
-
-    /**
-     * Register as a Java Web Start listener
-     */
-    private void registerJnlpListener() {
-        try {
-            sis = (SingleInstanceService) ServiceManager.lookup("javax.jnlp.SingleInstanceService");
-        } catch (UnavailableServiceException e) {
-            sis = null;
-            logger.warn("Cannot create single instance service for web start");
-        }
     }
 
     /**

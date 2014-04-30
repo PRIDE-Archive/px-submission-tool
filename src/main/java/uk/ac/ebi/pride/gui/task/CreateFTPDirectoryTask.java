@@ -4,10 +4,10 @@ import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPReply;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.gui.task.ftp.UploadErrorMessage;
 import uk.ac.ebi.pride.gui.task.ftp.UploadMessage;
 import uk.ac.ebi.pride.gui.task.ftp.UploadSuccessMessage;
-import uk.ac.ebi.pride.prider.webservice.submission.model.FtpUploadDetail;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,7 +24,7 @@ public class CreateFTPDirectoryTask extends TaskAdapter<Void, UploadMessage> {
     /**
      * ftp login details
      */
-    private FtpUploadDetail ftpDetail;
+    private UploadDetail ftpDetail;
     /**
      * ftp client
      */
@@ -33,7 +33,7 @@ public class CreateFTPDirectoryTask extends TaskAdapter<Void, UploadMessage> {
     /**
      * Constructor
      */
-    public CreateFTPDirectoryTask(FtpUploadDetail ftpDetail) {
+    public CreateFTPDirectoryTask(UploadDetail ftpDetail) {
         this.ftpDetail = ftpDetail;
     }
 

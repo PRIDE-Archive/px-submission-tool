@@ -9,10 +9,10 @@ import org.apache.commons.net.io.CopyStreamListener;
 import org.apache.commons.net.io.Util;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.util.FileUtil;
 import uk.ac.ebi.pride.gui.task.ftp.*;
-import uk.ac.ebi.pride.prider.webservice.submission.model.FtpUploadDetail;
 
 import java.io.*;
 import java.net.URL;
@@ -29,13 +29,13 @@ public class FileFTPUploadTask extends TaskAdapter<Void, UploadMessage> implemen
     public static final int BUFFER_SIZE = 2048;
 
     private DataFile dataFile;
-    private FtpUploadDetail ftpDetail;
+    private UploadDetail ftpDetail;
     private FTPClient ftp;
     private InputStream inputStream;
     private OutputStream outputStream;
 
     public FileFTPUploadTask(DataFile dataFile,
-                             FtpUploadDetail ftpDetail) {
+                             UploadDetail ftpDetail) {
         this.dataFile = dataFile;
         this.ftpDetail = ftpDetail;
     }

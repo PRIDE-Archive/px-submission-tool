@@ -1,8 +1,8 @@
 package uk.ac.ebi.pride.gui.data;
 
+import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
-import uk.ac.ebi.pride.prider.webservice.submission.model.FtpUploadDetail;
 
 import java.io.Serializable;
 import java.util.Collections;
@@ -19,13 +19,13 @@ public class SubmissionRecord implements Serializable {
     private Submission submission;
     private String userName;
     private String password;
-    private FtpUploadDetail ftpDetail;
+    private UploadDetail uploadDetail;
     private boolean summaryFileUploaded = false;
     private Set<DataFile> uploadedFiles;
 
     public SubmissionRecord() {
         this.submission = new Submission();
-        this.ftpDetail = null;
+        this.uploadDetail = null;
         this.uploadedFiles = Collections.synchronizedSet(new HashSet<DataFile>());
     }
 
@@ -33,9 +33,9 @@ public class SubmissionRecord implements Serializable {
         this(submission, null);
     }
 
-    public SubmissionRecord(Submission submission, FtpUploadDetail ftpDetail) {
+    public SubmissionRecord(Submission submission, UploadDetail uploadDetail) {
         this.submission = submission;
-        this.ftpDetail = ftpDetail;
+        this.uploadDetail = uploadDetail;
         this.uploadedFiles = Collections.synchronizedSet(new HashSet<DataFile>());
     }
 
@@ -63,12 +63,12 @@ public class SubmissionRecord implements Serializable {
         this.password = password;
     }
 
-    public FtpUploadDetail getFtpDetail() {
-        return ftpDetail;
+    public UploadDetail getUploadDetail() {
+        return uploadDetail;
     }
 
-    public void setFtpDetail(FtpUploadDetail ftpDetail) {
-        this.ftpDetail = ftpDetail;
+    public void setUploadDetail(UploadDetail uploadDetail) {
+        this.uploadDetail = uploadDetail;
     }
 
     public Set<DataFile> getUploadedFiles() {

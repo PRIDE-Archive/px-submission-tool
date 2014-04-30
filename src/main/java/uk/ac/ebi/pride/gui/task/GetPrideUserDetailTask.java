@@ -2,8 +2,8 @@ package uk.ac.ebi.pride.gui.task;
 
 import org.springframework.web.client.RestTemplate;
 import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.archive.submission.model.user.ContactDetail;
 import uk.ac.ebi.pride.gui.desktop.DesktopContext;
-import uk.ac.ebi.pride.prider.webservice.user.model.ContactDetail;
 import uk.ac.ebi.pride.web.util.template.SecureRestTemplateFactory;
 
 /**

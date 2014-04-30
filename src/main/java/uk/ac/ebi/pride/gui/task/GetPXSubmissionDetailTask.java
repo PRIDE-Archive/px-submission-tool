@@ -4,8 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.client.RestTemplate;
 import uk.ac.ebi.pride.App;
-import uk.ac.ebi.pride.prider.webservice.project.model.ProjectDetail;
-import uk.ac.ebi.pride.prider.webservice.project.model.ProjectDetailList;
+import uk.ac.ebi.pride.archive.submission.model.project.ProjectDetail;
+import uk.ac.ebi.pride.archive.submission.model.project.ProjectDetailList;
 import uk.ac.ebi.pride.web.util.template.SecureRestTemplateFactory;
 
 import javax.swing.*;

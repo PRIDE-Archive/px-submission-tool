@@ -2,9 +2,9 @@ package uk.ac.ebi.pride.gui.task;
 
 import org.springframework.web.client.RestTemplate;
 import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.archive.submission.model.submission.SubmissionReferenceDetail;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
 import uk.ac.ebi.pride.gui.desktop.DesktopContext;
-import uk.ac.ebi.pride.prider.webservice.submission.model.SubmissionReferenceDetail;
 import uk.ac.ebi.pride.web.util.template.SecureRestTemplateFactory;
 
 /**
@@ -29,6 +29,6 @@ public class CompleteSubmissionTask extends TaskAdapter<SubmissionReferenceDetai
         DesktopContext context = App.getInstance().getDesktopContext();
         String baseUrl = context.getProperty("px.submission.complete.url");
 
-        return restTemplate.postForObject(baseUrl, submissionRecord.getFtpDetail(), SubmissionReferenceDetail.class);
+        return restTemplate.postForObject(baseUrl, submissionRecord.getUploadDetail(), SubmissionReferenceDetail.class);
     }
 }

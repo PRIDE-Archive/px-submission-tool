@@ -3,6 +3,8 @@ package uk.ac.ebi.pride.gui.task;
 import com.asperasoft.faspmanager.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.archive.submission.model.submission.DropBoxDetail;
+import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.data.exception.SubmissionFileException;
 import uk.ac.ebi.pride.data.io.SubmissionFileWriter;
 import uk.ac.ebi.pride.data.model.DataFile;
@@ -32,7 +34,7 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
     /**
      * Map contains files need to be submitted along with the folder name
      */
-    private Set<DataFile> fileToSubmit;
+    private Set<File> fileToSubmit;
 
     /**
      * Total file size need to be uploaded
@@ -46,7 +48,7 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
      */
     public AsperaUploadTask(SubmissionRecord submissionRecord) {
         this.submissionRecord = submissionRecord;
-        this.fileToSubmit = Collections.synchronizedSet(new LinkedHashSet<DataFile>());
+        this.fileToSubmit = Collections.synchronizedSet(new LinkedHashSet<File>());
         this.totalFileSize = 0;
     }
 
@@ -58,28 +60,34 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
         // prepare for ftp upload
         prepareSubmission();
 
-        String ascpLocation = "./src/main/lib/bin/linux-64/ascp";
-        File executable = new File(ascpLocation);
-        AsperaFileUploader uploader = new AsperaFileUploader(executable);
-        uploader.setRemoteLocation("ah01.ebi.ac.uk", "pride-drop-010", "2VJFuR2u");
+        // upload via aspera
+        asperaUpload();
 
+        return null;
+    }
+
+    private void asperaUpload() throws FaspManagerException {
+        // get aspera client binary
+        String ascpLocation = "./aspera/bin/mac-intel/ascp";
+        File executable = new File(ascpLocation);
+
+        // set aspera connection details
+        AsperaFileUploader uploader = new AsperaFileUploader(executable);
+        final UploadDetail uploadDetail = submissionRecord.getUploadDetail();
+        final DropBoxDetail dropBox = uploadDetail.getDropBox();
+        uploader.setRemoteLocation(uploadDetail.getHost(), dropBox.getUserName(), dropBox.getPassword());
+
+        // set upload parameters
         XferParams params = AsperaFileUploader.defaultTransferParams();
         params.createPath = true;
         uploader.setTransferParameters(params);
 
-        List<File> uploadFiles = new ArrayList<File>(1);
-
-        for (DataFile dataFile : fileToSubmit) {
-            uploadFiles.add(dataFile.getFile());
-        }
+        // add transfer litener
         uploader.setListener(this);
-        String transferId = uploader.uploadFile(uploadFiles, "aspera_test");
-        System.out.println("TransferEvent ID: " + transferId);
-//        publish(new UploadSuccessMessage(this)); // move it to listener part
-//        PUT MY ASPERA CODE HERE
-//        publish message
 
-        return null;
+        // start upload
+        String transferId = uploader.uploadFiles(fileToSubmit, dropBox.getDropBoxDirectory());
+        logger.debug("TransferEvent ID: {}", transferId);
     }
 
     /**
@@ -91,16 +99,14 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
         // add submission summary file
         File submissionFile = createSubmissionFile(); //submission px file creation
         if (submissionFile != null) {
-            DataFile dataFile = new DataFile();
-            dataFile.setFile(submissionFile);
-            fileToSubmit.add(dataFile); //add the submission px file to the upload list
+            fileToSubmit.add(submissionFile); //add the submission px file to the upload list
         }
 
         // prepare for submission
         for (DataFile dataFile : submissionRecord.getSubmission().getDataFiles()) {
             totalFileSize += dataFile.getFile().length();
             if (dataFile.isFile()) {
-                fileToSubmit.add(dataFile);
+                fileToSubmit.add(dataFile.getFile());
             }
         }
     }
@@ -148,28 +154,25 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
 
         switch (transferEvent) {
             case PROGRESS:
-                System.out.println("Transfer in Progress");
-                System.out.println("Total files: ");
-//            uploadFileSize += ((UploadProgressMessage) uploadMessage).getBytesTransferred();
                 int uploadedNumOfFiles = (int) sessionStats.getFilesComplete();
-                System.out.println("Total files: " + totalNumOfFiles);
-                System.out.println("Files uploaded: " + uploadedNumOfFiles);
-                System.out.println("Total file size " + totalFileSize);
-                System.out.println("Uploaded file size " + sessionStats.getTotalTransferredBytes());
+                logger.debug("Aspera transfer in progress");
+                logger.debug("Total files: ");
+                logger.debug("Total files: " + totalNumOfFiles);
+                logger.debug("Files uploaded: " + uploadedNumOfFiles);
+                logger.debug("Total file size " + totalFileSize);
+                logger.debug("Uploaded file size " + sessionStats.getTotalTransferredBytes());
                 publish(new UploadProgressMessage(this, null, totalFileSize, sessionStats.getTotalTransferredBytes(), totalNumOfFiles, uploadedNumOfFiles));
                 break;
             case SESSION_STOP:
+                FaspManager.destroy();
                 publish(new UploadProgressMessage(this, null, totalFileSize, totalFileSize, totalNumOfFiles, totalNumOfFiles));
                 publish(new UploadSuccessMessage(this));
-                System.out.println("Session Stop");
-                FaspManager.destroy();
+                logger.debug("Aspera Session Stop");
                 break;
             case SESSION_ERROR:
-                System.out.println("Session Error: " + transferEvent.getDescription());
-//            logger.debug("Failed to upload file: " + uploadMessage.getDataFile().getFile().getName());
-
-//            publish(new UploadErrorMessage())
+                logger.debug("Aspera session Error: " + transferEvent.getDescription());
                 FaspManager.destroy();
+                publish(new UploadErrorMessage(this, null, "Failed to upload via Aspera: " + transferEvent.getDescription()));
                 break;
         }
     }

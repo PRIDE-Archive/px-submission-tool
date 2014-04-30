@@ -1,5 +1,7 @@
 <assembly>
 
+    <id>px-submission-tool-deployment</id>
+
     <formats>
         <format>zip</format>
     </formats>
@@ -41,6 +43,13 @@
         <fileSet>
             <directory>${project.basedir}/config</directory>
             <outputDirectory>${assembly.dir}/config</outputDirectory>
+            <includes>
+                <include>**/**</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/aspera</directory>
+            <outputDirectory>${assembly.dir}/aspera</outputDirectory>
             <includes>
                 <include>**/**</include>
             </includes>
