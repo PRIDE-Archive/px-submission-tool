@@ -271,24 +271,26 @@ resubmission.login.warning.message = Please login into PRIDE
 resubmission.no.private.px.label = No dataset available
 resubmission.select.px.dataset.label = Choose your dataset
 
-# ftp upload
-ftp.upload.detail.error.message = <html><b>Failed to get upload credentials.</b> <br/>Please ensure that you have Internet connection. </html>
-ftp.upload.detail.error.title = Upload Error
-ftp.upload.error.message = <html><b>There appears to be a problem with using FTP to upload your files.</b> <br/> This could due to the firewall restrictions on your local network.<br/> In which case you should contact your system administrator</html>
-ftp.upload.error.title = Upload Error
-ftp.upload.default.message = Submission in progress . . .
-ftp.upload.stop.message = Submission has stopped
-ftp.upload.success.message = All your files have been uploaded successfully
-ftp.progress.default.message = Preparing to upload
-ftp.upload.large.icon = icon/64x64/upload.png
-ftp.cancel.small.icon = icon/24x24/stop.png
-ftp.start.small.icon = icon/24x24/start.png
-ftp.success.small.icon = icon/24x24/tick.png
+# upload
+upload.detail.error.message = <html><b>Failed to get upload credentials.</b> <br/>Please ensure that you have Internet connection. </html>
+upload.detail.error.title = Upload Error
+upload.error.message = <html><b>There appears to be a problem with using FTP to upload your files.</b> <br/> This could due to the firewall restrictions on your local network.<br/> In which case you should contact your system administrator</html>
+upload.error.title = Upload Error
+upload.default.message = Submission in progress . . .
+upload.stop.message = Submission has stopped
+upload.success.message = All your files have been uploaded successfully
+progress.default.message = Preparing to upload
+upload.large.icon = icon/64x64/upload.png
+cancel.small.icon = icon/24x24/stop.png
+start.small.icon = icon/24x24/start.png
+success.small.icon = icon/24x24/tick.png
 stop.upload.dialog.title = Warning
 stop.upload.dialog.message = You are about to stop the current submission upload, are you sure?
 submission.complete.large.icon = icon/64x64/idea.png
 submission.complete.title = Your submission reference:
 submission.complete.message = <html>Please note: your submission reference is only a temporary identifier. <br/>You will receive an confirmation email shortly with all the relevant details, please reply to the email if you have any questions about your submission.</html>
+upload.method.title = Fast upload
+upload.method.message = Would you like to use our fast upload service?
 
 # welcome screen
 welcome.submission.tool.detail = <html>This tool guides you to submit dataset to members of the ProteomeXchange consortium.</html>

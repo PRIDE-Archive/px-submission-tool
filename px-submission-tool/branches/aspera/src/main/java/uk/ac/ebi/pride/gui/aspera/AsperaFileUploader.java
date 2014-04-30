@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.List;
+import java.util.Collection;
 
 /**
  * Class to perform a file upload using Aspera.
@@ -27,6 +27,7 @@ public class AsperaFileUploader {
      */
     private RemoteLocation remoteLocation;
 
+    //todo: this should not be hard coded in the class
     private RemoteLocation pridePublicLocation = new RemoteLocation("fasp.ebi.ac.uk", "prd_ascp", "path/to/keyFile?");
     /**
      * The default parameters to use for a file transfer.
@@ -40,23 +41,25 @@ public class AsperaFileUploader {
      * of the command line tool. For example at
      * http://download.asperasoft.com/download/docs/ascp/2.7/html/index.html
      *
+     * todo: externalize these parameters, they should not be hard coded in the class, try to use property file instead
+     *
      * @return the default transfer parameters.
      */
     public static XferParams defaultTransferParams() {
         XferParams p = new XferParams();
         p.tcpPort = 22;  // tcp port used for authentication (ssh)
         p.udpPort = 33001; // port used for data transfer
-        p.targetRateKbps = 10000; // 100000 Kbps (= 100 Mbps)
+        p.targetRateKbps = 1000; // 100000 Kbps (= 100 Mbps)
         p.minimumRateKbps = 100; //    100 Kbps
         p.encryption = Encryption.NONE;
         p.overwrite = Overwrite.DIFFERENT;
         p.generateManifest = Manifest.NONE;
-        p.policy = Policy.FAIR;
+//        p.policy = Policy.FAIR;
         p.cookie = "PRIDE-Aspera-1-Cookie";
         p.token = "PRIDE-Aspera-1-Token";
         p.resumeCheck = Resume.SPARSE_CHECKSUM;
         p.preCalculateJobSize = false;
-        p.createPath = false;
+        p.createPath = true;
         return p;
     }
 
@@ -67,8 +70,10 @@ public class AsperaFileUploader {
      * @throws InitializationException if the initialization with the provided path failed.
      */
     public AsperaFileUploader(File ascpExecutable) throws FaspManagerException {
-        // set defaults
+        // set default listener
         this.listener = new DefaultAsperaTransferListener();
+
+        // set default transfer parameters
         this.transferParameters = defaultTransferParams();
 
         // set the location of the ascp executable
@@ -134,24 +139,14 @@ public class AsperaFileUploader {
      * @see #setRemoteLocation(String, String, String)
      * @see #setTransferParameters(com.asperasoft.faspmanager.XferParams)
      */
-    public String uploadFile(List<File> filesToUpload, String destinationDirectory) throws FaspManagerException {
-        if (remoteLocation == null) {
-            throw new IllegalStateException("No remote host specified!");
-        }
-
+    public String uploadFiles(Collection<File> filesToUpload, String destinationDirectory) throws FaspManagerException {
         // set all Files as local resources to be uploaded
         LocalLocation localFiles = new LocalLocation();
         for (File file : filesToUpload) {
-            if (file == null || !file.exists() || file.isDirectory() || !file.canRead()) {
-                throw new IllegalArgumentException("Can not access file: " + file);
-            }
             localFiles.addPath(file.getAbsolutePath());
         }
 
         // define the destination on the server
-        if (destinationDirectory == null || destinationDirectory.trim().isEmpty()) {
-            throw new IllegalArgumentException("No valid destination location specified!" + destinationDirectory);
-        }
         remoteLocation.clear(); // clear all path, we only want to allow the one specified for this method!
         remoteLocation.addPath(destinationDirectory);
 
@@ -159,21 +154,9 @@ public class AsperaFileUploader {
         TransferOrder order = new TransferOrder(localFiles, remoteLocation, transferParameters);
 
         /* Submit the job for transfer */
-        String jobId = null;
-        try {
-            jobId = FaspManager.getSingleton().startTransfer(order);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-        return jobId;
+        return FaspManager.getSingleton().startTransfer(order);
     }
-//
-//    public String uploadFile(File fileToUpload, String destinationDirectory) throws FaspManagerException {
-//        List<File> files = new ArrayList<File>();
-//        files.add(fileToUpload);
-//        return uploadFile(files, destinationDirectory);
-//    }
+
 
     private String downloadFiles(String[] remoteSourcePaths, String localDestinationDirPath) throws FaspManagerException {
 

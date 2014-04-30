@@ -33,7 +33,8 @@ public final class Constant {
 
 
     public static final String EMAIL = "email";
-    public static final String FTP_SERVER = "ftp";
+    public static final String FTP = "ftp";
+    public static final String ASPERA = "aspera";
     public static final String PRIDE_USER_NAME = "username";
     public static final String PRIDE_PASSWORD = "password";
     public static final String FTP_USER_NAME = "username";

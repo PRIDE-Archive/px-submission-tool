@@ -24,34 +24,13 @@ public class AppBootstrap {
      * Method to run the pride inspector
      */
     private void go() {
-        // read bootstrap properties
-        Properties bootstrapProps = getBootstrapSettings();
-
-        // get max memory
-        String proxyHost = bootstrapProps.getProperty("px.proxy.host");
-        String proxyPort = bootstrapProps.getProperty("px.proxy.port");
-
-        // createAttributedSequence the command
-        StringBuilder cmdBuffer = new StringBuilder();
-        cmdBuffer.append("java -cp ");
-        if (isWindowsPlatform()) {
-            cmdBuffer.append("\"");
-        }
-        cmdBuffer.append(System.getProperty("java.class.path"));
-        if (isWindowsPlatform()) {
-            cmdBuffer.append("\"");
-        }
-
-        if (proxyHost != null && proxyPort != null) {
-            cmdBuffer.append(" -Dhttp.proxyHost=");
-            cmdBuffer.append(proxyHost);
-            cmdBuffer.append(" -Dhttp.proxyPort=");
-            cmdBuffer.append(proxyPort);
-        }
-        cmdBuffer.append(" ");
-        cmdBuffer.append(App.class.getName());
+        StringBuilder cmdBuffer = getCommand();
 
         // call the command
+        callCommand(cmdBuffer);
+    }
+
+    private void callCommand(StringBuilder cmdBuffer) {
         Process process;
         try {
             logger.info(cmdBuffer.toString());
@@ -66,6 +45,45 @@ public class AppBootstrap {
         } catch (IOException e) {
             logger.error("Error while bootstrapping the ProteomeXchange submission tool", e);
         }
+    }
+
+    private StringBuilder getCommand() {
+        // read bootstrap properties
+        Properties bootstrapProps = getBootstrapSettings();
+
+        // createAttributedSequence the command
+        StringBuilder cmdBuffer = new StringBuilder();
+        cmdBuffer.append("java -cp ");
+        if (isWindowsPlatform()) {
+            cmdBuffer.append("\"");
+        }
+
+        cmdBuffer.append(System.getProperty("java.class.path"));
+        if (isWindowsPlatform()) {
+            cmdBuffer.append("\"");
+        }
+
+        // get proxy details
+        String proxyHost = bootstrapProps.getProperty("px.proxy.host");
+        String proxyPort = bootstrapProps.getProperty("px.proxy.port");
+
+        if (proxyHost != null && proxyPort != null) {
+            cmdBuffer.append(" -Dhttp.proxyHost=");
+            cmdBuffer.append(proxyHost);
+            cmdBuffer.append(" -Dhttp.proxyPort=");
+            cmdBuffer.append(proxyPort);
+        }
+
+        // get upload protocol
+        String uploadProtocol = bootstrapProps.getProperty("px.upload.protocol");
+        if (uploadProtocol != null) {
+            cmdBuffer.append(" -Dpx.upload.protocol=");
+            cmdBuffer.append(uploadProtocol);
+        }
+
+        cmdBuffer.append(" ");
+        cmdBuffer.append(App.class.getName());
+        return cmdBuffer;
     }
 
     /**
