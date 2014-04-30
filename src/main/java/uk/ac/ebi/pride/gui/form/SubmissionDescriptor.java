@@ -1,5 +1,6 @@
 package uk.ac.ebi.pride.gui.form;
 
+import com.asperasoft.faspmanager.FaspManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
@@ -230,10 +231,10 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         @Override
         public void succeed(TaskEvent<UploadDetail> mapTaskEvent) {
             // store ftp details
-            UploadDetail ftpUploadDetails = mapTaskEvent.getValue();
+            UploadDetail uploadDetail = mapTaskEvent.getValue();
 
-            if (ftpUploadDetails != null) {
-                appContext.getSubmissionRecord().setUploadDetail(ftpUploadDetails);
+            if (uploadDetail != null) {
+                appContext.getSubmissionRecord().setUploadDetail(uploadDetail);
 
                 firePropertyChange(BEFORE_DISPLAY_PANEL_PROPERTY, false, true);
             } else {
@@ -314,8 +315,11 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             SubmissionRecord submissionRecord = appContext.getSubmissionRecord();
             logger.debug("Handle stop message: {} files", submissionRecord.getSubmission().getDataFiles().size() - submissionRecord.getUploadedFiles().size());
 
+            // stop exiting aspera upload
+            FaspManager.destroy();
+
             SubmissionForm form = (SubmissionForm) SubmissionDescriptor.this.getNavigationPanel();
-            form.setUploadMessage(appContext.getProperty("ftp.upload.stop.message"));
+            form.setUploadMessage(appContext.getProperty("upload.stop.message"));
             form.enableStartButton(true);
         }
 
@@ -327,7 +331,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         private void handleSuccessMessage(UploadSuccessMessage message) {
             logger.debug("Handle success message");
             SubmissionForm form = (SubmissionForm) SubmissionDescriptor.this.getNavigationPanel();
-            form.setUploadMessage(appContext.getProperty("ftp.upload.success.message"));
+            form.setUploadMessage(appContext.getProperty("upload.success.message"));
             form.enabledSuccessButton(true);
 
             // complete submission task
@@ -388,8 +392,8 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
 
             // show error message dialog
             JOptionPane.showConfirmDialog(app.getMainFrame(),
-                    appContext.getProperty("ftp.upload.error.message"),
-                    appContext.getProperty("ftp.upload.error.title"),
+                    appContext.getProperty("upload.error.message"),
+                    appContext.getProperty("upload.error.title"),
                     JOptionPane.CLOSED_OPTION, JOptionPane.ERROR_MESSAGE);
         }
 
