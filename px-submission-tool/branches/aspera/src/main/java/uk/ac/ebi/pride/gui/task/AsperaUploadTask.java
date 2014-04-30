@@ -10,10 +10,7 @@ import uk.ac.ebi.pride.data.io.SubmissionFileWriter;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.gui.aspera.AsperaFileUploader;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
-import uk.ac.ebi.pride.gui.task.ftp.UploadErrorMessage;
-import uk.ac.ebi.pride.gui.task.ftp.UploadMessage;
-import uk.ac.ebi.pride.gui.task.ftp.UploadProgressMessage;
-import uk.ac.ebi.pride.gui.task.ftp.UploadSuccessMessage;
+import uk.ac.ebi.pride.gui.task.ftp.*;
 import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.gui.util.SubmissionRecordSerializer;
 
@@ -28,7 +25,7 @@ import java.util.*;
 
 public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implements TransferListener {
 
-    public static final Logger logger = LoggerFactory.getLogger(FTPUploadTask.class);
+    public static final Logger logger = LoggerFactory.getLogger(AsperaUploadTask.class);
 
     private SubmissionRecord submissionRecord;
     /**
@@ -63,7 +60,17 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
         // upload via aspera
         asperaUpload();
 
+        // wait for aspera to upload
+        waitUpload();
+
         return null;
+    }
+
+    private void waitUpload() throws InitializationException {
+        final FaspManager faspManager = FaspManager.getSingleton();
+        // this is keep the fasp manager running
+        while(faspManager.isRunning()) {
+        }
     }
 
     private void asperaUpload() throws FaspManagerException {
@@ -76,6 +83,7 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
         final UploadDetail uploadDetail = submissionRecord.getUploadDetail();
         final DropBoxDetail dropBox = uploadDetail.getDropBox();
         uploader.setRemoteLocation(uploadDetail.getHost(), dropBox.getUserName(), dropBox.getPassword());
+//        uploader.setRemoteLocation("ah01.ebi.ac.uk", "pride-drop-010", "2VJFuR2u");
 
         // set upload parameters
         XferParams params = AsperaFileUploader.defaultTransferParams();
@@ -86,7 +94,7 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
         uploader.setListener(this);
 
         // start upload
-        String transferId = uploader.uploadFiles(fileToSubmit, dropBox.getDropBoxDirectory());
+        String transferId = uploader.uploadFiles(fileToSubmit, uploadDetail.getFolder());
         logger.debug("TransferEvent ID: {}", transferId);
     }
 
@@ -147,6 +155,10 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
         }
     }
 
+    @Override
+    protected void cancelled() {
+        publish(new UploadStoppedMessage(this, submissionRecord));
+    }
 
     @Override
     public void fileSessionEvent(TransferEvent transferEvent, SessionStats sessionStats, FileInfo fileInfo) {

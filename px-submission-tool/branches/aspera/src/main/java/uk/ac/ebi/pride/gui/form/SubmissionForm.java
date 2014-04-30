@@ -83,7 +83,7 @@ public class SubmissionForm extends Form implements ActionListener {
 
         progressBar = new JProgressBar();
         progressBar.setPreferredSize(new Dimension(620, 25));
-        progressBar.setValue(1);
+        progressBar.setValue(0);
         progressDetailPanel.add(progressBar, c);
 
         // control button
@@ -91,7 +91,7 @@ public class SubmissionForm extends Form implements ActionListener {
         c.gridy = 1;
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
 
-        Icon cancelIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("cancel.small.icon"));
+        Icon cancelIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("pause.small.icon"));
         controlButton = GUIUtilities.createLabelLikeButton(cancelIcon, null);
         controlButton.setActionCommand(STOP_SUBMISSION_PROP);
         controlButton.addActionListener(this);
@@ -147,7 +147,7 @@ public class SubmissionForm extends Form implements ActionListener {
     }
 
     public void enableCancelButton(boolean enabled) {
-        Icon cancelIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("cancel.small.icon"));
+        Icon cancelIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("pause.small.icon"));
         controlButton.setIcon(cancelIcon);
         controlButton.setEnabled(enabled);
         controlButton.setActionCommand(STOP_SUBMISSION_PROP);
