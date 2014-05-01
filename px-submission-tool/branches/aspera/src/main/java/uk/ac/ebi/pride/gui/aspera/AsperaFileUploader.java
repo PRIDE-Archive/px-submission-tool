@@ -49,12 +49,12 @@ public class AsperaFileUploader {
         XferParams p = new XferParams();
         p.tcpPort = 22;  // tcp port used for authentication (ssh)
         p.udpPort = 33001; // port used for data transfer
-        p.targetRateKbps = 1000; // 100000 Kbps (= 100 Mbps)
+        p.targetRateKbps = 100000; // 100000 Kbps (= 100 Mbps)
         p.minimumRateKbps = 100; //    100 Kbps
         p.encryption = Encryption.NONE;
         p.overwrite = Overwrite.DIFFERENT;
         p.generateManifest = Manifest.NONE;
-//        p.policy = Policy.FAIR;
+        p.policy = Policy.FAIR;
         p.cookie = "PRIDE-Aspera-1-Cookie";
         p.token = "PRIDE-Aspera-1-Token";
         p.resumeCheck = Resume.SPARSE_CHECKSUM;
