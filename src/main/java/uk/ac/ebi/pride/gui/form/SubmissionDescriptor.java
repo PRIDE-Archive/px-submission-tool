@@ -160,10 +160,18 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
 
         // show a option dialog to warning user that the download will be stopped
         if (isFinished) {
+            //clearSubmissionRecord();
             app.restart();
         } else {
             cancelUpload();
         }
+    }
+
+    private void clearSubmissionRecord() {
+        SubmissionRecord submissionRecord = appContext.getSubmissionRecord();
+        submissionRecord.setUploadDetail(null);
+        submissionRecord.setSummaryFileUploaded(false);
+        submissionRecord.setUploadedFiles(null);
     }
 
     private void cancelUpload() {
@@ -174,10 +182,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
                 JOptionPane.QUESTION_MESSAGE);
         if (n == 0) {
             appContext.cancelTasksByOwner(this);
-            SubmissionRecord submissionRecord = appContext.getSubmissionRecord();
-            submissionRecord.setUploadDetail(null);
-            submissionRecord.setSummaryFileUploaded(false);
-            submissionRecord.setUploadedFiles(null);
+            clearSubmissionRecord();
             firePropertyChange(BEFORE_HIDING_FOR_PREVIOUS_PANEL_PROPERTY, false, true);
         }
     }
