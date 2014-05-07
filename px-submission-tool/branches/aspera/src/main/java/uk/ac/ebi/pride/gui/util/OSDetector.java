@@ -3,40 +3,31 @@ package uk.ac.ebi.pride.gui.util;
 /**
  * Created by ilias on 02/05/14 for.detectOS project
  */
-public class OSDetector
-{
-    private String os = System.getProperty("os.name").toLowerCase();
-    private String arch = System.getProperty("os.arch");
+public final class OSDetector {
+    public static final String os = System.getProperty("os.name").toLowerCase();
+    public static final String arch = System.getProperty("os.arch");
 
-    public String getOS()
-    {
-        if (os.contains("linux"))
-        {
-            if (arch.contains("amd64"))
-            {
-                return "linux64";
+    public enum OS {
+        LINUX_64,
+        LINUX_32,
+        MAC,
+        WINDOWS,
+        UNSUPPORTED
+    }
+
+    public static OS getOS() {
+        if (os.contains("linux")) {
+            if (arch.contains("amd64")) {
+                return OS.LINUX_64;
+            } else {
+                return OS.LINUX_32;
             }
-            else
-            {
-                return "linux32";
-            }
-        }
-        else if (os.contains("mac"))
-        {
-            return "mac";
-        }
-        else if (os.contains("win"))
-        {
-            return "windows";
-        }
-        else
-        {
-            return "unsupported";
+        } else if (os.contains("mac")) {
+            return OS.MAC;
+        } else if (os.contains("win")) {
+            return OS.WINDOWS;
+        } else {
+            return OS.UNSUPPORTED;
         }
     }
-//
-//    public String getArch()
-//    {
-//        return arch;
-//    }
 }
