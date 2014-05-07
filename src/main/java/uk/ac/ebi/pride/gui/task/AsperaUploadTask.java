@@ -12,18 +12,22 @@ import uk.ac.ebi.pride.gui.aspera.AsperaFileUploader;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
 import uk.ac.ebi.pride.gui.task.ftp.*;
 import uk.ac.ebi.pride.gui.util.Constant;
+import uk.ac.ebi.pride.gui.util.OSDetector;
 import uk.ac.ebi.pride.gui.util.SubmissionRecordSerializer;
 
 import java.io.File;
 import java.io.IOException;
 import java.security.SecureRandom;
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Created by ilias
  */
 
-public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implements TransferListener {
+public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implements TransferListener
+{
 
     public static final Logger logger = LoggerFactory.getLogger(AsperaUploadTask.class);
 
@@ -43,14 +47,16 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
      *
      * @param submissionRecord submission record
      */
-    public AsperaUploadTask(SubmissionRecord submissionRecord) {
+    public AsperaUploadTask(SubmissionRecord submissionRecord)
+    {
         this.submissionRecord = submissionRecord;
         this.fileToSubmit = Collections.synchronizedSet(new LinkedHashSet<File>());
         this.totalFileSize = 0;
     }
 
     @Override
-    protected Void doInBackground() throws Exception {
+    protected Void doInBackground() throws Exception
+    {
         // save submission initial progress
         serializeSubmissionReport();
 
@@ -66,16 +72,44 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
         return null;
     }
 
-    private void waitUpload() throws InitializationException {
+    private void waitUpload() throws InitializationException
+    {
         final FaspManager faspManager = FaspManager.getSingleton();
         // this is keep the fasp manager running
-        while(faspManager.isRunning()) {
+        while (faspManager.isRunning())
+        {
         }
     }
 
-    private void asperaUpload() throws FaspManagerException {
+    private void asperaUpload() throws FaspManagerException
+    {
+        //detect Operating System
+        OSDetector osDetector = new OSDetector();
+        String os = osDetector.getOS();
+
         // get aspera client binary
-        String ascpLocation = "./aspera/bin/mac-intel/ascp";
+        String ascpLocation = "";
+        if (os.equals("mac"))
+        {
+            ascpLocation = "./aspera/bin/mac-intel/ascp";
+        }
+        else if (os.equals("linux32"))
+        {
+            ascpLocation = "./aspera/bin/linux-32/ascp";
+        }
+        else if (os.equals("linux64"))
+        {
+            ascpLocation = "./aspera/bin/linux-64/ascp";
+        }
+        else if (os.equals("windows"))
+        {
+            ascpLocation = "./aspera/bin/windows-32/ascp.exe";
+        }
+        else
+        {
+            logger.error("Unsupported Operating System");
+        }
+
         File executable = new File(ascpLocation);
 
         // set aspera connection details
@@ -101,19 +135,23 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
     /**
      * Prepare for upload an entire submission
      */
-    private void prepareSubmission() {
+    private void prepareSubmission()
+    {
         logger.debug("Preparing for uploading an entire submission");
 
         // add submission summary file
         File submissionFile = createSubmissionFile(); //submission px file creation
-        if (submissionFile != null) {
+        if (submissionFile != null)
+        {
             fileToSubmit.add(submissionFile); //add the submission px file to the upload list
         }
 
         // prepare for submission
-        for (DataFile dataFile : submissionRecord.getSubmission().getDataFiles()) {
+        for (DataFile dataFile : submissionRecord.getSubmission().getDataFiles())
+        {
             totalFileSize += dataFile.getFile().length();
-            if (dataFile.isFile()) {
+            if (dataFile.isFile())
+            {
                 fileToSubmit.add(dataFile.getFile());
             }
         }
@@ -124,8 +162,10 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
      *
      * @return boolean true indicates success
      */
-    private File createSubmissionFile() {
-        try {
+    private File createSubmissionFile()
+    {
+        try
+        {
             // create a random temporary directory
             SecureRandom random = new SecureRandom();
             File tempDir = new File(System.getProperty("java.io.tmpdir") + File.separator + random.nextLong());
@@ -139,7 +179,9 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
             SubmissionFileWriter.write(submissionRecord.getSubmission(), submissionFile);
 
             return submissionFile;
-        } catch (SubmissionFileException ex) {
+        }
+        catch (SubmissionFileException ex)
+        {
             String msg = "Failed to create submission file";
             logger.error(msg, ex);
             publish(new UploadErrorMessage(this, null, msg));
@@ -147,24 +189,31 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
         return null;
     }
 
-    private void serializeSubmissionReport() {
-        try {
+    private void serializeSubmissionReport()
+    {
+        try
+        {
             SubmissionRecordSerializer.serialize(submissionRecord);
-        } catch (IOException ioe) {
+        }
+        catch (IOException ioe)
+        {
             logger.error("Failed to save submission record");
         }
     }
 
     @Override
-    protected void cancelled() {
+    protected void cancelled()
+    {
         publish(new UploadStoppedMessage(this, submissionRecord));
     }
 
     @Override
-    public void fileSessionEvent(TransferEvent transferEvent, SessionStats sessionStats, FileInfo fileInfo) {
+    public void fileSessionEvent(TransferEvent transferEvent, SessionStats sessionStats, FileInfo fileInfo)
+    {
         int totalNumOfFiles = submissionRecord.getSubmission().getDataFiles().size();
 
-        switch (transferEvent) {
+        switch (transferEvent)
+        {
             case PROGRESS:
                 int uploadedNumOfFiles = (int) sessionStats.getFilesComplete();
                 logger.debug("Aspera transfer in progress");
