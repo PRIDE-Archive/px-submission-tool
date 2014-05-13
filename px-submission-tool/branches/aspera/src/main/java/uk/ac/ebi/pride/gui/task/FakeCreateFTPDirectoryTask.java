@@ -1,6 +1,6 @@
 package uk.ac.ebi.pride.gui.task;
 
-import uk.ac.ebi.pride.gui.task.ftp.FTPDetail;
+import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.gui.task.ftp.UploadMessage;
 import uk.ac.ebi.pride.gui.task.ftp.UploadSuccessMessage;
 
@@ -15,12 +15,12 @@ public class FakeCreateFTPDirectoryTask extends TaskAdapter<Void, UploadMessage>
     /**
      * ftp login details
      */
-    private FTPDetail ftpDetail;
+    private UploadDetail ftpDetail;
 
     /**
      * Constructor
      */
-    public FakeCreateFTPDirectoryTask(FTPDetail ftpDetail) {
+    public FakeCreateFTPDirectoryTask(UploadDetail ftpDetail) {
         this.ftpDetail = ftpDetail;
     }
 

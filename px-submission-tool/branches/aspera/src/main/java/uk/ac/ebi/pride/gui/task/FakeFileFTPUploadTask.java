@@ -1,5 +1,6 @@
 package uk.ac.ebi.pride.gui.task;
 
+import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.gui.task.ftp.*;
 
@@ -14,7 +15,7 @@ public class FakeFileFTPUploadTask extends TaskAdapter<Void, UploadMessage> {
     private DataFile dataFile;
 
     public FakeFileFTPUploadTask(DataFile dataFile,
-                             FTPDetail ftpDetail) {
+                             UploadDetail ftpDetail) {
         this.dataFile = dataFile;
     }
 
