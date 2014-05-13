@@ -140,6 +140,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         if (uploadMethod.equals(UploadMethod.FTP)) {
             // create ftp directory before uploading
             task = new CreateFTPDirectoryTask(uploadDetail);
+//            task = new FakeCreateFTPDirectoryTask(uploadDetail);
             task.addTaskListener(createFTPDirectoryTaskListener);
         } else if (uploadMethod.equals(UploadMethod.ASPERA)) {
             // start aspera upload straightaway
@@ -341,6 +342,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
 
             // complete submission task
             Task task = new CompleteSubmissionTask(appContext.getSubmissionRecord());
+//            Task task = new FakeCompleteSubmissionTask(appContext.getSubmissionRecord());
             task.addTaskListener(completeSubmissionTaskListener);
             task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
             appContext.addTask(task);
