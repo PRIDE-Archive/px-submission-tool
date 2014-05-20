@@ -33,8 +33,8 @@ px.submission.summary.file.format.url = http://www.proteomexchange.org/sites/pro
 px.submission.detail.url = http://www.proteomexchange.org/submission-ws/resubmission/projects
 
 # aspera client binary
-aspera.client.mac.binary = ./aspera/bin/mac-intel/ascp
-aspera.client.linux32.binary = ./aspera/bin/linux-32/ascp
-aspera.client.linux64.binary = ./aspera/bin/linux-64/ascp
-aspera.client.windows.binary = ./aspera/bin/windows-32/ascp.exe
+aspera.client.mac.binary = aspera/bin/mac-intel/ascp
+aspera.client.linux32.binary = aspera/bin/linux-32/ascp
+aspera.client.linux64.binary = aspera/bin/linux-64/ascp
+aspera.client.windows.binary = aspera/bin/windows-32/ascp.exe
 
