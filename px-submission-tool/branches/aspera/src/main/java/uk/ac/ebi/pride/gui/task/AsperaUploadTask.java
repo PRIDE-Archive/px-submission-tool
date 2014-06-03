@@ -84,6 +84,7 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
 
         // choose aspera binary according to operating system
         String ascpLocation = chooseAsperaBinary();
+        logger.debug("Aspera binary location {}", ascpLocation);
 
         File executable = new File(ascpLocation);
 
@@ -151,6 +152,8 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
 
         //get absolute path including jar filename
         String jarPath = AsperaUploadTask.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+        logger.debug("Jar Path: {}", jarPath);
+
         try {
             String decodedJarPath = URLDecoder.decode(jarPath, "UTF-8");
             //convert String object to File object in order to be able to use getParent()
@@ -158,7 +161,10 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
             //this is the directory one level above the jar file
             File jarParent = new File(jarFile.getParent());
             // this is the directory two levels above the jar file
-            jarDir = jarParent.getParent();
+            if (!decodedJarPath.endsWith("jar"))
+                jarDir = jarParent.getParent();
+            else
+                jarDir = jarParent.getAbsolutePath();
         } catch (UnsupportedEncodingException e) {
             final String msg = "Failed to locate aspera binary";
             logger.error(msg, e);
