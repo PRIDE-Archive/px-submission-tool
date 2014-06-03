@@ -13,8 +13,7 @@ import java.util.Collection;
  * @author Florian Reisinger
  * @since 0.1
  */
-public class AsperaFileUploader
-{
+public class AsperaFileUploader {
 
     private static final Logger logger = LoggerFactory.getLogger(AsperaFileUploader.class);
 
@@ -46,8 +45,7 @@ public class AsperaFileUploader
      *
      * @return the default transfer parameters.
      */
-    public static XferParams defaultTransferParams()
-    {
+    public static XferParams defaultTransferParams() {
         XferParams p = new XferParams();
         p.tcpPort = 22;  // tcp port used for authentication (ssh)
         p.udpPort = 33001; // port used for data transfer
@@ -71,8 +69,7 @@ public class AsperaFileUploader
      * @param ascpExecutable the ascp executable file.
      * @throws InitializationException if the initialization with the provided path failed.
      */
-    public AsperaFileUploader(File ascpExecutable) throws FaspManagerException
-    {
+    public AsperaFileUploader(File ascpExecutable) throws FaspManagerException {
         // set default listener
         this.listener = new DefaultAsperaTransferListener();
 
@@ -86,10 +83,8 @@ public class AsperaFileUploader
         FaspManager.getSingleton().addListener(listener);
     }
 
-    private String getAscpPath(File excutable)
-    {
-        if (excutable == null || !excutable.exists())
-        {
+    private String getAscpPath(File excutable) {
+        if (excutable == null || !excutable.exists()) {
             throw new IllegalArgumentException("Specified ascp executable does not exist.");
         }
         // ToDo: perform other checks
@@ -99,8 +94,7 @@ public class AsperaFileUploader
         return excutable.getAbsolutePath();
     }
 
-    public TransferListener getListener()
-    {
+    public TransferListener getListener() {
         return listener;
     }
 
@@ -111,32 +105,27 @@ public class AsperaFileUploader
      * @param listener the TransferListener used to monitor the transfer (listen to the FaspManagerS events).
      * @throws FaspManagerException if the addition of the listener to the FaspManager did not succeed.
      */
-    public void setListener(TransferListener listener) throws FaspManagerException
-    {
+    public void setListener(TransferListener listener) throws FaspManagerException {
         // overwrite the default listener
         FaspManager.getSingleton().removeListener(this.listener);
         this.listener = listener;
         FaspManager.getSingleton().addListener(listener);
     }
 
-    public XferParams getTransferParameters()
-    {
+    public XferParams getTransferParameters() {
         return transferParameters;
     }
 
-    public void setTransferParameters(XferParams transferParameters)
-    {
+    public void setTransferParameters(XferParams transferParameters) {
         this.transferParameters = transferParameters;
     }
 
-    public String getRemoteLocation()
-    {
+    public String getRemoteLocation() {
 
         return remoteLocation.toString();
     }
 
-    public void setRemoteLocation(String server, String user, String pass)
-    {
+    public void setRemoteLocation(String server, String user, String pass) {
         this.remoteLocation = new RemoteLocation(server, user, pass);
     }
 
@@ -151,17 +140,15 @@ public class AsperaFileUploader
      * @see #setRemoteLocation(String, String, String)
      * @see #setTransferParameters(com.asperasoft.faspmanager.XferParams)
      */
-    public String uploadFiles(Collection<File> filesToUpload, String destinationDirectory) throws FaspManagerException
-    {
+    public String uploadFiles(Collection<File> filesToUpload, String destinationDirectory) throws FaspManagerException {
         // set all Files as local resources to be uploaded
         LocalLocation localFiles = new LocalLocation();
-        for (File file : filesToUpload)
-        {
+        for (File file : filesToUpload) {
             localFiles.addPath(file.getAbsolutePath());
         }
 
         // define the destination on the server
-        remoteLocation.clearPaths(); // clear all path, we only want to allow the one specified for this method!
+        remoteLocation.clear(); // clear all path, we only want to allow the one specified for this method!
         remoteLocation.addPath(destinationDirectory);
 
         // compile the transfer order
@@ -171,12 +158,10 @@ public class AsperaFileUploader
         return FaspManager.getSingleton().startTransfer(order);
     }
 
-    private String downloadFiles(String[] remoteSourcePaths, String localDestinationDirPath) throws FaspManagerException
-    {
+    private String downloadFiles(String[] remoteSourcePaths, String localDestinationDirPath) throws FaspManagerException {
 
-        pridePublicLocation.clearPaths();
-        for (String path : remoteSourcePaths)
-        {
+        pridePublicLocation.clear();
+        for (String path : remoteSourcePaths) {
             pridePublicLocation.addPath(path);
         }
 
