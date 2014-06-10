@@ -119,7 +119,7 @@ public class ProjectTagTableModel extends PxTableModel {
 
             projectTags.put(projecTag, selection);
 
-            if (projecTag.endsWith(HUMAN_PROTEOME_PROJECT) && selection) {
+            if (projecTag.contains(HUMAN_PROTEOME_PROJECT) && selection) {
                 projectTags.put(HUMAN_PROTEOME_PROJECT, true);
             }
 
