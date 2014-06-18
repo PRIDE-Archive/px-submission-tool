@@ -222,7 +222,7 @@ public class ProjectMetaDataPanel extends ContextAwarePanel {
 
     private boolean isMac() {
         String OS = System.getProperty("os.name").toLowerCase();
-        return (OS.indexOf("mac") >= 0);
+        return OS.contains("mac");
     }
 
     private void initComponents() {

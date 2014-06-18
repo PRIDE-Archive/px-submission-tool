@@ -53,8 +53,10 @@ public abstract class AbstractMetadataComboSelectionModel extends AbstractListMo
         }
 
         // add element for calling ols dialog
-        this.otherSelectionOption = otherSelectionOption;
-        elements.add(otherSelectionOption);
+        if (otherSelectionOption != null) {
+            this.otherSelectionOption = otherSelectionOption;
+            elements.add(otherSelectionOption);
+        }
 
         // default ontology to check
         this.ontology = ontology;
@@ -69,7 +71,7 @@ public abstract class AbstractMetadataComboSelectionModel extends AbstractListMo
 
             if (anItem instanceof CvParam) {
                 addItem((CvParam) anItem);
-            } else if (otherSelectionOption.equals(anItem)) {
+            } else if (otherSelectionOption != null && otherSelectionOption.equals(anItem)) {
                 Runnable run = new Runnable() {
                     @Override
                     public void run() {

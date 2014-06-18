@@ -12,7 +12,7 @@ public class ExperimentMethodSelectionModel extends AbstractMetadataComboSelecti
 
     public ExperimentMethodSelectionModel() {
         super(App.getInstance().getDesktopContext().getProperty("experiment.method.combobox.default.selection"),
-              App.getInstance().getDesktopContext().getProperty("experiment.method.combobox.other.experiment.method"),
+              null,
               App.getInstance().getDesktopContext().getProperty("experiment.method.combobox.default.experiment.method.file"),
               Constant.MS);
     }
