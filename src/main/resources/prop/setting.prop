@@ -38,3 +38,22 @@ aspera.client.linux32.binary = aspera/bin/linux-32/ascp
 aspera.client.linux64.binary = aspera/bin/linux-64/ascp
 aspera.client.windows.binary = aspera/bin/windows-32/ascp.exe
 
+# EBI aspera server details
+aspera.EBI.host = fasp.ebi.ac.uk
+aspera.EBI.user = prd_ascp
+aspera.EBI.password = path/to/keyFile?
+
+# aspera transfer parameters
+xfer.tcpPort = 22
+xfer.udpPort = 33001
+xfer.targetRateKbps = 10000000
+xfer.minimumRateKbps = 100
+xfer.encryption = Encryption.DEFAULT
+xfer.overwrite = Overwrite.DIFFERENT
+xfer.generateManifest = Manifest.NONE
+xfer.policy = Policy.FAIR
+xfer.cookie = PRIDE-Aspera-1-Cookie
+xfer.token = PRIDE-Aspera-1-Token
+xfer.resumeCheck = Resume.SPARSE_CHECKSUM
+xfer.preCalculateJobSize = false
+xfer.createPath = true

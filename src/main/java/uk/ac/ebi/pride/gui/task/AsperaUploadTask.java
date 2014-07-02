@@ -99,7 +99,7 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
         params.createPath = true;
         uploader.setTransferParameters(params);
 
-        // add transfer litener
+        // add transfer listener
         uploader.setListener(this);
 
         // start upload

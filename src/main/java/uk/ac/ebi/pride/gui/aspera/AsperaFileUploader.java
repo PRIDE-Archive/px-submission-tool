@@ -3,6 +3,8 @@ package uk.ac.ebi.pride.gui.aspera;
 import com.asperasoft.faspmanager.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.gui.desktop.DesktopContext;
 
 import java.io.File;
 import java.util.Collection;
@@ -16,7 +18,7 @@ import java.util.Collection;
 public class AsperaFileUploader {
 
     private static final Logger logger = LoggerFactory.getLogger(AsperaFileUploader.class);
-
+    static final DesktopContext appContext = App.getInstance().getDesktopContext();
     /**
      * The default TransferListener to listen to transfer events
      * raised by the FaspManager during a transfer.
@@ -27,8 +29,11 @@ public class AsperaFileUploader {
      */
     private RemoteLocation remoteLocation;
 
-    //todo: this should not be hard coded in the class
-    private RemoteLocation pridePublicLocation = new RemoteLocation("fasp.ebi.ac.uk", "prd_ascp", "path/to/keyFile?");
+    private String ebiHost = appContext.getProperty("aspera.EBI.host");
+    private String ebiUser = appContext.getProperty("aspera.EBI.user");
+    private String ebiPass = appContext.getProperty("aspera.EBI.password");
+
+    private RemoteLocation pridePublicLocation = new RemoteLocation(ebiHost, ebiUser, ebiPass);
     /**
      * The default parameters to use for a file transfer.
      */
@@ -47,19 +52,19 @@ public class AsperaFileUploader {
      */
     public static XferParams defaultTransferParams() {
         XferParams p = new XferParams();
-        p.tcpPort = 22;  // tcp port used for authentication (ssh)
-        p.udpPort = 33001; // port used for data transfer
-        p.targetRateKbps = 10000000; // 10000000 Kbps (= 10 Gbps)
-        p.minimumRateKbps = 100; //    100 Kbps
+        p.tcpPort = Integer.parseInt(appContext.getProperty("xfer.tcpPort"));
+        p.udpPort = Integer.parseInt(appContext.getProperty("xfer.udpPort")); // port used for data transfer
+        p.targetRateKbps = Integer.parseInt(appContext.getProperty("xfer.targetRateKbps")); // 10000000 Kbps (= 10 Gbps)
+        p.minimumRateKbps = Integer.parseInt(appContext.getProperty("xfer.minimumRateKbps")); //    100 Kbps
         p.encryption = Encryption.DEFAULT;
         p.overwrite = Overwrite.DIFFERENT;
         p.generateManifest = Manifest.NONE;
         p.policy = Policy.FAIR;
-        p.cookie = "PRIDE-Aspera-1-Cookie";
-        p.token = "PRIDE-Aspera-1-Token";
+        p.cookie = appContext.getProperty("xfer.cookie");
+        p.token = appContext.getProperty("xfer.token");
         p.resumeCheck = Resume.SPARSE_CHECKSUM;
-        p.preCalculateJobSize = false;
-        p.createPath = true;
+        p.preCalculateJobSize = Boolean.parseBoolean(appContext.getProperty("xfer.preCalculateJobSize"));
+        p.createPath = Boolean.parseBoolean(appContext.getProperty("xfer.createPath"));
         return p;
     }
 
