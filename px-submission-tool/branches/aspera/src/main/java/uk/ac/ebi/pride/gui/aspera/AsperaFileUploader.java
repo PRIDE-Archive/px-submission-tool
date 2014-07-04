@@ -33,6 +33,7 @@ public class AsperaFileUploader {
     private String ebiUser = appContext.getProperty("aspera.EBI.user");
     private String ebiPass = appContext.getProperty("aspera.EBI.password");
 
+    // Pride's public location for downloading data, not used in uploading
     private RemoteLocation pridePublicLocation = new RemoteLocation(ebiHost, ebiUser, ebiPass);
     /**
      * The default parameters to use for a file transfer.
@@ -46,25 +47,24 @@ public class AsperaFileUploader {
      * of the command line tool. For example at
      * http://download.asperasoft.com/download/docs/ascp/2.7/html/index.html
      * <p/>
-     * todo: externalize these parameters, they should not be hard coded in the class, try to use property file instead
      *
      * @return the default transfer parameters.
      */
     public static XferParams defaultTransferParams() {
         XferParams p = new XferParams();
-        p.tcpPort = Integer.parseInt(appContext.getProperty("xfer.tcpPort"));
-        p.udpPort = Integer.parseInt(appContext.getProperty("xfer.udpPort")); // port used for data transfer
-        p.targetRateKbps = Integer.parseInt(appContext.getProperty("xfer.targetRateKbps")); // 10000000 Kbps (= 10 Gbps)
-        p.minimumRateKbps = Integer.parseInt(appContext.getProperty("xfer.minimumRateKbps")); //    100 Kbps
+        p.tcpPort = Integer.parseInt(appContext.getProperty("aspera.xfer.tcpPort"));
+        p.udpPort = Integer.parseInt(appContext.getProperty("aspera.xfer.udpPort")); // port used for data transfer
+        p.targetRateKbps = Integer.parseInt(appContext.getProperty("aspera.xfer.targetRateKbps")); // 10000000 Kbps (= 10 Gbps)
+        p.minimumRateKbps = Integer.parseInt(appContext.getProperty("aspera.xfer.minimumRateKbps")); //    100 Kbps
         p.encryption = Encryption.DEFAULT;
         p.overwrite = Overwrite.DIFFERENT;
         p.generateManifest = Manifest.NONE;
         p.policy = Policy.FAIR;
-        p.cookie = appContext.getProperty("xfer.cookie");
-        p.token = appContext.getProperty("xfer.token");
+        p.cookie = appContext.getProperty("aspera.xfer.cookie");
+        p.token = appContext.getProperty("aspera.xfer.token");
         p.resumeCheck = Resume.SPARSE_CHECKSUM;
-        p.preCalculateJobSize = Boolean.parseBoolean(appContext.getProperty("xfer.preCalculateJobSize"));
-        p.createPath = Boolean.parseBoolean(appContext.getProperty("xfer.createPath"));
+        p.preCalculateJobSize = Boolean.parseBoolean(appContext.getProperty("aspera.xfer.preCalculateJobSize"));
+        p.createPath = Boolean.parseBoolean(appContext.getProperty("aspera.xfer.createPath"));
         return p;
     }
 
@@ -92,8 +92,6 @@ public class AsperaFileUploader {
         if (excutable == null || !excutable.exists()) {
             throw new IllegalArgumentException("Specified ascp executable does not exist.");
         }
-        // ToDo: perform other checks
-        // check if expected file is in specified location
 
         logger.info("Aspera executable location: " + excutable);
         return excutable.getAbsolutePath();
