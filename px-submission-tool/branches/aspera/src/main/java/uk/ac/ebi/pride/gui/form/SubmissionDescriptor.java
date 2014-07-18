@@ -4,10 +4,12 @@ import com.asperasoft.faspmanager.FaspManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 import uk.ac.ebi.pride.archive.submission.model.submission.SubmissionReferenceDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
 import uk.ac.ebi.pride.data.model.Contact;
+import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.gui.blocker.DefaultGUIBlocker;
 import uk.ac.ebi.pride.gui.blocker.GUIBlocker;
@@ -17,7 +19,6 @@ import uk.ac.ebi.pride.gui.task.*;
 import uk.ac.ebi.pride.gui.task.ftp.*;
 import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.gui.util.SubmissionRecordSerializer;
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 
 import javax.help.HelpBroker;
 import javax.swing.*;
@@ -133,18 +134,19 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
 
         // upload files and folders
         // upload files
-        final UploadDetail uploadDetail = appContext.getSubmissionRecord().getUploadDetail();
+        SubmissionRecord submissionRecord = appContext.getSubmissionRecord();
+        final UploadDetail uploadDetail = submissionRecord.getUploadDetail();
         final UploadMethod uploadMethod = uploadDetail.getMethod();
 
         Task task = null;
-        if (uploadMethod.equals(UploadMethod.FTP)) {
+        if (uploadMethod.equals(UploadMethod.FTP) || hasURLBasedDataFiles(submissionRecord.getSubmission())) {
             // create ftp directory before uploading
             task = new CreateFTPDirectoryTask(uploadDetail);
 //            task = new FakeCreateFTPDirectoryTask(uploadDetail);
             task.addTaskListener(createFTPDirectoryTaskListener);
         } else if (uploadMethod.equals(UploadMethod.ASPERA)) {
             // start aspera upload straightaway
-            task = new PersistedAsperaUploadTask(appContext.getSubmissionRecord());
+            task = new PersistedAsperaUploadTask(submissionRecord);
             task.addTaskListener(uploadTaskListener);
         }
 
@@ -153,6 +155,16 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
             appContext.addTask(task);
         }
+    }
+
+    private boolean hasURLBasedDataFiles(Submission submission) {
+        List<DataFile> dataFiles = submission.getDataFiles();
+        for (DataFile dataFile : dataFiles) {
+            if (dataFile.isUrl()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
