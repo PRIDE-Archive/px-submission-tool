@@ -11,7 +11,7 @@ import uk.ac.ebi.pride.data.util.Constant;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareDialog;
 import uk.ac.ebi.pride.gui.util.BalloonTipUtil;
 import uk.ac.ebi.pride.gui.util.ColourUtil;
-import uk.ac.ebi.pride.prider.dataprovider.file.ProjectFileType;
+import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 
 import javax.swing.*;
 import java.awt.*;

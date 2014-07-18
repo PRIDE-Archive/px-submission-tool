@@ -6,12 +6,14 @@ import org.springframework.web.client.RestTemplate;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.archive.submission.model.project.ProjectDetail;
 import uk.ac.ebi.pride.archive.submission.model.project.ProjectDetailList;
+import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.web.util.template.SecureRestTemplateFactory;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.regex.Matcher;
 
 /**
  * Task for get PX submission details using given user name and password
@@ -38,7 +40,11 @@ public class GetPXSubmissionDetailTask extends AbstractWebServiceTask<Set<String
             ProjectDetailList projectDetailList = restTemplate.getForObject(baseUrl, ProjectDetailList.class);
 
             for (ProjectDetail projectDetail : projectDetailList.getProjectDetails()) {
-                pxAccessions.add(projectDetail.getAccession());
+                String accession = projectDetail.getAccession();
+                Matcher matcher = Constant.PX_ACC_PATTERN.matcher(accession);
+                if (matcher.matches()) {
+                    pxAccessions.add(accession);
+                }
             }
         } catch (Exception ex) {
             logger.warn("Failed to login to retrieve project details", ex);

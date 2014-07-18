@@ -14,6 +14,7 @@ import uk.ac.ebi.pride.gui.task.TaskEvent;
 import uk.ac.ebi.pride.gui.task.TaskListener;
 import uk.ac.ebi.pride.gui.util.BalloonTipUtil;
 import uk.ac.ebi.pride.gui.util.ColourUtil;
+import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.gui.util.ValidationState;
 
 import javax.swing.*;
@@ -22,7 +23,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.List;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * @author Rui Wang
@@ -32,7 +32,6 @@ import java.util.regex.Pattern;
 public class ResubmissionPanel extends ContextAwarePanel implements ActionListener, TaskListener<java.util.Set<String>, String> {
 
     private static final String LOGIN_ACTION = "login";
-    private static final Pattern RESUBMISSION_PX_ACC_PATTERN = Pattern.compile("^PXD\\d{6}$");
 
     /**
      * PRIDE user name and password
@@ -93,7 +92,7 @@ public class ResubmissionPanel extends ContextAwarePanel implements ActionListen
         String pxAccession = (String) pxDatasetComboBox.getSelectedItem();
 
         if (pxAccession != null) {
-            Matcher matcher = RESUBMISSION_PX_ACC_PATTERN.matcher(pxAccession);
+            Matcher matcher = Constant.PX_ACC_PATTERN.matcher(pxAccession);
             if (matcher.matches()) {
                 return pxAccession;
             }
@@ -168,6 +167,7 @@ public class ResubmissionPanel extends ContextAwarePanel implements ActionListen
             getPXSubmissionDetailTask.addTaskListener(this);
             getPXSubmissionDetailTask.setGUIBlocker(new DefaultGUIBlocker(getPXSubmissionDetailTask, GUIBlocker.Scope.NONE, null));
             App.getInstance().getDesktopContext().addTask(getPXSubmissionDetailTask);
+            warningBalloonTip.setVisible(false);
         }
     }
 

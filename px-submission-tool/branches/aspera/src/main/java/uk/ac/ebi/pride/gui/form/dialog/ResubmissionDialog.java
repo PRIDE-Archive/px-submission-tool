@@ -155,6 +155,7 @@ public class ResubmissionDialog extends ContextAwareDialog implements ActionList
                 if (validateState.equals(ValidationState.SUCCESS)) {
                     // update app context with the login details and resubmission accession
                     projectMetaData.setResubmissionPxAccession(resubmissionPanel.getPxAccession());
+                    projectMetaData.getSubmitterContact().setUserName(resubmissionPanel.getUserName());
                     projectMetaData.getSubmitterContact().setEmail(resubmissionPanel.getUserName());
                     projectMetaData.getSubmitterContact().setPassword(resubmissionPanel.getPassword());
                     this.setVisible(false);
@@ -162,6 +163,7 @@ public class ResubmissionDialog extends ContextAwareDialog implements ActionList
             } else {
                 // remove resubmission related details
                 projectMetaData.setResubmissionPxAccession(null);
+                projectMetaData.getSubmitterContact().setUserName(null);
                 projectMetaData.getSubmitterContact().setEmail(null);
                 projectMetaData.getSubmitterContact().setPassword(null);
                 this.setVisible(false);

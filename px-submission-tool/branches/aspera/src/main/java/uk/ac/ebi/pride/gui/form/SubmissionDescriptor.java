@@ -17,7 +17,7 @@ import uk.ac.ebi.pride.gui.task.*;
 import uk.ac.ebi.pride.gui.task.ftp.*;
 import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.gui.util.SubmissionRecordSerializer;
-import uk.ac.ebi.pride.prider.dataprovider.project.SubmissionType;
+import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 
 import javax.help.HelpBroker;
 import javax.swing.*;

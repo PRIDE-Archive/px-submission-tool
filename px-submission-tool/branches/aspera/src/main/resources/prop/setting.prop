@@ -30,7 +30,7 @@ px.submission.tool.url = http://www.proteomexchange.org/submission
 px.submission.summary.file.format.url = http://www.proteomexchange.org/sites/proteomexchange.org/files/documents/proteomexchange_submission_summary_version_2.0.pdf
 
 # url for resubmission
-px.submission.detail.url = http://www.proteomexchange.org/submission-ws/resubmission/projects
+px.submission.detail.url = http://www.proteomexchange.org/archive-submission-ws/resubmission/projects
 
 # aspera client binary
 aspera.client.mac.binary = aspera/bin/mac-intel/ascp

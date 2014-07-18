@@ -2,7 +2,7 @@ package uk.ac.ebi.pride.gui.util;
 
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.data.model.DataFile;
-import uk.ac.ebi.pride.prider.dataprovider.project.SubmissionType;
+import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 
 import javax.swing.*;
 import java.util.List;
@@ -157,5 +157,9 @@ public final class WarningMessageGenerator {
     public static String getUnsupportedSearchFileWarning() {
 
         return "<html>" + "<b>Unsupported search files found</b><br/>" + "Please choose complete submission option if you have either PRIDE XML or mzIdentML" + "</html>";
+    }
+
+    public static String getMissingImageDataFileWarning() {
+        return "<html>" + "<b>Missing mass spec imaging data</b><br/>" + "Please include .imzML files which contains mass spectrometry imaging data" + "</html>";
     }
 }

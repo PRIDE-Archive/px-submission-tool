@@ -9,7 +9,7 @@ import uk.ac.ebi.pride.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.blocker.DefaultGUIBlocker;
 import uk.ac.ebi.pride.gui.blocker.GUIBlocker;
 import uk.ac.ebi.pride.gui.task.TaskAdapter;
-import uk.ac.ebi.pride.prider.dataprovider.file.ProjectFileType;
+import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;

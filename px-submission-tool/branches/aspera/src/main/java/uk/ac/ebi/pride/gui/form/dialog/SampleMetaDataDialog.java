@@ -16,7 +16,7 @@ import uk.ac.ebi.pride.gui.form.table.model.ResultFileMetaDataTableModel;
 import uk.ac.ebi.pride.gui.navigation.NavigationControlPanel;
 import uk.ac.ebi.pride.gui.util.BalloonTipUtil;
 import uk.ac.ebi.pride.gui.util.BorderUtil;
-import uk.ac.ebi.pride.prider.dataprovider.file.ProjectFileType;
+import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 
 import javax.help.HelpBroker;
 import javax.swing.*;

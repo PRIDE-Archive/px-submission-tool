@@ -3,8 +3,8 @@ package uk.ac.ebi.pride.gui.form.table.renderer;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.data.model.DataFile;
-import uk.ac.ebi.pride.prider.dataprovider.file.ProjectFileType;
-import uk.ac.ebi.pride.prider.dataprovider.project.SubmissionType;
+import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
+import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 
 import javax.swing.*;
 import javax.swing.table.TableCellRenderer;

@@ -5,7 +5,7 @@ import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.validation.SubmissionValidator;
 import uk.ac.ebi.pride.gui.util.Constant;
-import uk.ac.ebi.pride.prider.dataprovider.file.ProjectFileType;
+import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -22,7 +22,7 @@ public class FileSelectionTableModel extends PxTableModel implements PropertyCha
         FILE_ID("File ID", "File ID"),
         FILE_NAME("File Name", "File name"),
         PATH("PATH / URL", "File path or URL"),
-        TYPE("Type", "File type"),
+        TYPE("File Type", "File type"),
         REMOVAL("Remove", "Delete file or URL"),
         VALIDATION("Validation", "Validation");
 
