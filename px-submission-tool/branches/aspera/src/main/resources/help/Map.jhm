@@ -17,6 +17,7 @@
     <mapID target="help.welcome" url="html/usage/welcome.html"/>
     <mapID target="help.resubmission" url="html/usage/resubmission.html"/>
     <mapID target="help.file.selection" url="html/usage/file_selection.html"/>
+    <mapID target="help.file.type" url="html/usage/file_type.html"/>
     <mapID target="help.file.mapping" url="html/usage/file_mapping.html"/>
     <mapID target="help.login" url="html/usage/login.html"/>
     <mapID target="help.meta.data" url="html/usage/dataset_details.html"/>
