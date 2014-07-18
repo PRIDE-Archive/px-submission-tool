@@ -9,6 +9,9 @@ incomplete.submission.record.dialog.message = Your previous submission was termi
 add.file.button.title = Add Files
 add.file.button.tooltip = Select and add files to be submitted
 add.file.button.small.icon = icon/16x16/add.png
+file.type.help.small.icon = icon/16x16/help.png
+file.type.help.question.title = What are the file types?
+file.type.help.question.tooltip= Show detailed description on the file types
 add.file.dialog.message = Select files or folders contain files to be submitted
 add.summary.file.dialog.message = Select predefined submission summary file
 add.file.button.tooltip = Add URL represents file to be submitted
@@ -24,6 +27,9 @@ search.file.type.required.note = <html><b>SEARCH</b> (required): Search engine o
 peak.file.type.note = <html><b>PEAK</b> (required for mzIdentML/ optional for PRIDE XML): peak list files such as mgf, dta, ms2 or pkl, or processed mzML, mzXML files</html>
 quant.file.type.note = <html><b>QUANT</b> (optional): quantification analysis output files, such as: MaxQuant output files, mzQuantML, etc</html>
 gel.file.type.note = <html><b>GEL</b> (optional): gel image file such as: TIF, JPG, or PNG files</html>
+fasta.file.type.note = <html><b>FASTA</b> (optional): sequence database file such as: fasta files</html>
+spectrum.library.file.type.note = <html><b>SPECTRUM_LIBRARY</b> (optional): spectrum library file</html>
+ms.image.file.type.note = <html><b>IMAGE_DATA</b> (optional): MS image data file such as: imzML files</html>
 other.file.type.note = <html><b>OTHER</b> (optional): any other files related to the submission (e.g. scripts)</html>
 
 # mass spec experiment method

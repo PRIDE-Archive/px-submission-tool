@@ -2,7 +2,7 @@ package uk.ac.ebi.pride.gui.util;
 
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
-import uk.ac.ebi.pride.prider.dataprovider.file.ProjectFileType;
+import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 
 /**
  * Search engine output supported by PRIDE Converter

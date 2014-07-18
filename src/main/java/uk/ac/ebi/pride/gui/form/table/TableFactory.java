@@ -10,7 +10,7 @@ import uk.ac.ebi.pride.gui.form.table.editor.SampleMetaDataButtonCellEditor;
 import uk.ac.ebi.pride.gui.form.table.listener.*;
 import uk.ac.ebi.pride.gui.form.table.model.*;
 import uk.ac.ebi.pride.gui.form.table.renderer.*;
-import uk.ac.ebi.pride.prider.dataprovider.file.ProjectFileType;
+import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
@@ -32,9 +32,9 @@ public class TableFactory {
     private static final int MAPPING_COUNT_COLUMN_WIDTH = 120;
     private static final int ANNOTATED_STATUS_COLUMN_WIDTH = 120;
     private static final int ANNOTATED_COLUMN_WIDTH = 120;
-    private static final int FILE_TYPE_COLUMN_WIDTH = 100;
+    private static final int FILE_TYPE_COLUMN_WIDTH = 150;
     private static final int FILE_NAME_COLUMN_WIDTH = 200;
-    private static final int FILE_PATH_COLUMN_WIDTH = 500;
+    private static final int FILE_PATH_COLUMN_WIDTH = 400;
     private static final int CV_NAME_COLUMN_WIDTH = 200;
     private static final int CV_ONTOLOGY_COLUMN_WIDTH = 100;
     private static final int CV_ACCESSION_COLUMN_WIDTH = 100;

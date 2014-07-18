@@ -13,8 +13,8 @@ import uk.ac.ebi.pride.jaxb.model.CvParam;
 import uk.ac.ebi.pride.jaxb.model.SampleDescription;
 import uk.ac.ebi.pride.jaxb.xml.unmarshaller.PrideXmlUnmarshaller;
 import uk.ac.ebi.pride.jaxb.xml.unmarshaller.PrideXmlUnmarshallerFactory;
-import uk.ac.ebi.pride.prider.dataprovider.file.ProjectFileType;
-import uk.ac.ebi.pride.prider.dataprovider.project.SubmissionType;
+import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
+import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 
 import javax.xml.bind.JAXBException;
 import java.io.*;
@@ -150,6 +150,13 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getResultFileWarning());
             }
             setProgress(80);
+
+            // ms image data
+            if (quickValidationResult.hasImagingRawFile() && !quickValidationResult.hasImagingDataFile()) {
+                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMissingImageDataFileWarning());
+            }
+            setProgress(85);
+
         } else {
             // must have raw files
             if (noRawFile) {
@@ -315,6 +322,9 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             } else if (ProjectFileType.RAW.equals(fileType)) {
                 if (fileFormat == null || ProjectFileType.RAW.equals(fileType)) {
                     result.setSupportedRawFile(true);
+                    if (MassSpecFileFormat.IBD.equals(fileFormat)) {
+                        result.setImagingRawFile(true);
+                    }
                 } else {
                     result.setUnsupportedRawFile(true);
                 }
@@ -326,6 +336,8 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                         result.setUnsupportedSearchFile(true);
                     }
                 }
+            } else if (ProjectFileType.IMAGE_DATA.equals(fileType)) {
+                result.setImagingDataFile(true);
             }
         }
 
@@ -600,6 +612,8 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         boolean unsupportedSearchFile;
         int numOfInvalidFiles = 0;
         boolean submissionPxFile;
+        boolean imagingRawFile;
+        boolean imagingDataFile;
 
         public boolean hasSupportedResultFile() {
             return supportedResultFile;
@@ -711,6 +725,22 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
 
         public void incrementNumOfInvalidFiles() {
             this.numOfInvalidFiles++;
+        }
+
+        public boolean hasImagingRawFile() {
+            return imagingRawFile;
+        }
+
+        public void setImagingRawFile(boolean imagingRawFile) {
+            this.imagingRawFile = imagingRawFile;
+        }
+
+        public boolean hasImagingDataFile() {
+            return imagingDataFile;
+        }
+
+        public void setImagingDataFile(boolean imagingDataFile) {
+            this.imagingDataFile = imagingDataFile;
         }
     }
 }

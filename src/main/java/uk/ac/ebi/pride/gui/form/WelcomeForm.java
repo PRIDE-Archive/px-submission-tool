@@ -9,7 +9,7 @@ import uk.ac.ebi.pride.gui.form.dialog.ResubmissionDialog;
 import uk.ac.ebi.pride.gui.util.BorderUtil;
 import uk.ac.ebi.pride.gui.util.ColourUtil;
 import uk.ac.ebi.pride.gui.util.HttpUtil;
-import uk.ac.ebi.pride.prider.dataprovider.project.SubmissionType;
+import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 
 import javax.swing.*;
 import java.awt.*;

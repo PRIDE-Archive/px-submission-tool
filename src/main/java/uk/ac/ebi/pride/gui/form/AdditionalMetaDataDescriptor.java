@@ -5,7 +5,7 @@ import uk.ac.ebi.pride.data.model.ProjectMetaData;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.util.ValidationState;
-import uk.ac.ebi.pride.prider.dataprovider.project.SubmissionType;
+import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 
 import javax.help.HelpBroker;
 import java.util.Set;

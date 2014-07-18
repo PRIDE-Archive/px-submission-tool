@@ -10,8 +10,8 @@ import uk.ac.ebi.pride.gui.form.comp.NonOpaquePanel;
 import uk.ac.ebi.pride.gui.form.table.TableFactory;
 import uk.ac.ebi.pride.gui.form.table.model.FileMappingTableModel;
 import uk.ac.ebi.pride.gui.navigation.NavigationControlPanel;
-import uk.ac.ebi.pride.prider.dataprovider.file.ProjectFileType;
-import uk.ac.ebi.pride.prider.dataprovider.project.SubmissionType;
+import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
+import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 
 import javax.swing.*;
 import java.awt.*;

@@ -11,8 +11,8 @@ import uk.ac.ebi.pride.gui.form.table.model.SourceFileMappngTableModel;
 import uk.ac.ebi.pride.gui.form.table.model.TargetFileMappingTableModel;
 import uk.ac.ebi.pride.gui.util.BalloonTipUtil;
 import uk.ac.ebi.pride.gui.util.ValidationState;
-import uk.ac.ebi.pride.prider.dataprovider.file.ProjectFileType;
-import uk.ac.ebi.pride.prider.dataprovider.project.SubmissionType;
+import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
+import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;

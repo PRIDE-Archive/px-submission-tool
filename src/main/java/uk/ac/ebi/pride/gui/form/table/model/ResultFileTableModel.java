@@ -5,7 +5,7 @@ import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.validation.SubmissionValidator;
 import uk.ac.ebi.pride.gui.util.Constant;
-import uk.ac.ebi.pride.prider.dataprovider.file.ProjectFileType;
+import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
