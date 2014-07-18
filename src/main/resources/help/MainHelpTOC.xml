@@ -9,6 +9,7 @@
     <tocitem text="Login" target="help.login"/>
     <tocitem text="Dataset Details" target="help.meta.data"/>
     <tocitem text="File Selection" target="help.file.selection"/>
+    <tocitem text="File Type" target="help.file.type"/>
     <tocitem text="File Relations" target="help.file.mapping"/>
     <tocitem text="Additional Details" target="help.additional.details"/>
     <tocitem text="Experimental Details" target="help.exp.details"/>
