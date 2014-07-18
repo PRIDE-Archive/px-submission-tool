@@ -9,7 +9,7 @@ import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.data.exception.SubmissionFileException;
 import uk.ac.ebi.pride.data.io.SubmissionFileWriter;
 import uk.ac.ebi.pride.data.model.DataFile;
-import uk.ac.ebi.pride.gui.aspera.AsperaFileUploader;
+import uk.ac.ebi.pride.gui.aspera.PersistedAsperaFileUploader;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
 import uk.ac.ebi.pride.gui.desktop.DesktopContext;
 import uk.ac.ebi.pride.gui.task.ftp.*;
@@ -23,6 +23,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.security.SecureRandom;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -30,7 +31,7 @@ import java.util.Set;
  * Created by ilias
  */
 
-public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implements TransferListener {
+public class PersistedAsperaUploadTask extends TaskAdapter<Void, UploadMessage> implements TransferListener {
 
     public static final Logger logger = LoggerFactory.getLogger(AsperaUploadTask.class);
 
@@ -38,7 +39,7 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
     /**
      * Set contains files need to be submitted along with the folder name
      */
-    private Set<File> fileToSubmit;
+    private Iterator<File> fileToSubmit;
 
     /**
      * Total file size need to be uploaded
@@ -46,23 +47,30 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
     private long totalFileSize;
 
     /**
+     * finished file count
+     */
+    private int finishedFileCount;
+
+    /**
      * Constructor used for a new submission
      *
      * @param submissionRecord submission record
      */
-    public AsperaUploadTask(SubmissionRecord submissionRecord) {
+    public PersistedAsperaUploadTask(SubmissionRecord submissionRecord) {
         this.submissionRecord = submissionRecord;
-        this.fileToSubmit = Collections.synchronizedSet(new LinkedHashSet<File>());
         this.totalFileSize = 0;
+        this.finishedFileCount = 0;
     }
 
     @Override
     protected Void doInBackground() throws Exception {
+
+
         // save submission initial progress
         serializeSubmissionReport();
 
         // prepare for ftp upload
-        prepareSubmission();
+        fileToSubmit = prepareSubmission();
 
         // upload via aspera
         asperaUpload();
@@ -73,10 +81,12 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
         return null;
     }
 
-    private void waitUpload() throws InitializationException {
-        final FaspManager faspManager = FaspManager.getSingleton();
+    private void waitUpload() throws InitializationException, InterruptedException {
+        FaspManager faspManager = FaspManager.getSingleton();
+
         // this is keep the fasp manager running
         while (faspManager.isRunning()) {
+            Thread.sleep(30000);
         }
     }
 
@@ -86,27 +96,57 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
         String ascpLocation = chooseAsperaBinary();
         logger.debug("Aspera binary location {}", ascpLocation);
 
+        // binary location
         File executable = new File(ascpLocation);
 
         // set aspera connection details
-        AsperaFileUploader uploader = new AsperaFileUploader(executable);
-        UploadDetail uploadDetail = submissionRecord.getUploadDetail();
-        DropBoxDetail dropBox = uploadDetail.getDropBox();
-        uploader.setRemoteLocation(uploadDetail.getHost(), dropBox.getUserName(), dropBox.getPassword());
+        XferParams defaultTransferParams = getDefaultTransferParams();
 
-        // set upload parameters
-        XferParams params = AsperaFileUploader.defaultTransferParams();
-        params.createPath = true;
-        uploader.setTransferParameters(params);
+        // construct uploader
+        PersistedAsperaFileUploader uploader = new PersistedAsperaFileUploader(executable);
+
 
         // add transfer listener
-        uploader.setListener(this);
+        uploader.addTransferListener(this);
+
+        // remote location
+        final UploadDetail uploadDetail = submissionRecord.getUploadDetail();
+        final DropBoxDetail dropBox = uploadDetail.getDropBox();
+        RemoteLocation remoteLocation = new RemoteLocation(uploadDetail.getHost(), dropBox.getUserName(), dropBox.getPassword());
 
         // start upload
-        final String folder = uploadDetail.getFolder();
-        File folderFile = new File(folder);
-        String transferId = uploader.uploadFiles(fileToSubmit, folderFile.getName());
-        logger.debug("TransferEvent ID: {}", transferId);
+        String session = uploader.startTransferSession(remoteLocation, defaultTransferParams);
+        logger.debug("Transfer Session ID: {}", session);
+    }
+
+    /**
+     * Set the default transfer parameters for this transfer.
+     * For supported parameters see class #XferParams
+     * For additional descriptions see the Aspera documentation
+     * of the command line tool. For example at
+     * http://download.asperasoft.com/download/docs/ascp/2.7/html/index.html
+     * <p/>
+     *
+     * @return the default transfer parameters.
+     */
+    public static XferParams getDefaultTransferParams() {
+        DesktopContext appContext = App.getInstance().getDesktopContext();
+        XferParams p = new XferParams();
+        p.tcpPort = Integer.parseInt(appContext.getProperty("aspera.xfer.tcpPort"));
+        p.udpPort = Integer.parseInt(appContext.getProperty("aspera.xfer.udpPort")); // port used for data transfer
+        p.targetRateKbps = Integer.parseInt(appContext.getProperty("aspera.xfer.targetRateKbps")); // 10000000 Kbps (= 10 Gbps)
+        p.minimumRateKbps = Integer.parseInt(appContext.getProperty("aspera.xfer.minimumRateKbps")); //    100 Kbps
+        p.encryption = Encryption.DEFAULT;
+        p.overwrite = Overwrite.DIFFERENT;
+        p.generateManifest = Manifest.NONE;
+        p.policy = Policy.FAIR;
+        p.cookie = appContext.getProperty("aspera.xfer.cookie");
+        p.token = appContext.getProperty("aspera.xfer.token");
+        p.resumeCheck = Resume.SPARSE_CHECKSUM;
+        p.preCalculateJobSize = Boolean.parseBoolean(appContext.getProperty("aspera.xfer.preCalculateJobSize"));
+        p.createPath = Boolean.parseBoolean(appContext.getProperty("aspera.xfer.createPath"));
+        p.persist = true;
+        return p;
     }
 
     private String chooseAsperaBinary() {
@@ -145,7 +185,8 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
 
     /**
      * Get the root path of aspera binary
-     * @return  root path in string
+     *
+     * @return root path in string
      */
     private String getAbsolutePath() {
         String jarDir = null;
@@ -177,22 +218,26 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
     /**
      * Prepare for upload an entire submission
      */
-    private void prepareSubmission() {
+    private Iterator<File> prepareSubmission() {
         logger.debug("Preparing for uploading an entire submission");
+
+        Set<File> files = Collections.synchronizedSet(new LinkedHashSet<File>());
 
         // add submission summary file
         File submissionFile = createSubmissionFile(); //submission px file creation
         if (submissionFile != null) {
-            fileToSubmit.add(submissionFile); //add the submission px file to the upload list
+            files.add(submissionFile); //add the submission px file to the upload list
         }
 
         // prepare for submission
         for (DataFile dataFile : submissionRecord.getSubmission().getDataFiles()) {
             totalFileSize += dataFile.getFile().length();
             if (dataFile.isFile()) {
-                fileToSubmit.add(dataFile.getFile());
+                files.add(dataFile.getFile());
             }
         }
+
+        return files.iterator();
     }
 
     /**
@@ -238,9 +283,32 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
 
     @Override
     public void fileSessionEvent(TransferEvent transferEvent, SessionStats sessionStats, FileInfo fileInfo) {
+        FaspManager faspManager = null;
+        try {
+            faspManager = FaspManager.getSingleton();
+        } catch (InitializationException e) {
+            FaspManager.destroy();
+            publish(new UploadErrorMessage(this, null, "Failed to initialize via Aspera manager"));
+        }
+
         int totalNumOfFiles = submissionRecord.getSubmission().getDataFiles().size();
+        UploadDetail uploadDetail = submissionRecord.getUploadDetail();
+        String folder = uploadDetail.getFolder();
 
         switch (transferEvent) {
+            case SESSION_START:
+                int count = 0;
+                while (fileToSubmit.hasNext() && count < 20) {
+                    File file = fileToSubmit.next();
+                    try {
+                        faspManager.addSource(sessionStats.getId(), file.getAbsolutePath(), folder + File.separator + file.getName());
+                    } catch (FaspManagerException e) {
+                        FaspManager.destroy();
+                        publish(new UploadErrorMessage(this, null, "Failed to upload next file via Aspera: " + file.getName()));
+                    }
+                    count++;
+                }
+                break;
             case PROGRESS:
                 int uploadedNumOfFiles = (int) sessionStats.getFilesComplete();
                 logger.debug("Aspera transfer in progress");
@@ -250,6 +318,28 @@ public class AsperaUploadTask extends TaskAdapter<Void, UploadMessage> implement
                 logger.debug("Total file size " + totalFileSize);
                 logger.debug("Uploaded file size " + sessionStats.getTotalTransferredBytes());
                 publish(new UploadProgressMessage(this, null, totalFileSize, sessionStats.getTotalTransferredBytes(), totalNumOfFiles, uploadedNumOfFiles));
+                break;
+            case FILE_STOP:
+                if (fileInfo.getState().equals(FileState.FINISHED)) {
+                    finishedFileCount++;
+                    // last file has finished uploading, add a new one
+                    if (fileToSubmit.hasNext()) {
+                        File file = fileToSubmit.next();
+                        try {
+                            faspManager.addSource(sessionStats.getId(), file.getAbsolutePath(), folder + File.separator + file.getName());
+                        } catch (FaspManagerException e) {
+                            FaspManager.destroy();
+                            publish(new UploadErrorMessage(this, null, "Failed to upload next file via Aspera: " + file.getName()));
+                        }
+                    } else {
+                        if (finishedFileCount == totalNumOfFiles + 1) {
+                            FaspManager.destroy();
+                            publish(new UploadProgressMessage(this, null, totalFileSize, totalFileSize, totalNumOfFiles, totalNumOfFiles));
+                            publish(new UploadSuccessMessage(this));
+                            logger.debug("Aspera Session Stop");
+                        }
+                    }
+                }
                 break;
             case SESSION_STOP:
                 FaspManager.destroy();

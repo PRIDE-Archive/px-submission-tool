@@ -144,7 +144,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             task.addTaskListener(createFTPDirectoryTaskListener);
         } else if (uploadMethod.equals(UploadMethod.ASPERA)) {
             // start aspera upload straightaway
-            task = new AsperaUploadTask(appContext.getSubmissionRecord());
+            task = new PersistedAsperaUploadTask(appContext.getSubmissionRecord());
             task.addTaskListener(uploadTaskListener);
         }
 

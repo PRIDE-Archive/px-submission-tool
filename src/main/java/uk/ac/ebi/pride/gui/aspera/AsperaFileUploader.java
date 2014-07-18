@@ -18,7 +18,7 @@ import java.util.Collection;
 public class AsperaFileUploader {
 
     private static final Logger logger = LoggerFactory.getLogger(AsperaFileUploader.class);
-    static final DesktopContext appContext = App.getInstance().getDesktopContext();
+    private static final DesktopContext appContext = App.getInstance().getDesktopContext();
     /**
      * The default TransferListener to listen to transfer events
      * raised by the FaspManager during a transfer.
@@ -151,7 +151,7 @@ public class AsperaFileUploader {
         }
 
         // define the destination on the server
-        remoteLocation.clear(); // clear all path, we only want to allow the one specified for this method!
+        remoteLocation.clearPaths(); // clear all path, we only want to allow the one specified for this method!
         remoteLocation.addPath(destinationDirectory);
 
         // compile the transfer order
@@ -163,7 +163,7 @@ public class AsperaFileUploader {
 
     private String downloadFiles(String[] remoteSourcePaths, String localDestinationDirPath) throws FaspManagerException {
 
-        pridePublicLocation.clear();
+        pridePublicLocation.clearPaths();
         for (String path : remoteSourcePaths) {
             pridePublicLocation.addPath(path);
         }
