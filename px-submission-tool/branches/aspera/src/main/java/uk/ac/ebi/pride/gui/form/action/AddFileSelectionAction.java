@@ -167,7 +167,8 @@ public class AddFileSelectionAction extends AbstractAction {
             Submission submission = ((AppContext) App.getInstance().getDesktopContext()).getSubmissionRecord().getSubmission();
             List<DataFile> dataFiles = submission.getDataFiles();
             for (DataFile file : dataFiles) {
-                if (file.getFile().getName().equals(dataFile.getFile().getName())) {
+                String fileName = file.getFileName();
+                if (fileName.equals(dataFile.getFileName())) {
                     return true;
                 }
             }

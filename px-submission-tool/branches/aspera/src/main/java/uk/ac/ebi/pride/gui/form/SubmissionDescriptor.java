@@ -112,8 +112,9 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         logger.debug("Configured upload protocol: {}", uploadProtocol);
 
         // choose upload method
+        boolean hasURLBasedDataFiles = hasURLBasedDataFiles(submission);
         UploadMethod method;
-        if (uploadProtocol.equalsIgnoreCase(Constant.FTP)) {
+        if (hasURLBasedDataFiles || uploadProtocol.equalsIgnoreCase(Constant.FTP)) {
             method = UploadMethod.FTP;
         } else {
             // default is ASPERA
@@ -139,7 +140,8 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         final UploadMethod uploadMethod = uploadDetail.getMethod();
 
         Task task = null;
-        if (uploadMethod.equals(UploadMethod.FTP) || hasURLBasedDataFiles(submissionRecord.getSubmission())) {
+
+        if (uploadMethod.equals(UploadMethod.FTP)) {
             // create ftp directory before uploading
             task = new CreateFTPDirectoryTask(uploadDetail);
 //            task = new FakeCreateFTPDirectoryTask(uploadDetail);
@@ -149,7 +151,6 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             task = new PersistedAsperaUploadTask(submissionRecord);
             task.addTaskListener(uploadTaskListener);
         }
-
         if (task != null) {
             task.addOwner(SubmissionDescriptor.this);
             task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
