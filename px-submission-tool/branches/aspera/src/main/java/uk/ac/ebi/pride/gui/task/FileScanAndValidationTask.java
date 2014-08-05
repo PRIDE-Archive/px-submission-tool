@@ -2,6 +2,10 @@ package uk.ac.ebi.pride.gui.task;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.AppContext;
+import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
+import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.SampleMetaData;
 import uk.ac.ebi.pride.data.model.Submission;
@@ -13,8 +17,6 @@ import uk.ac.ebi.pride.jaxb.model.CvParam;
 import uk.ac.ebi.pride.jaxb.model.SampleDescription;
 import uk.ac.ebi.pride.jaxb.xml.unmarshaller.PrideXmlUnmarshaller;
 import uk.ac.ebi.pride.jaxb.xml.unmarshaller.PrideXmlUnmarshallerFactory;
-import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 
 import javax.xml.bind.JAXBException;
 import java.io.*;
@@ -41,9 +43,11 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
     public static final Pattern PRIDEXML_SAMPLE_DESCRIPTION_PATTERN = Pattern.compile(".*<sampleDescription[^>]*/>.*");
 
     private Submission submission;
+    private AppContext appContext;
 
     public FileScanAndValidationTask(Submission submission) {
         this.submission = submission;
+        this.appContext = (AppContext)App.getInstance().getDesktopContext();
     }
 
     @Override
@@ -204,7 +208,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             DataFile resultOrSearchFile = resultOrSearchFiles.get(0);
             for (DataFile dataFile : dataFiles) {
                 if (!resultOrSearchFile.containsFileMapping(dataFile)) {
-                    resultOrSearchFile.addFileMapping(dataFile);
+                    appContext.addFileMapping(resultOrSearchFile, dataFile);
                 }
             }
         }
@@ -213,7 +217,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         for (DataFile resultOrSearchFile : resultOrSearchFiles) {
             for (DataFile dataFile : dataFiles) {
                 if (isDataFileRelated(resultOrSearchFile, dataFile) && !resultOrSearchFile.containsFileMapping(dataFile)) {
-                    resultOrSearchFile.addFileMapping(dataFile);
+                    appContext.addFileMapping(resultOrSearchFile, dataFile);
                 }
 
                 if (dataFile.getFileType().equals(ProjectFileType.RAW)) {
@@ -239,7 +243,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
     private void addFileMapping(List<DataFile> resultOrSearchFiles, DataFile dataFile) {
         for (DataFile resultOrSearchFile : resultOrSearchFiles) {
             if (!resultOrSearchFile.containsFileMapping(dataFile)) {
-                resultOrSearchFile.addFileMapping(dataFile);
+                appContext.addFileMapping(resultOrSearchFile, dataFile);
             }
         }
     }
