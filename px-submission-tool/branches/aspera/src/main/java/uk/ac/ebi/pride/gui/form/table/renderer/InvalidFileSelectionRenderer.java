@@ -31,6 +31,9 @@ public class InvalidFileSelectionRenderer extends JLabel implements TableCellRen
         int modelColumnIndex = getModelColumnIndex();
         valid = (Boolean) table.getModel().getValueAt(modelRowIndex, modelColumnIndex);
         text = value == null ? "" : value.toString();
+        if (!text.equals("")) {
+            setToolTipText(text);
+        }
         return this;
     }
 
