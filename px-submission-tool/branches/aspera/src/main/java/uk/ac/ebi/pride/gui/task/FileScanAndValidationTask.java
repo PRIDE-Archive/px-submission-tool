@@ -336,7 +336,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                         result.setUnsupportedSearchFile(true);
                     }
                 }
-            } else if (ProjectFileType.IMAGE_DATA.equals(fileType)) {
+            } else if (ProjectFileType.MS_IMAGE_DATA.equals(fileType)) {
                 result.setImagingDataFile(true);
             }
         }
