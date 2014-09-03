@@ -140,7 +140,7 @@ public class SummaryItemPanel extends ContextAwarePanel implements PropertyChang
                 case GEL:
                     count[5]++;
                     break;
-                case QUANTIFICATION:
+                case QUANT:
                     count[5]++;
                     break;
                 case OTHER:
