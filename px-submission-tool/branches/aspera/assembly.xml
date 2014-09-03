@@ -41,6 +41,13 @@
             <outputDirectory>${assembly.dir}/document</outputDirectory>
         </fileSet>
         <fileSet>
+            <directory>${project.basedir}/readme</directory>
+            <includes>
+                <include>*</include>
+            </includes>
+            <outputDirectory>${assembly.dir}</outputDirectory>
+        </fileSet>
+        <fileSet>
             <directory>${project.basedir}/config</directory>
             <outputDirectory>${assembly.dir}/config</outputDirectory>
             <includes>
