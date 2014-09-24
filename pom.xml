@@ -51,7 +51,7 @@
         <apache.http.client>4.2.1</apache.http.client>
         <java.mail.version>1.4.4</java.mail.version>
         <java.help.version>2.0.02</java.help.version>
-        <px.submission.core.version>2.0.5</px.submission.core.version>
+        <px.submission.core.version>2.0.6</px.submission.core.version>
         <pride.web.utils.version>1.3.8</pride.web.utils.version>
         <ols.dialog.version>3.3.3</ols.dialog.version>
         <aspera.faspmanager.version>1.0</aspera.faspmanager.version>
