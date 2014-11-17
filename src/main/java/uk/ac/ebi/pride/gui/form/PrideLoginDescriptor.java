@@ -18,6 +18,8 @@ import uk.ac.ebi.pride.gui.util.ValidationState;
 
 import javax.help.HelpBroker;
 import javax.swing.*;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import java.awt.*;
 import java.util.List;
 
@@ -177,8 +179,31 @@ public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor 
         Runnable eventDispatcher = new Runnable() {
             public void run() {
                 // show warning dialog
+                JLabel label = new JLabel();
+                Font font = label.getFont();
+                StringBuilder style = new StringBuilder("font-family:" + font.getFamily() + ";");
+                style.append("font-weight:" + (font.isBold() ? "bold" : "normal") + ";");
+                style.append("font-size:" + font.getSize() + "pt;");
+                // html content
+                JEditorPane ep = new JEditorPane("text/html", "<html><body style=\"" + style + "\">" //
+                        + appContext.getProperty("pride.login.error.message")
+                        + "</body></html>");
+                ep.addHyperlinkListener(new HyperlinkListener()
+                {
+                    @Override
+                    public void hyperlinkUpdate(HyperlinkEvent e)
+                    { try {
+                        if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED))
+                            Desktop.getDesktop().browse(e.getURL().toURI());
+                    } catch (Exception ex) {
+                        //couldn't display error message
+                    }
+                    }
+                });
+                ep.setEditable(false);
+                ep.setBackground(label.getBackground());
                 JOptionPane.showConfirmDialog(app.getMainFrame(),
-                        appContext.getProperty("pride.login.error.message"),
+                        ep,
                         appContext.getProperty("pride.login.error.title"),
                         JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
             }

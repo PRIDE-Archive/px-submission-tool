@@ -93,10 +93,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
 
         // get ftp details if null
         if (appContext.getSubmissionRecord().getUploadDetail() == null) {
-            Submission submission = appContext.getSubmissionRecord().getSubmission();
-
-            // get ftp details from PRIDE
-            getUploadDetail(submission);
+            getUploadDetail(appContext.getSubmissionRecord().getSubmission());
         } else {
             firePropertyChange(BEFORE_DISPLAY_PANEL_PROPERTY, false, true);
         }
@@ -110,7 +107,6 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         // retrieve the upload protocol
         final String uploadProtocol = System.getProperty("px.upload.protocol", Constant.ASPERA);
         logger.debug("Configured upload protocol: {}", uploadProtocol);
-
         // choose upload method
         boolean hasURLBasedDataFiles = hasURLBasedDataFiles(submission);
         UploadMethod method;
@@ -132,8 +128,6 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
     @Override
     public void displayingPanel() {
         logger.debug("Displaying the submission panel");
-
-        // upload files and folders
         // upload files
         SubmissionRecord submissionRecord = appContext.getSubmissionRecord();
         final UploadDetail uploadDetail = submissionRecord.getUploadDetail();
@@ -144,10 +138,9 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         if (uploadMethod.equals(UploadMethod.FTP)) {
             // create ftp directory before uploading
             task = new CreateFTPDirectoryTask(uploadDetail);
-//            task = new FakeCreateFTPDirectoryTask(uploadDetail);
             task.addTaskListener(createFTPDirectoryTaskListener);
         } else if (uploadMethod.equals(UploadMethod.ASPERA)) {
-            // start aspera upload straightaway
+            // start aspera upload straight away
             task = new PersistedAsperaUploadTask(submissionRecord);
             task.addTaskListener(uploadTaskListener);
         }
@@ -254,9 +247,9 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
 
             if (uploadDetail != null) {
                 appContext.getSubmissionRecord().setUploadDetail(uploadDetail);
-
                 firePropertyChange(BEFORE_DISPLAY_PANEL_PROPERTY, false, true);
             } else {
+                logger.error("Cannot connect to Protomexchange web service for login credentials, likely outbound traffic for port TCP 22 is blocked. Please contact your system administrators to fix this problem.");
                 // show error message dialog
                 JOptionPane.showConfirmDialog(app.getMainFrame(),
                         appContext.getProperty("upload.detail.error.message"),
@@ -301,7 +294,18 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         private void handleErrorMessage(UploadErrorMessage message) {
             logger.debug("Handle error message: {}", message.getMessage());
             SubmissionForm form = (SubmissionForm) SubmissionDescriptor.this.getNavigationPanel();
-            form.setUploadMessage(message.getMessage());
+            final String type = System.getProperty("px.upload.protocol", Constant.ASPERA);
+            if (type.equals(Constant.ASPERA)) {
+                JOptionPane.showConfirmDialog(app.getMainFrame(),
+                        appContext.getProperty("upload.aspera.error.message"),
+                        appContext.getProperty("upload.detail.error.title"),
+                        JOptionPane.CLOSED_OPTION, JOptionPane.ERROR_MESSAGE);
+                form.setUploadMessage("Aspera upload failed. Retrying with FTP...");
+                System.setProperty("px.upload.protocol", Constant.FTP);
+                getUploadDetail(appContext.getSubmissionRecord().getSubmission());
+            } else {
+                form.setUploadMessage(message.getMessage());
+            }
         }
 
         /**
@@ -334,7 +338,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             SubmissionRecord submissionRecord = appContext.getSubmissionRecord();
             logger.debug("Handle stop message: {} files", submissionRecord.getSubmission().getDataFiles().size() - submissionRecord.getUploadedFiles().size());
 
-            // stop exiting aspera upload
+            // stop: exiting aspera upload
             FaspManager.destroy();
 
             SubmissionForm form = (SubmissionForm) SubmissionDescriptor.this.getNavigationPanel();
@@ -355,7 +359,6 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
 
             // complete submission task
             Task task = new CompleteSubmissionTask(appContext.getSubmissionRecord());
-//            Task task = new FakeCompleteSubmissionTask(appContext.getSubmissionRecord());
             task.addTaskListener(completeSubmissionTaskListener);
             task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
             appContext.addTask(task);

@@ -35,6 +35,12 @@ public class GetUploadDetailTask extends TaskAdapter<UploadDetail, String> {
         DesktopContext context = App.getInstance().getDesktopContext();
         String baseUrl = context.getProperty("px.upload.detail.url");
 
-        return restTemplate.getForObject(baseUrl, UploadDetail.class, method.getMethod());
+        UploadDetail uploadDetail = null;
+        try {
+            uploadDetail = restTemplate.getForObject(baseUrl, UploadDetail.class, method.getMethod());
+        } catch(Exception ex){
+            // port blocked, dealt with later
+        }
+        return uploadDetail;
     }
 }

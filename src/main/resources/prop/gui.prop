@@ -131,7 +131,7 @@ pride.login.password.tooltip = Your password
 pride.login.username.error.message = User name cannot be empty
 pride.login.password.error.message = Password cannot be empty
 pride.login.error.title = Login
-pride.login.error.message = Failed to login. Please register first if you don't have an account.
+pride.login.error.message = <b>Failed to login.<br>Please register first if you don't have an account:<br/><a href="http://www.ebi.ac.uk/pride/archive/register">Register a new PRIDE account</a><br/>Are you connected to the Internet via a proxy? Then you will need to enter your proxy details:<br/><a href="http://www.ebi.ac.uk/pride/help/archive/faq#PX-proxy-settings">How to manually set the proxy details</a>
 pride.login.resubmission.error.message = Failed to login. Please ensure you have the correct user name and password.
 pride.login.button.loading.small.icon = icon/16x16/loading.gif
 pride.login.create.account.title = Register New User
@@ -278,9 +278,10 @@ resubmission.no.private.px.label = No dataset available
 resubmission.select.px.dataset.label = Choose your dataset
 
 # upload
-upload.detail.error.message = <html><b>Failed to get upload credentials.</b> <br/>Please ensure that you have Internet connection. </html>
+upload.detail.error.message = <html><b>Failed to get upload credentials.</b><br/>Please ensure that you have an Internet connection.<br/>Requires outbound traffic enabled on your firewall and network for port TCP 22.<br/>In which case you should contact your system administrator.</html>
 upload.detail.error.title = Upload Error
-upload.error.message = <html><b>There appears to be a problem with using FTP to upload your files.</b> <br/> This could due to the firewall restrictions on your local network.<br/> In which case you should contact your system administrator</html>
+upload.error.message = <html><b>There appears to be a problem with using FTP to upload your files.</b> <br/>Requires outbound traffic enabled on your firewall and network for port TCP 21.<br/>In which case you should contact your system administrator.</html>
+upload.aspera.error.message = <html><b>There appears to be a problem with using Aspera to upload your files.</b> <br/>Requires outbound traffic enabled on your firewall and network for port TCP 22 & UDP 33001.<br/>In which case you should contact your system administrator.<br/>Retrying your submission with FTP now...</html>
 upload.error.title = Upload Error
 upload.default.message = Submission in progress . . .
 upload.stop.message = Submission has been paused
