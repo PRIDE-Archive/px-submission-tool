@@ -5,7 +5,7 @@
     <groupId>uk.ac.ebi.pride.px</groupId>
     <artifactId>px-submission-tool</artifactId>
     <packaging>jar</packaging>
-    <version>2.2.3-SNAPSHOT</version>
+    <version>2.2.4-SNAPSHOT</version>
     <name>px-submission-tool</name>
 
     <parent>
