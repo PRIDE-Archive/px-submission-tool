@@ -1,16 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>uk.ac.ebi.pride.px</groupId>
     <artifactId>px-submission-tool</artifactId>
     <packaging>jar</packaging>
-    <version>2.2.2-SNAPSHOT</version>
+    <version>2.2.3-SNAPSHOT</version>
     <name>px-submission-tool</name>
 
     <parent>
         <groupId>uk.ac.ebi.pride.maven</groupId>
         <artifactId>pride-base-master</artifactId>
-        <version>1.0.1</version>
+        <version>1.0.3</version>
     </parent>
 
     <licenses>
@@ -38,12 +39,22 @@
             </roles>
             <timezone>0</timezone>
         </developer>
+        <developer>
+            <id>tobias</id>
+            <name>Tobias Ternent</name>
+            <organization>Proteomics Services Team, PANDA Group, EMBL-European Bioinformatics Institute</organization>
+            <organizationUrl>http://www.ebi.ac.uk/pride</organizationUrl>
+            <roles>
+                <role>developer</role>
+            </roles>
+            <timezone>0</timezone>
+        </developer>
     </developers>
 
     <properties>
         <assembly.dir>${project.name}-${project.version}</assembly.dir>
-        <jmzidentml.version>1.1.4-SNAPSHOT</jmzidentml.version>
-        <pride.jaxb.version>1.0.8</pride.jaxb.version>
+        <jmzidentml.version>1.2.0</jmzidentml.version>
+        <pride.jaxb.version>1.0.12</pride.jaxb.version>
         <pride.utilities.version>0.1.17</pride.utilities.version>
         <swingx.version>1.6.1</swingx.version>
         <balloontip.version>1.2</balloontip.version>
@@ -54,9 +65,8 @@
         <px.submission.core.version>2.0.6</px.submission.core.version>
         <pride.web.utils.version>1.3.8</pride.web.utils.version>
         <ols.dialog.version>3.3.3</ols.dialog.version>
-        <aspera.faspmanager.version>1.0</aspera.faspmanager.version>
         <archive.submission.model.version>1.0.0</archive.submission.model.version>
-        <archive.data.provider.api.version>2.0.5</archive.data.provider.api.version>
+        <archive.data.provider.api.version>2.0.6</archive.data.provider.api.version>
         <aspera-faspmanager.version>2.7.0.42750</aspera-faspmanager.version>
     </properties>
 

@@ -1,7 +1,11 @@
 package uk.ac.ebi.pride.gui.task;
 
+import org.apache.http.HttpHost;
+import org.apache.http.conn.params.ConnRoutePNames;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.archive.submission.model.project.ProjectDetail;
@@ -12,6 +16,7 @@ import uk.ac.ebi.pride.web.util.template.SecureRestTemplateFactory;
 import javax.swing.*;
 import java.awt.*;
 import java.util.LinkedHashSet;
+import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Matcher;
 
@@ -37,6 +42,16 @@ public class GetPXSubmissionDetailTask extends AbstractWebServiceTask<Set<String
         String baseUrl = App.getInstance().getDesktopContext().getProperty("px.submission.detail.url");
 
         try {
+            Properties props = System.getProperties();
+            String proxyHost = props.getProperty("http.proxyHost");
+            String proxyPort = props.getProperty("http.proxyPort");
+
+            if (proxyHost != null && proxyPort != null) {
+                HttpComponentsClientHttpRequestFactory factory = ((HttpComponentsClientHttpRequestFactory) restTemplate.getRequestFactory());
+                DefaultHttpClient defaultHttpClient = (DefaultHttpClient) factory.getHttpClient();
+                HttpHost proxy = new HttpHost(proxyHost.trim(), Integer.parseInt(proxyPort));
+                defaultHttpClient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
+            }
             ProjectDetailList projectDetailList = restTemplate.getForObject(baseUrl, ProjectDetailList.class);
 
             for (ProjectDetail projectDetail : projectDetailList.getProjectDetails()) {
