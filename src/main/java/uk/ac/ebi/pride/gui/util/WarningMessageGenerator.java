@@ -50,6 +50,20 @@ public final class WarningMessageGenerator {
         return errMsg.toString();
     }
 
+    public static String getInvalidMzIdentMLSpectraDataWarning(List<DataFile> mzIdentMLFiles) {
+        StringBuilder errMsg = new StringBuilder();
+        errMsg.append("<html>");
+        errMsg.append("<b>The following mzIdentML do not contain reference to original spectrum files</b><br/>");
+        for (DataFile mzIdentMLFile : mzIdentMLFiles) {
+            errMsg.append("<li>");
+            errMsg.append(mzIdentMLFile.getFile().getName());
+            errMsg.append("</li>");
+        }
+        errMsg.append("</html>");
+
+        return errMsg.toString();
+    }
+
     public static String getMzIdentMLPeakListFilWarning() {
 
         return "<html>" + "<b>Please add the following spectrum files, they are referenced by your mzIdentML files</b><br/>" + "</html>";

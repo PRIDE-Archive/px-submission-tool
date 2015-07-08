@@ -120,6 +120,13 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 }
                 setProgress(60);
 
+                // cannot have mzIdentML which do contain spectra data reference
+                List<DataFile> invalidMzIdentMLSpectraDataFiles = runMzIdentMLSpectraDataValidation(mzIdentMLDataFiles);
+                if (invalidMzIdentMLSpectraDataFiles.size() > 0) {
+                    return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidMzIdentMLSpectraDataWarning(invalidMzIdentMLSpectraDataFiles));
+                }
+                setProgress(70);
+
                 // cannot have mzIdentML without peak list files
                 Map<DataFile, List<String>> invalidMzIdentMLPeakListFiles = runMzIdentMLPeakListFileScanAndValidation(submission.getDataFiles());
                 if (invalidMzIdentMLPeakListFiles.size() > 0) {
@@ -516,6 +523,29 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 }
             }
 
+        }
+
+        return invalidMzIdentMLFiles;
+    }
+
+    /**
+     * Validate whether mzIdentML contains SpectraData section
+     *
+     * @param dataFiles a list of all data files
+     * @return  a list of invalid mzIdentMl files which don't contain SpectraData section
+     * @throws IOException
+     */
+    private List<DataFile> runMzIdentMLSpectraDataValidation(List<DataFile> dataFiles) throws IOException {
+        List<DataFile> invalidMzIdentMLFiles = new ArrayList<DataFile>();
+
+        for (DataFile dataFile : dataFiles) {
+            if (MassSpecFileFormat.MZIDENTML.equals(dataFile.getFileFormat())) {
+                Set<String> peakListFileNames = parsePeakListFileNames(dataFile.getFile());
+
+                if (peakListFileNames.isEmpty()) {
+                    invalidMzIdentMLFiles.add(dataFile);
+                }
+            }
         }
 
         return invalidMzIdentMLFiles;
