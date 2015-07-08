@@ -134,68 +134,68 @@ public class App extends Desktop {
         try {
             // register welcome form
             WelcomeDescriptor welcomePanel = new WelcomeDescriptor(getDesktopContext().getProperty("welcome.nav.desc.id"),
-                    getDesktopContext().getProperty("welcome.nav.desc.title"),
+                    "Step 1: " + getDesktopContext().getProperty("welcome.nav.desc.title") + " (1/11)",
                     getDesktopContext().getProperty("welcome.nav.desc.detail") +
                             " (version " + getDesktopContext().getProperty("px.submission.tool.version") + ")");
             navigator.registerNavigationPanel(welcomePanel);
 
             // login form
             PrideLoginDescriptor prideLoginPanel = new PrideLoginDescriptor(getDesktopContext().getProperty("pride.login.nav.desc.id"),
-                    getDesktopContext().getProperty("pride.login.nav.desc.title"),
+                    "Step 2: " + getDesktopContext().getProperty("pride.login.nav.desc.title") + " (2/11)",
                     getDesktopContext().getProperty("pride.login.nav.desc.detail"));
             navigator.registerNavigationPanel(prideLoginPanel);
 
             // register project metadata form
             ProjectMetaDataDescriptor metaDataPanel = new ProjectMetaDataDescriptor(getDesktopContext().getProperty("project.metadata.nav.desc.id"),
-                    getDesktopContext().getProperty("project.metadata.nav.desc.title"),
+                    "Step 3: " + getDesktopContext().getProperty("project.metadata.nav.desc.title") + " (3/11)",
                     getDesktopContext().getProperty("project.metadata.nav.desc.detail"));
             navigator.registerNavigationPanel(metaDataPanel);
 
             // register file selection form
             FileSelectionDescriptor fileSelectionPanel = new FileSelectionDescriptor(getDesktopContext().getProperty("file.selection.nav.desc.id"),
-                    getDesktopContext().getProperty("file.selection.nav.desc.title"),
+                    "Step 4: " + getDesktopContext().getProperty("file.selection.nav.desc.title") + " (4/11)",
                     getDesktopContext().getProperty("file.selection.nav.desc.detail"));
             navigator.registerNavigationPanel(fileSelectionPanel);
 
             // register file mapping form
             FileMappingDescriptor fileMappingPanel = new FileMappingDescriptor(getDesktopContext().getProperty("file.mapping.nav.desc.id"),
-                    getDesktopContext().getProperty("file.mapping.nav.desc.title"),
+                    "Step 5: " + getDesktopContext().getProperty("file.mapping.nav.desc.title") + " (5/11)",
                     getDesktopContext().getProperty("file.mapping.nav.desc.detail"));
             navigator.registerNavigationPanel(fileMappingPanel);
 
             // register sample metadata form
             SampleMetaDataDescriptor sampleMetaDataPanel = new SampleMetaDataDescriptor(getDesktopContext().getProperty("sample.metadata.nav.desc.id"),
-                    getDesktopContext().getProperty("sample.metadata.nav.desc.title"),
+                    "Step 6: " + getDesktopContext().getProperty("sample.metadata.nav.desc.title") + " (6/11)",
                     getDesktopContext().getProperty("sample.metadata.nav.desc.detail"));
             navigator.registerNavigationPanel(sampleMetaDataPanel);
 
             // register additional metadata form
             AdditionalMetaDataDescriptor additionalMetaDataPanel = new AdditionalMetaDataDescriptor(getDesktopContext().getProperty("additional.metadata.nav.desc.id"),
-                    getDesktopContext().getProperty("additional.metadata.nav.desc.title"),
+                    "Step 7: " + getDesktopContext().getProperty("additional.metadata.nav.desc.title") + " (7/11)",
                     getDesktopContext().getProperty("additional.metadata.nav.desc.detail"));
             navigator.registerNavigationPanel(additionalMetaDataPanel);
 
             // lab head form
             LabHeadDescriptor labHeadPanel = new LabHeadDescriptor(getDesktopContext().getProperty("pride.labhead.nav.desc.id"),
-                    getDesktopContext().getProperty("pride.labhead.nav.desc.title"),
+                    "Step 8: " + getDesktopContext().getProperty("pride.labhead.nav.desc.title") + " (8/11)",
                     getDesktopContext().getProperty("pride.labhead.nav.desc.detail"));
             navigator.registerNavigationPanel(labHeadPanel);
 
             // register additional project metadata form
             AdditionalDatasetDetailsDescriptor projectTagPanel = new AdditionalDatasetDetailsDescriptor(getDesktopContext().getProperty("additional.project.metadata.nav.desc.id"),
-                    getDesktopContext().getProperty("additional.project.metadata.nav.desc.title"),
+                    "Step 9: " + getDesktopContext().getProperty("additional.project.metadata.nav.desc.title") + " (9/11)",
                     getDesktopContext().getProperty("additional.project.metadata.nav.desc.detail"));
             navigator.registerNavigationPanel(projectTagPanel);
 
             // register submission summary
             SummaryDescriptor summaryPanel = new SummaryDescriptor(getDesktopContext().getProperty("summary.nav.desc.id"),
-                    getDesktopContext().getProperty("summary.nav.desc.title"),
+                    "Step 10: " + getDesktopContext().getProperty("summary.nav.desc.title") + " (10/11)",
                     getDesktopContext().getProperty("summary.nav.desc.detail"));
             navigator.registerNavigationPanel(summaryPanel);
 
             // register submission form
             SubmissionDescriptor submissionPanel = new SubmissionDescriptor(getDesktopContext().getProperty("submission.nav.desc.id"),
-                    getDesktopContext().getProperty("submission.nav.desc.title"),
+                    "Step 11: " + getDesktopContext().getProperty("submission.nav.desc.title") + " (11/11)",
                     getDesktopContext().getProperty("submission.nav.desc.detail"));
             navigator.registerNavigationPanel(submissionPanel);
 
