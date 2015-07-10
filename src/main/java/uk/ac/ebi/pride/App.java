@@ -139,6 +139,12 @@ public class App extends Desktop {
                             " (version " + getDesktopContext().getProperty("px.submission.tool.version") + ")");
             navigator.registerNavigationPanel(welcomePanel);
 
+            // register prerequisite form
+            PrerequisiteDescriptor prerequisiteDescriptor = new PrerequisiteDescriptor(getDesktopContext().getProperty("prerequisite.nav.desc.id"),
+                    getDesktopContext().getProperty("prerequisite.nav.desc.title"),
+                    getDesktopContext().getProperty("prerequisite.nav.desc.detail"));
+            navigator.registerNavigationPanel(prerequisiteDescriptor);
+
             // login form
             PrideLoginDescriptor prideLoginPanel = new PrideLoginDescriptor(getDesktopContext().getProperty("pride.login.nav.desc.id"),
                     "Step 1: " + getDesktopContext().getProperty("pride.login.nav.desc.title") + " (1/10)",

@@ -1,22 +1,18 @@
 package uk.ac.ebi.pride.gui.form;
 
-import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 import uk.ac.ebi.pride.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.action.LoadSubmissionFileAction;
-import uk.ac.ebi.pride.gui.form.comp.GradientRoundedPanel;
-import uk.ac.ebi.pride.gui.form.comp.RoundedPanel;
+import uk.ac.ebi.pride.gui.form.comp.HeaderPanel;
 import uk.ac.ebi.pride.gui.form.dialog.ResubmissionDialog;
 import uk.ac.ebi.pride.gui.util.BorderUtil;
 import uk.ac.ebi.pride.gui.util.ColourUtil;
 import uk.ac.ebi.pride.gui.util.HttpUtil;
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 
 /**
  * This form shows welcome messages
@@ -28,18 +24,7 @@ public class WelcomeForm extends Form {
 
     private static final String FULL_SUBMISSION_OPTION = "FULL_SUBMISSION";
     private static final String PARTIAL_SUBMISSION_OPTION = "PARTIAL_SUBMISSION";
-    private static final String MINIMUM_SUBMISSION_OPTION = "MINIMUM_SUBMISSION";
 
-
-    private JButton fullSubmissionButton;
-    private JButton partialSubmissionButton;
-    private JButton minimumSubmissionButton;
-
-    private JPanel requirementItemContainer;
-    private JPanel resultFileRequirementItemPanel;
-    private JPanel identificationFileRequirementItemPanel;
-    private JPanel rawFileRequirementItemPanel;
-    private JPanel prideLoginRequirementItemPanel;
 
     private ResubmissionDialog resubmissionDialog;
 
@@ -55,20 +40,7 @@ public class WelcomeForm extends Form {
 
         // create mission statement panel
         JPanel submissionOptionPanel = createSubmissionOptionPanel();
-        this.add(submissionOptionPanel, BorderLayout.NORTH);
-
-        // create requirement panel
-        JPanel detailPanel = createRequirementPanel();
-        this.add(detailPanel, BorderLayout.CENTER);
-
-        // create requirement item panel
-        resultFileRequirementItemPanel = createResultFilePanel();
-        identificationFileRequirementItemPanel = createIdentificationFilePanel();
-        rawFileRequirementItemPanel = createRawFilePanel();
-        prideLoginRequirementItemPanel = createPrideLoginPanel();
-
-        // select the default submission option
-        fullSubmissionButton.doClick();
+        this.add(submissionOptionPanel, BorderLayout.CENTER);
     }
 
     /**
@@ -111,42 +83,97 @@ public class WelcomeForm extends Form {
      * Create a button panel for the option panel
      */
     private JPanel createOptionButtonPanel() {
-        JPanel buttonPanel = new JPanel();
-        GridLayout gridLayout = new GridLayout(1, 3);
-        gridLayout.setHgap(10);
+        JPanel submissionOptionPanel = new JPanel();
+        submissionOptionPanel.setBorder(BorderUtil.createLoweredBorder());
+        GridLayout gridLayout = new GridLayout(2, 1);
+        gridLayout.setVgap(20);
+        submissionOptionPanel.setLayout(gridLayout);
 
+        ButtonGroup buttonGroup = new ButtonGroup();
         // action listener
         ActionListener submissionOptionListener = new SubmissionOptionListener();
 
-        ButtonGroup buttonGroup = new ButtonGroup();
 
-        // full submission button
-        Icon icon = GUIUtilities.loadIcon(appContext.getProperty("welcome.full.submission.button.title.large.icon"));
-        fullSubmissionButton = createOptionButton(appContext.getProperty("welcome.full.submission.button.title"), icon);
-        fullSubmissionButton.setActionCommand(FULL_SUBMISSION_OPTION);
-        fullSubmissionButton.addActionListener(submissionOptionListener);
-        buttonPanel.add(fullSubmissionButton);
-        buttonGroup.add(fullSubmissionButton);
+        // complete submission panel
+        JPanel completeSubmissionPanel = new JPanel(new BorderLayout());
+        HeaderPanel completeSubmissionHeaderPanel = new HeaderPanel();
+        completeSubmissionHeaderPanel.setLayout(new BoxLayout(completeSubmissionHeaderPanel, BoxLayout.X_AXIS));
+        completeSubmissionHeaderPanel.setPreferredSize(new Dimension(60, 20));
 
-        // partial submission button, contains unsupported files
-        icon = GUIUtilities.loadIcon(appContext.getProperty("welcome.partial.submission.button.title.large.icon"));
-        partialSubmissionButton = createOptionButton(appContext.getProperty("welcome.partial.submission.button.title"), icon);
-        partialSubmissionButton.setActionCommand(PARTIAL_SUBMISSION_OPTION);
-        partialSubmissionButton.addActionListener(submissionOptionListener);
-        buttonPanel.add(partialSubmissionButton);
-        buttonGroup.add(partialSubmissionButton);
+        completeSubmissionHeaderPanel.add(Box.createHorizontalGlue());
+        JCheckBox completeSubmissionCheckBox = new JCheckBox();
+        buttonGroup.add(completeSubmissionCheckBox);
+        completeSubmissionCheckBox.setActionCommand(FULL_SUBMISSION_OPTION);
+        completeSubmissionCheckBox.addActionListener(submissionOptionListener);
+        completeSubmissionHeaderPanel.add(completeSubmissionCheckBox);
+        completeSubmissionHeaderPanel.add(Box.createHorizontalGlue());
+        completeSubmissionPanel.add(completeSubmissionHeaderPanel, BorderLayout.WEST);
+        completeSubmissionCheckBox.doClick();
 
-        // minimum submission button
-//        icon = GUIUtilities.loadIcon(appContext.getProperty("welcome.minimum.submission.button.title.large.icon"));
-//        minimumSubmissionButton = createOptionButton(appContext.getProperty("welcome.minimum.submission.button.title"), icon);
-//        minimumSubmissionButton.setActionCommand(MINIMUM_SUBMISSION_OPTION);
-//        minimumSubmissionButton.addActionListener(submissionOptionListener);
-//        buttonPanel.add(minimumSubmissionButton);
-        buttonPanel.add(new JPanel());
-        buttonGroup.add(minimumSubmissionButton);
+        String completeSubmissionTitle = appContext.getProperty("welcome.full.submission.title");
+        String completeSubmissionContent = appContext.getProperty("welcome.full.submission.content");
+        JPanel completeSubmissionContentPanel = createSubmissionOptionPanel(completeSubmissionTitle, completeSubmissionContent, true);
+        completeSubmissionPanel.add(completeSubmissionContentPanel);
+        submissionOptionPanel.add(completeSubmissionPanel);
+
+        // partial submission panel
+        JPanel partialSubmissionPanel = new JPanel(new BorderLayout());
+        HeaderPanel partialSubmissionHeaderPanel = new HeaderPanel(new BorderLayout());
+        partialSubmissionHeaderPanel.setLayout(new BoxLayout(partialSubmissionHeaderPanel, BoxLayout.X_AXIS));
+        partialSubmissionHeaderPanel.setPreferredSize(new Dimension(60, 20));
+
+        partialSubmissionHeaderPanel.add(Box.createHorizontalGlue());
+        JCheckBox partialSubmissionCheckBox = new JCheckBox();
+        buttonGroup.add(partialSubmissionCheckBox);
+        partialSubmissionCheckBox.setActionCommand(PARTIAL_SUBMISSION_OPTION);
+        partialSubmissionCheckBox.addActionListener(submissionOptionListener);
+        partialSubmissionHeaderPanel.add(partialSubmissionCheckBox);
+        partialSubmissionHeaderPanel.add(Box.createHorizontalGlue());
+        partialSubmissionPanel.add(partialSubmissionHeaderPanel, BorderLayout.WEST);
+
+        String partialSubmissionTitle = appContext.getProperty("welcome.partial.submission.title");
+        String partialSubmissionContent = appContext.getProperty("welcome.partial.submission.content");
+        JPanel partialSubmissionContentPanel = createSubmissionOptionPanel(partialSubmissionTitle, partialSubmissionContent, false);
+        partialSubmissionPanel.add(partialSubmissionContentPanel);
+
+        submissionOptionPanel.add(partialSubmissionPanel);
+
+        return submissionOptionPanel;
+    }
+
+    public JPanel createSubmissionOptionPanel(String title, String content, boolean recommend) {
+        JPanel contentPanel = new HeaderPanel();
+        contentPanel.setLayout(new BorderLayout());
+
+        JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        titlePanel.setOpaque(false);
+        JLabel titleLabel = new JLabel();
+        titleLabel.setForeground(Color.white);
+        titleLabel.setFont(titleLabel.getFont().deriveFont(20f).deriveFont(Font.BOLD));
+        titleLabel.setText(title);
+
+        titlePanel.add(titleLabel);
+        titlePanel.add(Box.createRigidArea(new Dimension(5, 5)));
+        if (recommend) {
+            JLabel refLabel = new JLabel(" (recommend)");
+            refLabel.setForeground(Color.green);
+            refLabel.setFont(refLabel.getFont().deriveFont(18f).deriveFont(Font.BOLD));
+            titlePanel.add(refLabel);
+        }
 
 
-        return buttonPanel;
+        JLabel messageLabel = new JLabel();
+        messageLabel.setBorder(BorderFactory.createEmptyBorder(0, 40, 0, 0));
+        messageLabel.setHorizontalTextPosition(SwingConstants.LEFT);
+        messageLabel.setVerticalTextPosition(SwingConstants.TOP);
+        messageLabel.setForeground(Color.white);
+        messageLabel.setFont(messageLabel.getFont().deriveFont(16f));
+        messageLabel.setText(content);
+
+        contentPanel.add(titlePanel, BorderLayout.NORTH);
+        contentPanel.add(messageLabel, BorderLayout.CENTER);
+
+        return contentPanel;
     }
 
     /**
@@ -205,202 +232,6 @@ public class WelcomeForm extends Form {
         return linkPanel;
     }
 
-    /**
-     * Create a button represent a submission option
-     */
-    private JButton createOptionButton(String title, Icon icon) {
-        JButton optionButton = new JButton();
-        optionButton.setPreferredSize(new Dimension(240, 180));
-        optionButton.setHorizontalTextPosition(JButton.CENTER);
-        optionButton.setVerticalTextPosition(JButton.TOP);
-        optionButton.setText(title);
-        optionButton.setFont(optionButton.getFont().deriveFont(16f).deriveFont(Font.BOLD));
-        optionButton.setIcon(icon);
-
-        return optionButton;
-    }
-
-    private JPanel createRequirementPanel() {
-        JPanel reqPanel = new JPanel(new BorderLayout());
-        reqPanel.setBorder(BorderUtil.createLoweredBorder());
-
-        // title panel
-        JPanel titlePanel = new JPanel(new BorderLayout());
-        JLabel titleLabel = new JLabel(App.getInstance().getDesktopContext().getProperty("welcome.you.need.title"));
-        titleLabel.setFont(titlePanel.getFont().deriveFont(16f).deriveFont(Font.BOLD));
-        titlePanel.add(titleLabel, BorderLayout.NORTH);
-//        JLabel descPanel = new JLabel(App.getInstance().getDesktopContext().getProperty("welcome.you.need.desc"));
-//        titlePanel.add(descPanel, BorderLayout.CENTER);
-        titlePanel.add(Box.createRigidArea(new Dimension(10, 10)), BorderLayout.SOUTH);
-        reqPanel.add(titlePanel, BorderLayout.NORTH);
-
-        requirementItemContainer = new JPanel();
-        GridLayout layout = new GridLayout(1, 3);
-        layout.setHgap(10);
-        requirementItemContainer.setLayout(layout);
-
-        reqPanel.add(requirementItemContainer, BorderLayout.CENTER);
-
-        return reqPanel;
-    }
-
-    /**
-     * Requirement panel for result file
-     */
-    private JPanel createResultFilePanel() {
-        String header = appContext.getProperty("welcome.result.file.title");
-        String subHeader = appContext.getProperty("welcome.result.file.desc");
-        Icon icon = GUIUtilities.loadIcon(appContext.getProperty("welcome.result.file.small.icon"));
-        return createRequiredItemPanel(header, subHeader, icon);
-    }
-
-    /**
-     * Requirement panel for identification file
-     */
-    private JPanel createIdentificationFilePanel() {
-        String header = appContext.getProperty("welcome.identification.file.title");
-        String subHeader = appContext.getProperty("welcome.identification.file.desc");
-        Icon icon = GUIUtilities.loadIcon(appContext.getProperty("welcome.identification.file.small.icon"));
-        return createRequiredItemPanel(header, subHeader, icon);
-    }
-
-    /**
-     * Requirement panel for raw file
-     */
-    private JPanel createRawFilePanel() {
-        String header = appContext.getProperty("welcome.raw.file.title");
-        String subHeader = appContext.getProperty("welcome.raw.file.desc");
-        Icon icon = GUIUtilities.loadIcon(appContext.getProperty("welcome.raw.file.small.icon"));
-        return createRequiredItemPanel(header, subHeader, icon);
-    }
-
-    /**
-     * Requirement panel for pride login
-     */
-    private JPanel createPrideLoginPanel() {
-        String header = appContext.getProperty("welcome.pride.login.title");
-        String subHeader = appContext.getProperty("welcome.pride.login.desc");
-        String hyperlinkSubHeader = appContext.getProperty("welcome.pride.login.hyperlink.desc");
-        String hyperlinkURL = appContext.getProperty("pride.new.account.url");
-        Icon icon = GUIUtilities.loadIcon(appContext.getProperty("welcome.pride.login.small.icon"));
-
-        return createHyperlinkedRequiredItemPanel(header, subHeader, hyperlinkSubHeader, hyperlinkURL, icon);
-    }
-
-    /**
-     * Generic requirement panel with hyperlinked sub titles
-     */
-    private JPanel createHyperlinkedRequiredItemPanel(String header, String subHeader, String hyperlinkedSubHeader, final String url, Icon icon) {
-        RoundedPanel requirementPanel = new GradientRoundedPanel();
-        requirementPanel.setShady(true);
-        requirementPanel.setShadowColour(Color.gray);
-        requirementPanel.setBorderColour(Color.gray);
-        requirementPanel.setShadowGap(3);
-        requirementPanel.setBackground(Color.white);
-        requirementPanel.setLayout(new BorderLayout());
-
-        JPanel contentPanel = new JPanel(new GridBagLayout());
-        contentPanel.setOpaque(false);
-        GridBagConstraints c = new GridBagConstraints();
-        c.fill = GridBagConstraints.HORIZONTAL;
-
-        // large header
-        c.gridx = 0;
-        c.gridy = 1;
-
-        JLabel largeHeaderLabel = new JLabel(header);
-        largeHeaderLabel.setFont(largeHeaderLabel.getFont().deriveFont(16f).deriveFont(Font.BOLD));
-        largeHeaderLabel.setHorizontalAlignment(JLabel.CENTER);
-        contentPanel.add(largeHeaderLabel, c);
-
-        // small header
-        c.gridx = 0;
-        c.gridy = 2;
-
-        JPanel smallHeaderPanel = new JPanel();
-        smallHeaderPanel.setOpaque(false);
-        smallHeaderPanel.setLayout(new FlowLayout(FlowLayout.CENTER));
-        JLabel smallHeaderLabel = new JLabel(subHeader);
-        smallHeaderLabel.setHorizontalAlignment(JLabel.RIGHT);
-        smallHeaderPanel.add(smallHeaderLabel);
-        JLabel hyperlinkSmallHeaderLabel = new JLabel(hyperlinkedSubHeader);
-        hyperlinkSmallHeaderLabel.setForeground(ColourUtil.HYPERLINK_COLOUR);
-        hyperlinkSmallHeaderLabel.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                HttpUtil.openURL(url);
-            }
-        });
-        smallHeaderPanel.add(hyperlinkSmallHeaderLabel);
-        contentPanel.add(smallHeaderPanel, c);
-
-        // gap
-        c.gridx = 0;
-        c.gridy = 3;
-        contentPanel.add(Box.createRigidArea(new Dimension(5, 5)), c);
-
-        // icon
-        c.gridx = 0;
-        c.gridy = 4;
-
-        JLabel iconLabel = new JLabel(icon);
-        contentPanel.add(iconLabel, c);
-
-        requirementPanel.add(contentPanel, BorderLayout.CENTER);
-
-        return requirementPanel;
-    }
-
-    /**
-     * Generic requirement panel
-     */
-    private JPanel createRequiredItemPanel(String header, String subHeader, Icon icon) {
-        RoundedPanel requirementPanel = new GradientRoundedPanel();
-        requirementPanel.setShady(true);
-        requirementPanel.setShadowColour(Color.gray);
-        requirementPanel.setBorderColour(Color.gray);
-        requirementPanel.setShadowGap(3);
-        requirementPanel.setBackground(Color.white);
-        requirementPanel.setLayout(new BorderLayout());
-
-        JPanel contentPanel = new JPanel(new GridBagLayout());
-        contentPanel.setOpaque(false);
-        GridBagConstraints c = new GridBagConstraints();
-        c.fill = GridBagConstraints.HORIZONTAL;
-
-        // large header
-        c.gridx = 0;
-        c.gridy = 1;
-
-        JLabel largeHeaderLabel = new JLabel(header);
-        largeHeaderLabel.setFont(largeHeaderLabel.getFont().deriveFont(16f).deriveFont(Font.BOLD));
-        largeHeaderLabel.setHorizontalAlignment(JLabel.CENTER);
-        contentPanel.add(largeHeaderLabel, c);
-
-        // small header
-        c.gridx = 0;
-        c.gridy = 2;
-
-        JLabel smallHeaderLabel = new JLabel(subHeader);
-        smallHeaderLabel.setHorizontalAlignment(JLabel.CENTER);
-        contentPanel.add(smallHeaderLabel, c);
-
-        // gap
-        c.gridx = 0;
-        c.gridy = 3;
-        contentPanel.add(Box.createRigidArea(new Dimension(5, 5)), c);
-
-        // icon
-        c.gridx = 0;
-        c.gridy = 4;
-
-        JLabel iconLabel = new JLabel(icon);
-        contentPanel.add(iconLabel, c);
-
-        requirementPanel.add(contentPanel, BorderLayout.CENTER);
-
-        return requirementPanel;
-    }
 
     /**
      * Listener to perform actions when a submission option is selected
@@ -413,35 +244,22 @@ public class WelcomeForm extends Form {
                 // set submission option in application context
                 appContext.setSubmissionsType(SubmissionType.COMPLETE);
                 // change the colour of the option button
-                fullSubmissionButton.setForeground(Color.BLACK);
-                partialSubmissionButton.setForeground(Color.GRAY);
-                fullSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("welcome.full.submission.button.title.selected.large.icon")));
-                partialSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("welcome.partial.submission.button.title.large.icon")));
+//                fullSubmissionButton.setForeground(Color.BLACK);
+//                partialSubmissionButton.setForeground(Color.GRAY);
+//                fullSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("welcome.full.submission.button.title.selected.large.icon")));
+//                partialSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("welcome.partial.submission.button.title.large.icon")));
 //                minimumSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("welcome.minimum.submission.button.title.large.icon")));
                 // change the required information
-                requirementItemContainer.removeAll();
-                requirementItemContainer.add(resultFileRequirementItemPanel);
-                requirementItemContainer.add(rawFileRequirementItemPanel);
-                requirementItemContainer.add(prideLoginRequirementItemPanel);
             } else if (e.getActionCommand().equals(PARTIAL_SUBMISSION_OPTION)) {
                 // set submission option in application context
                 appContext.setSubmissionsType(SubmissionType.PARTIAL);
 
                 // change the colour of the option button
-                fullSubmissionButton.setForeground(Color.GRAY);
-                partialSubmissionButton.setForeground(Color.BLACK);
-                fullSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("welcome.full.submission.button.title.large.icon")));
-                partialSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("welcome.partial.submission.button.title.selected.large.icon")));
-//                minimumSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("welcome.minimum.submission.button.title.large.icon")));
-                // change the required information
-                requirementItemContainer.removeAll();
-                requirementItemContainer.add(identificationFileRequirementItemPanel);
-                requirementItemContainer.add(rawFileRequirementItemPanel);
-                requirementItemContainer.add(prideLoginRequirementItemPanel);
+//                fullSubmissionButton.setForeground(Color.GRAY);
+//                partialSubmissionButton.setForeground(Color.BLACK);
+//                fullSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("welcome.full.submission.button.title.large.icon")));
+//                partialSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("welcome.partial.submission.button.title.selected.large.icon")));
             }
-
-            requirementItemContainer.revalidate();
-            requirementItemContainer.repaint();
         }
     }
 
