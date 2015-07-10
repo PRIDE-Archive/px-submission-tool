@@ -68,7 +68,7 @@ public class PrerequisiteForm extends Form {
         requirementItemContainer = new JPanel();
         GridLayout layout = new GridLayout(2, 3);
         layout.setHgap(20);
-        layout.setVgap(20);
+        layout.setVgap(30);
         requirementItemContainer.setLayout(layout);
 
         reqPanel.add(requirementItemContainer, BorderLayout.CENTER);
