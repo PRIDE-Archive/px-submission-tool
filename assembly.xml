@@ -34,11 +34,11 @@
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/document</directory>
+            <directory>${project.basedir}/help</directory>
             <includes>
                 <include>*</include>
             </includes>
-            <outputDirectory>${assembly.dir}/document</outputDirectory>
+            <outputDirectory>${assembly.dir}/help</outputDirectory>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/readme</directory>
