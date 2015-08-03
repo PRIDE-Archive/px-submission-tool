@@ -6,6 +6,7 @@
 
 <toc version="1.0">
     <tocitem text="Welcome" target="help.welcome"/>
+    <tocitem text="Prerequisite" target="help.prerequisite"/>
     <tocitem text="Login" target="help.login"/>
     <tocitem text="Dataset Details" target="help.meta.data"/>
     <tocitem text="File Selection" target="help.file.selection"/>

@@ -24,7 +24,7 @@ public class PrerequisiteDescriptor extends ContextAwareNavigationPanelDescripto
     @Override
     public void getHelp() {
         HelpBroker hb = appContext.getMainHelpBroker();
-        hb.showID("help.prequisite", "javax.help.SecondaryWindow", "main");
+        hb.showID("help.prerequisite", "javax.help.SecondaryWindow", "main");
     }
 
     @Override

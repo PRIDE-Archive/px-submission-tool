@@ -183,7 +183,7 @@ welcome.nav.desc.title = Welcome
 welcome.nav.desc.detail = ProteomeXchange Submission Tool
 
 prerequisite.nav.desc.id = Prerequisite
-prerequisite.nav.desc.title = Prerequisite
+prerequisite.nav.desc.title = Prerequisites
 prerequisite.nav.desc.detail = Before we begin, please check you have the following information
 
 file.selection.nav.desc.id = FileSelection
@@ -317,7 +317,7 @@ welcome.you.need.desc = Please ensure the following information ready
 welcome.full.submission.title = Complete Submission
 welcome.full.submission.content = <html><p>Use this option if you can provide your identification results in either mzIdentML or PRIDE XML format. It will then be possible to fully integrate the results in PRIDE and visualise them (e.g. as required by MCP).</p> <br/> <p>In addition to a PXD identifier, a permanent Digital Object Identifier (DOI) will be provided to uniquely identify the dataset.</p></html>
 welcome.partial.submission.title = Partial Submission
-welcome.partial.submission.content = <html><p>You should only choose this option if your search results cannot be converted to mzIdentML or PRIDE XML. Identifications will not be integrated in PRIDE. However, files will be made available to download (and maybe visualised with other external tools)</p> <br/> <p> A PXD identifier will be provided to uniquely identify the dataset, but not a DOI</p></html>
+welcome.partial.submission.content = <html><p>You should only choose this option if your search results cannot be converted to mzIdentML or PRIDE XML. Identifications will not be integrated in PRIDE. However, files will be made available to download (and maybe visualised with other external tools).</p> <br/> <p> A PXD identifier will be provided to uniquely identify the dataset, but not a DOI.</p></html>
 
 prerequisite.result.file.title = Result Files
 prerequisite.result.file.desc = PRIDE XML or mzIdentML(+ spectra)
@@ -333,10 +333,10 @@ prerequisite.pride.login.desc = PRIDE user credentials
 prerequisite.pride.login.hyperlink.desc = Register
 prerequisite.pride.login.small.icon = icon/128x128/login.png
 prerequisite.metadata.title = Experiment Details
-prerequisite.metadata.desc = Description, protocols
+prerequisite.metadata.desc = Sample, protocols, species, tissues
 prerequisite.metadata.small.icon = icon/128x128/experimentdetails.png
 prerequisite.labhead.title = Lab Head
-prerequisite.labhead.desc = Details about your lab head
+prerequisite.labhead.desc = Name, email, and affiliation
 prerequisite.labhead.small.icon = icon/128x128/labhead.png
 
 # summary screen

@@ -15,6 +15,7 @@
     <mapID target="print_setting_icon" url="icon/print_settings.png"/>
 
     <mapID target="help.welcome" url="html/usage/welcome.html"/>
+    <mapID target="help.prerequisite" url="html/usage/prerequisite.html"/>
     <mapID target="help.resubmission" url="html/usage/resubmission.html"/>
     <mapID target="help.file.selection" url="html/usage/file_selection.html"/>
     <mapID target="help.file.type" url="html/usage/file_type.html"/>

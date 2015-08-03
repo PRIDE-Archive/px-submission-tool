@@ -155,7 +155,7 @@ public class WelcomeForm extends Form {
         titlePanel.add(titleLabel);
         titlePanel.add(Box.createRigidArea(new Dimension(5, 5)));
         if (recommend) {
-            JLabel refLabel = new JLabel(" (recommend)");
+            JLabel refLabel = new JLabel(" (recommended)");
             refLabel.setForeground(Color.green);
             refLabel.setFont(refLabel.getFont().deriveFont(18f).deriveFont(Font.BOLD));
             titlePanel.add(refLabel);
