@@ -88,16 +88,14 @@ public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor 
     }
 
     private void getPrideUserDetail(PrideLoginForm form) {
-        String userName = form.getUserName();
-        char[] password = form.getPassword();
-
+        String username = form.getUserName().trim();
+        String password = new String (form.getPassword()).trim();
         // record user name and password
         SubmissionRecord submissionRecord = appContext.getSubmissionRecord();
-        submissionRecord.setUserName(userName);
-        submissionRecord.setPassword(new String(password));
-
+        submissionRecord.setUserName(username);
+        submissionRecord.setPassword(password);
         // launch a new task for login
-        Task task = new GetPrideUserDetailTask(userName, password);
+        Task task = new GetPrideUserDetailTask(username, password.toCharArray());
         task.addTaskListener(this);
         task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
         App.getInstance().getDesktopContext().addTask(task);
