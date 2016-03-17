@@ -19,8 +19,6 @@ public class InstrumentSelectionModel extends AbstractMetadataComboSelectionMode
                 Constant.MS);
     }
 
-
-    @Override
     public void addItem(CvParam cvParam) {
         appContext.addInstrument(cvParam);
     }

@@ -3,6 +3,11 @@ package uk.ac.ebi.pride.gui.form.combo.model;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.data.model.CvParam;
 import uk.ac.ebi.pride.data.util.Constant;
+import uk.ac.ebi.pride.utilities.ols.web.service.model.Identifier;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Combo box model for species selection
@@ -19,7 +24,6 @@ public class SpeciesSelectionModel extends AbstractMetadataComboSelectionModel {
                 Constant.PSI_MOD);
     }
 
-    @Override
     public void addItem(CvParam cvParam) {
         appContext.addSpecies(cvParam);
     }
