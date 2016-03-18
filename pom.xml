@@ -24,7 +24,7 @@
     </licenses>
 
     <organization>
-        <name>European Bioinformatics Institute</name>
+        <name>EMBL-European Bioinformatics Institute</name>
         <url>http://www.ebi.ac.uk</url>
     </organization>
 
@@ -42,7 +42,7 @@
         <developer>
             <id>tobias</id>
             <name>Tobias Ternent</name>
-            <organization>Proteomics Services Team, PANDA Group, EMBL-European Bioinformatics Institute</organization>
+            <organization>Proteomics, EMBL-European Bioinformatics Institute</organization>
             <organizationUrl>http://www.ebi.ac.uk/pride</organizationUrl>
             <roles>
                 <role>developer</role>
