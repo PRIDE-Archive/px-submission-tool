@@ -300,7 +300,7 @@ stop.upload.dialog.title = Warning
 stop.upload.dialog.message = You are about to stop the current submission upload, are you sure?
 submission.complete.large.icon = icon/64x64/idea.png
 submission.complete.title = Your submission reference:
-submission.complete.message = <html>Please note: your submission reference is only a temporary identifier. <br/>You will receive an confirmation email shortly with all the relevant details, please reply to the email if you have any questions about your submission.</html>
+submission.complete.message = <html>Please note: your submission reference is <b>not<b/> an accession number.<br/>You will receive an confirmation email shortly with details, please reply to it if you have any questions about your submission.</html>
 upload.method.title = Fast upload
 upload.method.message = Would you like to use our fast upload service?
 
