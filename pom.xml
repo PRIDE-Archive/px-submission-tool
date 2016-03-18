@@ -11,7 +11,7 @@
     <parent>
         <groupId>uk.ac.ebi.pride.maven</groupId>
         <artifactId>pride-base-master</artifactId>
-        <version>1.0.3</version>
+        <version>1.0.4-SNAPSHOT</version>
     </parent>
 
     <licenses>
@@ -56,18 +56,11 @@
         <jmzidentml.version>1.2.0</jmzidentml.version>
         <pride.jaxb.version>1.0.12</pride.jaxb.version>
         <pride.utilities.version>0.1.17</pride.utilities.version>
-        <swingx.version>1.6.1</swingx.version>
-        <balloontip.version>1.2</balloontip.version>
-        <apache.commons.net.version>3.3</apache.commons.net.version>
-        <apache.http.client>4.2.1</apache.http.client>
-        <java.mail.version>1.4.4</java.mail.version>
-        <java.help.version>2.0.02</java.help.version>
         <px.submission.core.version>2.0.9</px.submission.core.version>
-        <pride.web.utils.version>1.3.8</pride.web.utils.version>
+        <pride.web.utils.version>1.3.11</pride.web.utils.version>
         <ols.dialog.version>3.4.4-SNAPSHOT</ols.dialog.version>
         <archive.submission.model.version>1.0.0</archive.submission.model.version>
         <archive.data.provider.api.version>2.0.6</archive.data.provider.api.version>
-        <aspera-faspmanager.version>2.7.0.42750</aspera-faspmanager.version>
     </properties>
 
     <dependencies>
@@ -76,7 +69,6 @@
             <artifactId>archive-data-provider-api</artifactId>
             <version>${archive.data.provider.api.version}</version>
         </dependency>
-
         <dependency>
             <groupId>uk.ac.ebi.pride.archive</groupId>
             <artifactId>archive-submission-model</artifactId>
@@ -88,53 +80,44 @@
             <artifactId>pride-web-utils</artifactId>
             <version>${pride.web.utils.version}</version>
         </dependency>
-
         <!-- pride xml jaxb library-->
         <dependency>
             <groupId>uk.ac.ebi.pride.jaxb</groupId>
             <artifactId>pride-jaxb</artifactId>
             <version>${pride.jaxb.version}</version>
         </dependency>
-
         <!-- pride utility classes-->
         <dependency>
             <groupId>uk.ac.ebi.pride</groupId>
             <artifactId>pride-utilities</artifactId>
             <version>${pride.utilities.version}</version>
         </dependency>
-
         <!-- swing related libraries-->
         <dependency>
             <groupId>org.swinglabs</groupId>
             <artifactId>swingx</artifactId>
-            <version>${swingx.version}</version>
+            <version>1.6.1</version>
         </dependency>
         <dependency>
             <groupId>net.java.balloontip</groupId>
             <artifactId>balloontip</artifactId>
-            <version>${balloontip.version}</version>
+            <version>1.2</version>
         </dependency>
         <dependency>
             <groupId>commons-net</groupId>
             <artifactId>commons-net</artifactId>
-            <version>${apache.commons.net.version}</version>
-        </dependency>
-        <!-- apache commons httpcomponents-->
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>${apache.http.client}</version>
+            <version>3.4</version>
         </dependency>
         <dependency>
             <groupId>javax.mail</groupId>
-            <artifactId>mail</artifactId>
-            <version>${java.mail.version}</version>
+            <artifactId>javax.mail-api</artifactId>
+            <version>1.5.5</version>
         </dependency>
         <!-- javaHelp -->
         <dependency>
             <groupId>javax.help</groupId>
             <artifactId>javahelp</artifactId>
-            <version>${java.help.version}</version>
+            <version>2.0.05</version>
         </dependency>
         <!-- submission core -->
         <dependency>
@@ -148,12 +131,11 @@
             <artifactId>ols-dialog</artifactId>
             <version>${ols.dialog.version}</version>
         </dependency>
-
         <!--Aspera manager-->
         <dependency>
             <groupId>com.asperasoft</groupId>
             <artifactId>aspera-faspmanager</artifactId>
-            <version>${aspera-faspmanager.version}</version>
+            <version>2.7.0.42750</version>
         </dependency>
     </dependencies>
 
@@ -167,17 +149,8 @@
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.5.1</version>
-                <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>2.8</version>
+                <version>2.10</version>
                 <executions>
                     <execution>
                         <id>copy-dependency</id>
@@ -198,7 +171,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>2.4</version>
+                <version>2.6</version>
                 <configuration>
                     <!-- comment exclusion section out if want to run batch dbtest -->
                     <excludes>
@@ -224,7 +197,7 @@
             </plugin>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.4</version>
+                <version>2.6</version>
                 <configuration>
                     <appendAssemblyId>false</appendAssemblyId>
                     <descriptors>
@@ -243,20 +216,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <repositories>
-        <repository>
-            <id>nexus-ebi-repo-old</id>
-            <url>http://www.ebi.ac.uk/intact/maven/nexus/content/repositories/ebi-repo/</url>
-        </repository>
-        <repository>
-            <id>nexus-ebi-release-repo</id>
-            <url>http://www.ebi.ac.uk/Tools/maven/repos/content/groups/ebi-repo/</url>
-        </repository>
-        <repository>
-            <id>nexus-ebi-snapshot-repo</id>
-            <url>http://www.ebi.ac.uk/Tools/maven/repos/content/groups/ebi-snapshots/</url>
-        </repository>
-    </repositories>
-
 </project>
