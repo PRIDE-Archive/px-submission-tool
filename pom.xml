@@ -9,9 +9,9 @@
     <name>px-submission-tool</name>
 
     <parent>
-        <groupId>uk.ac.ebi.pride.maven</groupId>
-        <artifactId>pride-base-master</artifactId>
-        <version>1.0.4-SNAPSHOT</version>
+    <groupId>uk.ac.ebi.pride.maven</groupId>
+    <artifactId>pride-base-master</artifactId>
+    <version>1.0.4-SNAPSHOT</version>
     </parent>
 
     <licenses>
