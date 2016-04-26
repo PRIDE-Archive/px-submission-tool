@@ -105,6 +105,15 @@ public class App extends Desktop {
     }
 
     /**
+     * Check whether it is Windows platform
+     *
+     * @return boolean  true means it is running on windows
+     */
+    private boolean isWindowsPlatform() {
+        return System.getProperty("os.name").startsWith("Windows");
+    }
+
+    /**
      * Build the main display frame and set the look and feel
      */
     private void buildMainFrame() {
@@ -112,9 +121,13 @@ public class App extends Desktop {
         mainFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
         // set look and feel
+        String lookAndFeel = "Nimbus";
+        if (!isWindowsPlatform()) {
+            lookAndFeel = "Mac OS X";
+        }
         try {
             for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
-                if ("Nimbus".equals(info.getName())) {
+                if (lookAndFeel.equals(info.getName())) {
                     UIManager.setLookAndFeel(info.getClassName());
                     break;
                 }

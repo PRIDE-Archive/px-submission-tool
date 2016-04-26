@@ -137,12 +137,13 @@ public class SummaryItemPanel extends ContextAwarePanel implements PropertyChang
                 case SEARCH:
                     count[4]++;
                     break;
+                // Easy change for compacting code
                 case GEL:
-                    count[5]++;
-                    break;
+                   // count[5]++;
+                    //break;
                 case QUANT:
-                    count[5]++;
-                    break;
+                   // count[5]++;
+                  //  break;
                 case OTHER:
                     count[5]++;
                     break;

@@ -27,7 +27,7 @@ public class FakeFileFTPUploadTask extends TaskAdapter<Void, UploadMessage> {
         while(bytesTransferred <= fileSize) {
             publish(new UploadProgressMessage(this, dataFile, fileSize, bytesTransferred));
             bytesTransferred += 2000;
-            Thread.sleep(100);
+            Thread.sleep(10);
         }
 
         publish(new UploadFileSuccessMessage(this, dataFile));
