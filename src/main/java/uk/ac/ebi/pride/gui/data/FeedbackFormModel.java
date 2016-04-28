@@ -80,6 +80,7 @@ public class FeedbackFormModel {
         if (feedbackProvided) {
             // TODO - Do send feedback
             logger.debug("Submitting feedback from user...");
+            logger.info("User feedback for submission reference '" + submissionRef + "', rating '" + rating + "', comments '" + comment + "'");
         }
         return true;
     }
