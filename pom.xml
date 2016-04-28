@@ -153,6 +153,12 @@
             <artifactId>commons-codec</artifactId>
             <version>LATEST</version>
         </dependency>
+        <!-- Placeholder text for components -->
+        <dependency>
+            <groupId>org.swinglabs</groupId>
+            <artifactId>swingx</artifactId>
+            <version>LATEST</version>
+        </dependency>
     </dependencies>
 
     <build>

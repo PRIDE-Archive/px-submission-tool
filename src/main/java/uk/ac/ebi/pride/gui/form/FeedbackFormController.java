@@ -1,9 +1,11 @@
 package uk.ac.ebi.pride.gui.form;
 
+import org.jdesktop.swingx.prompt.PromptSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.gui.GUIUtilities;
+import uk.ac.ebi.pride.gui.data.FeedbackFormModel;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -24,7 +26,7 @@ public class FeedbackFormController extends Form {
     private static final Logger logger = LoggerFactory.getLogger(SubmissionForm.class);
 
     // Submission data
-    private String submissionRef;
+    private FeedbackFormModel model;
 
     // Form components
     JPanel feedbackFramePanel;
@@ -33,7 +35,7 @@ public class FeedbackFormController extends Form {
     JPanel additionalFeedbackInfoPanel;
 
     public FeedbackFormController(String subRef) {
-        submissionRef = subRef;
+        model = new FeedbackFormModel(subRef);
         initComponents();
     }
 
@@ -116,6 +118,10 @@ public class FeedbackFormController extends Form {
         JTextArea feedbackAdditionalInfoText = new JTextArea(7, 1);
         feedbackAdditionalInfoText.setLineWrap(true);
         feedbackAdditionalInfoText.setWrapStyleWord(true);
+        PromptSupport.setPrompt(App.getInstance().getDesktopContext().getProperty("feedback.form.comments.placeholder_text"), feedbackAdditionalInfoText);
+        PromptSupport.setFocusBehavior(PromptSupport.FocusBehavior.HIDE_PROMPT, feedbackAdditionalInfoText);
+        PromptSupport.setFontStyle(Font.ITALIC, feedbackAdditionalInfoText);
+        PromptSupport.setForeground(Color.LIGHT_GRAY, feedbackAdditionalInfoText);
         JScrollPane fbAdditionalInfoScrollPane = new JScrollPane(feedbackAdditionalInfoText);
         //fbAdditionalInfoScrollPane.setAutoscrolls(true);
         // Attach elements to panel

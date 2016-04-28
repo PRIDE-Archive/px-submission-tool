@@ -383,10 +383,4 @@ feedback.form.rate.good.icon = icon/64x64/face-3.png
 feedback.form.rate.good.tooltip = <html><p>Click here to report a <strong>Good</strong> submission experience</p></html>
 feedback.form.rate.very_good.icon = icon/64x64/face-4.png
 feedback.form.rate.very_good.tooltip = <html><p>Click here to report a <strong>Very Good</strong> submission experience</p></html>
-
-
-
-
-
-
-
+feedback.form.comments.placeholder_text = Click here to provide more detailed feedback
