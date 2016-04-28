@@ -143,13 +143,14 @@ public class FeedbackFormController extends Form {
         if (!model.isFeedbackProvided() && !model.isFeedbackProvisionRejected()) {
             // TODO Prompt the user to provide some feedback
             int result = JOptionPane.showConfirmDialog((Component) null, App.getInstance().getDesktopContext().getProperty("feedback.form.confirmation_dialog.message"),
-                    "Feedback", JOptionPane.YES_NO_OPTION);
+                    "Feedback", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.confirmation_dialog.icon")));
             if (result == 1) {
                 return true;
             }
             return false;
         }
         if (model.isFeedbackProvided()) {
+            // TODO - Retrieve the comments, if any
             return model.save();
         }
         return true;

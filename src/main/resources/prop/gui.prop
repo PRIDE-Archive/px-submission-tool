@@ -385,3 +385,4 @@ feedback.form.rate.very_good.icon = icon/64x64/face-4.png
 feedback.form.rate.very_good.tooltip = <html><p>Click here to report a <strong>Very Good</strong> submission experience</p></html>
 feedback.form.comments.placeholder_text = Click here to provide more detailed feedback
 feedback.form.confirmation_dialog.message = Would you like to provide us with some feedback about the submission process?
+feedback.form.confirmation_dialog.icon = icon/64x64/warning.png
