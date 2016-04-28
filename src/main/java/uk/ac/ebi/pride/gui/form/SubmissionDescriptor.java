@@ -64,7 +64,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
      * State indicates whether a submission has finished
      */
     private boolean isFinished = false;
-    private boolean isSuceed = false;
+    private boolean isSucceed = false;
 
     public SubmissionDescriptor(String id, String title, String desc) {
         super(id, title, desc, new SubmissionForm());
@@ -182,8 +182,11 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         logger.debug("SubmissionDescriptor::beforeHidingForPreviousPanel() - call");
         if (isFinished) {
             //clearSubmissionRecord();
+            // We don't check for isSucceed because isFinished is only set when the upload finished with success
             logger.debug("SubmissionDescriptor::beforeHidingForPreviousPanel() - call _ isfinished");
-            app.restart();
+            if (feedbackDescriptor.beforeHidingForPreviousPanel()) {
+                app.restart();
+            }
         } else {
             logger.debug("SubmissionDescriptor::beforeHidingForPreviousPanel() - call _ cancelUpload()");
             cancelUpload();
@@ -214,7 +217,8 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
     public void beforeHidingForNextPanel() {
         // TODO - Hook for feedback data submission ?
         logger.debug("SubmissionDescriptor::beforeHidingForNextPanel() - call");
-        app.shutdown(null);
+        if (feedbackDescriptor.beforeHidingForNextPanel())
+            app.shutdown(null);
     }
 
     @Override
@@ -392,6 +396,34 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         // Form controlled by this descriptor
         private FeedbackFormController fbfController;
 
+        private boolean isFormSet() {
+            return fbfController != null;
+        }
+
+        /**
+         * This method performs the necessary clean and reset actions originally performed by the CompleteSubmissionTaskListener
+         */
+        private void cleanData() {
+            // removing submission record
+            SubmissionRecordSerializer.remove();
+            // reset application context
+            appContext.resetDataFileEntryCount();
+            SubmissionRecord newSubmissionRecord = new SubmissionRecord();
+            newSubmissionRecord.getSubmission().getProjectMetaData().setSubmissionType(SubmissionType.COMPLETE);
+            appContext.setSubmissionRecord(newSubmissionRecord);
+        }
+
+        private boolean submitFeedback() {
+            // If we haven't shown the feedback form, it is ok to change panel
+            if (!isFormSet())
+                return true;
+            if (fbfController.doSubmitFeedback()) {
+                cleanData();
+                return true;
+            }
+            return false;
+        }
+
         public FeedbackDescriptor() {
             fbfController = null;
         }
@@ -410,8 +442,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
          * @return true if it is OK to proceed, false if not
          */
         public boolean beforeHidingForPreviousPanel() {
-            // TODO
-            return true;
+            return submitFeedback();
         }
 
         /**
@@ -420,7 +451,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
          * @return
          */
         public boolean beforeHidingForNextPanel() {
-            return true;
+            return submitFeedback();
         }
     }
 
@@ -437,15 +468,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             feedbackDescriptor.setFeedbackFormController(form.showFeedbackMessage(stringTaskEvent.getValue().getReference()));
 
             isFinished = true;
-            isSuceed = true;
-
-            // removing submission record
-            SubmissionRecordSerializer.remove();
-            // reset application context
-            appContext.resetDataFileEntryCount();
-            SubmissionRecord newSubmissionRecord = new SubmissionRecord();
-            newSubmissionRecord.getSubmission().getProjectMetaData().setSubmissionType(SubmissionType.COMPLETE);
-            appContext.setSubmissionRecord(newSubmissionRecord);
+            isSucceed = true;
 
             firePropertyChange(BEFORE_FINISH_PROPERTY, false, true);
         }

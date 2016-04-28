@@ -60,6 +60,7 @@ public class FeedbackFormModel {
     }
 
     public void setRating(int rating) {
+        setFeedbackProvided(true);
         this.rating = rating;
     }
 
@@ -69,5 +70,17 @@ public class FeedbackFormModel {
 
     public void setFeedbackProvisionRejected(boolean feedbackProvisionRejected) {
         this.feedbackProvisionRejected = feedbackProvisionRejected;
+    }
+
+    public boolean save() {
+        if (!feedbackProvided && !feedbackProvisionRejected) {
+            logger.debug("No feedback has been provided, and the user didn't reject providing feedback.");
+            return false;
+        }
+        if (feedbackProvided) {
+            // TODO - Do send feedback
+            logger.debug("Submitting feedback from user...");
+        }
+        return true;
     }
 }

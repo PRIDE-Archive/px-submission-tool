@@ -138,4 +138,20 @@ public class FeedbackFormController extends Form {
         form.revalidate();
         form.repaint();
     }
+
+    public boolean doSubmitFeedback() {
+        if (!model.isFeedbackProvided() && !model.isFeedbackProvisionRejected()) {
+            // TODO Prompt the user to provide some feedback
+            int result = JOptionPane.showConfirmDialog((Component) null, App.getInstance().getDesktopContext().getProperty("feedback.form.confirmation_dialog.message"),
+                    "Feedback", JOptionPane.YES_NO_OPTION);
+            if (result == 1) {
+                return true;
+            }
+            return false;
+        }
+        if (model.isFeedbackProvided()) {
+            return model.save();
+        }
+        return true;
+    }
 }
