@@ -8,7 +8,6 @@ import uk.ac.ebi.pride.gui.form.comp.HeaderPanel;
 import uk.ac.ebi.pride.gui.util.BorderUtil;
 
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -229,105 +228,22 @@ public class SubmissionForm extends Form implements ActionListener {
         this.repaint();
 
         // Show feeback capture panel
-        this.showFeedbackMessage(submissionRef);
+        //this.showFeedbackMessage(submissionRef);
     }
 
     // Feedback submission feature
 
-    public void showFeedbackMessage(String submissionRef) {
+    public FeedbackFormController showFeedbackMessage(String submissionRef) {
         // Put the upload bar on the northern border
         this.remove(this.progPanel);
         this.add(this.progPanel, BorderLayout.NORTH);
 
-        // Feedback Frame panel providing panel position and padding
-        JPanel feedbackFramePanel = new JPanel(new BorderLayout());
-        feedbackFramePanel.setBorder(new EmptyBorder(20, 0, 10, 0));
-        feedbackFramePanel.setPreferredSize(new Dimension(500, 200));
+        // TODO - Delegate the rest of the code to the FeedbackFormController
+        // Callback
+        FeedbackFormController fbfController = new FeedbackFormController(submissionRef);
+        fbfController.addToParentForm(this, BorderLayout.CENTER);
 
-        // Feedback Main panel, contains the actual feedback components
-        JPanel feedbackMainPanel = new JPanel(new BorderLayout());
-        //feedbackMainPanel.setBackground(Color.LIGHT_GRAY);
-
-        // Title for feedback
-        // WARNING - This component has been removed from the final version of the panel
-        // JLabel formTitle = new JLabel();
-        // formTitle.setBorder(new EmptyBorder(5, 10, 0, 0));
-        // formTitle.setHorizontalAlignment(SwingConstants.LEFT);
-        // formTitle.setVerticalAlignment(SwingConstants.TOP);
-        // formTitle.setFont(formTitle.getFont().deriveFont(16f));
-        // formTitle.setText(App.getInstance().getDesktopContext().getProperty("feedback.form.title"));
-        // Add it to the main panel
-        //feedbackMainPanel.add(formTitle, BorderLayout.NORTH);
-
-        // Rating Panel
-        JPanel ratingPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        ratingPanel.setBorder(new EmptyBorder(5, 5, 0, 5));
-        ratingPanel.setOpaque(false);
-        // Smiley buttons
-        // Very bad experience
-        Icon veryBadExperienceIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.very_bad.icon"));
-        JRadioButton veryBadExperienceButton = new JRadioButton(veryBadExperienceIcon);
-        veryBadExperienceButton.setOpaque(false);
-        veryBadExperienceButton.setToolTipText(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.very_bad.tooltip"));
-        // Bad experience
-        Icon badExperienceIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.bad.icon"));
-        JRadioButton badExperienceButton = new JRadioButton(badExperienceIcon);
-        badExperienceButton.setToolTipText(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.bad.tooltip"));
-        badExperienceButton.setOpaque(false);
-        // Neutral experience
-        Icon neutralExperienceIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.neutral.icon"));
-        JRadioButton neutralExperienceButton = new JRadioButton(neutralExperienceIcon);
-        neutralExperienceButton.setToolTipText(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.neutral.tooltip"));
-        neutralExperienceButton.setOpaque(false);
-        neutralExperienceButton.setSelected(true);
-        // Good experience
-        Icon goodExperienceIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.good.icon"));
-        JRadioButton goodExperienceButton = new JRadioButton(goodExperienceIcon);
-        goodExperienceButton.setToolTipText(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.good.tooltip"));
-        goodExperienceButton.setOpaque(false);
-        // Very good experience
-        Icon veryGoodExperienceIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.very_good.icon"));
-        JRadioButton veryGoodExperienceButton = new JRadioButton(veryGoodExperienceIcon);
-        veryGoodExperienceButton.setToolTipText(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.very_good.tooltip"));
-        veryGoodExperienceButton.setOpaque(false);
-        // Add buttons to the panel
-        ratingPanel.add(veryBadExperienceButton);
-        ratingPanel.add(badExperienceButton);
-        ratingPanel.add(neutralExperienceButton);
-        ratingPanel.add(goodExperienceButton);
-        ratingPanel.add(veryGoodExperienceButton);
-        // Radio buttons group
-        ButtonGroup ratingButtonsGroup = new ButtonGroup();
-        ratingButtonsGroup.add(veryBadExperienceButton);
-        ratingButtonsGroup.add(badExperienceButton);
-        ratingButtonsGroup.add(neutralExperienceButton);
-        ratingButtonsGroup.add(goodExperienceButton);
-        ratingButtonsGroup.add(veryGoodExperienceButton);
-        // TEST
-        //veryBadExperienceButton.setBorderPainted(true);
-        //veryBadExperienceButton.setBorder(BorderFactory.createLoweredBevelBorder());
-        // Add rating panel to main panel
-        feedbackMainPanel.add(ratingPanel, BorderLayout.CENTER);
-
-        // Additional comments
-        JPanel additionalFeedbackInfoPanel = new JPanel(new BorderLayout());
-        additionalFeedbackInfoPanel.setBorder(new EmptyBorder(0, 5, 15, 5));
-        additionalFeedbackInfoPanel.setOpaque(false);
-        // Text box
-        JTextArea feedbackAdditionalInfoText = new JTextArea(7, 1);
-        feedbackAdditionalInfoText.setLineWrap(true);
-        feedbackAdditionalInfoText.setWrapStyleWord(true);
-        JScrollPane fbAdditionalInfoScrollPane = new JScrollPane(feedbackAdditionalInfoText);
-        //fbAdditionalInfoScrollPane.setAutoscrolls(true);
-        // Attach elements to panel
-        additionalFeedbackInfoPanel.add(fbAdditionalInfoScrollPane, BorderLayout.CENTER);
-        // Add additional feedback panel to main feedback panel
-        feedbackMainPanel.add(additionalFeedbackInfoPanel, BorderLayout.SOUTH);
-
-        // Add main panel to frame panel
-        feedbackFramePanel.add(feedbackMainPanel, BorderLayout.CENTER);
-        this.add(feedbackFramePanel, BorderLayout.CENTER);
-        this.revalidate();
-        this.repaint();
+        // Return the feedback subform controller (aka form)
+        return fbfController;
     }
 }

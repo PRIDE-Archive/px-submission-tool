@@ -56,9 +56,15 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
     private CompleteSubmissionTaskListener completeSubmissionTaskListener;
 
     /**
+     * This is the controller that will take care of the feedback submission from the point of view of a Descriptor
+     */
+    private FeedbackDescriptor feedbackDescriptor;
+
+    /**
      * State indicates whether a submission has finished
      */
-    private boolean isFinished;
+    private boolean isFinished = false;
+    private boolean isSuceed = false;
 
     public SubmissionDescriptor(String id, String title, String desc) {
         super(id, title, desc, new SubmissionForm());
@@ -67,6 +73,8 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         this.uploadTaskListener = new UploadTaskListener();
         this.completeSubmissionTaskListener = new CompleteSubmissionTaskListener();
         this.createFTPDirectoryTaskListener = new CreateFTPDirectoryTaskListener();
+        this.feedbackDescriptor = new FeedbackDescriptor();
+
 
         // add property change listener
         SubmissionForm form = (SubmissionForm) SubmissionDescriptor.this.getNavigationPanel();
@@ -170,10 +178,14 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         logger.debug("Before hiding for previous panel");
 
         // show a option dialog to warning user that the download will be stopped
+        // TODO - Hook for feedback data submission ?
+        logger.debug("SubmissionDescriptor::beforeHidingForPreviousPanel() - call");
         if (isFinished) {
             //clearSubmissionRecord();
+            logger.debug("SubmissionDescriptor::beforeHidingForPreviousPanel() - call _ isfinished");
             app.restart();
         } else {
+            logger.debug("SubmissionDescriptor::beforeHidingForPreviousPanel() - call _ cancelUpload()");
             cancelUpload();
         }
     }
@@ -200,6 +212,8 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
 
     @Override
     public void beforeHidingForNextPanel() {
+        // TODO - Hook for feedback data submission ?
+        logger.debug("SubmissionDescriptor::beforeHidingForNextPanel() - call");
         app.shutdown(null);
     }
 
@@ -372,6 +386,45 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
     }
 
     /**
+     * Feedback form Controller, at descriptor level
+     */
+    private class FeedbackDescriptor {
+        // Form controlled by this descriptor
+        private FeedbackFormController fbfController;
+
+        public FeedbackDescriptor() {
+            fbfController = null;
+        }
+
+        public FeedbackFormController getFeedbackFormController() {
+            return fbfController;
+        }
+
+        public void setFeedbackFormController(FeedbackFormController fbfController) {
+            this.fbfController = fbfController;
+        }
+
+        /**
+         * The main submission descriptor will delegate on this method whether to proceed or not with the given action
+         * request
+         * @return true if it is OK to proceed, false if not
+         */
+        public boolean beforeHidingForPreviousPanel() {
+            // TODO
+            return true;
+        }
+
+        /**
+         * The main submission descriptor will delegate on this method whether to proceed or not with the given action
+         * request
+         * @return
+         */
+        public boolean beforeHidingForNextPanel() {
+            return true;
+        }
+    }
+
+    /**
      * Complete submission task listener
      */
     private class CompleteSubmissionTaskListener extends TaskListenerAdapter<SubmissionReferenceDetail, String> {
@@ -380,8 +433,11 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         public void succeed(TaskEvent<SubmissionReferenceDetail> stringTaskEvent) {
             SubmissionForm form = (SubmissionForm) SubmissionDescriptor.this.getNavigationPanel();
             form.showCompletionMessage(stringTaskEvent.getValue().getReference());
+            // Show feedback submission form
+            feedbackDescriptor.setFeedbackFormController(form.showFeedbackMessage(stringTaskEvent.getValue().getReference()));
 
             isFinished = true;
+            isSuceed = true;
 
             // removing submission record
             SubmissionRecordSerializer.remove();
