@@ -77,39 +77,47 @@ public class FeedbackFormController extends Form implements ActionListener {
         ratingPanel.setOpaque(false);
         // Smiley buttons
         // Very bad experience
-        Icon veryBadExperienceIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.very_bad.icon"));
-        JRadioButton veryBadExperienceButton = new JRadioButton(veryBadExperienceIcon);
+        JRadioButton veryBadExperienceButton = new JRadioButton(GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.very_bad.icon.not_selected")));
+        veryBadExperienceButton.setSelectedIcon(GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.very_bad.icon.selected")));
+        veryBadExperienceButton.setRolloverIcon(GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.very_bad.icon.not_selected.rollover")));
+        veryBadExperienceButton.setRolloverEnabled(true);
         veryBadExperienceButton.setOpaque(true);
         veryBadExperienceButton.setToolTipText(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.very_bad.tooltip"));
         veryBadExperienceButton.setActionCommand(RATING_BUTTON_ACTION_VERY_BAD);
-        //veryBadExperienceButton.setBorder(BorderFactory.createRaisedSoftBevelBorder());
-        //veryBadExperienceButton.setBorderPainted(true);
         veryBadExperienceButton.addActionListener(this);
         // Bad experience
-        Icon badExperienceIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.bad.icon"));
-        JRadioButton badExperienceButton = new JRadioButton(badExperienceIcon);
+        JRadioButton badExperienceButton = new JRadioButton(GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.bad.icon.not_selected")));
+        badExperienceButton.setSelectedIcon(GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.bad.icon.selected")));
+        badExperienceButton.setRolloverIcon(GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.bad.icon.not_selected.rollover")));
+        badExperienceButton.setRolloverEnabled(true);
         badExperienceButton.setToolTipText(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.bad.tooltip"));
         badExperienceButton.setOpaque(false);
         badExperienceButton.setActionCommand(RATING_BUTTON_ACTION_BAD);
         badExperienceButton.addActionListener(this);
         // Neutral experience
-        Icon neutralExperienceIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.neutral.icon"));
-        JRadioButton neutralExperienceButton = new JRadioButton(neutralExperienceIcon);
+        JRadioButton neutralExperienceButton = new JRadioButton(GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.neutral.icon.not_selected")));
+        neutralExperienceButton.setSelectedIcon(GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.neutral.icon.selected")));
+        neutralExperienceButton.setRolloverIcon(GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.neutral.icon.not_selected.rollover")));
+        neutralExperienceButton.setRolloverEnabled(true);
         neutralExperienceButton.setToolTipText(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.neutral.tooltip"));
         neutralExperienceButton.setOpaque(false);
         neutralExperienceButton.setSelected(true);
         neutralExperienceButton.setActionCommand(RATING_BUTTON_ACTION_NEUTRAL);
         neutralExperienceButton.addActionListener(this);
         // Good experience
-        Icon goodExperienceIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.good.icon"));
-        JRadioButton goodExperienceButton = new JRadioButton(goodExperienceIcon);
+        JRadioButton goodExperienceButton = new JRadioButton(GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.good.icon.not_selected")));
+        goodExperienceButton.setSelectedIcon(GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.good.icon.selected")));
+        goodExperienceButton.setRolloverIcon(GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.good.icon.not_selected.rollover")));
+        goodExperienceButton.setRolloverEnabled(true);
         goodExperienceButton.setToolTipText(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.good.tooltip"));
         goodExperienceButton.setOpaque(false);
         goodExperienceButton.setActionCommand(RATING_BUTTON_ACTION_GOOD);
         goodExperienceButton.addActionListener(this);
         // Very good experience
-        Icon veryGoodExperienceIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.very_good.icon"));
-        JRadioButton veryGoodExperienceButton = new JRadioButton(veryGoodExperienceIcon);
+        JRadioButton veryGoodExperienceButton = new JRadioButton(GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.very_good.icon.not_selected")));
+        veryGoodExperienceButton.setSelectedIcon(GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.very_good.icon.selected")));
+        veryGoodExperienceButton.setRolloverIcon(GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.very_good.icon.not_selected.rollover")));
+        veryGoodExperienceButton.setRolloverEnabled(true);
         veryGoodExperienceButton.setToolTipText(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.very_good.tooltip"));
         veryGoodExperienceButton.setOpaque(false);
         veryGoodExperienceButton.setActionCommand(RATING_BUTTON_ACTION_VERY_GOOD);
@@ -127,6 +135,7 @@ public class FeedbackFormController extends Form implements ActionListener {
         ratingButtonsGroup.add(neutralExperienceButton);
         ratingButtonsGroup.add(goodExperienceButton);
         ratingButtonsGroup.add(veryGoodExperienceButton);
+        ratingButtonsGroup.clearSelection();
         // TEST
         //veryBadExperienceButton.setBorderPainted(true);
         //veryBadExperienceButton.setBorder(BorderFactory.createLoweredBevelBorder());
@@ -173,12 +182,11 @@ public class FeedbackFormController extends Form implements ActionListener {
     }
 
     private void applyRadioSelectionStyle(AbstractButton b) {
-        b.setBorder(BorderFactory.createLoweredBevelBorder());
-        b.setBorderPainted(true);
+        //b.setRolloverEnabled(false);
     }
 
     private void applyRadioDeselectedStyle(AbstractButton b) {
-        b.setBorderPainted(false);
+        //b.setRolloverEnabled(true);
     }
 
     private void updateRadioButtonsAspect() {
