@@ -79,9 +79,11 @@ public class FeedbackFormController extends Form implements ActionListener {
         // Very bad experience
         Icon veryBadExperienceIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.very_bad.icon"));
         JRadioButton veryBadExperienceButton = new JRadioButton(veryBadExperienceIcon);
-        veryBadExperienceButton.setOpaque(false);
+        veryBadExperienceButton.setOpaque(true);
         veryBadExperienceButton.setToolTipText(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.very_bad.tooltip"));
         veryBadExperienceButton.setActionCommand(RATING_BUTTON_ACTION_VERY_BAD);
+        //veryBadExperienceButton.setBorder(BorderFactory.createRaisedSoftBevelBorder());
+        //veryBadExperienceButton.setBorderPainted(true);
         veryBadExperienceButton.addActionListener(this);
         // Bad experience
         Icon badExperienceIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.rate.bad.icon"));
@@ -161,18 +163,12 @@ public class FeedbackFormController extends Form implements ActionListener {
     }
 
     public boolean doSubmitFeedback() {
-        if (!model.isFeedbackProvided() && !model.isFeedbackProvisionRejected()) {
-            int result = JOptionPane.showConfirmDialog((Component) null, App.getInstance().getDesktopContext().getProperty("feedback.form.confirmation_dialog.message"),
-                    "Feedback", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE, GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.confirmation_dialog.icon")));
-            if (result == 1) {
-                return true;
-            }
+        if (!model.isFeedbackProvided() ) {
+            JOptionPane.showMessageDialog((Component) null, App.getInstance().getDesktopContext().getProperty("feedback.form.confirmation_dialog.message"),
+                    "Feedback", JOptionPane.OK_OPTION, GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.confirmation_dialog.icon")));
             return false;
         }
-        if (model.isFeedbackProvided()) {
-            // TODO - Retrieve the comments, if any
-            return model.save();
-        }
+        model.save();
         return true;
     }
 
