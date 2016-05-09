@@ -116,9 +116,13 @@ public class App extends Desktop {
             for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
                     UIManager.setLookAndFeel(info.getClassName());
+                    LookAndFeel lookAndFeel = UIManager.getLookAndFeel();
+                    UIDefaults defaults = lookAndFeel.getDefaults();
+                    defaults.put("ScrollBar.minimumThumbSize", new Dimension(30, 30));
                     break;
                 }
             }
+
 
         } catch (Exception e) {
             logger.error("Failed to load nimbus look and feel for the application", e);
