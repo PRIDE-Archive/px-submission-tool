@@ -4,7 +4,7 @@
     <groupId>uk.ac.ebi.pride.px</groupId>
     <artifactId>px-submission-tool</artifactId>
     <packaging>jar</packaging>
-    <version>2.3.2-SNAPSHOT</version>
+    <version>2.3.1-SNAPSHOT</version>
     <name>px-submission-tool</name>
     <url>https://github.com/proteomexchange/px-submission-tool</url>
 
@@ -237,6 +237,22 @@
                     <remoteTagging>true</remoteTagging>
                     <goals>deploy</goals>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.9</version>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
+                        <configuration>
+                            <additionalparam>-Xdoclint:none</additionalparam>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
