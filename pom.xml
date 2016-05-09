@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>uk.ac.ebi.pride.px</groupId>
     <artifactId>px-submission-tool</artifactId>
     <packaging>jar</packaging>
-    <version>2.3.1-SNAPSHOT</version>
+    <version>2.3.1</version>
     <name>px-submission-tool</name>
     <url>https://github.com/proteomexchange/px-submission-tool</url>
 
@@ -266,7 +265,7 @@
         <connection>scm:git:https://github.com/proteomexchange/px-submission-tool.git</connection>
         <developerConnection>scm:git:https://github.com/proteomexchange/px-submission-tool.git</developerConnection>
         <url>https://github.com/proteomexchange/px-submission-tool.git</url>
-        <tag>HEAD</tag>
+        <tag>px-submission-tool-2.3.1</tag>
     </scm>
 
 </project>
