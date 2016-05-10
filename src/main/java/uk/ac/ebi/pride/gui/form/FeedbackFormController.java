@@ -43,6 +43,7 @@ public class FeedbackFormController extends Form implements ActionListener {
     JPanel feedbackMainPanel;
     JPanel ratingPanel;
     JPanel additionalFeedbackInfoPanel;
+    JTextArea feedbackAdditionalInfoText;
     ButtonGroup ratingButtonsGroup;
 
     public FeedbackFormController(String subRef) {
@@ -147,7 +148,7 @@ public class FeedbackFormController extends Form implements ActionListener {
         additionalFeedbackInfoPanel.setBorder(new EmptyBorder(0, 5, 15, 5));
         additionalFeedbackInfoPanel.setOpaque(false);
         // Text box
-        JTextArea feedbackAdditionalInfoText = new JTextArea(7, 1);
+        feedbackAdditionalInfoText = new JTextArea(7, 1);
         feedbackAdditionalInfoText.setLineWrap(true);
         feedbackAdditionalInfoText.setWrapStyleWord(true);
         PromptSupport.setPrompt(App.getInstance().getDesktopContext().getProperty("feedback.form.comments.placeholder_text"), feedbackAdditionalInfoText);
@@ -177,6 +178,7 @@ public class FeedbackFormController extends Form implements ActionListener {
                     "Feedback", JOptionPane.OK_OPTION, GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.confirmation_dialog.icon")));
             return false;
         }
+        model.setComment(feedbackAdditionalInfoText.getText());
         model.save();
         return true;
     }

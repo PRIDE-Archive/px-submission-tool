@@ -71,6 +71,7 @@
         <ols.dialog.version>3.4.4-SNAPSHOT</ols.dialog.version>
         <archive.submission.model.version>1.0.0</archive.submission.model.version>
         <archive.data.provider.api.version>2.0.6</archive.data.provider.api.version>
+        <project.output.dir>target/classes</project.output.dir>
     </properties>
 
     <dependencies>
@@ -159,13 +160,25 @@
             <artifactId>swingx</artifactId>
             <version>LATEST</version>
         </dependency>
+        <!-- PRIDE Reporting library -->
+        <dependency>
+            <groupId>uk.ac.ebi.pride.px</groupId>
+            <artifactId>libpxreport</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
     <build>
+        <directory>target</directory>
+        <outputDirectory>${project.output.dir}</outputDirectory>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
+            </resource>
+            <resource>
+                <directory>src/main/unfilteredResources</directory>
+                <filtering>false</filtering>
             </resource>
         </resources>
         <plugins>

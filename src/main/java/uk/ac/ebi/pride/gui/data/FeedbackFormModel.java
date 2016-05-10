@@ -2,6 +2,14 @@ package uk.ac.ebi.pride.gui.data;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.px.CompositeReport;
+import uk.ac.ebi.pride.px.ReportFactory;
+import uk.ac.ebi.pride.px.SubmissionRecordReport;
+import uk.ac.ebi.pride.px.UserFeedbackReport;
+import uk.ac.ebi.pride.px.reports.ReportBuilder;
+import uk.ac.ebi.pride.px.reports.ReportProduct;
+import uk.ac.ebi.pride.px.reports.builders.GoogleSpreadsheetBuilder;
 
 /**
  * Project: px-submission-tool
@@ -10,7 +18,7 @@ import org.slf4j.LoggerFactory;
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
- *
+ * <p>
  * ---
  * This is the model used by the FeedbackFormController, when providing user feedback at the end of the submission
  * process.
@@ -30,12 +38,11 @@ public class FeedbackFormModel {
     private boolean feedbackProvisionRejected = false;
 
     // Feedback information
-    private String submissionRef;
-    private int rating = -1;
-    private String comment = "";
+    private UserFeedbackReport userFeedbackReport = ReportFactory.getFactory().getUserFeedbackReport();
+    private SubmissionRecordReport submissionRecordReport = ReportFactory.getFactory().getSubmissionRecordReport();
 
     public FeedbackFormModel(String submissionRef) {
-        this.submissionRef = submissionRef;
+        submissionRecordReport.setSubmissionReference(submissionRef);
         logger.debug("FeedbackForm model created for submission reference " + submissionRef);
     }
 
@@ -48,11 +55,11 @@ public class FeedbackFormModel {
     }
 
     public int getRating() {
-        return rating;
+        return userFeedbackReport.getRating();
     }
 
     public String getComment() {
-        return comment;
+        return userFeedbackReport.getComments();
     }
 
     public void setFeedbackProvided(boolean feedbackProvided) {
@@ -61,11 +68,13 @@ public class FeedbackFormModel {
 
     public void setRating(int rating) {
         setFeedbackProvided(true);
-        this.rating = rating;
+        userFeedbackReport.setRating(rating);
+        logger.debug("Set user feedback rating to: " + rating);
     }
 
     public void setComment(String comment) {
-        this.comment = comment;
+        logger.debug("Setting comment to: '" + comment + "'");
+        userFeedbackReport.setComments(comment);
     }
 
     public void setFeedbackProvisionRejected(boolean feedbackProvisionRejected) {
@@ -73,15 +82,24 @@ public class FeedbackFormModel {
     }
 
     public boolean save() {
-        if (!feedbackProvided && !feedbackProvisionRejected) {
+        if (!feedbackProvided) {
             logger.debug("No feedback has been provided, and the user didn't reject providing feedback.");
             return false;
         }
-        if (feedbackProvided) {
-            // TODO - Do send feedback
-            logger.debug("Submitting feedback from user...");
-            logger.info("User feedback for submission reference '" + submissionRef + "', rating '" + rating + "', comments '" + comment + "'");
-        }
+        // TODO - Do send feedback
+        CompositeReport compositeReport = ReportFactory.getFactory().getCompositeReport();
+        compositeReport.add(submissionRecordReport);
+        compositeReport.add(userFeedbackReport);
+        ReportBuilder builder = new GoogleSpreadsheetBuilder(
+                App.getInstance().getDesktopContext().getProperty("libpxreport.keyfile.path"),
+                App.getInstance().getDesktopContext().getProperty("libpxreport.account.id"),
+                App.getInstance().getDesktopContext().getProperty("libpxreport.spreadsheet.title"),
+                App.getInstance().getDesktopContext().getProperty("libpxreport.spreadsheet.worksheet.title"),
+                App.getInstance().getDesktopContext().getProperty("libpxreport.client.service.name"));
+        compositeReport.save(builder);
+        ReportProduct product = builder.getProduct();
+        logger.debug("Submitting feedback from user...");
+        logger.info("User feedback for submission reference '" + submissionRecordReport.getSubmissionReference() + "', rating '" + getRating() + "', comments '" + getComment() + "'");
         return true;
     }
 }

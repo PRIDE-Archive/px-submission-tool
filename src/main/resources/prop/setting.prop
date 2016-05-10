@@ -52,3 +52,10 @@ aspera.xfer.cookie = PRIDE-Aspera-1-Cookie
 aspera.xfer.token = PRIDE-Aspera-1-Token
 aspera.xfer.preCalculateJobSize = false
 aspera.xfer.createPath = true
+
+# Report subsystem parameters
+libpxreport.keyfile.path = keyfiles/pride-submission-reports-e963f29e8d2a.p12
+libpxreport.client.service.name = libpxreport
+libpxreport.account.id = libpxreport@pride-submission-reports.iam.gserviceaccount.com
+libpxreport.spreadsheet.title = px-submission-tool_userFeedback
+libpxreport.spreadsheet.worksheet.title = mainSheet
