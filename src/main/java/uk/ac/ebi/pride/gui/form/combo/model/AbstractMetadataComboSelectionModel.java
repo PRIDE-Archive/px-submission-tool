@@ -75,7 +75,7 @@ public abstract class AbstractMetadataComboSelectionModel extends AbstractListMo
             if (anItem instanceof CvParam) {
                 addItem((CvParam) anItem);
             } else if (otherSelectionOption != null && otherSelectionOption.equals(anItem)) {
-                Map<String, List<Identifier>> preselectedOntologies = new HashMap<>();
+                final Map<String, List<Identifier>> preselectedOntologies = new HashMap<>();
                 if (((String) anItem).equalsIgnoreCase(appContext.getProperty("species.combobox.other.species"))) {
                     preselectedOntologies.put("ncbitaxon", null);
                     ontology = "ncbitaxon";
@@ -98,7 +98,11 @@ public abstract class AbstractMetadataComboSelectionModel extends AbstractListMo
                     preselectedOntologies.put("doid", null);
                     ontology = "doid";
                 }
-                Runnable run = () -> new OLSDialog(((App) App.getInstance()).getMainFrame(), AbstractMetadataComboSelectionModel.this, true, "", ontology, "", preselectedOntologies);
+                Runnable run = new Runnable() {
+                    @Override
+                    public void run() {
+                        new OLSDialog(((App) App.getInstance()).getMainFrame(), AbstractMetadataComboSelectionModel.this, true, "", ontology, "", preselectedOntologies);
+                    }};
                 EDTUtils.invokeLater(run);
             }
         }
