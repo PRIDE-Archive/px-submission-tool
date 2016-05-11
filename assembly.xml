@@ -61,5 +61,16 @@
                 <include>**/**</include>
             </includes>
         </fileSet>
+        <!-- Include access keys for Google API -->
+        <fileSet>
+            <directory>${project.basedir}/src/main/unfilteredResources/keyFiles</directory>
+            <outputDirectory>${assembly.dir}/keyFiles</outputDirectory>
+            <includes>
+                <include>**/**</include>
+            </includes>
+            <excludes>
+                <exclude>**/empty</exclude>
+            </excludes>
+        </fileSet>
     </fileSets>
 </assembly>

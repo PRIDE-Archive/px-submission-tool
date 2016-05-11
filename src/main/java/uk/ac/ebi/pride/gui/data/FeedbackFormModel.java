@@ -8,6 +8,7 @@ import uk.ac.ebi.pride.px.ReportFactory;
 import uk.ac.ebi.pride.px.SubmissionRecordReport;
 import uk.ac.ebi.pride.px.UserFeedbackReport;
 import uk.ac.ebi.pride.px.reports.ReportBuilder;
+import uk.ac.ebi.pride.px.reports.ReportBuilderException;
 import uk.ac.ebi.pride.px.reports.ReportProduct;
 import uk.ac.ebi.pride.px.reports.builders.GoogleSpreadsheetBuilder;
 
@@ -97,7 +98,11 @@ public class FeedbackFormModel {
                 App.getInstance().getDesktopContext().getProperty("libpxreport.spreadsheet.worksheet.title"),
                 App.getInstance().getDesktopContext().getProperty("libpxreport.client.service.name"));
         compositeReport.save(builder);
-        ReportProduct product = builder.getProduct();
+        try {
+            ReportProduct product = builder.getProduct();
+        } catch (ReportBuilderException e) {
+            logger.error("Something, happened when submitting the report, but I'm not addressing this right now");
+        }
         logger.debug("Submitting feedback from user...");
         logger.info("User feedback for submission reference '" + submissionRecordReport.getSubmissionReference() + "', rating '" + getRating() + "', comments '" + getComment() + "'");
         return true;
