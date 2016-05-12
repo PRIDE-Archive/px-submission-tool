@@ -25,6 +25,8 @@ import javax.swing.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.List;
+import java.util.Observable;
+import java.util.Observer;
 
 /**
  * Navigation descriptor for submission form
@@ -392,7 +394,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
     /**
      * Feedback form Controller, at descriptor level
      */
-    private class FeedbackDescriptor {
+    private class FeedbackDescriptor implements Observer {
         // Form controlled by this descriptor
         private FeedbackFormController fbfController;
 
@@ -434,6 +436,8 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
 
         public void setFeedbackFormController(FeedbackFormController fbfController) {
             this.fbfController = fbfController;
+            logger.debug("Registering for listening to window close event");
+            ((App)App.getInstance()).getCloseWindowListener().addObserver(this);
         }
 
         /**
@@ -452,6 +456,16 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
          */
         public boolean beforeHidingForNextPanel() {
             return submitFeedback();
+        }
+
+        @Override
+        public void update(Observable o, Object arg) {
+            // We have registered for just the close window subject, so we don't need to check which observer is
+            // notifying us
+            logger.debug("The user decided to close the application, let's see if we have feedback");
+            if (!submitFeedback()) {
+                ((App)App.getInstance()).setDoNotCloseAppFlag();
+            }
         }
     }
 

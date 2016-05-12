@@ -14,8 +14,11 @@ import javax.swing.*;
 import javax.swing.text.DefaultEditorKit;
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.io.File;
 import java.io.IOException;
+import java.util.Observable;
 
 /**
  * This is the entry point of the entire application
@@ -34,6 +37,59 @@ public class App extends Desktop {
      * Navigator panel
      */
     private Navigator navigator;
+
+    private boolean okToClose;
+
+    // Window Listener for performing possible pending operations before closing the application
+    private class AppCloseWindowListener extends Observable implements WindowListener {
+        @Override
+        public void windowOpened(WindowEvent e) {
+            //Empty
+        }
+
+        @Override
+        public void windowClosing(WindowEvent e) {
+            logger.debug("Notifying possible observers that there is a 'Window Closing' action taking place");
+            unsetDoNotCloseAppFlag();
+            setChanged();
+            notifyObservers();
+            if (isOkToClose()) {
+                mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            } else {
+                mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+            }
+            //mainFrame.setVisible(false);
+            //mainFrame.dispose();
+        }
+
+        @Override
+        public void windowClosed(WindowEvent e) {
+            //Empty
+        }
+
+        @Override
+        public void windowIconified(WindowEvent e) {
+            //Empty
+        }
+
+        @Override
+        public void windowDeiconified(WindowEvent e) {
+            //Empty
+        }
+
+        @Override
+        public void windowActivated(WindowEvent e) {
+            //Empty
+        }
+
+        @Override
+        public void windowDeactivated(WindowEvent e) {
+            //Empty
+        }
+    }
+
+    // Window Listener
+    private AppCloseWindowListener appCloseWindowListener = new AppCloseWindowListener();
 
     public static void main(String[] args) {
         Desktop.launch(App.class, AppContext.class, args);
@@ -119,6 +175,8 @@ public class App extends Desktop {
     private void buildMainFrame() {
         mainFrame = new JFrame();
         mainFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        //mainFrame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        mainFrame.addWindowListener(appCloseWindowListener);
 
         // set look and feel
         String lookAndFeel = "Nimbus";
@@ -277,6 +335,27 @@ public class App extends Desktop {
     @Override
     public void finish() {
         mainFrame.dispose();
+    }
+
+    // Get Window Listener
+    public Observable getCloseWindowListener() {
+        return appCloseWindowListener;
+    }
+
+    public void setDoNotCloseAppFlag() {
+        synchronized (this) {
+            okToClose = false;
+        }
+    }
+
+    public void unsetDoNotCloseAppFlag() {
+        synchronized (this) {
+            okToClose = true;
+        }
+    }
+
+    public boolean isOkToClose() {
+        return okToClose;
     }
 
     /**
