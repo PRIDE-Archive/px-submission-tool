@@ -185,10 +185,12 @@ public class FeedbackFormController extends Form implements ActionListener {
 
     private void applyRadioSelectionStyle(AbstractButton b) {
         //b.setRolloverEnabled(false);
+        //b.setBackground(Color.decode("#FF2400"));
     }
 
     private void applyRadioDeselectedStyle(AbstractButton b) {
         //b.setRolloverEnabled(true);
+        //b.setBackground(null);
     }
 
     private void updateRadioButtonsAspect() {

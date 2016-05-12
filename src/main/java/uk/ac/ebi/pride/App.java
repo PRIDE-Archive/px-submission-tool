@@ -124,21 +124,20 @@ public class App extends Desktop {
         String lookAndFeel = "Nimbus";
         if (!isWindowsPlatform()) {
             lookAndFeel = "Mac OS X";
-        }
-        try {
-            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
-                if (lookAndFeel.equals(info.getName())) {
-                    UIManager.setLookAndFeel(info.getClassName());
-                    LookAndFeel lookAndFeel = UIManager.getLookAndFeel();
-                    UIDefaults defaults = lookAndFeel.getDefaults();
-                    defaults.put("ScrollBar.minimumThumbSize", new Dimension(30, 30));
-                    break;
+        } else {
+            try {
+                for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                    if (lookAndFeel.equals(info.getName())) {
+                        UIManager.setLookAndFeel(info.getClassName());
+                        LookAndFeel laf = UIManager.getLookAndFeel();
+                        UIDefaults defaults = laf.getDefaults();
+                        defaults.put("ScrollBar.minimumThumbSize", new Dimension(30, 30));
+                        break;
+                    }
                 }
+            } catch (Exception e) {
+                logger.error("Failed to load nimbus look and feel for the application", e);
             }
-
-
-        } catch (Exception e) {
-            logger.error("Failed to load nimbus look and feel for the application", e);
         }
     }
 
