@@ -5,7 +5,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.gui.GUIUtilities;
+import uk.ac.ebi.pride.gui.blocker.DefaultGUIBlocker;
+import uk.ac.ebi.pride.gui.blocker.GUIBlocker;
 import uk.ac.ebi.pride.gui.data.FeedbackFormModel;
+import uk.ac.ebi.pride.gui.navigation.Navigator;
+import uk.ac.ebi.pride.gui.task.TaskAdapter;
+import uk.ac.ebi.pride.gui.task.TaskEvent;
+import uk.ac.ebi.pride.gui.task.TaskListenerAdapter;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -38,13 +44,32 @@ public class FeedbackFormController extends Form implements ActionListener {
     // Submission data
     private FeedbackFormModel model;
 
-    // Form components
-    JPanel feedbackFramePanel;
-    JPanel feedbackMainPanel;
-    JPanel ratingPanel;
-    JPanel additionalFeedbackInfoPanel;
-    JTextArea feedbackAdditionalInfoText;
-    ButtonGroup ratingButtonsGroup;
+    // Form components for user feedback collection
+    private JPanel feedbackFramePanel;
+    private JPanel feedbackMainPanel;
+    private JPanel ratingPanel;
+    private JPanel additionalFeedbackInfoPanel;
+    private JTextArea feedbackAdditionalInfoText;
+    private ButtonGroup ratingButtonsGroup;
+    // Components to tell user that feedback is being submitted
+    private JPanel feedbackSubmissionPanel;
+    private JLabel waitingIcon;
+    private JLabel submissionWaitingMessage;
+    // Successful submission of feedback
+    private JPanel feedbackSubmissionSuccessPanel;
+    private JLabel feedbackSubmissionSuccessMessage;
+    private JLabel feedbackSubmissionSuccessIcon;
+    // Failed feedback submission
+    private JPanel feedbackSubmissionFailPanel;
+    private JLabel feedbackSubmissionFailMessage;
+    private JLabel feedbackSubmissionFailIcon;
+
+    // Toggle between feedback panels
+    private boolean fpanelToggle = true;
+
+    // Prent form
+    private Form parentForm = null;
+    private Object constraints = null;
 
     public FeedbackFormController(String subRef) {
         model = new FeedbackFormModel(subRef);
@@ -161,31 +186,121 @@ public class FeedbackFormController extends Form implements ActionListener {
         additionalFeedbackInfoPanel.add(fbAdditionalInfoScrollPane, BorderLayout.CENTER);
         // Add additional feedback panel to main feedback panel
         feedbackMainPanel.add(additionalFeedbackInfoPanel, BorderLayout.SOUTH);
+        //feedbackMainPanel.setVisible(true);
+
+        // Submission panel
+        feedbackSubmissionPanel = new JPanel(new FlowLayout());
+        // Waiting icon
+        waitingIcon = new JLabel(GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.send.panel.icon")));
+        submissionWaitingMessage = new JLabel(App.getInstance().getDesktopContext().getProperty("feedback.send.panel.message.text"));
+        submissionWaitingMessage.setFont(submissionWaitingMessage.getFont().deriveFont(Float.parseFloat(App.getInstance().getDesktopContext().getProperty("feedback.send.panel.message.text.font.size"))));
+        // Add components to the panel
+        feedbackSubmissionPanel.add(waitingIcon);
+        feedbackSubmissionPanel.add(submissionWaitingMessage);
+        // Set it to not visible
+        //feedbackSubmissionPanel.setVisible(false);
+
+        // Successful submission panel
+        feedbackSubmissionSuccessPanel = new JPanel(new FlowLayout());
+        feedbackSubmissionSuccessPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
+        feedbackSubmissionSuccessIcon = new JLabel(GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.send.success.icon")));
+        feedbackSubmissionSuccessMessage = new JLabel(App.getInstance().getDesktopContext().getProperty("feedback.send.success.message.text"));
+        feedbackSubmissionSuccessMessage.setFont(feedbackSubmissionSuccessMessage.getFont().deriveFont(Float.parseFloat(App.getInstance().getDesktopContext().getProperty("feedback.send.success.message.text.font.size"))));
+        feedbackSubmissionSuccessPanel.add(feedbackSubmissionSuccessMessage);
+        feedbackSubmissionSuccessPanel.add(feedbackSubmissionSuccessIcon);
+        // Failed submission panel
+        feedbackSubmissionFailPanel = new JPanel(new FlowLayout());
+        feedbackSubmissionFailPanel.setBorder(BorderFactory.createEmptyBorder(20, 0, 0, 0));
+        feedbackSubmissionFailIcon = new JLabel(GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.send.fail.icon")));
+        feedbackSubmissionFailMessage = new JLabel(App.getInstance().getDesktopContext().getProperty("feedback.send.fail.message.text"));
+        feedbackSubmissionFailMessage.setFont(feedbackSubmissionFailMessage.getFont().deriveFont(Float.parseFloat(App.getInstance().getDesktopContext().getProperty("feedback.send.fail.message.text.font.size"))));
+        feedbackSubmissionFailPanel.add(feedbackSubmissionFailMessage);
+        feedbackSubmissionFailPanel.add(feedbackSubmissionFailIcon);
 
         // Add main panel to frame panel
         feedbackFramePanel.add(feedbackMainPanel, BorderLayout.CENTER);
+        // Add submission panel
+        //feedbackFramePanel.add(feedbackSubmissionPanel, BorderLayout.CENTER);
     }
 
     public void addToParentForm(Form form, Object constraints) {
+        logger.debug("Adding Feedback form to parent form");
+        parentForm = form;
+        this.constraints = constraints;
         form.add(feedbackFramePanel, constraints);
         form.revalidate();
         form.repaint();
+        // Prepare the buttons
+        Navigator navigator = ((App) App.getInstance()).getNavigator();
+        JButton nextButton = navigator.getNextButton();
+
+        nextButton.setText(App.getInstance().getDesktopContext().getProperty("feedback.button.submit.label"));
     }
 
-    public boolean doSubmitFeedback() {
+    private void showUserFeedbackSubmissionMessage() {
+        logger.debug("Showing wait message for user feedback submission");
+        Navigator navigator = ((App) App.getInstance()).getNavigator();
+        JButton nextButton = navigator.getNextButton();
+        Icon newIcon = GUIUtilities.loadIcon(appContext.getProperty("feedback.button.submit.submitting_state.icon"));
+        nextButton.setIcon(newIcon);
+        feedbackFramePanel.removeAll();
+        feedbackFramePanel.add(feedbackSubmissionPanel, BorderLayout.CENTER);
+        feedbackFramePanel.revalidate();
+        feedbackFramePanel.repaint();
+    }
+
+    private void showSuccessFeedbackSubmission() {
+        logger.debug("Successful user feedback submission");
+        feedbackFramePanel.removeAll();
+        feedbackFramePanel.add(feedbackSubmissionSuccessPanel, BorderLayout.CENTER);
+        feedbackFramePanel.revalidate();
+        feedbackFramePanel.repaint();
+
+    }
+
+    private void showErrorFeedbackSubmission() {
+        logger.error("Error occurred while submitting user feedback");
+        feedbackFramePanel.removeAll();
+        feedbackFramePanel.add(feedbackSubmissionFailPanel, BorderLayout.CENTER);
+        feedbackFramePanel.revalidate();
+        feedbackFramePanel.repaint();
+
+    }
+
+    public boolean doSubmitFeedbackOnClose() {
+        //return (model.isFeedbackSubmitted() || doSubmitFeedback());
+        if (!model.isFeedbackSubmitted()) {
+            JOptionPane.showMessageDialog((Component) null, App.getInstance().getDesktopContext().getProperty("feedback.form.confirmation_dialog.message"),
+                    "Feedback", JOptionPane.OK_OPTION, GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.confirmation_dialog.icon")));
+            return false;
+        }
+        return true;
+    }
+
+    public boolean doSubmitFeedback(TaskListenerAdapter descriptorListener) {
+        if (model.isFeedbackSubmitted())
+            return true;
         if (!model.isFeedbackProvided() ) {
             JOptionPane.showMessageDialog((Component) null, App.getInstance().getDesktopContext().getProperty("feedback.form.confirmation_dialog.message"),
                     "Feedback", JOptionPane.OK_OPTION, GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.confirmation_dialog.icon")));
             return false;
         }
         model.setComment(feedbackAdditionalInfoText.getText());
-        model.save();
-        return true;
+        FeedbackSubmissionTask task = new FeedbackSubmissionTask(this);
+        FeedbackSubmissionTaskListener listener = new FeedbackSubmissionTaskListener(this);
+        task.addTaskListener(listener);
+        task.addTaskListener(descriptorListener);
+        task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
+        App.getInstance().getDesktopContext().addTask(task);
+        return false;
     }
 
     private void applyRadioSelectionStyle(AbstractButton b) {
         //b.setRolloverEnabled(false);
         //b.setBackground(Color.decode("#FF2400"));
+        Navigator navigator = ((App) App.getInstance()).getNavigator();
+        JButton nextButton = navigator.getNextButton();
+        nextButton.setEnabled(true);
     }
 
     private void applyRadioDeselectedStyle(AbstractButton b) {
@@ -219,5 +334,43 @@ public class FeedbackFormController extends Form implements ActionListener {
             logger.error("Action Command '" + e.getActionCommand() + "' NOT RECOGNIZED");
         }
         updateRadioButtonsAspect();
+    }
+
+    // TODO - Feedback submission task
+    private class FeedbackSubmissionTask extends TaskAdapter<Boolean, Void> {
+        // Feedback model
+        private FeedbackFormController formController;
+
+        public FeedbackSubmissionTask(FeedbackFormController controller) {
+            formController = controller;
+        }
+
+        @Override
+        protected Boolean doInBackground() throws Exception {
+            formController.showUserFeedbackSubmissionMessage();
+            return model.save();
+        }
+    }
+
+    // TODO - Feedback submission task listener
+    private class FeedbackSubmissionTaskListener extends TaskListenerAdapter<Boolean, Void> {
+        // Form controller
+        private FeedbackFormController formController;
+
+        public FeedbackSubmissionTaskListener(FeedbackFormController formController) {
+            this.formController = formController;
+        }
+
+        @Override
+        public void failed(TaskEvent<Throwable> event) {
+            // Show dialog with alternative link
+            formController.showErrorFeedbackSubmission();
+        }
+
+        @Override
+        public void succeed(TaskEvent<Boolean> booleanTaskEvent) {
+            // Show feedback completion
+            formController.showSuccessFeedbackSubmission();
+        }
     }
 }

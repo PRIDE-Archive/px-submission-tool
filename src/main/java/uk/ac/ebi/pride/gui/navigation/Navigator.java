@@ -291,6 +291,8 @@ public class Navigator extends JPanel implements PropertyChangeListener {
             handleBeforeHidingForNextPanelResult(evt);
         } else if (NavigationPanelDescriptor.BEFORE_HIDING_FOR_PREVIOUS_PANEL_PROPERTY.equals(propName)) {
             handleBeforeHidingForPreviousPanelResult(evt);
+        } else if (NavigationPanelDescriptor.BEFORE_SUBMITTING_FEEDBACK_PROPERTY.equals(propName)) {
+            handleBeforeSubmittingFeedback(evt);
         } else if (NavigationPanelDescriptor.BEFORE_FINISH_PROPERTY.equals(propName)) {
             handleFinishResult(evt);
         }
@@ -399,6 +401,21 @@ public class Navigator extends JPanel implements PropertyChangeListener {
         nextButton.setText(App.getInstance().getDesktopContext().getProperty("finish.button.label"));
         Icon finishIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("finish.button.small.icon"));
         nextButton.setIcon(finishIcon);
+        nextButton.setHorizontalTextPosition(SwingConstants.RIGHT);
+    }
+
+    private void handleBeforeSubmittingFeedback(PropertyChangeEvent evt) {
+        cancelButton.setVisible(false);
+        backButton.setVisible(true);
+        backButton.setEnabled(false);
+        backButton.setText(App.getInstance().getDesktopContext().getProperty("new.submission.button.label"));
+        Icon newIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("new.submission.button.small.icon"));
+        backButton.setIcon(newIcon);
+        nextButton.setVisible(true);
+        //nextButton.setEnabled(true);
+        //nextButton.setText(App.getInstance().getDesktopContext().getProperty("feedback.button.submit.label"));
+        //Icon finishIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("finish.button.small.icon"));
+        //nextButton.setIcon(finishIcon);
         nextButton.setHorizontalTextPosition(SwingConstants.RIGHT);
     }
 

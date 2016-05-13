@@ -419,7 +419,18 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             // If we haven't shown the feedback form, it is ok to change panel
             if (!isFormSet())
                 return true;
-            if (fbfController.doSubmitFeedback()) {
+            if (fbfController.doSubmitFeedback(new FeedbackSubmissionDescriptorTaskListener())) {
+                cleanData();
+                return true;
+            }
+            return false;
+        }
+
+        private boolean submitFeedbackOnClose() {
+            if (!isFormSet()) {
+                return true;
+            }
+            if (fbfController.doSubmitFeedbackOnClose()) {
                 cleanData();
                 return true;
             }
@@ -463,8 +474,20 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             // We have registered for just the close window subject, so we don't need to check which observer is
             // notifying us
             logger.debug("The user decided to close the application, let's see if we have feedback");
-            if (!submitFeedback()) {
+            if (!submitFeedbackOnClose()) {
                 ((App)App.getInstance()).setDoNotCloseAppFlag();
+            }
+        }
+
+        private class FeedbackSubmissionDescriptorTaskListener extends TaskListenerAdapter<Boolean, Void> {
+            @Override
+            public void failed(TaskEvent<Throwable> event) {
+                firePropertyChange(BEFORE_FINISH_PROPERTY, false, true);
+            }
+
+            @Override
+            public void succeed(TaskEvent<Boolean> booleanTaskEvent) {
+                firePropertyChange(BEFORE_FINISH_PROPERTY, false, true);
             }
         }
     }
@@ -484,7 +507,8 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             isFinished = true;
             isSucceed = true;
 
-            firePropertyChange(BEFORE_FINISH_PROPERTY, false, true);
+            //firePropertyChange(BEFORE_FINISH_PROPERTY, false, true);
+            firePropertyChange(BEFORE_SUBMITTING_FEEDBACK_PROPERTY, false, true);
         }
 
         @Override

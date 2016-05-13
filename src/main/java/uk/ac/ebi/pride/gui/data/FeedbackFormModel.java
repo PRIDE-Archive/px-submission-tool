@@ -37,6 +37,7 @@ public class FeedbackFormModel {
     // State variables
     private boolean feedbackProvided = false;
     private boolean feedbackProvisionRejected = false;
+    private boolean feedbackSubmitted = false;
 
     // Feedback information
     private UserFeedbackReport userFeedbackReport = ReportFactory.getFactory().getUserFeedbackReport();
@@ -78,8 +79,13 @@ public class FeedbackFormModel {
         userFeedbackReport.setComments(comment);
     }
 
+    public boolean isFeedbackSubmitted() {
+        return feedbackSubmitted;
+    }
+
     public void setFeedbackProvisionRejected(boolean feedbackProvisionRejected) {
         this.feedbackProvisionRejected = feedbackProvisionRejected;
+
     }
 
     public boolean save() {
@@ -87,7 +93,9 @@ public class FeedbackFormModel {
             logger.debug("No feedback has been provided, and the user didn't reject providing feedback.");
             return false;
         }
-        // TODO - Do send feedback
+        if (isFeedbackSubmitted())
+            return true;
+        // Do send feedback
         CompositeReport compositeReport = ReportFactory.getFactory().getCompositeReport();
         compositeReport.add(submissionRecordReport);
         compositeReport.add(userFeedbackReport);
@@ -105,6 +113,7 @@ public class FeedbackFormModel {
         }
         logger.debug("Submitting feedback from user...");
         logger.info("User feedback for submission reference '" + submissionRecordReport.getSubmissionReference() + "', rating '" + getRating() + "', comments '" + getComment() + "'");
+        feedbackSubmitted = true;
         return true;
     }
 }

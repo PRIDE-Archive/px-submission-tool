@@ -33,6 +33,12 @@ public class NavigationPanelDescriptor extends PropertyChangeHelper {
      */
     public static final String BEFORE_FINISH_PROPERTY = "beforeFinishProperty";
 
+    // User Feedback properties
+    /**
+     * This property is fired to prepare "feedback submission" button
+     */
+    public static final String BEFORE_SUBMITTING_FEEDBACK_PROPERTY = "beforeSubmittingFeedbackProperty";
+
     /**
      * Indicate finish of the navigation
      */

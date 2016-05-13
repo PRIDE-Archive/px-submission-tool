@@ -64,7 +64,6 @@ public class App extends Desktop {
 
         @Override
         public void windowClosed(WindowEvent e) {
-            //Empty
         }
 
         @Override
