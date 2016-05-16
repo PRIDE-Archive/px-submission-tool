@@ -27,6 +27,7 @@ import java.util.Observable;
  */
 public class App extends Desktop {
     private static final Logger logger = LoggerFactory.getLogger(App.class);
+    private static final String OS = System.getProperty("os.name").toLowerCase();
 
     /**
      * Main frame of the application
@@ -165,7 +166,25 @@ public class App extends Desktop {
      * @return boolean  true means it is running on windows
      */
     private boolean isWindowsPlatform() {
-        return System.getProperty("os.name").startsWith("Windows");
+        return (OS.indexOf("win") >= 0);
+    }
+
+    public static boolean isMac() {
+
+        return (OS.indexOf("mac") >= 0);
+
+    }
+
+    public static boolean isUnix() {
+
+        return (OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") > 0 );
+
+    }
+
+    public static boolean isSolaris() {
+
+        return (OS.indexOf("sunos") >= 0);
+
     }
 
     /**
@@ -178,8 +197,28 @@ public class App extends Desktop {
         mainFrame.addWindowListener(appCloseWindowListener);
 
         // set look and feel
-        String lookAndFeel = "Nimbus";
-        if (!isWindowsPlatform()) {
+        String lookAndFeel = "Nimbus"; // Default
+        try {
+            for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+                if (isWindowsPlatform() && (info.getName().contains("Windows"))) {
+                    UIManager.setLookAndFeel(info.getClassName());
+                    return;
+                }
+                if (isMac() && (info.getName().contains("Mac OS"))) {
+                    UIManager.setLookAndFeel(info.getClassName());
+                    return;
+                }
+            }
+            // No look and feel found, set default
+            UIManager.setLookAndFeel(lookAndFeel);
+            // Workaround for Nimbus bug
+            LookAndFeel laf = UIManager.getLookAndFeel();
+            UIDefaults defaults = laf.getDefaults();
+            defaults.put("ScrollBar.minimumThumbSize", new Dimension(30, 30));
+        } catch (Exception e){
+            logger.error("Failed to load a Look'n'Feel for the application " + e.toString());
+        }
+        /*if (!isWindowsPlatform()) {
             lookAndFeel = "Mac OS X";
         } else {
             try {
@@ -195,7 +234,7 @@ public class App extends Desktop {
             } catch (Exception e) {
                 logger.error("Failed to load nimbus look and feel for the application", e);
             }
-        }
+        }*/
     }
 
     /**
