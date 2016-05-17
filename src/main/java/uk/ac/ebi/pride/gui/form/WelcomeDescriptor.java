@@ -2,6 +2,8 @@ package uk.ac.ebi.pride.gui.form;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.blocker.DefaultGUIBlocker;
 import uk.ac.ebi.pride.gui.blocker.GUIBlocker;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
@@ -81,7 +83,8 @@ public class WelcomeDescriptor extends ContextAwareNavigationPanelDescriptor imp
                     appContext.getProperty("unsupported.result.file.dialog.message"),
                     appContext.getProperty("unsupported.result.file.dialog.title"),
                     JOptionPane.YES_NO_OPTION,
-                    JOptionPane.WARNING_MESSAGE);
+                    JOptionPane.WARNING_MESSAGE,
+                    GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("icon.warning.normal.small")));
             if (n != 0) {
                 confirmSubmissionOption = false;
             }

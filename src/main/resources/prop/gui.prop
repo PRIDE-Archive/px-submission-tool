@@ -408,3 +408,6 @@ feedback.send.fail.message.text = We couldn't receive your feedback!
 feedback.send.fail.message.text.font.size = 24
 feedback.button.submit.label = Feedback
 feedback.button.submit.submitting_state.icon = icon/16x16/loading.gif
+
+# General icons
+icon.warning.normal.small = icon/64x64/warning.png
