@@ -159,7 +159,7 @@
         <dependency>
             <groupId>org.swinglabs</groupId>
             <artifactId>swingx</artifactId>
-            <version>LATEST</version>
+            <version>1.6.1</version>
         </dependency>
         <!-- PRIDE Reporting library -->
         <dependency>
