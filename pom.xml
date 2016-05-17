@@ -72,6 +72,7 @@
         <archive.submission.model.version>1.0.0</archive.submission.model.version>
         <archive.data.provider.api.version>2.0.6</archive.data.provider.api.version>
         <project.output.dir>target/classes</project.output.dir>
+        <libpxreport.version>1.0</libpxreport.version>
     </properties>
 
     <dependencies>
@@ -164,7 +165,7 @@
         <dependency>
             <groupId>uk.ac.ebi.pride.px</groupId>
             <artifactId>libpxreport</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>${libpxreport.version}</version>
         </dependency>
         <dependency>
             <groupId>org.swinglabs.swingx</groupId>
