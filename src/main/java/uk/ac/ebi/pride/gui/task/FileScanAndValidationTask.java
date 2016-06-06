@@ -304,6 +304,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
 
         for (DataFile dataFile : dataFiles) {
             String fileName = dataFile.getFileName();
+            logger.debug("runQuickValidation(): SubmissionValidator.validateDataFile(" + fileName + ")");
             if (SubmissionValidator.validateDataFile(dataFile).hasError()) {
                 logger.debug("runQuickValidation(): SubmissionValidator.validateDataFile(" + fileName + ").hasError() = " + SubmissionValidator.validateDataFile(dataFile).hasError());
                 result.incrementNumOfInvalidFiles();
