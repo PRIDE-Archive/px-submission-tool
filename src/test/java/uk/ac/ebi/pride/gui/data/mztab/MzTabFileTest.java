@@ -1,16 +1,14 @@
 package uk.ac.ebi.pride.gui.data.mztab;
 
-import junit.framework.TestCase;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.gui.data.mztab.model.MzTabFile;
 
 import java.io.FileNotFoundException;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 

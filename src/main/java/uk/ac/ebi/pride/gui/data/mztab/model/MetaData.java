@@ -3,6 +3,7 @@ package uk.ac.ebi.pride.gui.data.mztab.model;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -71,7 +72,14 @@ public class MetaData {
     private List<Sample> samples;
 
     public MetaData() {
-
+        version = null;
+        mode = null;
+        type = null;
+        fileId = null;
+        title = null;
+        description = null;
+        msRuns = new ArrayList<>();
+        samples = new ArrayList<>();
     }
 
     // Getters/Setters
