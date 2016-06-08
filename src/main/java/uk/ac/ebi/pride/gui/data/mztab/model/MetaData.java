@@ -2,6 +2,7 @@ package uk.ac.ebi.pride.gui.data.mztab.model;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jmx.export.metadata.InvalidMetadataException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -113,7 +114,7 @@ public class MetaData {
     }
 
     public void setMode(MzTabMode mode) {
-        this.mode = mode;
+        this.mode = mode
     }
 
     public void setType(MzTabType type) {
@@ -132,5 +133,36 @@ public class MetaData {
         this.description = description;
     }
 
-    // TODO - add ms-run entry
+    // Add ms-run entry
+    public void addMsRun(MsRun msRun) {
+        logger.debug("Adding ms-run");
+        msRuns.add(msRun);
+    }
+
+    // Add Sample data entry
+    public void addSampleData(Sample sample) {
+        logger.debug("Adding sample data entry");
+        samples.add(sample);
+    }
+
+    // Validate Metadata
+    public void validate() throws InvalidMetadataException {
+        // Required attributes
+        if (getVersion() == null) {
+            throw new InvalidMetadataException("Missing version information");
+        }
+        if (getMode() == null) {
+            throw new InvalidMetadataException("Missing mzTab mode information");
+        }
+        if (getType() == null) {
+            throw new InvalidMetadataException("Missing mzTab type information");
+        }
+        // mzTab-ID is not required
+        // title is not required
+        if (getDescription() == null) {
+            throw new InvalidMetadataException("Missing mzTab description");
+        }
+
+        // TODO Consistency check
+    }
 }
