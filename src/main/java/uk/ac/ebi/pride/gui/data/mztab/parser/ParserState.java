@@ -18,9 +18,9 @@ public abstract class ParserState {
     public abstract void parseLine(MzTabParser context, String line, long lineNumber, long offset);
     // Change state delegate
     protected final void changeState(MzTabParser context, ParserState newState) {
-        doValidateProduct(MzTabParser context);
-        doSetProduct(MzTabParser context);
-        doChangeState(MzTabParser context, ParserState newState);
+        doValidateProduct(context);
+        doSetProduct(context);
+        doChangeState(context, newState);
     }
     // Delegate to subclasses
     protected abstract void doValidateProduct(MzTabParser context);
