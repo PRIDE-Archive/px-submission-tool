@@ -22,6 +22,7 @@ public class Sample {
     private String description;
     //sample-species
     private Species species;
-    
+    // sample-tissues
+    private Tissue tissue;
 
 }

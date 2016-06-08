@@ -9,6 +9,8 @@ import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidCvParameterException;
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
+ *
+ * This class models sample species information
  */
 
 public class Species extends CvParameter {
