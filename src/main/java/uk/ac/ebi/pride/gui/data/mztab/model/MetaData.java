@@ -1,4 +1,4 @@
-package uk.ac.ebi.pride.gui.data.mztab;
+package uk.ac.ebi.pride.gui.data.mztab.model;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,6 +67,12 @@ public class MetaData {
     private String description;
     // ms-run entries
     private List<MsRun> msRuns;
+    // samples
+    private List<Sample> samples;
+
+    public MetaData() {
+
+    }
 
     // Getters/Setters
     public String getVersion() {

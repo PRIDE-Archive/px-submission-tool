@@ -1,6 +1,5 @@
-package uk.ac.ebi.pride.gui.data.mztab;
+package uk.ac.ebi.pride.gui.data.mztab.model;
 
-import org.omg.CORBA.DynAnyPackage.Invalid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidCvParameterException;

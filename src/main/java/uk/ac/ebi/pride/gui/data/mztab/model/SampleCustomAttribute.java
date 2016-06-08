@@ -1,4 +1,4 @@
-package uk.ac.ebi.pride.gui.data.mztab;
+package uk.ac.ebi.pride.gui.data.mztab.model;
 
 import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidCvParameterException;
 

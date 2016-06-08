@@ -1,6 +1,5 @@
-package uk.ac.ebi.pride.gui.data.mztab;
+package uk.ac.ebi.pride.gui.data.mztab.model;
 
-import org.apache.commons.logging.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
