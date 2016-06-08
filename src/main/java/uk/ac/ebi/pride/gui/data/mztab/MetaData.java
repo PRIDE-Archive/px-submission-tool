@@ -3,6 +3,8 @@ package uk.ac.ebi.pride.gui.data.mztab;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
+
 /**
  * Project: px-submission-tool
  * Package: uk.ac.ebi.pride.gui.data.mztab
@@ -63,9 +65,10 @@ public class MetaData {
     private String title;
     // description
     private String description;
+    // ms-run entries
+    private List<MsRun> msRuns;
 
     // Getters/Setters
-
     public String getVersion() {
         return version;
     }
@@ -114,4 +117,6 @@ public class MetaData {
     public void setDescription(String description) {
         this.description = description;
     }
+
+    // TODO - add ms-run entry
 }
