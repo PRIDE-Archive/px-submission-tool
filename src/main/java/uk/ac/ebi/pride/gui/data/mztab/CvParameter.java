@@ -87,7 +87,7 @@ public abstract class CvParameter {
 
     @Override
     public String toString() {
-        return "[" + label + "," + accession + "," + name + "," + value + "]";
+        return "[" + label + ", " + accession + ", " + name + ", " + value + "]";
     }
 
     private void reportInvalidCvParameter() throws InvalidCvParameterException {
