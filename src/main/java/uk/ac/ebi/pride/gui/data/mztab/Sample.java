@@ -20,5 +20,8 @@ public class Sample {
 
     // Bean
     private String description;
+    //sample-species
+    private Species species;
+    
 
 }
