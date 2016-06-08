@@ -1,5 +1,7 @@
 package uk.ac.ebi.pride.gui.data.mztab;
 
+import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidCvParameterException;
+
 /**
  * Project: px-submission-tool
  * Package: uk.ac.ebi.pride.gui.data.mztab
@@ -10,5 +12,7 @@ package uk.ac.ebi.pride.gui.data.mztab;
  */
 
 public class MsRunFormat extends CvParameter {
-    // Nothing special here
+    public MsRunFormat(String label, String accession, String name, String value) throws InvalidCvParameterException {
+        super(label, accession, name, value);
+    }
 }

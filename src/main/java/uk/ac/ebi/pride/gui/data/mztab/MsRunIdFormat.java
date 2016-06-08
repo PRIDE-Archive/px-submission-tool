@@ -2,6 +2,7 @@ package uk.ac.ebi.pride.gui.data.mztab;
 
 import com.itextpdf.text.log.Logger;
 import com.itextpdf.text.log.LoggerFactory;
+import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidCvParameterException;
 
 /**
  * Project: px-submission-tool
@@ -13,5 +14,8 @@ import com.itextpdf.text.log.LoggerFactory;
  */
 
 public class MsRunIdFormat extends CvParameter {
-    // Nothing special to do here
+
+    public MsRunIdFormat(String label, String accession, String name, String value) throws InvalidCvParameterException {
+        super(label, accession, name, value);
+    }
 }
