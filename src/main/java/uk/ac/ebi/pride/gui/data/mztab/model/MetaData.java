@@ -2,7 +2,7 @@ package uk.ac.ebi.pride.gui.data.mztab.model;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.jmx.export.metadata.InvalidMetadataException;
+import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidMetaDataException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -114,7 +114,7 @@ public class MetaData {
     }
 
     public void setMode(MzTabMode mode) {
-        this.mode = mode
+        this.mode = mode;
     }
 
     public void setType(MzTabType type) {
@@ -146,21 +146,37 @@ public class MetaData {
     }
 
     // Validate Metadata
-    public void validate() throws InvalidMetadataException {
+    public void validate() throws InvalidMetaDataException {
         // Required attributes
         if (getVersion() == null) {
-            throw new InvalidMetadataException("Missing version information");
+            throw new InvalidMetaDataException("Missing version information");
         }
         if (getMode() == null) {
-            throw new InvalidMetadataException("Missing mzTab mode information");
+            throw new InvalidMetaDataException("Missing mzTab mode information");
         }
         if (getType() == null) {
-            throw new InvalidMetadataException("Missing mzTab type information");
+            throw new InvalidMetaDataException("Missing mzTab type information");
         }
         // mzTab-ID is not required
         // title is not required
         if (getDescription() == null) {
-            throw new InvalidMetadataException("Missing mzTab description");
+            throw new InvalidMetaDataException("Missing mzTab description");
+        }
+        // MS Run location is required
+        if (msRuns.isEmpty()) {
+            throw new InvalidMetaDataException("Missing ms-run[] entries");
+        } else {
+            boolean msrunLocationPresent = false;
+            for (MsRun item : msRuns
+                    ) {
+                if (item.getLocation() != null) {
+                    msrunLocationPresent = true;
+                    break;
+                }
+            }
+            if (!msrunLocationPresent) {
+                throw new InvalidMetaDataException("No ms-run location present!");
+            }
         }
 
         // TODO Consistency check

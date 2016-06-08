@@ -20,13 +20,25 @@ public class MsRun {
     private static final Logger logger = LoggerFactory.getLogger(MsRun.class);
 
     // Bean
-    private MsRunFormat msRunFormat;
-    private MsRunIdFormat msRunIdFormat;
-    private URL location;
+    private MsRunFormat msRunFormat = null;
+    private MsRunIdFormat msRunIdFormat = null;
+    private URL location = null;
 
     public MsRun(MsRunFormat msRunFormat, MsRunIdFormat msRunIdFormat, URL location) {
         this.msRunFormat = msRunFormat;
         this.msRunIdFormat = msRunIdFormat;
         this.location = location;
+    }
+
+    public MsRunFormat getMsRunFormat() {
+        return msRunFormat;
+    }
+
+    public MsRunIdFormat getMsRunIdFormat() {
+        return msRunIdFormat;
+    }
+
+    public URL getLocation() {
+        return location;
     }
 }
