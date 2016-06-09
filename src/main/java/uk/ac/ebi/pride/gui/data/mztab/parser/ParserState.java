@@ -26,5 +26,7 @@ public abstract class ParserState {
     protected abstract void doValidateProduct(MzTabParser context);
     protected abstract void doSetProduct(MzTabParser context);
     protected abstract void doChangeState(MzTabParser context, ParserState newState);
+    // Get this state ID name
+    protected abstract String getStateIdName();
 
 }

@@ -47,6 +47,12 @@ public abstract class MzTabParser {
         doValidateProduct();
     }
 
+    protected void changeState(ParserState newState) {
+        logger.debug("Changing state '" + parserState.getStateIdName()
+                + "' to new State '" + newState.getStateIdName() + "'");
+        parserState = newState;
+    }
+
     // Delegate steps
     protected abstract void doParse();
     protected abstract void doValidateProduct();

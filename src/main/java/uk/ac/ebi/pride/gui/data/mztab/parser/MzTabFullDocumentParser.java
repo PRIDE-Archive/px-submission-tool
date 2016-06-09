@@ -20,7 +20,6 @@ public class MzTabFullDocumentParser extends MzTabParser {
     public MzTabFullDocumentParser(String fileUrl) {
         super();
         this.fileUrl = fileUrl;
-        // TODO - Open file
         // TODO - Set initial state
     }
 
