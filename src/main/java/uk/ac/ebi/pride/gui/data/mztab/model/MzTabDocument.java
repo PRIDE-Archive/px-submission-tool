@@ -28,4 +28,9 @@ public class MzTabDocument {
     public void setMetaData(MetaData metaData) {
         this.metaData = metaData;
     }
+
+    public boolean validate() {
+        // TODO - Validation criteria
+        return true;
+    }
 }
