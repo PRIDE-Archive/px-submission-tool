@@ -30,7 +30,6 @@ public class MetaData {
             this.mode = mode;
         }
 
-
         @Override
         public String toString() {
             return mode;
@@ -71,6 +70,7 @@ public class MetaData {
     private List<MsRun> msRuns;
     // samples
     private List<Sample> samples;
+    // TODO
 
     public MetaData() {
         version = null;

@@ -15,6 +15,8 @@ import java.io.FileNotFoundException;
  * All rights reserved.
  *
  * This Class models the core information we need form an mzTab file, for data submission purposes
+ *
+ * @deprecated
  */
 
 public class MzTabFile {

@@ -11,14 +11,16 @@ import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidMzTabDocument;
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
+ *
+ * This is a quick parser for mzTab files, it will get
  */
-public class MzTabFullDocumentParser extends MzTabParser {
-    private static final Logger logger = LoggerFactory.getLogger(MzTabFullDocumentParser.class);
+public class MzTabFullDocumentQuickParser extends MzTabParser {
+    private static final Logger logger = LoggerFactory.getLogger(MzTabFullDocumentQuickParser.class);
 
     // mzTab source
     private String fileUrl;
 
-    public MzTabFullDocumentParser(String fileUrl) {
+    public MzTabFullDocumentQuickParser(String fileUrl) {
         super();
         this.fileUrl = fileUrl;
         // TODO - Set initial state
