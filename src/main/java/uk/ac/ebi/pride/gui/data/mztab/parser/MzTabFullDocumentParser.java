@@ -2,6 +2,7 @@ package uk.ac.ebi.pride.gui.data.mztab.parser;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidMzTabDocument;
 
 /**
  * Project: px-submission-tool
@@ -29,7 +30,7 @@ public class MzTabFullDocumentParser extends MzTabParser {
     }
 
     @Override
-    protected void doValidateProduct() {
+    protected void doValidateProduct() throws InvalidMzTabDocument {
         // Validate the MzTabDocument
         getMzTabDocument().validate();
     }

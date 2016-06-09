@@ -2,6 +2,7 @@ package uk.ac.ebi.pride.gui.data.mztab.model;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidMzTabDocument;
 
 /**
  * Project: px-submission-tool
@@ -29,7 +30,7 @@ public class MzTabDocument {
         this.metaData = metaData;
     }
 
-    public boolean validate() {
+    public boolean validate() throws InvalidMzTabDocument {
         // TODO - Validation criteria
         return true;
     }
