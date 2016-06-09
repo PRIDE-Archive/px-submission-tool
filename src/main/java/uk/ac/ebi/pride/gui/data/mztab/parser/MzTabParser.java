@@ -31,10 +31,11 @@ public abstract class MzTabParser {
     protected void setMzTabDocument(MzTabDocument mzTabDocument) {
         this.mzTabDocument = mzTabDocument;
     }
-
     protected void setParserState(ParserState parserState) {
         this.parserState = parserState;
     }
+    // Get the Strategy ParserState Factory
+    protected abstract StrategyParserStateFactory getParserFactory();
 
     // Return the product of this statefull builder
     public MzTabDocument getMzTabDocument() {

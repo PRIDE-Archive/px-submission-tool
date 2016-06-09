@@ -19,11 +19,18 @@ public class MzTabFullDocumentQuickParser extends MzTabParser {
 
     // mzTab source
     private String fileUrl;
+    // Parsing Strategy Factory
+    private static final StrategyParserStateFactory PARSER_STATE_FACTORY = new QuickParserStrategyFactory();
 
     public MzTabFullDocumentQuickParser(String fileUrl) {
         super();
         this.fileUrl = fileUrl;
         // TODO - Set initial state
+    }
+
+    @Override
+    protected StrategyParserStateFactory getParserFactory() {
+        return PARSER_STATE_FACTORY;
     }
 
     @Override
