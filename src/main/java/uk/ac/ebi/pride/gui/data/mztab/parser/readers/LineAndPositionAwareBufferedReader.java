@@ -90,11 +90,19 @@ public class LineAndPositionAwareBufferedReader {
         reader = new LineNumberReader(new FileReader(fileName));
     }
 
+    /**
+     * Read a line with offset and line number information
+     * @return line number, offset and the content of the line if any, null if it reached the end of the input stream
+     * @throws IOException
+     */
     public PositionAwareLine readLine() throws IOException {
         String line = reader.readLine();
         //logger.debug("Line read '" + line + "', position '" + offset + "', line number '" + reader.getLineNumber() + "'");
-        PositionAwareLine readLine = new PositionAwareLine((int)reader.getLineNumber(), offset, line);
-        offset += line.getBytes().length + ncrlf;
+        PositionAwareLine readLine = null;
+        if (line != null) {
+            readLine = new PositionAwareLine((int)reader.getLineNumber(), offset, line);
+            offset += line.getBytes().length + ncrlf;
+        }
         return readLine;
     }
 }
