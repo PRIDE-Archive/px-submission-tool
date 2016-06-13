@@ -34,8 +34,9 @@ public class DetectingCrLfTest {
 
     @Test
     public void testUnixFileLf() throws Exception {
-        String routePrefix = this.getClass().getClassLoader().getResource("sample_data").toString();
-        assertEquals("Number of characters used for new line", expected, LineAndPositionAwareBufferedReader.howManyCrlfChars(fileName));
+        String routePrefix = Paths.get(this.getClass().getClassLoader().getResource("sample_data").toURI()).toAbsolutePath().toString();
+        String filePath = Paths.get(routePrefix + "/" + fileName).toString();
+        assertEquals("Number of characters used for new line in file '" + fileName + "'", expected, LineAndPositionAwareBufferedReader.howManyCrlfChars(filePath));
     }
 
     @Parameterized.Parameters
