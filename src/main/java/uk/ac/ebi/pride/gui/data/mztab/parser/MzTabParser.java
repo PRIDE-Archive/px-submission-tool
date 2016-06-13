@@ -23,6 +23,9 @@ public abstract class MzTabParser {
     // Parser State Delegate
     private ParserState parserState;
 
+    // Parser State Factory
+    StrategyParserStateFactory strategyParserStateFactory;
+
     protected MzTabParser() {
         mzTabDocument = null;
         parserState = null;
@@ -34,8 +37,9 @@ public abstract class MzTabParser {
     protected void setParserState(ParserState parserState) {
         this.parserState = parserState;
     }
-    // Get the Strategy ParserState Factory
-    protected abstract StrategyParserStateFactory getParserFactory();
+    protected StrategyParserStateFactory getParserFactory() {
+        return strategyParserStateFactory;
+    }
 
     // Return the product of this statefull builder
     public MzTabDocument getMzTabDocument() {
@@ -54,8 +58,22 @@ public abstract class MzTabParser {
         parserState = newState;
     }
 
+
     // Delegate steps
-    protected abstract void doParse();
+    /**
+     * Several object hierarchies have been designed and implemented here to achieve low coupling, flexibility, extendability,
+     * etc. But, at some point you need to stop putting levels of indirection, otherwise, your code could grow exponentially.
+     *
+     * A default "doParse" implementation is provided, working on local files, which is the use case that this solution is
+     * trying covering, if, in the future, the software is required to read mzTab files from sources other than files or,
+     * a different parsing needs to be done on mzTab files, the following method could be made abstract, delegating on subclasses
+     * the implementation of the top level parsign algorithm / strategy for mzTab formatted data
+     */
+    protected void doParse() {
+        // TODO check file access
+        // TODO open file
+        // TODO use a line number and position aware BufferedReader
+    }
     protected abstract void doValidateProduct();
 
 }
