@@ -32,5 +32,4 @@ public abstract class ParserState {
     protected abstract void doChangeState(MzTabParser context, ParserState newState);
     // Get this state ID name
     protected abstract String getStateIdName();
-
 }
