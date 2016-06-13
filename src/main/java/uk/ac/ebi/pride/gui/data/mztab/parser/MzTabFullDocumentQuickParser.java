@@ -17,30 +17,15 @@ import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidMzTabDocument;
 public class MzTabFullDocumentQuickParser extends MzTabParser {
     private static final Logger logger = LoggerFactory.getLogger(MzTabFullDocumentQuickParser.class);
 
-    // mzTab source
-    private String fileUrl;
     // Parsing Strategy Factory
     private static final StrategyParserStateFactory PARSER_STATE_FACTORY = new QuickParserStrategyFactory();
 
-    public MzTabFullDocumentQuickParser(String fileUrl) {
-        super();
-        this.fileUrl = fileUrl;
-        // TODO - Set initial state
+    public MzTabFullDocumentQuickParser(String fileName) {
+        super(fileName);
     }
 
     @Override
-    protected StrategyParserStateFactory getParserFactory() {
+    protected StrategyParserStateFactory getParserStateFactory() {
         return PARSER_STATE_FACTORY;
-    }
-
-    @Override
-    protected void doParse() {
-        // TODO
-    }
-
-    @Override
-    protected void doValidateProduct() throws InvalidMzTabDocument {
-        // Validate the MzTabDocument
-        getMzTabDocument().validate();
     }
 }

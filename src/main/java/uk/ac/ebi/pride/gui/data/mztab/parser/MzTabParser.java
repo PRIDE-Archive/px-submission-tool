@@ -27,9 +27,6 @@ public abstract class MzTabParser {
     // Parser State Delegate
     private ParserState parserState;
 
-    // Parser State Factory
-    private StrategyParserStateFactory strategyParserStateFactory;
-
     // Source mzTab file
     private String fileName;
 
@@ -44,9 +41,6 @@ public abstract class MzTabParser {
     }
     protected void setParserState(ParserState parserState) {
         this.parserState = parserState;
-    }
-    protected StrategyParserStateFactory getStrategyParserStateFactoryFactory() {
-        return strategyParserStateFactory;
     }
 
     // Return the product of this statefull builder
@@ -74,6 +68,8 @@ public abstract class MzTabParser {
 
 
     // Delegate steps
+    protected abstract StrategyParserStateFactory getParserStateFactory();
+
     /**
      * Several object hierarchies have been designed and implemented here to achieve low coupling, flexibility, extendability,
      * etc. But, at some point you need to stop putting levels of indirection, otherwise, your code could grow exponentially.
@@ -117,7 +113,7 @@ public abstract class MzTabParser {
         // Create a new mzTab Document
         setMzTabDocument(new MzTabDocument());
         // Set initial state
-        parserState = getStrategyParserStateFactoryFactory().getMetaDataParserState();
+        parserState = getParserStateFactory().getMetaDataParserState();
     }
 
     // Product validation by delegation
