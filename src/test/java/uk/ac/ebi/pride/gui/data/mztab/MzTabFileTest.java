@@ -1,5 +1,6 @@
 package uk.ac.ebi.pride.gui.data.mztab;
 
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -22,7 +23,7 @@ import static org.junit.Assert.*;
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
  */
-
+@Ignore
 public class MzTabFileTest {
     private static final Logger logger = LoggerFactory.getLogger(MzTabFileTest.class);
     private List<String> validFiles;
