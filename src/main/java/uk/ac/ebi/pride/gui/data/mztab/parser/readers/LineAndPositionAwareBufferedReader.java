@@ -86,11 +86,13 @@ public class LineAndPositionAwareBufferedReader {
 
     public LineAndPositionAwareBufferedReader(String fileName) throws IOException {
         ncrlf = howManyCrlfChars(fileName);
+        logger.debug("Creating reader for file '" + fileName + "'");
         reader = new LineNumberReader(new FileReader(fileName));
     }
 
     public PositionAwareLine readLine() throws IOException {
         String line = reader.readLine();
+        //logger.debug("Line read '" + line + "', position '" + offset + "', line number '" + reader.getLineNumber() + "'");
         PositionAwareLine readLine = new PositionAwareLine((int)reader.getLineNumber(), offset, line);
         offset += line.getBytes().length + ncrlf;
         return readLine;
