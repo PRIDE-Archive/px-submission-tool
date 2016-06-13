@@ -3,6 +3,10 @@ package uk.ac.ebi.pride.gui.data.mztab.parser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.gui.data.mztab.model.MzTabDocument;
+import uk.ac.ebi.pride.gui.data.mztab.parser.readers.LineAndPositionAwareBufferedReader;
+import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.MzTabParserException;
+
+import java.io.IOException;
 
 /**
  * Project: px-submission-tool
@@ -24,11 +28,15 @@ public abstract class MzTabParser {
     private ParserState parserState;
 
     // Parser State Factory
-    StrategyParserStateFactory strategyParserStateFactory;
+    private StrategyParserStateFactory strategyParserStateFactory;
 
-    protected MzTabParser() {
+    // Source mzTab file
+    private String fileName;
+
+    protected MzTabParser(String fileName) {
         mzTabDocument = null;
         parserState = null;
+        this.fileName = fileName;
     }
 
     protected void setMzTabDocument(MzTabDocument mzTabDocument) {
@@ -37,7 +45,7 @@ public abstract class MzTabParser {
     protected void setParserState(ParserState parserState) {
         this.parserState = parserState;
     }
-    protected StrategyParserStateFactory getParserFactory() {
+    protected StrategyParserStateFactory getStrategyParserStateFactoryFactory() {
         return strategyParserStateFactory;
     }
 
@@ -48,6 +56,12 @@ public abstract class MzTabParser {
 
     // Director of the parsing process (build)
     public final void parse() {
+        if (getMzTabDocument() != null) {
+            logger.error("This document has already been parsed!");
+            return;
+        } else {
+            doInitParser();
+        }
         doParse();
         doValidateProduct();
     }
@@ -69,11 +83,52 @@ public abstract class MzTabParser {
      * a different parsing needs to be done on mzTab files, the following method could be made abstract, delegating on subclasses
      * the implementation of the top level parsign algorithm / strategy for mzTab formatted data
      */
-    protected void doParse() {
-        // TODO check file access
-        // TODO open file
-        // TODO use a line number and position aware BufferedReader
+    protected void doParse() throws MzTabParserException {
+        // check file access
+        // open file
+        LineAndPositionAwareBufferedReader reader = null;
+        try {
+            reader = new LineAndPositionAwareBufferedReader(fileName);
+        } catch (IOException e) {
+            throw new MzTabParserException("Could not start mzTab parser\n" + e.toString());
+        }
+        // Parse the file (Section Routing Algorithm)
+        while (true) {
+            LineAndPositionAwareBufferedReader.PositionAwareLine positionAwareLine = null;
+            try {
+                positionAwareLine = reader.readLine();
+            } catch (IOException e) {
+                throw new MzTabParserException("Error parsing the mzTab file\n" + e.toString());
+            }
+            if (positionAwareLine != null) {
+                // Parse the line
+                parserState.parseLine(this, positionAwareLine.getLine(),
+                        positionAwareLine.getLineNo(),
+                        positionAwareLine.getOffset());
+            }
+            break;
+        }
     }
-    protected abstract void doValidateProduct();
+
+    /**
+     * This is another method that could be delegated to subclasses, if another kind of mzTab parser wants to be implemented
+     */
+    protected void doInitParser() {
+        // Create a new mzTab Document
+        setMzTabDocument(new MzTabDocument());
+        // Set initial state
+        parserState = getStrategyParserStateFactoryFactory().getMetaDataParserState();
+    }
+
+    // Product validation by delegation
+    protected void doValidateProduct() {
+        if (getMzTabDocument() != null) {
+            if (!getMzTabDocument().validate()) {
+                throw new MzTabParserException("The parsed mzTab document IS NOT VALID!");
+            }
+        } else {
+            throw new MzTabParserException("There is no mzTab document to validate!");
+        }
+    }
 
 }
