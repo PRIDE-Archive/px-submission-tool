@@ -61,19 +61,19 @@ public class LineAndPositionAwareBufferedReader {
             while ((b = in.read()) != -1) {
                 char c = (char) b;
                 //logger.debug("Character: '" + String.valueOf(c) + "'");
-                if (c == '\n') {
+                if (c == '\r') {
                     b = in.read();
                     if (b != -1) {
                         c = (char) b;
-                        if (c == '\r') {
+                        if (c == '\n') {
                             logger.info("CRLF Found!");
                             return 2;
                         }
                     }
-                    logger.info("LF Found!");
-                    return 1;
-                } else if (c == '\r') {
                     logger.info("CR Found!");
+                    return 1;
+                } else if (c == '\n') {
+                    logger.info("LF Found!");
                     return 1;
                 }
             }
