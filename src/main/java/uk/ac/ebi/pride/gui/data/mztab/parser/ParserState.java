@@ -10,6 +10,10 @@ import org.slf4j.LoggerFactory;
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
+ *
+ * The hierarchy ParserState implements a State pattern, changing the behaviour of the parser at runtime,
+ * depending on the particular section that is currently being processed
+ *
  */
 public abstract class ParserState {
     private static final Logger logger = LoggerFactory.getLogger(ParserState.class);
