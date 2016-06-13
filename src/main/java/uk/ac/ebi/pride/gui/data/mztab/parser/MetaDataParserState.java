@@ -22,4 +22,24 @@ public abstract class MetaDataParserState extends ParserState {
     protected String getStateIdName() {
         return STATE_ID_NAME;
     }
+
+    @Override
+    public void parseLine(MzTabParser context, String line, long lineNumber, long offset) {
+        // Routing algorithm at Section level
+        if (line.startsWith("MTD")) {
+            // TODO Get appropiate section item parser
+        } else if (line.startsWith("COM")) {
+            // TODO Get comment parsing strategy (context aware)
+        } else if (line.startsWith("PRH")) {
+            // TODO Change state to parsing Proteins
+        } else if (line.startsWith("PSH")) {
+            // TODO Change state to parsing PSMs
+        } else if (line.startsWith("PEH")) {
+            // TODO Change state to parsing Peptides
+        } else if (line.startsWith("SMH")) {
+            // TODO Change state to parsing Small Molecules
+        } else {
+            // TODO UNEXPECTED Line content ERROR
+        }
+    }
 }
