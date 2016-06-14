@@ -40,11 +40,6 @@ public class QuickMetaDataParserState extends MetaDataParserState {
     }
 
     @Override
-    public void parseLine(MzTabParser context, String line, long lineNumber, long offset) {
-        // TODO
-    }
-
-    @Override
     protected void doValidateProduct(MzTabParser context) {
         // TODO
     }
