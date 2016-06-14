@@ -32,6 +32,14 @@ public class QuickMetaDataParserState extends MetaDataParserState {
     }
 
     @Override
+    protected LineItemParsingHandler getLineItemParsingHandler() {
+        if (lineItemParsingHandler == null) {
+            buildLineItemParsingHandlerChain();
+        }
+        return lineItemParsingHandler;
+    }
+
+    @Override
     public void parseLine(MzTabParser context, String line, long lineNumber, long offset) {
         // TODO
     }
@@ -42,7 +50,7 @@ public class QuickMetaDataParserState extends MetaDataParserState {
     }
 
     @Override
-    protected void doSetProduct(MzTabParser context) {
+    protected void doSetSubProduct(MzTabParser context) {
         // TODO
     }
 
