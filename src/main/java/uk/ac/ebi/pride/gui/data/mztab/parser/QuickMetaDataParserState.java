@@ -18,6 +18,19 @@ import org.slf4j.LoggerFactory;
 public class QuickMetaDataParserState extends MetaDataParserState {
     private static final Logger logger = LoggerFactory.getLogger(QuickMetaDataParserState.class);
 
+    // Chain of responsibility for parsing metadata items
+    private LineItemParsingHandler lineItemParsingHandler = null;
+
+    public QuickMetaDataParserState() {
+        // TODO Build the chain of metadata parser items
+    }
+
+    private void buildLineItemParsingHandlerChain() {
+        // If we wanted more flexibility here, we could add another layer of indirection by externalizing the creation
+        // of LineItemParsingHandlers
+        // TODO
+    }
+
     @Override
     public void parseLine(MzTabParser context, String line, long lineNumber, long offset) {
         // TODO
