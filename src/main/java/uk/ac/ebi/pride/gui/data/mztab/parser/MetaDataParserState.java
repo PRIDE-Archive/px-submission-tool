@@ -12,6 +12,10 @@ import org.slf4j.LoggerFactory;
  * All rights reserved.
  * <p>
  * This class defines some parts of a ParserState that corresponds to the metadata section of the mzTab file
+ *
+ * Every mzTab line is tagged with the section it belongs to, and every section will contain different elements of information
+ * that need to be processed in a different way.
+ *
  */
 public abstract class MetaDataParserState extends ParserState {
     private static final Logger logger = LoggerFactory.getLogger(MetaDataParserState.class);
@@ -26,10 +30,9 @@ public abstract class MetaDataParserState extends ParserState {
     @Override
     public void parseLine(MzTabParser context, String line, long lineNumber, long offset) {
         // Routing algorithm at Section level
-        if (line.startsWith("MTD")) {
+        if (line.startsWith("MTD") || line.startsWith("COM")) {
             // TODO Get appropiate section item parser
-        } else if (line.startsWith("COM")) {
-            // TODO Get comment parsing strategy (context aware)
+
         } else if (line.startsWith("PRH")) {
             // TODO Change state to parsing Proteins
         } else if (line.startsWith("PSH")) {
