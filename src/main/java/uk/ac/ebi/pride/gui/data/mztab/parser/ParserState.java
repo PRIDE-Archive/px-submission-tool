@@ -18,17 +18,18 @@ import org.slf4j.LoggerFactory;
 public abstract class ParserState {
     private static final Logger logger = LoggerFactory.getLogger(ParserState.class);
 
-    // Parse a line
+    // Line item parsing handler
+    protected abstract LineItemParsingHandler getLineItemParsingHandler();
     public abstract void parseLine(MzTabParser context, String line, long lineNumber, long offset);
     // Change state delegate
     protected final void changeState(MzTabParser context, ParserState newState) {
         doValidateProduct(context);
-        doSetProduct(context);
+        doSetSubProduct(context);
         doChangeState(context, newState);
     }
     // Delegate to subclasses
     protected abstract void doValidateProduct(MzTabParser context);
-    protected abstract void doSetProduct(MzTabParser context);
+    protected abstract void doSetSubProduct(MzTabParser context);
     protected abstract void doChangeState(MzTabParser context, ParserState newState);
     // Get this state ID name
     protected abstract String getStateIdName();
