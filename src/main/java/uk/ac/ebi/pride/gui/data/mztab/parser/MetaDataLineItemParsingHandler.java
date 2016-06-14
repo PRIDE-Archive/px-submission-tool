@@ -26,13 +26,15 @@ public abstract class MetaDataLineItemParsingHandler extends LineItemParsingHand
         super(nextHandler);
     }
 
-    private boolean checkLinePrefix(String line, long lineNumber, long offset) throws LineItemParsingHandlerException {
+    private boolean checkLinePrefix(String line, long lineNumber, long offset) {
         if (!line.startsWith(METADATA_LINE_PREFIX)) {
-            throw new LineItemParsingHandlerException("INVALID LINE PREFIX, expected '" + METADATA_LINE_PREFIX
+            logger.error("INVALID LINE PREFIX, expected '" + METADATA_LINE_PREFIX
                     + "', for line '" + line
                     + "', line number '" + lineNumber
                     + "', position '" + offset + "'");
+            return false;
         }
+        return true;
     }
     @Override
     protected boolean doParseLine(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException {
