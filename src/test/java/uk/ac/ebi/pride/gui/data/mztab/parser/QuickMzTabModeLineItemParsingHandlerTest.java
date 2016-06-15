@@ -62,4 +62,18 @@ public class QuickMzTabModeLineItemParsingHandlerTest {
         verify(metaData, times(1)).getMode();
         verify(metaData, times(1)).setMode(MetaData.MzTabMode.COMPLETE);
     }
+
+    @Test
+    public void processSummaryMode() {
+        // Although using a real parser and metadata is not expensive, I use mockito to avoid creating all the subproducts
+        // needed to set up the context, and to focus on the tested subject's logic
+        MzTabParser context = Mockito.mock(DummyMzTabParser.class);
+        MetaData metaData = Mockito.mock(MetaData.class);
+        String mztabSummaryModeLine = "MTD\tmzTab-mode\tSummary";
+        when(context.getMetaDataSection()).thenReturn(metaData);
+        subject.parseLine(context, mztabSummaryModeLine, 1, 0);
+        verify(context, atLeastOnce()).getMetaDataSection();
+        verify(metaData, times(1)).getMode();
+        verify(metaData, times(1)).setMode(MetaData.MzTabMode.SUMMARY);
+    }
 }
