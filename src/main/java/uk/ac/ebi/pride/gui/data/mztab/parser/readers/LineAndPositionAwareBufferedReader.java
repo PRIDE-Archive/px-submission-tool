@@ -66,14 +66,14 @@ public class LineAndPositionAwareBufferedReader {
                     if (b != -1) {
                         c = (char) b;
                         if (c == '\n') {
-                            logger.info("CRLF Found!");
+                            logger.debug("CRLF Found!");
                             return 2;
                         }
                     }
-                    logger.info("CR Found!");
+                    logger.debug("CR Found!");
                     return 1;
                 } else if (c == '\n') {
-                    logger.info("LF Found!");
+                    logger.debug("LF Found!");
                     return 1;
                 }
             }
