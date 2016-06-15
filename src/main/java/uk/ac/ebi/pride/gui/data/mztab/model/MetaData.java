@@ -30,6 +30,8 @@ public class MetaData {
             this.type = type;
         }
 
+        public String getValue() {return toString();}
+
         @Override
         public String toString() {
             return type;
@@ -46,6 +48,8 @@ public class MetaData {
         MzTabMode(String mode) {
             this.mode = mode;
         }
+
+        public String getValue() {return toString();}
 
         @Override
         public String toString() {

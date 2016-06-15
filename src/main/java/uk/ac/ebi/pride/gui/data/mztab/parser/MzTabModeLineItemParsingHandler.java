@@ -23,18 +23,16 @@ public abstract class MzTabModeLineItemParsingHandler extends MetaDataLineItemPa
     private static final Logger logger = LoggerFactory.getLogger(MzTabModeLineItemParsingHandler.class);
 
     protected static final String MZTAB_MODE_KEYWORD = "mzTab-mode";
-    protected static final String MODE_COMPLETE_KEYWORD = "Complete";
-    protected static final String MODE_SUMMARY_KEYWORD = "Summary";
 
     @Override
     protected boolean doParseLineItem(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException {
         String[] lineItems = line.split("\t");
         if ((lineItems.length == 3)
                 && (lineItems[1].equals(MZTAB_MODE_KEYWORD))) {
-            if (lineItems[2].equals(MODE_COMPLETE_KEYWORD)) {
+            if (lineItems[2].equals(MetaData.MzTabMode.COMPLETE.getValue())) {
                 return doProcessMode(context, line, lineNumber, offset, MetaData.MzTabMode.COMPLETE);
             }
-            if (lineItems[2].equals(MODE_SUMMARY_KEYWORD)) {
+            if (lineItems[2].equals(MetaData.MzTabMode.SUMMARY.getValue())) {
                 return doProcessMode(context, line, lineNumber, offset, MetaData.MzTabMode.SUMMARY);
             }
             throw new LineItemParsingHandlerException("mzTab mode '" + lineItems[2] + "' NOT RECOGNIZED");
@@ -42,10 +40,6 @@ public abstract class MzTabModeLineItemParsingHandler extends MetaDataLineItemPa
         return false;
     }
 
-    // Process mzTab mode "Complete"
-    //protected abstract boolean doProcessCompleteMode(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException ;
-    // Process mzTab mode "Summary"
-    //protected abstract boolean doProcessSummaryMode(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException ;
     // Delegate strategy
     protected abstract boolean doProcessMode(MzTabParser context, String line, long lineNumber, long offset, MetaData.MzTabMode mode) throws LineItemParsingHandlerException;
 }
