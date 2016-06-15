@@ -2,6 +2,7 @@ package uk.ac.ebi.pride.gui.data.mztab.parser;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.ParserStateException;
 
 /**
  * Project: px-submission-tool
@@ -18,9 +19,7 @@ import org.slf4j.LoggerFactory;
 public abstract class ParserState {
     private static final Logger logger = LoggerFactory.getLogger(ParserState.class);
 
-    // Line item parsing handler
-    protected abstract LineItemParsingHandler getLineItemParsingHandler();
-    public abstract void parseLine(MzTabParser context, String line, long lineNumber, long offset);
+    public abstract void parseLine(MzTabParser context, String line, long lineNumber, long offset) throws ParserStateException;
     // Change state delegate
     protected final void changeState(MzTabParser context, ParserState newState) {
         doValidateProduct(context);
@@ -28,6 +27,8 @@ public abstract class ParserState {
         doChangeState(context, newState);
     }
     // Delegate to subclasses
+    // Line item parsing handler
+    protected abstract LineItemParsingHandler getLineItemParsingHandler();
     protected abstract void doValidateProduct(MzTabParser context);
     protected abstract void doSetSubProduct(MzTabParser context);
     protected abstract void doChangeState(MzTabParser context, ParserState newState);
