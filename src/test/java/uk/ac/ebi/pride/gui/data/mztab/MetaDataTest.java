@@ -43,8 +43,8 @@ public class MetaDataTest {
         MetaData metaData = new MetaData();
         metaData.setTitle("Test Title");
         metaData.setVersion("1.0");
-        metaData.setMode(MetaData.MzTabMode.IDENTIFICATION);
-        metaData.setType(MetaData.MzTabType.COMPLETE);
+        metaData.setMode(MetaData.MzTabMode.COMPLETE);
+        metaData.setType(MetaData.MzTabType.IDENTIFICATION);
         metaData.setDescription("Sample Description");
         MsRunFormat msRunFormat = new MsRunFormat("PSI-MS", "MS:1001062", "Mascot MGF file", CvParameter.DEFAULT_VALUE);
         MsRunIdFormat msRunIdFormat = new MsRunIdFormat("PSI-MS", "MS:1000774", "multiple peak list nativeID format", CvParameter.DEFAULT_VALUE);
