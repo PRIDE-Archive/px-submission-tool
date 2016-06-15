@@ -55,7 +55,7 @@ public class QuickMzTabModeLineItemParsingHandlerTest {
         // needed to set up the context, and to focus on the tested subject's logic
         MzTabParser context = Mockito.mock(DummyMzTabParser.class);
         MetaData metaData = Mockito.mock(MetaData.class);
-        String mztabCompleteModeLine = "MTD\tmzTab-mode\tComplete";
+        String mztabCompleteModeLine = "MTD\tmzTab-mode\t" + MetaData.MzTabMode.COMPLETE.getValue();
         when(context.getMetaDataSection()).thenReturn(metaData);
         subject.parseLine(context, mztabCompleteModeLine, 1, 0);
         verify(context, atLeastOnce()).getMetaDataSection();
@@ -69,7 +69,7 @@ public class QuickMzTabModeLineItemParsingHandlerTest {
         // needed to set up the context, and to focus on the tested subject's logic
         MzTabParser context = Mockito.mock(DummyMzTabParser.class);
         MetaData metaData = Mockito.mock(MetaData.class);
-        String mztabSummaryModeLine = "MTD\tmzTab-mode\tSummary";
+        String mztabSummaryModeLine = "MTD\tmzTab-mode\t" + MetaData.MzTabMode.SUMMARY.getValue();
         when(context.getMetaDataSection()).thenReturn(metaData);
         subject.parseLine(context, mztabSummaryModeLine, 1, 0);
         verify(context, atLeastOnce()).getMetaDataSection();
