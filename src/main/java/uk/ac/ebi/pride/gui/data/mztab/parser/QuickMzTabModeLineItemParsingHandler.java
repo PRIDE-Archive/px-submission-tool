@@ -19,23 +19,16 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
 public class QuickMzTabModeLineItemParsingHandler extends MzTabModeLineItemParsingHandler {
     private static final Logger logger = LoggerFactory.getLogger(QuickMzTabModeLineItemParsingHandler.class);
 
-    private void checkModeAlreadySet(MzTabParser context, String line, long lineNumber, long offset) {
+    private void checkForModeDuplication(MzTabParser context, String line, long lineNumber, long offset) {
         if (context.getMetaDataSection().getMode() != null) {
             throw new LineItemParsingHandlerException("DUPLICATED '" + MZTAB_MODE_KEYWORD + "' entry found!, line number '" + lineNumber + "'");
         }
     }
 
     @Override
-    protected boolean doProcessCompleteMode(MzTabParser context, String line, long lineNumber, long offset)  throws LineItemParsingHandlerException {
-        checkModeAlreadySet(context, line, lineNumber, offset);
-        context.getMetaDataSection().setMode(MetaData.MzTabMode.COMPLETE);
-        return true;
-    }
-
-    @Override
-    protected boolean doProcessSummaryMode(MzTabParser context, String line, long lineNumber, long offset)  throws LineItemParsingHandlerException {
-        checkModeAlreadySet(context, line, lineNumber, offset);
-        context.getMetaDataSection().setMode(MetaData.MzTabMode.SUMMARY);
+    protected boolean doProcessMode(MzTabParser context, String line, long lineNumber, long offset, MetaData.MzTabMode mode) throws LineItemParsingHandlerException {
+        checkForModeDuplication(context, line, lineNumber, offset);
+        context.getMetaDataSection().setMode(mode);
         return true;
     }
 }

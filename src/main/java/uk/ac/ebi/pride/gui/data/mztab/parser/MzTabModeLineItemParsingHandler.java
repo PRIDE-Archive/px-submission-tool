@@ -2,6 +2,7 @@ package uk.ac.ebi.pride.gui.data.mztab.parser;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.gui.data.mztab.model.MetaData;
 import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerException;
 
 import java.util.List;
@@ -31,18 +32,20 @@ public abstract class MzTabModeLineItemParsingHandler extends MetaDataLineItemPa
         if ((lineItems.length == 3)
                 && (lineItems[1].equals(MZTAB_MODE_KEYWORD))) {
             if (lineItems[2].equals(MODE_COMPLETE_KEYWORD)) {
-                return doProcessCompleteMode(context, line, lineNumber, offset);
-            } else if (lineItems[2].equals(MODE_SUMMARY_KEYWORD)) {
-                return doProcessSummaryMode(context, line, lineNumber, offset);
-            } else {
-                throw new LineItemParsingHandlerException("mzTab mode '" + lineItems[2] + "' NOT RECOGNIZED");
+                return doProcessMode(context, line, lineNumber, offset, MetaData.MzTabMode.COMPLETE);
             }
+            if (lineItems[2].equals(MODE_SUMMARY_KEYWORD)) {
+                return doProcessMode(context, line, lineNumber, offset, MetaData.MzTabMode.SUMMARY);
+            }
+            throw new LineItemParsingHandlerException("mzTab mode '" + lineItems[2] + "' NOT RECOGNIZED");
         }
         return false;
     }
 
     // Process mzTab mode "Complete"
-    protected abstract boolean doProcessCompleteMode(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException ;
+    //protected abstract boolean doProcessCompleteMode(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException ;
     // Process mzTab mode "Summary"
-    protected abstract boolean doProcessSummaryMode(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException ;
+    //protected abstract boolean doProcessSummaryMode(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException ;
+    // Delegate strategy
+    protected abstract boolean doProcessMode(MzTabParser context, String line, long lineNumber, long offset, MetaData.MzTabMode mode) throws LineItemParsingHandlerException;
 }
