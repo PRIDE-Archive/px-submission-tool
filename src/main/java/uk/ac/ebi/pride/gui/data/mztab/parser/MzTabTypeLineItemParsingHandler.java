@@ -24,10 +24,10 @@ public abstract class MzTabTypeLineItemParsingHandler extends MetaDataLineItemPa
     protected boolean doParseLineItem(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException {
         String[] lineItems = line.split("\t");
         if ((lineItems.length == 3) && (lineItems[1].equals(MZTAB_TYPE_KEYWORD))) {
-            if (lineItems[2].equals(MetaData.MzTabType.IDENTIFICATION)) {
+            if (lineItems[2].equals(MetaData.MzTabType.IDENTIFICATION.getValue())) {
                 return doProcessType(context, line, lineNumber, offset, MetaData.MzTabType.IDENTIFICATION);
             }
-            if (lineItems[2].equals(MetaData.MzTabType.QUANTIFICATION)) {
+            if (lineItems[2].equals(MetaData.MzTabType.QUANTIFICATION.getValue())) {
                 return doProcessType(context, line, lineNumber, offset, MetaData.MzTabType.QUANTIFICATION);
             }
             throw new LineItemParsingHandlerException("mzTab type '" + lineItems[2] + "' NOT RECOGNIZED");
