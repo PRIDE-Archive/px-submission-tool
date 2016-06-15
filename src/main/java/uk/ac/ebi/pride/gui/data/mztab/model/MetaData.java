@@ -20,7 +20,7 @@ public class MetaData {
     private static final Logger logger = LoggerFactory.getLogger(MetaData.class);
 
     // mzTab modes
-    public enum MzTabMode {
+    public enum MzTabType {
         QUANTIFICATION("Quantification"),
         IDENTIFICATION("Identification");
 
@@ -37,7 +37,7 @@ public class MetaData {
     }
 
     // mzTab types
-    public enum MzTabType {
+    public enum MzTabMode {
         COMPLETE("Complete"),
         SUMMARY("Summary");
 
