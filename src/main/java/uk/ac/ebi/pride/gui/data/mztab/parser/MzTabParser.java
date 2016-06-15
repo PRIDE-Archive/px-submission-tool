@@ -2,6 +2,7 @@ package uk.ac.ebi.pride.gui.data.mztab.parser;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.gui.data.mztab.model.MetaData;
 import uk.ac.ebi.pride.gui.data.mztab.model.MzTabDocument;
 import uk.ac.ebi.pride.gui.data.mztab.parser.readers.LineAndPositionAwareBufferedReader;
 import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.MzTabParserException;
@@ -17,6 +18,8 @@ import java.io.IOException;
  * All rights reserved.
  *
  * This class implements the mzTab file parser context, for a statefull parser of the different sections in the file
+ *
+ * This particular implementation, already is a "file based" mzTab parser, for scope reasons
  */
 public abstract class MzTabParser {
     private static final Logger logger = LoggerFactory.getLogger(MzTabParser.class);
@@ -42,13 +45,12 @@ public abstract class MzTabParser {
     protected void setParserState(ParserState parserState) {
         this.parserState = parserState;
     }
-
     // Return the product of this statefull builder
     public MzTabDocument getMzTabDocument() {
         return mzTabDocument;
     }
 
-    // Director of the parsing process (build)
+    // Director of the parsing process
     public final void parse() {
         if (getMzTabDocument() != null) {
             logger.error("This document has already been parsed!");
@@ -78,6 +80,8 @@ public abstract class MzTabParser {
      * trying covering, if, in the future, the software is required to read mzTab files from sources other than files or,
      * a different parsing needs to be done on mzTab files, the following method could be made abstract, delegating on subclasses
      * the implementation of the top level parsign algorithm / strategy for mzTab formatted data
+     *
+     * This is a director algorithm for building the mzTab Document product, parserState implements State and Builder pattern
      */
     protected void doParse() throws MzTabParserException {
         // check file access
@@ -111,7 +115,7 @@ public abstract class MzTabParser {
      */
     protected void doInitParser() {
         // Create a new mzTab Document
-        setMzTabDocument(new MzTabDocument());
+        if (getMzTabDocument() == null) setMzTabDocument(new MzTabDocument());
         // Set initial state
         parserState = getParserStateFactory().getMetaDataParserState();
     }
@@ -125,6 +129,19 @@ public abstract class MzTabParser {
         } else {
             throw new MzTabParserException("There is no mzTab document to validate!");
         }
+    }
+
+    // Subproducts managing code
+    // MetaData Section
+    public final MetaData getMetaDataSection() {
+        return getMzTabDocument().getMetaData();
+    }
+
+    public final void setMetaDataSection(MetaData metaDataSection) throws MzTabParserException {
+        if (getMetaDataSection() != null) {
+            throw new MzTabParserException("A MetaData subproduct ALREADY IS in place");
+        }
+        mzTabDocument.setMetaData(metaDataSection);
     }
 
 }
