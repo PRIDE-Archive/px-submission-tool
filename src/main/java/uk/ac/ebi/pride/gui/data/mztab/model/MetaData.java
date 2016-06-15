@@ -24,23 +24,6 @@ public class MetaData {
         QUANTIFICATION("Quantification"),
         IDENTIFICATION("Identification");
 
-        private String mode;
-
-        MzTabMode(String mode) {
-            this.mode = mode;
-        }
-
-        @Override
-        public String toString() {
-            return mode;
-        }
-    }
-
-    // mzTab types
-    public enum MzTabMode {
-        COMPLETE("Complete"),
-        SUMMARY("Summary");
-
         private String type;
 
         MzTabType(String type) {
@@ -50,6 +33,23 @@ public class MetaData {
         @Override
         public String toString() {
             return type;
+        }
+    }
+
+    // mzTab types
+    public enum MzTabMode {
+        COMPLETE("Complete"),
+        SUMMARY("Summary");
+
+        private String mode;
+
+        MzTabMode(String mode) {
+            this.mode = mode;
+        }
+
+        @Override
+        public String toString() {
+            return mode;
         }
     }
 
