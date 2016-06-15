@@ -19,32 +19,8 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
 public abstract class MetaDataLineItemParsingHandler extends LineItemParsingHandler {
     private static final Logger logger = LoggerFactory.getLogger(MetaDataLineItemParsingHandler.class);
 
-    //private static final String METADATA_LINE_PREFIX = "MTD";
-
-    public MetaDataLineItemParsingHandler() {
-        super();
-    }
-
-    public MetaDataLineItemParsingHandler(LineItemParsingHandler nextHandler) {
-        super(nextHandler);
-    }
-
-    /*private boolean checkLinePrefix(String line, long lineNumber, long offset) {
-        if (!line.startsWith(METADATA_LINE_PREFIX)) {
-            logger.error("INVALID LINE PREFIX, expected '" + METADATA_LINE_PREFIX
-                    + "', for line '" + line
-                    + "', line number '" + lineNumber
-                    + "', position '" + offset + "'");
-            return false;
-        }
-        return true;
-    }*/
     @Override
     protected boolean doParseLine(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException {
-        // Check line Prefix (this is redundant, considering what I've done on other parts of the code
-       /* if (checkLinePrefix(line, lineNumber, offset)) {
-            return doParseLineItem(context, line, lineNumber, offset);
-        }*/
         return doParseLineItem(context, line, lineNumber, offset);
     }
 
