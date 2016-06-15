@@ -13,6 +13,9 @@ import java.util.List;
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
+ *
+ * At this level of the hierarchy we capture the information for a particular item, the strategy for processing that
+ * information will be defined by subclasses
  */
 
 public abstract class MzTabModeLineItemParsingHandler extends MetaDataLineItemParsingHandler {

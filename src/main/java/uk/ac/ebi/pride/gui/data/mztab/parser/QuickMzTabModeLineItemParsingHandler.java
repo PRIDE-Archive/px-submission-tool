@@ -12,6 +12,8 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
+ *
+ * This strategy processes the mzTab-mode by incorporating it in its corresponding subproduct
  */
 
 public class QuickMzTabModeLineItemParsingHandler extends MzTabModeLineItemParsingHandler {

@@ -11,6 +11,9 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
+ *
+ * This branch of the hierarchy processes information at section level for all those items in the metadata section of an
+ * mzTab document.
  */
 
 public abstract class MetaDataLineItemParsingHandler extends LineItemParsingHandler {

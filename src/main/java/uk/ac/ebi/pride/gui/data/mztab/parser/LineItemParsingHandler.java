@@ -11,6 +11,13 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
+ *
+ * This class defines the interface of a handler that parses the information item in the given line.
+ *
+ * Information item parsers are organized in a hierarchy by sections and line items themselves, at the leaves of each
+ * hierarchy branch, one or more processing strategies will be found.
+ *
+ * A particular context strategy will arrange the processing strategies in a "chain of responsibility" manner.
  */
 
 public abstract class LineItemParsingHandler {
