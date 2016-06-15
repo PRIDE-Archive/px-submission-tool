@@ -2,6 +2,8 @@ package uk.ac.ebi.pride.gui.data.mztab.parser;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerException;
+import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.ParserStateException;
 
 /**
  * Project: px-submission-tool
@@ -28,11 +30,17 @@ public abstract class MetaDataParserState extends ParserState {
     }
 
     @Override
-    public void parseLine(MzTabParser context, String line, long lineNumber, long offset) {
+    public void parseLine(MzTabParser context, String line, long lineNumber, long offset) throws ParserStateException {
         // Routing algorithm at Section level
         if (line.startsWith("MTD") || line.startsWith("COM")) {
-            // TODO Get appropiate section item parser
-
+            // Get appropiate section item parser
+            try {
+                if (!getLineItemParsingHandler().parseLine(context, line, lineNumber, offset)) {
+                    logger.warn("IGNORED Line '" + lineNumber + "', offset '" + offset + "', content '" + line + "'");
+                }
+            } catch (LineItemParsingHandlerException e) {
+                throw new ParserStateException("Error parsing line '" + lineNumber + "' ---> " + e.getMessage());
+            }
         } else if (line.startsWith("PRH")) {
             // TODO Change state to parsing Proteins
         } else if (line.startsWith("PSH")) {
@@ -42,7 +50,8 @@ public abstract class MetaDataParserState extends ParserState {
         } else if (line.startsWith("SMH")) {
             // TODO Change state to parsing Small Molecules
         } else {
-            // TODO UNEXPECTED Line content ERROR
+            // UNEXPECTED Line content ERROR
+            throw new ParserStateException("UNEXPECTED LINE '" + line + "' at line number '" + lineNumber + "', offset '" + offset + "'");
         }
     }
 }

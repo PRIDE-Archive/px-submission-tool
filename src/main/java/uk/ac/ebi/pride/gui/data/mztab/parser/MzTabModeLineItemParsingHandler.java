@@ -18,9 +18,9 @@ import java.util.List;
 public abstract class MzTabModeLineItemParsingHandler extends MetaDataLineItemParsingHandler {
     private static final Logger logger = LoggerFactory.getLogger(MzTabModeLineItemParsingHandler.class);
 
-    private static final String MZTAB_MODE_KEYWORD = "mzTab-mode";
-    private static final String MODE_COMPLETE_KEYWORD = "Complete";
-    private static final String MODE_SUMMARY_KEYWORD = "Summary";
+    protected static final String MZTAB_MODE_KEYWORD = "mzTab-mode";
+    protected static final String MODE_COMPLETE_KEYWORD = "Complete";
+    protected static final String MODE_SUMMARY_KEYWORD = "Summary";
 
     @Override
     protected boolean doParseLineItem(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException {
@@ -39,7 +39,7 @@ public abstract class MzTabModeLineItemParsingHandler extends MetaDataLineItemPa
     }
 
     // Process mzTab mode "Complete"
-    protected abstract boolean doProcessCompleteMode(MzTabParser context, String line, long lineNumber, long offset);
+    protected abstract boolean doProcessCompleteMode(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException ;
     // Process mzTab mode "Summary"
-    protected abstract boolean doProcessSummaryMode(MzTabParser context, String line, long lineNumber, long offset);
+    protected abstract boolean doProcessSummaryMode(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException ;
 }
