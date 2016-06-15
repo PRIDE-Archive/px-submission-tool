@@ -51,6 +51,8 @@ public class QuickMzTabModeLineItemParsingHandlerTest {
 
     @Test
     public void processCompleteMode() {
+        // Although using a real parser and metadata is not expensive, I use mockito to avoid creating all the subproducts
+        // needed to set up the context, and to focus on the tested subject's logic
         MzTabParser context = Mockito.mock(DummyMzTabParser.class);
         MetaData metaData = Mockito.mock(MetaData.class);
         String mztabCompleteModeLine = "MTD\tmzTab-mode\tComplete";
