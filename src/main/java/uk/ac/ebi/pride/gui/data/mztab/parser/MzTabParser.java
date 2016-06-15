@@ -133,7 +133,7 @@ public abstract class MzTabParser {
 
     // Subproducts managing code
     // MetaData Section
-    public final MetaData getMetaDataSection() {
+    public MetaData getMetaDataSection() {
         return getMzTabDocument().getMetaData();
     }
 
