@@ -54,6 +54,5 @@ public class QuickMzTabTitleLineItemParsingHandlerTest {
         verify(context, atLeastOnce()).getMetaDataSection();
         verify(metaData, times(1)).getTitle();
         verify(metaData, times(1)).setTitle(titleSample);
-
     }
 }
