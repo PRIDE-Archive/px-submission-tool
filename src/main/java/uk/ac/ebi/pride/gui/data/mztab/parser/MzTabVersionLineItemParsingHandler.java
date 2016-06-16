@@ -11,6 +11,8 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
+ *
+ * mzTab version value parsing algorithm
  */
 public abstract class MzTabVersionLineItemParsingHandler extends MetaDataLineItemParsingHandler {
     private static final Logger logger = LoggerFactory.getLogger(MzTabVersionLineItemParsingHandler.class);
