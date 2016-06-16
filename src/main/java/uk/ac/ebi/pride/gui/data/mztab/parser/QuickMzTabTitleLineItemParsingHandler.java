@@ -11,6 +11,8 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
+ *
+ * Quick processing strategy for mzTab title
  */
 public class QuickMzTabTitleLineItemParsingHandler extends MzTabTitleLineItemParsingHandler {
     private static final Logger logger = LoggerFactory.getLogger(QuickMzTabTitleLineItemParsingHandler.class);

@@ -11,6 +11,13 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
+ *
+ * Capture mzTab title data
+ *
+ * As can be seen on the code, we are really doing the heavy lifting at this level of the hierarchy, and subclasses
+ * will basically decide what to do with the extracted information. This will be different when it comes to other line
+ * item parsers, that involved the creation of more complex objects, belonging to more massive entries in the file, e.g.
+ * the protein section.
  */
 public abstract class MzTabTitleLineItemParsingHandler extends MetaDataLineItemParsingHandler {
     private static final Logger logger = LoggerFactory.getLogger(MzTabTitleLineItemParsingHandler.class);
