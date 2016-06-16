@@ -9,6 +9,8 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
+ *
+ * Quick processing strategy for mzTab description items
  */
 
 public class QuickMzTabDescriptionLineItemHandler extends MzTabDescriptionLineItemHandler {

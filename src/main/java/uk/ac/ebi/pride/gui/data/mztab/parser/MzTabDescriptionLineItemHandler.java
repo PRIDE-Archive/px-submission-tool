@@ -11,6 +11,8 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
+ *
+ * Parser for collecting mzTab description information
  */
 
 public abstract class MzTabDescriptionLineItemHandler extends MetaDataLineItemParsingHandler {
