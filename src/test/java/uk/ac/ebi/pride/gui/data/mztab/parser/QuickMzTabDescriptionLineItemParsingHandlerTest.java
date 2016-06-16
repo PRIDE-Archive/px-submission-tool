@@ -22,7 +22,7 @@ import static org.mockito.Mockito.verify;
 
 // NOTE: Up to this point of developing the product extension, I think some refactoring that moves the common tests to
 // a test class that bulk-applies them to all the relevant strategies, would be a very nice code clean up task
-public class QuickMzTabDescriptionLineItemHandlerTest {
+public class QuickMzTabDescriptionLineItemParsingHandlerTest {
     private static MzTabParser context;
     private LineItemParsingHandler subject;
 

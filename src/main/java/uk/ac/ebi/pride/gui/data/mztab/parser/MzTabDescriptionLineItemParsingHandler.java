@@ -15,7 +15,7 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
  * Parser for collecting mzTab description information
  */
 
-public abstract class MzTabDescriptionLineItemHandler extends MetaDataLineItemParsingHandler {
+public abstract class MzTabDescriptionLineItemParsingHandler extends MetaDataLineItemParsingHandler {
     // Keyword
     protected static final String MZTAB_DESCRIPTION_KEYWORD = "description";
 

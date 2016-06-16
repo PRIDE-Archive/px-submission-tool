@@ -13,8 +13,8 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
  * Quick processing strategy for mzTab description items
  */
 
-public class QuickMzTabDescriptionLineItemHandler extends MzTabDescriptionLineItemHandler {
-    private void checkForDuplicatedDescription(MzTabParser context, long lineNumber) {
+public class QuickMzTabDescriptionLineItemHandler extends MzTabDescriptionLineItemParsingHandler {
+    private void checkForDuplicatedDescription(MzTabParser context, long lineNumber) throws LineItemParsingHandlerException {
         if (context.getMetaDataSection().getDescription() != null) {
             throw new LineItemParsingHandlerException("DUPLICATED " + MZTAB_DESCRIPTION_KEYWORD + " entry found at line " + lineNumber);
         }
