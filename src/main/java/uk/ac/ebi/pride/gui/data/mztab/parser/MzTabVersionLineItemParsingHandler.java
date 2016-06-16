@@ -16,7 +16,7 @@ public abstract class MzTabVersionLineItemParsingHandler extends MetaDataLineIte
     private static final Logger logger = LoggerFactory.getLogger(MzTabVersionLineItemParsingHandler.class);
 
     // mzTab version keyword
-    private static final String MZTAB_VERSION_KEYWORD = "mzTab-version";
+    protected static final String MZTAB_VERSION_KEYWORD = "mzTab-version";
 
     @Override
     protected boolean doParseLineItem(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException {
