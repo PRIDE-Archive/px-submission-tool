@@ -15,4 +15,8 @@ public class MsRunFormat extends CvParameter {
     public MsRunFormat(String label, String accession, String name, String value) throws InvalidCvParameterException {
         super(label, accession, name, value);
     }
+
+    public MsRunFormat(CvParameter cv) {
+        super(cv);
+    }
 }

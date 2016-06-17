@@ -36,6 +36,10 @@ public abstract class CvParameter {
         }
     }
 
+    public CvParameter(CvParameter cv) {
+        this(cv.label, cv.accession, cv.name, cv.value);
+    }
+
     public String getLabel() {
         logger.debug("Get label '" + label + "'");
         return label;
@@ -96,6 +100,8 @@ public abstract class CvParameter {
 
     /**
      * The following method validates the current CV Parameter instance
+     * It's been placed here in case we want to implement a meaningful validation process for CV parameters, if we need
+     * it.
      * @return true if it is valid, false otherwise
      */
     public boolean validate() {
