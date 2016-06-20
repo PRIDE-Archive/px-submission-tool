@@ -29,6 +29,9 @@ public class CvParameterParser {
 
     public static final CvParameter fromString(String s) throws CvParameterParserException {
         s = s.trim();
+        if (s.isEmpty()) {
+            return null;
+        }
         if (!s.startsWith("[")) {
             throw new CvParameterParserException("Missing starting '['");
         }
