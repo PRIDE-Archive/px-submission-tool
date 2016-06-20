@@ -270,7 +270,9 @@ public class LoadSubmissionFileAction extends AbstractAction {
 
             SubmissionRecord submissionRecord = new SubmissionRecord(submission);
 
-            ((AppContext) App.getInstance().getDesktopContext()).setSubmissionRecord(submissionRecord);
+            AppContext ctx = (AppContext) App.getInstance().getDesktopContext();
+            ctx.setSubmissionRecord(submissionRecord);
+            ctx.setBulkMode(true);
 
             return null;
         }
