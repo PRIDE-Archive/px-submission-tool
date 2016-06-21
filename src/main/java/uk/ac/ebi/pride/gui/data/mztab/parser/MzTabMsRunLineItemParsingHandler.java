@@ -3,6 +3,7 @@ package uk.ac.ebi.pride.gui.data.mztab.parser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.gui.data.mztab.model.MsRun;
+import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.IndexedItemWithPropertyParserException;
 import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerException;
 
 /**
@@ -73,8 +74,12 @@ public abstract class MzTabMsRunLineItemParsingHandler extends MetaDataLineItemP
 
     @Override
     protected boolean doParseLineItem(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException {
-        if (IndexedItemWithPropertyParser.parseLine(this, line)) {
-            return processEntry(context, lineNumber, offset);
+        try {
+            if (IndexedItemWithPropertyParser.parseLine(this, line)) {
+                return processEntry(context, lineNumber, offset);
+            }
+        } catch (IndexedItemWithPropertyParserException e) {
+            throw new LineItemParsingHandlerException(e.getMessage());
         }
         return false;
     }
