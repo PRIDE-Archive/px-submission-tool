@@ -12,8 +12,11 @@ import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidCvParameterException;
  */
 
 public class MsRunIdFormat extends CvParameter {
-
     public MsRunIdFormat(String label, String accession, String name, String value) throws InvalidCvParameterException {
         super(label, accession, name, value);
+    }
+
+    public MsRunIdFormat(CvParameter cv) {
+        super(cv);
     }
 }
