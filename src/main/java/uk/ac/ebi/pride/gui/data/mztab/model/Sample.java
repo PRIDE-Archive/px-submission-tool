@@ -17,7 +17,7 @@ import java.util.List;
  * This class models a Sample in mzTab metadata section
  */
 
-public class Sample {
+public class Sample implements Validable {
     private static final Logger logger = LoggerFactory.getLogger(Sample.class);
 
     public class DataEntry {
@@ -96,5 +96,11 @@ public class Sample {
 
     public List<DataEntry> getDataEntries() {
         return dataEntries;
+    }
+
+    @Override
+    public boolean validate() throws ValidationException {
+        // TODO
+        return false;
     }
 }

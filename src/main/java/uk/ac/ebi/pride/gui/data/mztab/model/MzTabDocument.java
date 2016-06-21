@@ -12,7 +12,7 @@ import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidMzTabDocument;
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
  */
-public class MzTabDocument {
+public class MzTabDocument implements Validable {
     private static final Logger logger = LoggerFactory.getLogger(MzTabDocument.class);
 
     // mzTab Sections
@@ -30,8 +30,9 @@ public class MzTabDocument {
         this.metaData = metaData;
     }
 
-    public boolean validate() throws InvalidMzTabDocument {
+    @Override
+    public boolean validate() throws ValidationException {
         // TODO - Validation criteria
-        return true;
+        return false;
     }
 }

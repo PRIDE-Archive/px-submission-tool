@@ -16,7 +16,7 @@ import java.net.URL;
  * This class models an ms-run entry in the metadata section of mzTab files
  */
 
-public class MsRun {
+public class MsRun implements Validable {
     private static final Logger logger = LoggerFactory.getLogger(MsRun.class);
 
     // Bean
@@ -40,5 +40,11 @@ public class MsRun {
 
     public URL getLocation() {
         return location;
+    }
+
+    @Override
+    public boolean validate() throws ValidationException {
+        // TODO - Validation Criteria
+        return false;
     }
 }
