@@ -17,7 +17,7 @@ public class IndexedItemWithPropertyParser {
         if (lineItems.length == 3) {
             // Extract item index
             bean.setIndex(Integer.valueOf(lineItems[1].substring(lineItems[1].indexOf('[') + 1, lineItems[0].indexOf(']'))));
-            bean.setPropertyKey(lineItems[1].substring(lineItems[1].indexOf(']') + 1).trim());
+            bean.setPropertyKey(lineItems[1].substring(lineItems[1].indexOf(']') + 2).trim());
             bean.setPropertyValue(lineItems[1]);
             return true;
         }
