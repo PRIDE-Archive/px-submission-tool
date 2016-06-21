@@ -139,16 +139,24 @@ public class MetaData {
         this.description = description;
     }
 
-    // Add ms-run entry
+    // MsRun Entries management
     public void updateMsRun(MsRun msRun, int index) {
         logger.debug("Adding ms-run with index " + index);
         msRuns.put(index, msRun);
     }
 
-    // Add Sample data entry
+    public MsRun getMsRunEntry(int index) {
+        return msRuns.get(index);
+    }
+
+    // Sample Entries management
     public void updateSampleData(Sample sample, int index) {
         logger.debug("Adding sample data entry, index " + index);
         samples.put(index, sample);
+    }
+
+    public Sample getSampleEntry(int index) {
+        return samples.get(index);
     }
 
     // Validate Metadata
