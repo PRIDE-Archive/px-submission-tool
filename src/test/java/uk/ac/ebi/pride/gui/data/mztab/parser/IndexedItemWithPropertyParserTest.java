@@ -1,11 +1,10 @@
 package uk.ac.ebi.pride.gui.data.mztab.parser;
 
-import org.junit.Before;
 import org.junit.Test;
 import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.IndexedItemWithPropertyParserException;
 
-import static org.junit.Assert.*;
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
 
 /**
  * Project: px-submission-tool
