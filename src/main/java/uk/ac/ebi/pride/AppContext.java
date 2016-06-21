@@ -54,9 +54,16 @@ public class AppContext extends DesktopContext {
     private SubmissionRecord submissionRecord;
 
     /**
-     * Keep a count of the data file entries, this can be used as the file entry id
+     * Keep a count of the data file entries, this can be used as the file entry
+     * id
      */
     private int dataFileEntryCount;
+
+    /**
+     * Remember whether the submission process is started from a submission.px
+     * file
+     */
+    private boolean bulkMode = false;
 
     /**
      * The main help set for PRIDE Inspector
@@ -136,7 +143,8 @@ public class AppContext extends DesktopContext {
     /**
      * Set the supporting state of the submission
      *
-     * @param type submission type, it could be supported, unsupported and raw only
+     * @param type submission type, it could be supported, unsupported and raw
+     * only
      */
     public synchronized void setSubmissionsType(SubmissionType type) {
         ProjectMetaData metadata = submissionRecord.getSubmission().getProjectMetaData();
@@ -180,7 +188,6 @@ public class AppContext extends DesktopContext {
         }
     }
 
-
     /**
      * Remove a data file from submission
      *
@@ -204,7 +211,7 @@ public class AppContext extends DesktopContext {
      * Add a new file mapping to a given data file
      *
      * @param dataFile given data file
-     * @param mapping  new file mapping
+     * @param mapping new file mapping
      */
     public synchronized void addFileMapping(DataFile dataFile, DataFile mapping) {
         if (dataFile != null) {
@@ -220,7 +227,7 @@ public class AppContext extends DesktopContext {
      * Remove a file mapping from a given data file
      *
      * @param dataFile given data file
-     * @param mapping  file mapping to remove
+     * @param mapping file mapping to remove
      */
     public synchronized void removeFileMapping(DataFile dataFile, DataFile mapping) {
         if (dataFile != null && mapping != null) {
@@ -259,7 +266,6 @@ public class AppContext extends DesktopContext {
         }
     }
 
-
     /**
      * Add an new sample metadata entry
      */
@@ -293,7 +299,7 @@ public class AppContext extends DesktopContext {
      * Set mass spec file type for a given data file
      *
      * @param dataFile data file
-     * @param type     mass spec file type
+     * @param type mass spec file type
      */
     public synchronized void setFileType(DataFile dataFile, ProjectFileType type) {
         if (dataFile != null && type != null && !dataFile.getFileType().equals(type)) {
@@ -446,6 +452,24 @@ public class AppContext extends DesktopContext {
             metaData.removeModifications(modification);
             firePropertyChange(REMOVE_MODIFICATION, null, modification);
         }
+    }
+
+    /**
+     * Check if the process was started by loading a submission.px file
+     *
+     * @return
+     */
+    public boolean isBulkMode() {
+        return bulkMode;
+    }
+
+    /**
+     * Set to true after loading the submission.px file
+     *
+     * @param BulkMode
+     */
+    public void setBulkMode(boolean BulkMode) {
+        this.bulkMode = BulkMode;
     }
 
     /**
