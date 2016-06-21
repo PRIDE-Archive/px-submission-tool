@@ -19,7 +19,7 @@ public class IndexedItemWithPropertyParser {
                 // Extract item index
                 bean.setIndex(Integer.valueOf(lineItems[1].substring(lineItems[1].indexOf('[') + 1, lineItems[1].indexOf(']'))));
                 bean.setPropertyKey(lineItems[1].substring(lineItems[1].indexOf(']') + 2).trim());
-                bean.setPropertyValue(lineItems[1]);
+                bean.setPropertyValue(lineItems[2].trim());
                 return true;
             }
         } catch (NumberFormatException e) {
