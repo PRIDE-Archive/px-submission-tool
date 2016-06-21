@@ -19,7 +19,7 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
 public class QuickMzTabModeLineItemParsingHandler extends MzTabModeLineItemParsingHandler {
     private static final Logger logger = LoggerFactory.getLogger(QuickMzTabModeLineItemParsingHandler.class);
 
-    private void checkForModeDuplication(MzTabParser context, String line, long lineNumber, long offset) {
+    private void checkForModeDuplication(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException {
         if (context.getMetaDataSection().getMode() != null) {
             throw new LineItemParsingHandlerException("DUPLICATED '" + MZTAB_MODE_KEYWORD + "' entry found!, line number '" + lineNumber + "'");
         }
