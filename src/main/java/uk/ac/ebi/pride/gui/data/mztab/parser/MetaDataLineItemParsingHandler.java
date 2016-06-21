@@ -19,6 +19,15 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
 public abstract class MetaDataLineItemParsingHandler extends LineItemParsingHandler {
     private static final Logger logger = LoggerFactory.getLogger(MetaDataLineItemParsingHandler.class);
 
+    protected interface IndexedItemWithProperty {
+        int getIndex();
+        void setIndex(int index);
+        String getPropertyKey();
+        void setPropertyKey(String pk);
+        String getPropertyValue();
+        void setPropertyValue(String pv);
+    }
+
     @Override
     protected boolean doParseLine(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException {
         return doParseLineItem(context, line, lineNumber, offset);

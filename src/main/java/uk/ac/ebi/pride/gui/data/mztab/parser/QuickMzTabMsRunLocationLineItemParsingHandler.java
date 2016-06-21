@@ -26,7 +26,7 @@ public class QuickMzTabMsRunLocationLineItemParsingHandler extends MzTabMsRunLoc
         checkForDuplicatedEntry(context, lineNumber);
         // Process entry
         try {
-            context.getMetaDataSection().getMsRunEntry(getIndex()).setLocation(new URL(getSubItemValueString()));
+            context.getMetaDataSection().getMsRunEntry(getIndex()).setLocation(new URL(getPropertyValue()));
         } catch (MalformedURLException e) {
             throw new LineItemParsingHandlerException(e.getMessage());
         }

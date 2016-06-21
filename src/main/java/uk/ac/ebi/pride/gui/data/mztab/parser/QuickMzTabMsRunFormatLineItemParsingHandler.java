@@ -2,7 +2,6 @@ package uk.ac.ebi.pride.gui.data.mztab.parser;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.ebi.pride.gui.data.mztab.model.MsRun;
 import uk.ac.ebi.pride.gui.data.mztab.model.MsRunFormat;
 import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerException;
 
@@ -29,7 +28,7 @@ public class QuickMzTabMsRunFormatLineItemParsingHandler extends MzTabMsRunForma
     protected boolean doProcessEntry(MzTabParser context, long lineNumber, long offset) {
         checkForDuplicatedEntry(context, lineNumber);
         // Process the entry
-        getMsRunFromContext(context, getIndex()).setMsRunFormat(new MsRunFormat(CvParameterParser.fromString(getSubItemValueString())));
+        getMsRunFromContext(context, getIndex()).setMsRunFormat(new MsRunFormat(CvParameterParser.fromString(getPropertyValue())));
         return true;
     }
 }

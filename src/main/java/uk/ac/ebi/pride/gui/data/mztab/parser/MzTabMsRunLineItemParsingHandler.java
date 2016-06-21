@@ -14,36 +14,42 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
  * All rights reserved.
  */
 
-public abstract class MzTabMsRunLineItemParsingHandler extends MetaDataLineItemParsingHandler {
+public abstract class MzTabMsRunLineItemParsingHandler extends MetaDataLineItemParsingHandler implements MetaDataLineItemParsingHandler.IndexedItemWithProperty {
     private static final Logger logger = LoggerFactory.getLogger(MzTabMsRunLineItemParsingHandler.class);
 
     protected static final String MZTAB_MSRUN_ITEM_PREFIX = "ms_run";
     private int index = 0;
-    private String subItemString = "";
-    private String subItemValueString = "";
+    private String propertyKey = "";
+    private String propertyValue = "";
 
-    protected int getIndex() {
+    @Override
+    public int getIndex() {
         return index;
     }
 
-    private void setIndex(int index) {
+    @Override
+    public void setIndex(int index) {
         this.index = index;
     }
 
-    protected String getSubItemString() {
-        return subItemString;
+    @Override
+    public String getPropertyKey() {
+        return propertyKey;
     }
 
-    private void setSubItemString(String subItemString) {
-        this.subItemString = subItemString;
+    @Override
+    public void setPropertyKey(String propertyKey) {
+        this.propertyKey = propertyKey;
     }
 
-    protected String getSubItemValueString() {
-        return subItemValueString;
+    @Override
+    public String getPropertyValue() {
+        return propertyValue;
     }
 
-    private void setSubItemValueString(String subItemValueString) {
-        this.subItemValueString = subItemValueString;
+    @Override
+    public void setPropertyValue(String propertyValue) {
+        this.propertyValue = propertyValue;
     }
 
     // Working with MsRun objects from context
@@ -67,12 +73,7 @@ public abstract class MzTabMsRunLineItemParsingHandler extends MetaDataLineItemP
 
     @Override
     protected boolean doParseLineItem(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException {
-        String[] lineItems = line.split("\t");
-        if (lineItems.length == 3) {
-            // Extract item index
-            setIndex(Integer.valueOf(lineItems[1].substring(lineItems[1].indexOf('[') + 1, lineItems[0].indexOf(']'))));
-            setSubItemString(lineItems[1].substring(lineItems[1].indexOf(']') + 1).trim());
-            setSubItemValueString(lineItems[1]);
+        if (IndexedItemWithPropertyParser.parseLine(this, line)) {
             return processEntry(context, lineNumber, offset);
         }
         return false;

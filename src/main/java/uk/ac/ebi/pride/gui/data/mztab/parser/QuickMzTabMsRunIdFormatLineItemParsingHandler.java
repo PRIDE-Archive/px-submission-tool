@@ -23,7 +23,7 @@ public class QuickMzTabMsRunIdFormatLineItemParsingHandler extends MzTabMsRunIdF
     protected boolean doProcessEntry(MzTabParser context, long lineNumber, long offset) throws LineItemParsingHandlerException {
         checkForDuplicatedEntry(context, lineNumber);
         // Process entry
-        context.getMetaDataSection().getMsRunEntry(getIndex()).setMsRunIdFormat(new MsRunIdFormat(CvParameterParser.fromString(getSubItemValueString())));
+        context.getMetaDataSection().getMsRunEntry(getIndex()).setMsRunIdFormat(new MsRunIdFormat(CvParameterParser.fromString(getPropertyValue())));
         return true;
     }
 }
