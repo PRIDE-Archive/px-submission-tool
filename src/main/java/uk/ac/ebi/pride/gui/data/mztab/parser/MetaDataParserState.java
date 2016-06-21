@@ -31,6 +31,9 @@ public abstract class MetaDataParserState extends ParserState {
 
     @Override
     public void parseLine(MzTabParser context, String line, long lineNumber, long offset) throws ParserStateException {
+        // TODO - Remove the beginning ("MTD") of the line, as line item parsers don't introduce redundancy by checking
+        // TODO - this is present, and they should only deal with the rest of the line, where the fact that we are in
+        // TODO - the right section of the file, has already been checked by the corresponding ParserState object
         // Routing algorithm at Section level
         if (line.startsWith("MTD") || line.startsWith("COM")) {
             // Get appropiate section item parser
