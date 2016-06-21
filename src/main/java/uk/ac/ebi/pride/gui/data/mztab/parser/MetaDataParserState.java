@@ -35,26 +35,28 @@ public abstract class MetaDataParserState extends ParserState {
         // TODO - this is present, and they should only deal with the rest of the line, where the fact that we are in
         // TODO - the right section of the file, has already been checked by the corresponding ParserState object
         // Routing algorithm at Section level
-        if (line.startsWith("MTD") || line.startsWith("COM")) {
-            // Get appropiate section item parser
-            try {
-                if (!getLineItemParsingHandler().parseLine(context, line, lineNumber, offset)) {
-                    logger.warn("IGNORED Line '" + lineNumber + "', offset '" + offset + "', content '" + line + "'");
+        if (!line.isEmpty()) {
+            if (line.startsWith("MTD") || line.startsWith("COM")) {
+                // Get appropiate section item parser
+                try {
+                    if (!getLineItemParsingHandler().parseLine(context, line, lineNumber, offset)) {
+                        logger.warn("IGNORED Line '" + lineNumber + "', offset '" + offset + "', content '" + line + "'");
+                    }
+                } catch (LineItemParsingHandlerException e) {
+                    throw new ParserStateException("Error parsing line '" + lineNumber + "' ---> " + e.getMessage());
                 }
-            } catch (LineItemParsingHandlerException e) {
-                throw new ParserStateException("Error parsing line '" + lineNumber + "' ---> " + e.getMessage());
+            } else if (line.startsWith("PRH")) {
+                // TODO Change state to parsing Proteins
+            } else if (line.startsWith("PSH")) {
+                // TODO Change state to parsing PSMs
+            } else if (line.startsWith("PEH")) {
+                // TODO Change state to parsing Peptides
+            } else if (line.startsWith("SMH")) {
+                // TODO Change state to parsing Small Molecules
+            } else {
+                // UNEXPECTED Line content ERROR
+                throw new ParserStateException("UNEXPECTED LINE '" + line + "' at line number '" + lineNumber + "', offset '" + offset + "'");
             }
-        } else if (line.startsWith("PRH")) {
-            // TODO Change state to parsing Proteins
-        } else if (line.startsWith("PSH")) {
-            // TODO Change state to parsing PSMs
-        } else if (line.startsWith("PEH")) {
-            // TODO Change state to parsing Peptides
-        } else if (line.startsWith("SMH")) {
-            // TODO Change state to parsing Small Molecules
-        } else {
-            // UNEXPECTED Line content ERROR
-            throw new ParserStateException("UNEXPECTED LINE '" + line + "' at line number '" + lineNumber + "', offset '" + offset + "'");
         }
     }
 }
