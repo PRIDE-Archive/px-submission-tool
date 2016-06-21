@@ -49,7 +49,7 @@ public class MetaDataTest {
         MsRunFormat msRunFormat = new MsRunFormat("PSI-MS", "MS:1001062", "Mascot MGF file", CvParameter.DEFAULT_VALUE);
         MsRunIdFormat msRunIdFormat = new MsRunIdFormat("PSI-MS", "MS:1000774", "multiple peak list nativeID format", CvParameter.DEFAULT_VALUE);
         MsRun msRun = new MsRun(msRunFormat, msRunIdFormat, new URL("file:/test.file"));
-        metaData.addMsRun(msRun);
+        metaData.updateMsRun(msRun, 1);
         metaData.validate();
     }
 }
