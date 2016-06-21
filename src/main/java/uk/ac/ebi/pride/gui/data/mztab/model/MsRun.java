@@ -24,6 +24,9 @@ public class MsRun implements Validable {
     private MsRunIdFormat msRunIdFormat = null;
     private URL location = null;
 
+    public MsRun() {
+    }
+
     public MsRun(MsRunFormat msRunFormat, MsRunIdFormat msRunIdFormat, URL location) {
         this.msRunFormat = msRunFormat;
         this.msRunIdFormat = msRunIdFormat;
