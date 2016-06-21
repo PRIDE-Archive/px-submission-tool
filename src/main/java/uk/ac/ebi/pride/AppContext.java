@@ -63,7 +63,7 @@ public class AppContext extends DesktopContext {
      * Remember whether the submission process is started from a submission.px
      * file
      */
-    private boolean BulkMode = false;
+    private boolean bulkMode = false;
 
     /**
      * The main help set for PRIDE Inspector
@@ -460,7 +460,7 @@ public class AppContext extends DesktopContext {
      * @return
      */
     public boolean isBulkMode() {
-        return BulkMode;
+        return bulkMode;
     }
 
     /**
@@ -469,7 +469,7 @@ public class AppContext extends DesktopContext {
      * @param BulkMode
      */
     public void setBulkMode(boolean BulkMode) {
-        this.BulkMode = BulkMode;
+        this.bulkMode = BulkMode;
     }
 
     /**
