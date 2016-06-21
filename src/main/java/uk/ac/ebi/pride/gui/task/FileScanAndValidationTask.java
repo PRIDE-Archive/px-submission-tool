@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
  * @version $Id$
  */
 public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMessage, Void> {
+
     private static final Logger logger = LoggerFactory.getLogger(FileScanAndValidationTask.class);
 
     private static final String MZIDENTML_ACCEPTED_VERSION = "1.1.0";
@@ -47,7 +48,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
 
     public FileScanAndValidationTask(Submission submission) {
         this.submission = submission;
-        this.appContext = (AppContext)App.getInstance().getDesktopContext();
+        this.appContext = (AppContext) App.getInstance().getDesktopContext();
     }
 
     @Override
@@ -182,7 +183,6 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             setProgress(80);
         }
 
-
         // cannot have unsupported raw files, such as: pkl
         if (quickValidationResult.hasUnsupportedRawFile()) {
             return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getUnsupportedRawFileWarning());
@@ -194,13 +194,15 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         }
 
         // pre-scan for file relation
-        scanForFileMappings();
+        // but only for non-bulkmode
+        if (!appContext.isBulkMode()) {
+            scanForFileMappings();
+        }
 
         setProgress(100);
 
         return new DataFileValidationMessage(ValidationState.SUCCESS);
     }
-
 
     private void scanForFileMappings() {
         List<DataFile> dataFiles = submission.getDataFiles();
@@ -297,7 +299,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
      * Validate a list of data files
      *
      * @param dataFiles a list of data files
-     * @return ValidationResult    stores all the validation results
+     * @return ValidationResult stores all the validation results
      */
     private QuickValidationResult runQuickValidation(List<DataFile> dataFiles) {
         QuickValidationResult result = new QuickValidationResult();
@@ -342,10 +344,8 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             } else if (ProjectFileType.SEARCH.equals(fileType)) {
                 if (PrideConverterSupport.isSupported(dataFile)) {
                     result.setSupportedSearchFile(true);
-                } else {
-                    if (MassSpecFileFormat.PRIDE.equals(fileFormat) || MassSpecFileFormat.MZIDENTML.equals(fileFormat)) {
-                        result.setUnsupportedSearchFile(true);
-                    }
+                } else if (MassSpecFileFormat.PRIDE.equals(fileFormat) || MassSpecFileFormat.MZIDENTML.equals(fileFormat)) {
+                    result.setUnsupportedSearchFile(true);
                 }
             } else if (ProjectFileType.MS_IMAGE_DATA.equals(fileType)) {
                 result.setImagingDataFile(true);
@@ -356,7 +356,8 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
     }
 
     /**
-     * Scan pride xml for sample related metadata, this will avoid asking user to input them again
+     * Scan pride xml for sample related metadata, this will avoid asking user
+     * to input them again
      */
     private void scanPrideXmlSampleDetails(List<DataFile> dataFiles) throws IOException {
         for (DataFile dataFile : dataFiles) {
@@ -410,7 +411,8 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
     }
 
     /**
-     * Update sample metadata of a given data file using a given sample description
+     * Update sample metadata of a given data file using a given sample
+     * description
      */
     private void updateSampleMetaData(DataFile dataFile, SampleDescription sampleDescription) {
         SampleMetaData sampleMetaData = dataFile.getSampleMetaData();
@@ -532,7 +534,8 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
      * Validate whether mzIdentML contains SpectraData section
      *
      * @param dataFiles a list of all data files
-     * @return  a list of invalid mzIdentMl files which don't contain SpectraData section
+     * @return a list of invalid mzIdentMl files which don't contain SpectraData
+     * section
      * @throws IOException
      */
     private List<DataFile> runMzIdentMLSpectraDataValidation(List<DataFile> dataFiles) throws IOException {
@@ -552,10 +555,12 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
     }
 
     /**
-     * validate whether the peak list files referenced by mzIdentML files are present
+     * validate whether the peak list files referenced by mzIdentML files are
+     * present
      *
      * @param dataFiles a list of all data files
-     * @return a map of original mzIdentML data file and missing peak list file name
+     * @return a map of original mzIdentML data file and missing peak list file
+     * name
      */
     private Map<DataFile, List<String>> runMzIdentMLPeakListFileScanAndValidation(List<DataFile> dataFiles) throws IOException {
         Map<DataFile, List<String>> invalidMzIdentMLFiles = new HashMap<DataFile, List<String>>();
@@ -610,7 +615,6 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                     break;
                 }
 
-
                 Matcher matcher = MZIDENTML_PEAK_LIST_FILE_PATTERN.matcher(line);
                 if (matcher.matches()) {
                     String filePath = matcher.group(1);
@@ -624,7 +628,6 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 mzIdentMLInputStream.close();
             }
         }
-
 
         return peakListFileNames;
     }
