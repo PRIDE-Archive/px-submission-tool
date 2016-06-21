@@ -52,4 +52,5 @@ public abstract class LineItemParsingHandler {
 
     // Delegate
     protected abstract boolean doParseLine(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException;
+    // TODO - Add a delegated method that converts the line item key to String, for logging and exception messages
 }
