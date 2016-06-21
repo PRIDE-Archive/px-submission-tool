@@ -5,7 +5,9 @@ import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidMetaDataException;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Project: px-submission-tool
@@ -71,9 +73,9 @@ public class MetaData {
     // description
     private String description;
     // ms-run entries
-    private List<MsRun> msRuns;
+    private Map<Integer, MsRun> msRuns;
     // samples
-    private List<Sample> samples;
+    private Map<Integer, Sample> samples;
     // TODO
 
     public MetaData() {
@@ -83,8 +85,8 @@ public class MetaData {
         fileId = null;
         title = null;
         description = null;
-        msRuns = new ArrayList<>();
-        samples = new ArrayList<>();
+        msRuns = new HashMap<>();
+        samples = new HashMap<>();
     }
 
     // Getters/Setters
@@ -138,15 +140,15 @@ public class MetaData {
     }
 
     // Add ms-run entry
-    public void addMsRun(MsRun msRun) {
-        logger.debug("Adding ms-run");
-        msRuns.add(msRun);
+    public void updateMsRun(MsRun msRun, int index) {
+        logger.debug("Adding ms-run with index " + index);
+        msRuns.put(index, msRun);
     }
 
     // Add Sample data entry
-    public void addSampleData(Sample sample) {
-        logger.debug("Adding sample data entry");
-        samples.add(sample);
+    public void updateSampleData(Sample sample, int index) {
+        logger.debug("Adding sample data entry, index " + index);
+        samples.put(index, sample);
     }
 
     // Validate Metadata
@@ -171,7 +173,8 @@ public class MetaData {
             throw new InvalidMetaDataException("Missing ms-run[] entries");
         } else {
             boolean msrunLocationPresent = false;
-            for (MsRun item : msRuns
+            // TODO - Rewrite validation criteria
+            /*for (MsRun item : msRuns
                     ) {
                 if (item.getLocation() != null) {
                     msrunLocationPresent = true;
@@ -180,9 +183,8 @@ public class MetaData {
             }
             if (!msrunLocationPresent) {
                 throw new InvalidMetaDataException("No ms-run location present!");
-            }
+            }*/
         }
-
         // TODO Consistency check
     }
 }
