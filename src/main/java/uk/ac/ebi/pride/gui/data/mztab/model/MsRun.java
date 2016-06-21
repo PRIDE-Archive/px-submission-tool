@@ -42,6 +42,18 @@ public class MsRun implements Validable {
         return location;
     }
 
+    public void setMsRunFormat(MsRunFormat msRunFormat) {
+        this.msRunFormat = msRunFormat;
+    }
+
+    public void setMsRunIdFormat(MsRunIdFormat msRunIdFormat) {
+        this.msRunIdFormat = msRunIdFormat;
+    }
+
+    public void setLocation(URL location) {
+        this.location = location;
+    }
+
     @Override
     public boolean validate() throws ValidationException {
         // TODO - Validation Criteria
