@@ -7,6 +7,10 @@ import org.junit.runners.Parameterized;
 import java.util.Arrays;
 import java.util.Collection;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.core.Is.is;
+import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
+
 /**
  * Project: px-submission-tool
  * Package: uk.ac.ebi.pride.gui.data.mztab.parser
@@ -40,13 +44,22 @@ public class IndexedItemWithPropertyParserBulkTest {
     @Test
     public void checkThatParseDataMatchesOriginal() {
         DummyIndexedItemWithPropertyBean bean = new DummyIndexedItemWithPropertyBean();
-        IndexedItemWithPropertyParser.parseLine(bean, getMzTabLine(lineStart, lineItemKey, index, propertyKey, propertyValue));
+        assertThat("mzTab line with missing fields passes",
+                IndexedItemWithPropertyParser.parseLine(bean, getMzTabLine(lineStart, lineItemKey, index, propertyKey, propertyValue)),
+                is(true));
+        assertThat(testDescription, bean.getLineItemKey(), equalToIgnoringCase(lineItemKey));
+        assertThat(testDescription, bean.getIndex() == index, is(true));
+        assertThat(testDescription, bean.getPropertyKey(), equalToIgnoringCase(propertyKey));
+        assertThat(testDescription, bean.getPropertyValue(), equalToIgnoringCase(propertyValue));
     }
 
     @Parameterized.Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(new Object[][]{
-                {"MTD", "ms-run", 0, "format", "", "Empty Value"},
+                // Empty value at the end is a special case, that has to do with trailing new line characters or not,
+                // as a general rule, we'll consider missing values as missing the entire last part, thus, not parsing
+                // when a particular number of items is involved
+                //{"MTD", "ms-run", 0, "format", "", "Empty Value"},
                 {"MTD", "ms-run", 1, "format", "[MS, MS:1000584, mzML file, ]", "Valid format value"},
                 {"MTD", "ms-run", 2, "id_format", "[MS, MS:1000530, mzML unique identifier, ]", "Valid id_format value"},
                 {"MTD", "ms-run", 3, "location", "file://platelets_lysate-24.mzML", "Location data"},
