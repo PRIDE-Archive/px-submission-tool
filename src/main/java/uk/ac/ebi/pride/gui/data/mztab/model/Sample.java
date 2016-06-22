@@ -90,7 +90,6 @@ public class Sample implements Validable {
     }
 
     public String getDescription() {
-
         return description;
     }
 
