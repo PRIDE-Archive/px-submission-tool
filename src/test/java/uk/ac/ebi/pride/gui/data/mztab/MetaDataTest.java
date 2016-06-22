@@ -1,19 +1,13 @@
 package uk.ac.ebi.pride.gui.data.mztab;
 
-import com.itextpdf.text.Meta;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidMetaDataException;
 import uk.ac.ebi.pride.gui.data.mztab.model.*;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-
-import static org.junit.Assert.*;
 
 /**
  * Project: px-submission-tool
