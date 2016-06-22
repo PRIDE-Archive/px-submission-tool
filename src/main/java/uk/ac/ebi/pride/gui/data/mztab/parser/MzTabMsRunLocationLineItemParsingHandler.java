@@ -12,9 +12,14 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
  */
 
 public abstract class MzTabMsRunLocationLineItemParsingHandler extends MzTabMsRunLineItemParsingHandler {
+    private static final String MZTAB_MSRUN_LOCATION_PROPERTY_KEY = "location";
+
     @Override
     protected boolean processEntry(MzTabParser context, long lineNumber, long offset)  throws LineItemParsingHandlerException {
-        return doProcessEntry(context, lineNumber, offset);
+        if (getPropertyKey().equals(MZTAB_MSRUN_LOCATION_PROPERTY_KEY)) {
+            return doProcessEntry(context, lineNumber, offset);
+        }
+        return false;
     }
 
     // Delegate to strategy subclasses what to do
