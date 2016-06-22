@@ -12,6 +12,8 @@ import java.net.URL;
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
+ *
+ * Quick processing strategy for ms-run location entries
  */
 
 public class QuickMzTabMsRunLocationLineItemParsingHandler extends MzTabMsRunLocationLineItemParsingHandler {
