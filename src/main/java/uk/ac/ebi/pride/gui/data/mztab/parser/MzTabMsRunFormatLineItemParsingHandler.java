@@ -12,9 +12,14 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
  */
 
 public abstract class MzTabMsRunFormatLineItemParsingHandler extends MzTabMsRunLineItemParsingHandler {
+    protected static final String MZTAB_MSRUN_FORMAT_PROPERTY_KEY = "format";
+
     @Override
     protected boolean processEntry(MzTabParser context, long lineNumber, long offset)  throws LineItemParsingHandlerException {
-        return doProcessEntry(context, lineNumber, offset);
+        if (getPropertyKey().equals(MZTAB_MSRUN_FORMAT_PROPERTY_KEY)) {
+            return doProcessEntry(context, lineNumber, offset);
+        }
+        return false;
     }
 
     // Delegate to strategy subclasses what to do
