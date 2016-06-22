@@ -1,7 +1,7 @@
 package uk.ac.ebi.pride.gui.data.mztab.parser;
 
 import org.junit.Test;
-import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.IndexedItemWithPropertyParserException;
+import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.MetadataIndexedItemParserStrategyException;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -21,21 +21,21 @@ public class MetadataIndexedItemParserStrategyTest {
 
     @Test
     public void falseOnEmptyLine() {
-        assertThat("False on empty line", MetadataIndexedItemParserStrategy.parseLine(new DummyIndexedItemWithPropertyBean(), ""), is(false));
+        assertThat("False on empty line", MetadataIndexedItemParserStrategy.parseLine(new DummyIndexedLineItemWithPropertyBeanBean(), ""), is(false));
     }
 
-    @Test(expected = IndexedItemWithPropertyParserException.class)
+    @Test(expected = MetadataIndexedItemParserStrategyException.class)
     public void cantParseMalformedLines() {
-        assertThat("False for not mzTab line", MetadataIndexedItemParserStrategy.parseLine(new DummyIndexedItemWithPropertyBean(), "this is not valid"), is(false));
+        assertThat("False for not mzTab line", MetadataIndexedItemParserStrategy.parseLine(new DummyIndexedLineItemWithPropertyBeanBean(), "this is not valid"), is(false));
         assertThat("False for all malformed mzTab line, when only line start is present",
-                MetadataIndexedItemParserStrategy.parseLine(new DummyIndexedItemWithPropertyBean(), "MTD\t"), is(false));
+                MetadataIndexedItemParserStrategy.parseLine(new DummyIndexedLineItemWithPropertyBeanBean(), "MTD\t"), is(false));
         assertThat("False for all malformed mzTab line, when missing property, index and value",
-                MetadataIndexedItemParserStrategy.parseLine(new DummyIndexedItemWithPropertyBean(), "MTD\ttestKey"), is(false));
+                MetadataIndexedItemParserStrategy.parseLine(new DummyIndexedLineItemWithPropertyBeanBean(), "MTD\ttestKey"), is(false));
         assertThat("False for all malformed mzTab line, when missing property key and value",
-                MetadataIndexedItemParserStrategy.parseLine(new DummyIndexedItemWithPropertyBean(), "MTD\ttestKey[12]"), is(false));
+                MetadataIndexedItemParserStrategy.parseLine(new DummyIndexedLineItemWithPropertyBeanBean(), "MTD\ttestKey[12]"), is(false));
         assertThat("False for all malformed mzTab line, when missing property value",
-                MetadataIndexedItemParserStrategy.parseLine(new DummyIndexedItemWithPropertyBean(), "MTD\ttestKey[12]-testPropertyKey"), is(false));
+                MetadataIndexedItemParserStrategy.parseLine(new DummyIndexedLineItemWithPropertyBeanBean(), "MTD\ttestKey[12]-testPropertyKey"), is(false));
         // Exception for NAN indexes
-        MetadataIndexedItemParserStrategy.parseLine(new DummyIndexedItemWithPropertyBean(), "MTD\ttestKey[I am not a number]-testPropertyKey\ttest property value");
+        MetadataIndexedItemParserStrategy.parseLine(new DummyIndexedLineItemWithPropertyBeanBean(), "MTD\ttestKey[I am not a number]-testPropertyKey\ttest property value");
     }
 }

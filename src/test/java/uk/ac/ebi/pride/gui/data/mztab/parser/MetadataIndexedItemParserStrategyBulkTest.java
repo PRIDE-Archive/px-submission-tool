@@ -43,7 +43,7 @@ public class MetadataIndexedItemParserStrategyBulkTest {
 
     @Test
     public void checkThatParseDataMatchesOriginal() {
-        DummyIndexedItemWithPropertyBean bean = new DummyIndexedItemWithPropertyBean();
+        DummyIndexedLineItemWithPropertyBeanBean bean = new DummyIndexedLineItemWithPropertyBeanBean();
         assertThat("mzTab line with missing fields passes",
                 MetadataIndexedItemParserStrategy.parseLine(bean, getMzTabLine(lineStart, lineItemKey, index, propertyKey, propertyValue)),
                 is(true));
