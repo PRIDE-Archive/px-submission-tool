@@ -4,9 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidMetaDataException;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -32,7 +30,9 @@ public class MetaData {
             this.type = type;
         }
 
-        public String getValue() {return toString();}
+        public String getValue() {
+            return toString();
+        }
 
         @Override
         public String toString() {
@@ -51,7 +51,9 @@ public class MetaData {
             this.mode = mode;
         }
 
-        public String getValue() {return toString();}
+        public String getValue() {
+            return toString();
+        }
 
         @Override
         public String toString() {
@@ -140,9 +142,9 @@ public class MetaData {
     }
 
     // MsRun Entries management
-    public void updateMsRun(MsRun msRun, int index) {
+    public MsRun updateMsRun(MsRun msRun, int index) {
         logger.debug("Adding ms-run with index " + index);
-        msRuns.put(index, msRun);
+        return msRuns.put(index, msRun);
     }
 
     public MsRun getMsRunEntry(int index) {
