@@ -3,8 +3,8 @@ package uk.ac.ebi.pride.gui.data.mztab.model;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Project: px-submission-tool
@@ -78,11 +78,11 @@ public class Sample implements Validable {
 
     // Bean
     private String description;
-    private List<DataEntry> dataEntries;
+    private Map<Integer, DataEntry> dataEntries;
 
     public Sample() {
         description = "";
-        dataEntries = new ArrayList<>();
+        dataEntries = new HashMap<>();
     }
 
     public void setDescription(String description) {
@@ -94,8 +94,13 @@ public class Sample implements Validable {
         return description;
     }
 
-    public List<DataEntry> getDataEntries() {
-        return dataEntries;
+    // Data Entries management
+    public DataEntry updateDataEntry(DataEntry dataEntry, int index) {
+        return dataEntries.put(index, dataEntry);
+    }
+
+    public DataEntry getDataEntry(int index) {
+        return dataEntries.get(index);
     }
 
     @Override
