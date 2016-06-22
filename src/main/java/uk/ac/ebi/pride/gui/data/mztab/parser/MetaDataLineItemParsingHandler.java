@@ -20,6 +20,8 @@ public abstract class MetaDataLineItemParsingHandler extends LineItemParsingHand
     private static final Logger logger = LoggerFactory.getLogger(MetaDataLineItemParsingHandler.class);
 
     protected interface IndexedItemWithProperty {
+        String getLineItemKey();
+        void setLineItemKey(String lineItemKey);
         int getIndex();
         void setIndex(int index);
         String getPropertyKey();

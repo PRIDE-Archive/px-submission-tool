@@ -16,7 +16,8 @@ public abstract class IndexedItemWithPropertyParser {
         String[] lineItems = line.split("\t");
         try {
             if (lineItems.length == 3) {
-                // Extract item index
+                // Extract data
+                bean.setLineItemKey(lineItems[1].substring(0, lineItems[1].indexOf('[')));
                 bean.setIndex(Integer.valueOf(lineItems[1].substring(lineItems[1].indexOf('[') + 1, lineItems[1].indexOf(']'))));
                 bean.setPropertyKey(lineItems[1].substring(lineItems[1].indexOf(']') + 2).trim());
                 bean.setPropertyValue(lineItems[2].trim());

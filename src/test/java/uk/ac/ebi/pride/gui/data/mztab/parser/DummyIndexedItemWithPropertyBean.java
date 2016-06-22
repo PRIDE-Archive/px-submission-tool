@@ -9,9 +9,20 @@ package uk.ac.ebi.pride.gui.data.mztab.parser;
  * All rights reserved.
  */
 public class DummyIndexedItemWithPropertyBean implements MetaDataLineItemParsingHandler.IndexedItemWithProperty {
+    private String lineItemKey = null;
     private int index = -1;
     private String propertyKey = null;
     private String propertyValue = null;
+
+    @Override
+    public String getLineItemKey() {
+        return lineItemKey;
+    }
+
+    @Override
+    public void setLineItemKey(String lineItemKey) {
+        this.lineItemKey = lineItemKey;
+    }
 
     @Override
     public int getIndex() {

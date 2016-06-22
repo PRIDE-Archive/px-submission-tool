@@ -19,9 +19,20 @@ public abstract class MzTabMsRunLineItemParsingHandler extends MetaDataLineItemP
     private static final Logger logger = LoggerFactory.getLogger(MzTabMsRunLineItemParsingHandler.class);
 
     protected static final String MZTAB_MSRUN_ITEM_PREFIX = "ms_run";
+    private String lineItemKey = "";
     private int index = 0;
     private String propertyKey = "";
     private String propertyValue = "";
+
+    @Override
+    public String getLineItemKey() {
+        return lineItemKey;
+    }
+
+    @Override
+    public void setLineItemKey(String lineItemKey) {
+        this.lineItemKey = lineItemKey;
+    }
 
     @Override
     public int getIndex() {
