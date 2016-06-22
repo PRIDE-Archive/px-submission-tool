@@ -15,7 +15,7 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.IndexedItemWithPropertyP
  * It captures the data into the given IndexedItemWithProperty object
  */
 
-public abstract class IndexedItemWithPropertyParser {
+public abstract class MetadataIndexedItemParserStrategy {
     public static boolean parseLine(MetaDataLineItemParsingHandler.IndexedItemWithProperty bean, String line) throws IndexedItemWithPropertyParserException {
         String[] lineItems = line.split("\t");
         try {

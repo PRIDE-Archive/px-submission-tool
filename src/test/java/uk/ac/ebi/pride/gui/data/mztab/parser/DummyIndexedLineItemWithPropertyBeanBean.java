@@ -8,7 +8,7 @@ package uk.ac.ebi.pride.gui.data.mztab.parser;
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
  */
-public class DummyIndexedItemWithPropertyBean implements MetaDataLineItemParsingHandler.IndexedItemWithProperty {
+public class DummyIndexedLineItemWithPropertyBeanBean implements MetaDataLineItemParsingHandler.IndexedLineItemWithPropertyBean {
     private String lineItemKey = null;
     private int index = -1;
     private String propertyKey = null;
