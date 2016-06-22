@@ -9,6 +9,10 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.IndexedItemWithPropertyP
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
+ *
+ * Parsing algorithm for those entries that consist of a <line_start>\t<lineItemKey>[index]-<propertyKey>\t<propertyValue>
+ *
+ * It captures the data into the given IndexedItemWithProperty object
  */
 
 public abstract class IndexedItemWithPropertyParser {

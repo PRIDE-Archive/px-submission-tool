@@ -9,6 +9,10 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
+ *
+ * Checking step for ms-run location entry
+ *
+ * It delegates further processing of its data
  */
 
 public abstract class MzTabMsRunLocationLineItemParsingHandler extends MzTabMsRunLineItemParsingHandler {

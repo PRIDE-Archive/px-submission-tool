@@ -10,6 +10,8 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
+ *
+ * Processing strategy for ms-run id_format entries
  */
 
 public class QuickMzTabMsRunIdFormatLineItemParsingHandler extends MzTabMsRunIdFormatLineItemParsingHandler {

@@ -13,6 +13,8 @@ import static org.junit.Assert.assertThat;
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
+ *
+ *
  */
 
 public class IndexedItemWithPropertyParserTest {

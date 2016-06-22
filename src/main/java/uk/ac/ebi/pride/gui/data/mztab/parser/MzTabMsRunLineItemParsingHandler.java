@@ -13,6 +13,12 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
+ *
+ * Root of the hierarchy of classes that will process ms-run entries in the mzTab file
+ *
+ * It does the first simple parsing of the ms-run entry, checking it at line item key level, i.e. it checks that the
+ * given line corresponds to an ms-run entry, and delegates identification and further processing of its particular data
+ * (location, format, id_format...)
  */
 
 public abstract class MzTabMsRunLineItemParsingHandler extends MetaDataLineItemParsingHandler implements MetaDataLineItemParsingHandler.IndexedItemWithProperty {
