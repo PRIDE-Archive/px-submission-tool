@@ -157,7 +157,7 @@ public class MetaData {
         samples.put(index, sample);
     }
 
-    public Sample getSampleEntry(int index) {
+    public Sample getSampleData(int index) {
         return samples.get(index);
     }
 
