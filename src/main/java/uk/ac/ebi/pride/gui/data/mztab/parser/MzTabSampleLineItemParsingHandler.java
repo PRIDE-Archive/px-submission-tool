@@ -2,6 +2,7 @@ package uk.ac.ebi.pride.gui.data.mztab.parser;
 
 import uk.ac.ebi.pride.gui.data.mztab.model.Sample;
 import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerException;
+import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.MetadataIndexedItemParserStrategyException;
 
 /**
  * Project: px-submission-tool
@@ -80,7 +81,20 @@ public abstract class MzTabSampleLineItemParsingHandler extends MetaDataLineItem
     }
 
     @Override
-    protected boolean doParseLineItem(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException {
+    protected boolean doParseLineItem(MzTabParser context, String line, long lineNumber, long offset)
+            throws LineItemParsingHandlerException {
+        // TODO - I should probably refactor this code out to a superclass for all those subclasses dealing with indexed
+        // TODO - line items, with or without properties share the same code
+        try {
+            if (MetadataIndexedItemParserStrategy.parseLine(this, line)) {
+                if (getLineItemKey().equals(MZTAB_SAMPLE_ITEM_PREFIX)) {
+                    // The line item key is ok, go ahead
+                    return processEntry(context, lineNumber, offset);
+                }
+            }
+        } catch (MetadataIndexedItemParserStrategyException e) {
+            throw new LineItemParsingHandlerException(e.getMessage());
+        }
         return false;
     }
 
