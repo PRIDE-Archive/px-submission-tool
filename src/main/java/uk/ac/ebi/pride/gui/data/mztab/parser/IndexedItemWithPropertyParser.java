@@ -11,7 +11,7 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.IndexedItemWithPropertyP
  * All rights reserved.
  */
 
-public class IndexedItemWithPropertyParser {
+public abstract class IndexedItemWithPropertyParser {
     public static boolean parseLine(MetaDataLineItemParsingHandler.IndexedItemWithProperty bean, String line) throws IndexedItemWithPropertyParserException {
         String[] lineItems = line.split("\t");
         try {
@@ -26,10 +26,5 @@ public class IndexedItemWithPropertyParser {
             throw new IndexedItemWithPropertyParserException(e.getMessage());
         }
         return false;
-    }
-
-    // No instances of this class
-
-    private IndexedItemWithPropertyParser() {
     }
 }
