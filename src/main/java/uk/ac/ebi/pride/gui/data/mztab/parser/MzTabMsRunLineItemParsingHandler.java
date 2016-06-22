@@ -87,7 +87,10 @@ public abstract class MzTabMsRunLineItemParsingHandler extends MetaDataLineItemP
     protected boolean doParseLineItem(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException {
         try {
             if (IndexedItemWithPropertyParser.parseLine(this, line)) {
-                return processEntry(context, lineNumber, offset);
+                if (getLineItemKey().equals(MZTAB_MSRUN_ITEM_PREFIX)) {
+                    // The line item key is ok, go ahead
+                    return processEntry(context, lineNumber, offset);
+                }
             }
         } catch (IndexedItemWithPropertyParserException e) {
             throw new LineItemParsingHandlerException(e.getMessage());
