@@ -18,7 +18,7 @@ import java.net.URL;
 
 public class QuickMzTabMsRunLocationLineItemParsingHandler extends MzTabMsRunLocationLineItemParsingHandler {
     private void checkForDuplicatedEntry(MzTabParser context, long lineNumber) throws LineItemParsingHandlerException {
-        if (context.getMetaDataSection().getMsRunEntry(getIndex()).getLocation() != null) {
+        if (getMsRunFromContext(context, getIndex()).getLocation() != null) {
             throw new LineItemParsingHandlerException("DUPLICATED MS-Run location entry FOUND AT LINE " + lineNumber);
         }
     }
