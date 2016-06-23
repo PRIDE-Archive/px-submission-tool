@@ -36,7 +36,7 @@ public abstract class MetaDataLineItemParsingHandler extends LineItemParsingHand
         void setPropertyValue(String pv);
     }
 
-    protected interface IndexedLineItemWithIndexedPropoertyDataEntry extends IndexedLineItemWithPropertyBean {
+    protected interface IndexedLineItemWithIndexedPropertyDataEntry extends IndexedLineItemWithPropertyBean {
         int getPropertyEntryIndex();
         void setPropertyEntryIndex(int index);
     }

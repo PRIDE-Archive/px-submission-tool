@@ -12,7 +12,7 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.MetadataIndexedItemParse
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
  */
-public abstract class MzTabSampleLineItemParsingHandler extends MetaDataLineItemParsingHandler implements MetaDataLineItemParsingHandler.IndexedLineItemWithIndexedPropoertyDataEntry {
+public abstract class MzTabSampleLineItemParsingHandler extends MetaDataLineItemParsingHandler implements MetaDataLineItemParsingHandler.IndexedLineItemWithIndexedPropertyDataEntry {
 
     protected static final String MZTAB_SAMPLE_ITEM_PREFIX = "sample";
     private String lineItemKey = "";

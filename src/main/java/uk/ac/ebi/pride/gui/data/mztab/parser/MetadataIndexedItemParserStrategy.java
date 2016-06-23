@@ -44,7 +44,7 @@ public abstract class MetadataIndexedItemParserStrategy {
         return true;
     }
 
-    private static boolean getPropertyEntryIndexIfExists(MetaDataLineItemParsingHandler.IndexedLineItemWithIndexedPropoertyDataEntry bean, String[] lineItems) throws MetadataIndexedItemParserStrategyException {
+    private static boolean getPropertyEntryIndexIfExists(MetaDataLineItemParsingHandler.IndexedLineItemWithIndexedPropertyDataEntry bean, String[] lineItems) throws MetadataIndexedItemParserStrategyException {
         // We need to get the second index in the entry
         try {
             String afterFirstSquareBracket = lineItems[1].substring(lineItems[1].indexOf(']') + 1);
@@ -73,7 +73,7 @@ public abstract class MetadataIndexedItemParserStrategy {
         return false;
     }
 
-    public static boolean parseLine(MetaDataLineItemParsingHandler.IndexedLineItemWithIndexedPropoertyDataEntry bean, String line) throws MetadataIndexedItemParserStrategyException {
+    public static boolean parseLine(MetaDataLineItemParsingHandler.IndexedLineItemWithIndexedPropertyDataEntry bean, String line) throws MetadataIndexedItemParserStrategyException {
         String[] lineItems = line.split("\t");
         try {
             if (lineItems.length == 3) {
