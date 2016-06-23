@@ -20,7 +20,7 @@ public class QuickMzTabMsRunFormatLineItemParsingHandler extends MzTabMsRunForma
     private static final Logger logger = LoggerFactory.getLogger(QuickMzTabMsRunFormatLineItemParsingHandler.class);
 
     // Check for duplicated entry
-    public void checkForDuplicatedEntry(MzTabParser context, long lineNumber) throws LineItemParsingHandlerException {
+    private void checkForDuplicatedEntry(MzTabParser context, long lineNumber) throws LineItemParsingHandlerException {
         if (getMsRunFromContext(context, getIndex()).getMsRunFormat() != null) {
             throw new LineItemParsingHandlerException("DUPLICATED MS-Run format entry FOUND AT LINE " + lineNumber);
         }
