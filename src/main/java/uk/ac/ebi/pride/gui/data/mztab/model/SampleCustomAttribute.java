@@ -17,4 +17,8 @@ public class SampleCustomAttribute extends CvParameter {
     public SampleCustomAttribute(String label, String accession, String name, String value) throws InvalidCvParameterException {
         super(label, accession, name, value);
     }
+
+    public SampleCustomAttribute(CvParameter cv) {
+        super(cv);
+    }
 }
