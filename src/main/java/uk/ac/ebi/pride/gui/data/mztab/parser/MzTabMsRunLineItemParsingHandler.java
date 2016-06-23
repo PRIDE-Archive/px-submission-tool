@@ -25,10 +25,16 @@ public abstract class MzTabMsRunLineItemParsingHandler extends MetaDataLineItemP
     private static final Logger logger = LoggerFactory.getLogger(MzTabMsRunLineItemParsingHandler.class);
 
     protected static final String MZTAB_MSRUN_ITEM_PREFIX = "ms_run";
-    private String lineItemKey = "";
-    private int index = -1;
-    private String propertyKey = "";
-    private String propertyValue = "";
+    // Bean Defaults
+    private static final String DEFAULT_LINE_ITEM_KEY = "";
+    private static final int DEFAULT_INDEX = -1;
+    private static final String DEFAULT_PROPERTY_KEY = "";
+    private static final String DEFAULT_PROPERTY_VALUE = "";
+    // Bean attributes
+    private String lineItemKey = DEFAULT_LINE_ITEM_KEY;
+    private int index = DEFAULT_INDEX;
+    private String propertyKey = DEFAULT_PROPERTY_KEY;
+    private String propertyValue = DEFAULT_PROPERTY_VALUE;
 
     @Override
     public String getLineItemKey() {
@@ -70,6 +76,14 @@ public abstract class MzTabMsRunLineItemParsingHandler extends MetaDataLineItemP
         this.propertyValue = propertyValue;
     }
 
+    private void cleanBean() {
+        logger.debug("Cleaning Bean data");
+        lineItemKey = DEFAULT_LINE_ITEM_KEY;
+        index = DEFAULT_INDEX;
+        propertyKey = DEFAULT_PROPERTY_KEY;
+        propertyValue = DEFAULT_PROPERTY_VALUE;
+    }
+
     // Working with MsRun objects from context
 
     /**
@@ -93,12 +107,16 @@ public abstract class MzTabMsRunLineItemParsingHandler extends MetaDataLineItemP
 
     @Override
     protected boolean doParseLineItem(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException {
+        // Clear the bean
+        cleanBean();
         try {
             if (MetadataIndexedItemParserStrategy.parseLine(this, line)) {
                 if (getLineItemKey().equals(MZTAB_MSRUN_ITEM_PREFIX)) {
                     // The line item key is ok, go ahead
                     return processEntry(context, lineNumber, offset);
                 }
+                //logger.error("Line item key is'" + getLineItemKey() + "' but this parser is looking for '" + MZTAB_MSRUN_ITEM_PREFIX + "'");
+                //return false;
             }
         } catch (MetadataIndexedItemParserStrategyException e) {
             throw new LineItemParsingHandlerException(e.getMessage());

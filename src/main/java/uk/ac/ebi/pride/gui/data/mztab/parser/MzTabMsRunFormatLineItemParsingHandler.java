@@ -1,5 +1,7 @@
 package uk.ac.ebi.pride.gui.data.mztab.parser;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerException;
 
 /**
@@ -16,6 +18,7 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
  */
 
 public abstract class MzTabMsRunFormatLineItemParsingHandler extends MzTabMsRunLineItemParsingHandler {
+    private static final Logger logger = LoggerFactory.getLogger(MzTabMsRunFormatLineItemParsingHandler.class);
     protected static final String MZTAB_MSRUN_FORMAT_PROPERTY_KEY = "format";
 
     @Override
@@ -23,6 +26,7 @@ public abstract class MzTabMsRunFormatLineItemParsingHandler extends MzTabMsRunL
         if (getPropertyKey().equals(MZTAB_MSRUN_FORMAT_PROPERTY_KEY)) {
             return doProcessEntry(context, lineNumber, offset);
         }
+        logger.debug("Found property key '" + getPropertyKey() + "' but this parser is expecting '" + MZTAB_MSRUN_FORMAT_PROPERTY_KEY + "'");
         return false;
     }
 

@@ -23,8 +23,11 @@ public class QuickMzTabMsRunFormatLineItemParsingHandler extends MzTabMsRunForma
     private void checkForDuplicatedEntry(MzTabParser context, long lineNumber) throws LineItemParsingHandlerException {
         logger.debug("Checking for duplicated entry for line " + lineNumber);
         if (getMsRunFromContext(context, getIndex()).getMsRunFormat() != null) {
-            throw new LineItemParsingHandlerException("DUPLICATED MS-Run format entry FOUND AT LINE " + lineNumber);
+            String msg = "DUPLICATED MS-Run format entry FOUND AT LINE " + lineNumber;
+            logger.debug(msg);
+            throw new LineItemParsingHandlerException(msg);
         }
+        logger.debug("No duplicates found!");
     }
 
     @Override
