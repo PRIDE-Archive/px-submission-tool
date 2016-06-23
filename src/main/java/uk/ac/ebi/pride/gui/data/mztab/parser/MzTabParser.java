@@ -47,6 +47,12 @@ public abstract class MzTabParser {
     }
     // Return the product of this statefull builder
     public MzTabDocument getMzTabDocument() {
+        // In the context of a parser starting from scratch, it makes sense that we create an new MzTabDocument if none
+        // has been set up
+        if (mzTabDocument == null) {
+            logger.debug("Creating a new mzTab document");
+            mzTabDocument = new MzTabDocument();
+        }
         return mzTabDocument;
     }
 
@@ -134,7 +140,15 @@ public abstract class MzTabParser {
     // Subproducts managing code
     // MetaData Section
     public MetaData getMetaDataSection() {
-        return getMzTabDocument().getMetaData();
+        MetaData metaData = getMzTabDocument().getMetaData();
+        if (metaData == null) {
+            // In the context of a parser processing an mzTab document, it makes sense to create an empty meta data
+            // section the first time the parser refers to it, if no previous meta data section was set
+            logger.debug("Creating new metadata section for the mzTab document");
+            metaData = new MetaData();
+            getMzTabDocument().setMetaData(metaData);
+        }
+        return metaData;
     }
 
     public final void setMetaDataSection(MetaData metaDataSection) throws MzTabParserException {

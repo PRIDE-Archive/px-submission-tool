@@ -12,7 +12,7 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
- *
+ * <p>
  * Quick processing strategy for ms-run format entries
  */
 
@@ -20,7 +20,8 @@ public class QuickMzTabMsRunFormatLineItemParsingHandler extends MzTabMsRunForma
     private static final Logger logger = LoggerFactory.getLogger(QuickMzTabMsRunFormatLineItemParsingHandler.class);
 
     // Check for duplicated entry
-    private void checkForDuplicatedEntry(MzTabParser context, long lineNumber) throws LineItemParsingHandlerException {;
+    private void checkForDuplicatedEntry(MzTabParser context, long lineNumber) throws LineItemParsingHandlerException {
+        logger.debug("Checking for duplicated entry for line " + lineNumber);
         if (getMsRunFromContext(context, getIndex()).getMsRunFormat() != null) {
             throw new LineItemParsingHandlerException("DUPLICATED MS-Run format entry FOUND AT LINE " + lineNumber);
         }
@@ -30,6 +31,7 @@ public class QuickMzTabMsRunFormatLineItemParsingHandler extends MzTabMsRunForma
     protected boolean doProcessEntry(MzTabParser context, long lineNumber, long offset) throws LineItemParsingHandlerException {
         checkForDuplicatedEntry(context, lineNumber);
         // Process the entry
+        logger.debug("Processing ms_run format entry for line " + lineNumber);
         getMsRunFromContext(context, getIndex()).setMsRunFormat(new MsRunFormat(CvParameterParser.fromString(getPropertyValue())));
         return true;
     }

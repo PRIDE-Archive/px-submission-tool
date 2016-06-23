@@ -82,7 +82,9 @@ public abstract class MzTabMsRunLineItemParsingHandler extends MetaDataLineItemP
      */
     protected MsRun getMsRunFromContext(MzTabParser context, int msRunIndex) {
         MsRun msRun = context.getMetaDataSection().getMsRunEntry(msRunIndex);
+        logger.debug("Existing MsRun entry for index " + msRunIndex + " is " + msRun);
         if (msRun == null) {
+            logger.debug("MsRun entry for index " + msRunIndex + " not present, creating a new one");
             msRun = new MsRun();
             context.getMetaDataSection().updateMsRun(msRun, msRunIndex);
         }
