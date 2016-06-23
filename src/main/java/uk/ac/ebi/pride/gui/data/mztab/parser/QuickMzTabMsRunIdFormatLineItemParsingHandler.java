@@ -16,7 +16,7 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
 
 public class QuickMzTabMsRunIdFormatLineItemParsingHandler extends MzTabMsRunIdFormatLineItemParsingHandler {
     private void checkForDuplicatedEntry(MzTabParser context, long lineNumber) throws LineItemParsingHandlerException {
-        if (context.getMetaDataSection().getMsRunEntry(getIndex()).getMsRunIdFormat() != null) {
+        if (getMsRunFromContext(context, getIndex()).getMsRunIdFormat() != null) {
             throw new LineItemParsingHandlerException("DUPLICATED MS-Run ID Format FOUND AT LINE " + lineNumber);
         }
     }
