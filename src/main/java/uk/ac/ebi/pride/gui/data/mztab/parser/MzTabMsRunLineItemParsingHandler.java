@@ -109,14 +109,16 @@ public abstract class MzTabMsRunLineItemParsingHandler extends MetaDataLineItemP
     protected boolean doParseLineItem(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException {
         // Clear the bean
         cleanBean();
+        logger.debug(">>> PARSING LINE ITEM: " + line);
         try {
             if (MetadataIndexedItemParserStrategy.parseLine(this, line)) {
                 if (getLineItemKey().equals(MZTAB_MSRUN_ITEM_PREFIX)) {
                     // The line item key is ok, go ahead
+                    //TODO - REMOVE - logger.debug("Line item key is '" + getLineItemKey() + "' AND this parser is looking for '" + MZTAB_MSRUN_ITEM_PREFIX + "', GO AHEAD");
                     return processEntry(context, lineNumber, offset);
                 }
-                //logger.error("Line item key is'" + getLineItemKey() + "' but this parser is looking for '" + MZTAB_MSRUN_ITEM_PREFIX + "'");
-                //return false;
+                //TODO - REMOVE - logger.debug("Line item key is '" + getLineItemKey() + "' but this parser is looking for '" + MZTAB_MSRUN_ITEM_PREFIX + "'");
+                //TODO - REMOVE - return false;
             }
         } catch (MetadataIndexedItemParserStrategyException e) {
             throw new LineItemParsingHandlerException(e.getMessage());

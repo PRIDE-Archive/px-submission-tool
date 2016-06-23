@@ -28,8 +28,8 @@ public class MetadataIndexedItemParserStrategyBulkTest {
     private String propertyValue;
     private String testDescription;
 
-    private static String getMzTabLine(String start, String lineItemKey, int index, String propertyKey, String propertyValue) {
-        return start + "\t" + lineItemKey + "[" + index + "]-" + propertyKey + "\t" + propertyValue;
+    private static String getMzTabLine(String section, String item, int itemIndex, String attribute, String attributeValue) {
+        return section + "\t" + item + "[" + itemIndex + "]-" + attribute + "\t" + attributeValue;
     }
 
     public MetadataIndexedItemParserStrategyBulkTest(String lineStart, String lineItemKey, int index, String propertyKey, String propertyValue, String testDescription) {
