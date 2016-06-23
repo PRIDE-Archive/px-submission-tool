@@ -17,4 +17,8 @@ public class Tissue extends CvParameter {
     public Tissue(String label, String accession, String name, String value) throws InvalidCvParameterException {
         super(label, accession, name, value);
     }
+
+    public Tissue(CvParameter cv) {
+        super(cv);
+    }
 }

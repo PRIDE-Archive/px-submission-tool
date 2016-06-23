@@ -17,4 +17,8 @@ public class Species extends CvParameter {
     public Species(String label, String accession, String name, String value) throws InvalidCvParameterException {
         super(label, accession, name, value);
     }
+
+    public Species(CvParameter cv) {
+        super(cv);
+    }
 }

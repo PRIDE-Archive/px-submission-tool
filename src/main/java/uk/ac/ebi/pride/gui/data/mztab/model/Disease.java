@@ -17,4 +17,8 @@ public class Disease extends CvParameter {
     public Disease(String label, String accession, String name, String value) throws InvalidCvParameterException {
         super(label, accession, name, value);
     }
+
+    public Disease(CvParameter cv) {
+        super(cv);
+    }
 }
