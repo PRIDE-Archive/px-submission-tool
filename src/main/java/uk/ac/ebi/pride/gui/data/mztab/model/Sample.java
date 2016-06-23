@@ -20,7 +20,7 @@ import java.util.Map;
 public class Sample implements Validable {
     private static final Logger logger = LoggerFactory.getLogger(Sample.class);
 
-    public class DataEntry {
+    public static class DataEntry {
         private Species species;
         private Tissue tissue;
         private CellType cellType;

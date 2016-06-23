@@ -80,6 +80,15 @@ public abstract class MzTabSampleLineItemParsingHandler extends MetaDataLineItem
         return sample;
     }
 
+    protected Sample.DataEntry getSampleDataEntryFromContext(MzTabParser context, int sampleIndex, int dataEntryIndex) {
+        Sample.DataEntry dataEntry = getSampleFromContext(context, sampleIndex).getDataEntry(dataEntryIndex);
+        if (dataEntry == null) {
+            dataEntry = new Sample.DataEntry();
+            getSampleFromContext(context, sampleIndex).updateDataEntry(dataEntry, dataEntryIndex);
+        }
+        return dataEntry;
+    }
+
     @Override
     protected boolean doParseLineItem(MzTabParser context, String line, long lineNumber, long offset)
             throws LineItemParsingHandlerException {
