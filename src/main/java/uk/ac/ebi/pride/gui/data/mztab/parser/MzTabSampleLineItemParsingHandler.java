@@ -15,11 +15,18 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.MetadataIndexedItemParse
 public abstract class MzTabSampleLineItemParsingHandler extends MetaDataLineItemParsingHandler implements MetaDataLineItemParsingHandler.IndexedLineItemWithIndexedPropertyDataEntry {
 
     protected static final String MZTAB_SAMPLE_ITEM_PREFIX = "sample";
-    private String lineItemKey = "";
-    private int index = -1;
-    private String propertyKey = "";
-    private String propertyValue = "";
-    private int propertyEntryIndex = -1;
+    // Bean Defaults
+    private static final String DEFAULT_LINE_ITEM_KEY = "";
+    private static final int DEFAULT_INDEX = -1;
+    private static final String DEFAULT_PROPERTY_KEY = "";
+    private static final String DEFAULT_PROPERTY_VALUE = "";
+    private static final int DEFAULT_PROPERTY_ENTRY_INDEX = -1;
+    // Bean attributes
+    private String lineItemKey = DEFAULT_LINE_ITEM_KEY;
+    private int index = DEFAULT_INDEX;
+    private String propertyKey = DEFAULT_PROPERTY_KEY;
+    private String propertyValue = DEFAULT_PROPERTY_VALUE;
+    private int propertyEntryIndex = DEFAULT_PROPERTY_ENTRY_INDEX;
 
     @Override
     public String getLineItemKey() {
@@ -71,6 +78,14 @@ public abstract class MzTabSampleLineItemParsingHandler extends MetaDataLineItem
         this.propertyEntryIndex = propertyEntryIndex;
     }
 
+    private void cleanBean() {
+        lineItemKey = DEFAULT_LINE_ITEM_KEY;
+        index = DEFAULT_INDEX;
+        propertyKey = DEFAULT_PROPERTY_KEY;
+        propertyValue = DEFAULT_PROPERTY_VALUE;
+        propertyEntryIndex = DEFAULT_PROPERTY_ENTRY_INDEX;
+    }
+
     protected Sample getSampleFromContext(MzTabParser context, int sampleIndex) {
         Sample sample = context.getMetaDataSection().getSampleData(sampleIndex);
         if (sample == null) {
@@ -94,6 +109,7 @@ public abstract class MzTabSampleLineItemParsingHandler extends MetaDataLineItem
             throws LineItemParsingHandlerException {
         // TODO - I should probably refactor this code out to a superclass for all those subclasses dealing with indexed
         // TODO - line items, with or without properties share the same code
+        cleanBean();
         try {
             if (MetadataIndexedItemParserStrategy.parseLine(this, line)) {
                 if (getLineItemKey().equals(MZTAB_SAMPLE_ITEM_PREFIX)) {
