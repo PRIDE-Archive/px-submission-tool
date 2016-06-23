@@ -17,4 +17,8 @@ public class CellType extends CvParameter {
     public CellType(String label, String accession, String name, String value) throws InvalidCvParameterException {
         super(label, accession, name, value);
     }
+
+    public CellType(CvParameter cv) {
+        super(cv);
+    }
 }
