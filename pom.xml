@@ -156,11 +156,11 @@
             <version>1.10</version>
         </dependency>
         <!-- Placeholder text for components -->
-        <dependency>
+        <!-- <dependency>
             <groupId>org.swinglabs</groupId>
             <artifactId>swingx</artifactId>
             <version>1.6.1</version>
-        </dependency>
+        </dependency> -->
         <!-- PRIDE Reporting library -->
         <dependency>
             <groupId>uk.ac.ebi.pride.px</groupId>
