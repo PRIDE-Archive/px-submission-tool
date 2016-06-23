@@ -22,18 +22,18 @@ import static org.hamcrest.core.Is.is;
  */
 
 @RunWith(Parameterized.class)
-public class ProcessingStrategiesParsingStackCommonTests {
+public class ProcessingStrategiesParsingStackCommonTest {
     private String rawParsingLine;
     private LineItemParsingHandler testSubject;
     private DummyMzTabParser context;
     private String testDescription;
     private boolean expectedParseLineReturnValue;
 
-    public ProcessingStrategiesParsingStackCommonTests(String rawParsingLine,
-                                                       LineItemParsingHandler testSubject,
-                                                       //DummyMzTabParser context,
-                                                       String testDescription,
-                                                       boolean expectedParseLineReturnValue) {
+    public ProcessingStrategiesParsingStackCommonTest(String rawParsingLine,
+                                                      LineItemParsingHandler testSubject,
+                                                      //DummyMzTabParser context,
+                                                      String testDescription,
+                                                      boolean expectedParseLineReturnValue) {
         this.rawParsingLine = rawParsingLine;
         this.testSubject = testSubject;
         this.testDescription = testDescription;
