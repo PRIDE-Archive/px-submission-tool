@@ -26,7 +26,7 @@ public abstract class MzTabMsRunLineItemParsingHandler extends MetaDataLineItemP
 
     protected static final String MZTAB_MSRUN_ITEM_PREFIX = "ms_run";
     private String lineItemKey = "";
-    private int index = 0;
+    private int index = -1;
     private String propertyKey = "";
     private String propertyValue = "";
 

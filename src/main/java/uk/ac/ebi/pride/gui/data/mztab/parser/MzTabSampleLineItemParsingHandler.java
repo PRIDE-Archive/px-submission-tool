@@ -16,7 +16,7 @@ public abstract class MzTabSampleLineItemParsingHandler extends MetaDataLineItem
 
     protected static final String MZTAB_SAMPLE_ITEM_PREFIX = "sample";
     private String lineItemKey = "";
-    private int index = 0;
+    private int index = -1;
     private String propertyKey = "";
     private String propertyValue = "";
     private int propertyEntryIndex = -1;
