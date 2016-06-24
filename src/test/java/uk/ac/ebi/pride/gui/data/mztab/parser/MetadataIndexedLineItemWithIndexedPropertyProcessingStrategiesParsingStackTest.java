@@ -125,6 +125,15 @@ public class MetadataIndexedLineItemWithIndexedPropertyProcessingStrategiesParsi
         subject.parseLine(context, mzTabLine, 1, 0);
     }
 
+    // Test for NAN property entry index
+    @Test(expected = LineItemParsingHandlerException.class)
+    public void rejectLineWithNanPropertyEntryIndex() {
+        String mzTabLine = getMzTabLine(lineStart, lineItemKey, index, propertyKey, propertyEntryIndex, propertyValue);
+        String effectiveMztabLine = mzTabLine.substring(0, mzTabLine.indexOf(']') + 1)
+                + mzTabLine.substring(mzTabLine.indexOf(']') + 1).replaceFirst("\\[\\d+\\]", "[Im_not_a_number]");
+        subject.parseLine(context, effectiveMztabLine, 1, 0);
+    }
+
     // Test for duplicated entry
     /*@Test(expected = LineItemParsingHandlerException.class)
     public void rejectDuplicatedEntry() {
