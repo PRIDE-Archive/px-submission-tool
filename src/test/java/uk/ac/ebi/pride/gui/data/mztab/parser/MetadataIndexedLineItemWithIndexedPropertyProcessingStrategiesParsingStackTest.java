@@ -5,7 +5,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
-import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerException;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -77,15 +76,15 @@ public class MetadataIndexedLineItemWithIndexedPropertyProcessingStrategiesParsi
     }
 
     // Test for manipulated line item property key
-    /*@Test
+    @Test
     public void rejectIncorrectPropertyKey() {
-        assertThat("mzTab line rejected because of incorrect property key, by " + testDescription,
-                subject.parseLine(context, getMzTabLine(lineStart, lineItemKey, index, "lkasjdf", propertyValue), 1, 0),
+        assertThat("mzTab line rejected because of incorrect property key, by " + testSubjectDescription,
+                subject.parseLine(context, getMzTabLine(lineStart, lineItemKey, index, "lkasjdf", propertyEntryIndex, propertyValue), 1, 0),
                 is(false));
     }
 
     // Test for missing index
-    @Test(expected = LineItemParsingHandlerException.class)
+    /*@Test(expected = LineItemParsingHandlerException.class)
     public void rejectLineWithMissingIndex() {
         String mzTabLine = getMzTabLine(lineStart, lineItemKey, index, propertyKey, propertyValue);
         mzTabLine = mzTabLine.replaceFirst("\\[\\d+\\]", "[]");
