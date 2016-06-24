@@ -1,5 +1,7 @@
 package uk.ac.ebi.pride.gui.data.mztab.parser;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.gui.data.mztab.model.Sample;
 import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerException;
 import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.MetadataIndexedItemParserStrategyException;
@@ -13,6 +15,7 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.MetadataIndexedItemParse
  * All rights reserved.
  */
 public abstract class MzTabSampleLineItemParsingHandler extends MetaDataLineItemParsingHandler implements MetaDataLineItemParsingHandler.IndexedLineItemWithIndexedPropertyDataEntry {
+    private static final Logger logger = LoggerFactory.getLogger(MzTabSampleLineItemParsingHandler.class);
 
     protected static final String MZTAB_SAMPLE_ITEM_PREFIX = "sample";
     // Bean Defaults
@@ -110,6 +113,7 @@ public abstract class MzTabSampleLineItemParsingHandler extends MetaDataLineItem
         // TODO - I should probably refactor this code out to a superclass for all those subclasses dealing with indexed
         // TODO - line items, with or without properties share the same code
         cleanBean();
+        logger.debug(">>> PARSING LINE ITEM: " + line);
         try {
             if (MetadataIndexedItemParserStrategy.parseLine(this, line)) {
                 if (getLineItemKey().equals(MZTAB_SAMPLE_ITEM_PREFIX)) {

@@ -37,7 +37,9 @@ public abstract class MetadataIndexedItemParserStrategy {
 
     private static boolean getLineItemKey(MetaDataLineItemParsingHandler.LineItemBean bean, String[] lineItems) throws MetadataIndexedItemParserStrategyException {
         try {
-            bean.setLineItemKey(lineItems[1].substring(0, lineItems[1].indexOf('[')));
+            String lineItemKey = lineItems[1].substring(0, lineItems[1].indexOf('['));
+            logger.debug("Parsed line item key '" + lineItemKey + "'");
+            bean.setLineItemKey(lineItemKey);
         } catch (IndexOutOfBoundsException e) {
             throw new MetadataIndexedItemParserStrategyException(e.getMessage());
         }
@@ -63,7 +65,13 @@ public abstract class MetadataIndexedItemParserStrategy {
 
     private static boolean getPropertyKeyIfExists(MetaDataLineItemParsingHandler.IndexedLineItemWithPropertyBean bean, String[] lineItems) throws MetadataIndexedItemParserStrategyException {
         try {
-            bean.setPropertyKey(lineItems[1].substring(lineItems[1].indexOf(']') + 2).trim());
+            String propertyKey = lineItems[1].substring(lineItems[1].indexOf(']') + 2).trim();
+            if (propertyKey.indexOf('[') != -1) {
+                // Refine it
+                propertyKey = propertyKey.substring(0, propertyKey.indexOf('['));
+            }
+            logger.debug("Parsed property key '" + propertyKey + "'");
+            bean.setPropertyKey(propertyKey);
         } catch (IndexOutOfBoundsException e) {
             // There is no property key, should we keep it absent?
             //bean.setPropertyKey("");
@@ -121,7 +129,8 @@ public abstract class MetadataIndexedItemParserStrategy {
                         && getLineItemIndex(bean, lineItems)
                         && getPropertyKeyIfExists(bean, lineItems)
                         && getPropertyValue(bean, lineItems)
-                        && getPropertyEntryIndexIfExists(bean, lineItems);
+                        // Entry index is optional
+                        || getPropertyEntryIndexIfExists(bean, lineItems);
             }
         } catch (Exception e) {
             throw new MetadataIndexedItemParserStrategyException(e.getMessage());
