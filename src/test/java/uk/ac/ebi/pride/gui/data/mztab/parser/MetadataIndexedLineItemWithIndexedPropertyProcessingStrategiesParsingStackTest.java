@@ -118,9 +118,9 @@ public class MetadataIndexedLineItemWithIndexedPropertyProcessingStrategiesParsi
         subject.parseLine(context, effectiveMztabLine, 1, 0);
     }
     // Test for NAN index
-    /*@Test(expected = LineItemParsingHandlerException.class)
+    @Test(expected = LineItemParsingHandlerException.class)
     public void rejectLineWithNanIndex() {
-        String mzTabLine = getMzTabLine(lineStart, lineItemKey, index, propertyKey, propertyValue);
+        String mzTabLine = getMzTabLine(lineStart, lineItemKey, index, propertyKey, propertyEntryIndex, propertyValue);
         mzTabLine = mzTabLine.replaceFirst("\\[\\d+\\]", "[Im_not_a_number]");
         subject.parseLine(context, mzTabLine, 1, 0);
     }
