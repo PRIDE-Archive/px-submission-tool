@@ -135,13 +135,13 @@ public class MetadataIndexedLineItemWithIndexedPropertyProcessingStrategiesParsi
     }
 
     // Test for duplicated entry
-    /*@Test(expected = LineItemParsingHandlerException.class)
+    @Test(expected = LineItemParsingHandlerException.class)
     public void rejectDuplicatedEntry() {
-        String mzTabLine = getMzTabLine(lineStart, lineItemKey, index, propertyKey, propertyValue);
+        String mzTabLine = getMzTabLine(lineStart, lineItemKey, index, propertyKey,propertyEntryIndex, propertyValue);
         subject.parseLine(context, mzTabLine, 1, 0);
         // Inserting the same line for the second time, triggers the error
         subject.parseLine(context, mzTabLine, 1, 0);
-    }*/
+    }
 
     // Everything ok test
     @Test
