@@ -101,9 +101,9 @@ public class MetadataIndexedLineItemWithIndexedPropertyProcessingStrategiesParsi
     }
 
     // Test for bad index formatting
-    /*@Test(expected = LineItemParsingHandlerException.class)
+    @Test(expected = LineItemParsingHandlerException.class)
     public void rejectLineWithBadIndexFormatting() {
-        String mzTabLine = getMzTabLine(lineStart, lineItemKey, index, propertyKey, propertyValue);
+        String mzTabLine = getMzTabLine(lineStart, lineItemKey, index, propertyKey, propertyEntryIndex, propertyValue);
         mzTabLine = mzTabLine.replaceFirst("\\[\\d+\\]", "[34.98]");
         subject.parseLine(context, mzTabLine, 1, 0);
     }
@@ -117,7 +117,7 @@ public class MetadataIndexedLineItemWithIndexedPropertyProcessingStrategiesParsi
     }
 
     // Test for duplicated entry
-    @Test(expected = LineItemParsingHandlerException.class)
+    /*@Test(expected = LineItemParsingHandlerException.class)
     public void rejectDuplicatedEntry() {
         String mzTabLine = getMzTabLine(lineStart, lineItemKey, index, propertyKey, propertyValue);
         subject.parseLine(context, mzTabLine, 1, 0);
