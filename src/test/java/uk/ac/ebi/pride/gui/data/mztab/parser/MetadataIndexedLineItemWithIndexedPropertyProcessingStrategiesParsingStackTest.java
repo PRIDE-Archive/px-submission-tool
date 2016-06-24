@@ -5,6 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerException;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -84,15 +85,23 @@ public class MetadataIndexedLineItemWithIndexedPropertyProcessingStrategiesParsi
     }
 
     // Test for missing index
-    /*@Test(expected = LineItemParsingHandlerException.class)
+    @Test(expected = LineItemParsingHandlerException.class)
     public void rejectLineWithMissingIndex() {
-        String mzTabLine = getMzTabLine(lineStart, lineItemKey, index, propertyKey, propertyValue);
+        String mzTabLine = getMzTabLine(lineStart, lineItemKey, index, propertyKey, propertyEntryIndex, propertyValue);
         mzTabLine = mzTabLine.replaceFirst("\\[\\d+\\]", "[]");
         subject.parseLine(context, mzTabLine, 1, 0);
     }
 
-    // Test for bad index formatting
     @Test(expected = LineItemParsingHandlerException.class)
+    public void rejectLineWithMissingPropertyKeyIndex() {
+        String mzTabLine = getMzTabLine(lineStart, lineItemKey, index, propertyKey, propertyEntryIndex, propertyValue);
+        String effectiveMztabLine = mzTabLine.substring(0, mzTabLine.indexOf(']') + 1)
+                + mzTabLine.substring(mzTabLine.indexOf(']') + 1).replaceFirst("\\[\\d+\\]", "[]");
+        subject.parseLine(context, effectiveMztabLine, 1, 0);
+    }
+
+    // Test for bad index formatting
+    /*@Test(expected = LineItemParsingHandlerException.class)
     public void rejectLineWithBadIndexFormatting() {
         String mzTabLine = getMzTabLine(lineStart, lineItemKey, index, propertyKey, propertyValue);
         mzTabLine = mzTabLine.replaceFirst("\\[\\d+\\]", "[34.98]");
@@ -100,7 +109,7 @@ public class MetadataIndexedLineItemWithIndexedPropertyProcessingStrategiesParsi
     }
 
     // Test for NAN index
-    @Test(expected = LineItemParsingHandlerException.class)
+    /*@Test(expected = LineItemParsingHandlerException.class)
     public void rejectLineWithNanIndex() {
         String mzTabLine = getMzTabLine(lineStart, lineItemKey, index, propertyKey, propertyValue);
         mzTabLine = mzTabLine.replaceFirst("\\[\\d+\\]", "[Im_not_a_number]");
