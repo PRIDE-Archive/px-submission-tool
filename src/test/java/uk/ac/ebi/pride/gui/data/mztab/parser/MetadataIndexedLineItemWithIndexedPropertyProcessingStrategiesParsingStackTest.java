@@ -68,12 +68,12 @@ public class MetadataIndexedLineItemWithIndexedPropertyProcessingStrategiesParsi
     }
 
     // Test for manipulated line item key
-    /*@Test
+    @Test
     public void rejectIncorrectLineItemKey() {
         assertThat("mzTab line rejected because of line item key mismatch, by " + testSubjectDescription,
                 subject.parseLine(context, getMzTabLine(lineStart, "ñlkajsdflkj", index, propertyKey, propertyEntryIndex, propertyValue), 1, 0),
                 is(false));
-    }*/
+    }
 
     // Everything ok test
     @Test
