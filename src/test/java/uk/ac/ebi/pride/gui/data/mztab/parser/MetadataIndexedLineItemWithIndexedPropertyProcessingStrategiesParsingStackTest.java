@@ -154,7 +154,11 @@ public class MetadataIndexedLineItemWithIndexedPropertyProcessingStrategiesParsi
     @Parameterized.Parameters
     public static Collection<Object[]> subjectsToTest() {
         return Arrays.asList(new Object[][]{
-                {"MTD", "sample", 90, "species", 2, "[NEWT, 3702, Arabidopsis thaliana (Mouse-ear cress), ]", "sample species parser", new QuickMzTabSampleSpeciesLineItemParsingHandler()}
+                {"MTD", "sample", 90, "species", 2, "[NEWT, 3702, Arabidopsis thaliana (Mouse-ear cress), ]", "sample species parser", new QuickMzTabSampleSpeciesLineItemParsingHandler()},
+                {"MTD", "sample", 91, "tissue", 3, "[BTO, BTO:0000221, cell suspension culture, ]", "sample tissue parser", new QuickMzTabSampleTissueLineItemParsingHandler()},
+                {"MTD", "sample", 92, "cell_type", 4, "[CL, CL:0000610, plant cell, ]", "sample cell type parser", new QuickMzTabSampleCellTypeLineItemParsingHandler()},
+                {"MTD", "sample", 93, "disease", 5, "[DOID, DOID:684, hepatocellular carcinoma, ]", "sample disease parser", new QuickMzTabSampleDiseaseLineItemParsingHandler()},
+                {"MTD", "sample", 93, "custom", 5, "[,,Extraction date, 2011-12-21]", "sample custom attribute parser", new QuickMzTabSampleCustomLineItemParsingHandler()}
         });
     }
 }
