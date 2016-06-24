@@ -19,11 +19,11 @@ public abstract class MzTabSampleLineItemParsingHandler extends MetaDataLineItem
 
     protected static final String MZTAB_SAMPLE_ITEM_PREFIX = "sample";
     // Bean Defaults
-    private static final String DEFAULT_LINE_ITEM_KEY = "";
-    private static final int DEFAULT_INDEX = -1;
-    private static final String DEFAULT_PROPERTY_KEY = "";
-    private static final String DEFAULT_PROPERTY_VALUE = "";
-    private static final int DEFAULT_PROPERTY_ENTRY_INDEX = -1;
+    protected static final String DEFAULT_LINE_ITEM_KEY = "";
+    protected static final int DEFAULT_INDEX = -1;
+    protected static final String DEFAULT_PROPERTY_KEY = "";
+    protected static final String DEFAULT_PROPERTY_VALUE = "";
+    protected static final int DEFAULT_PROPERTY_ENTRY_INDEX = -1;
     // Bean attributes
     private String lineItemKey = DEFAULT_LINE_ITEM_KEY;
     private int index = DEFAULT_INDEX;
@@ -118,6 +118,10 @@ public abstract class MzTabSampleLineItemParsingHandler extends MetaDataLineItem
             if (MetadataIndexedItemParserStrategy.parseLine(this, line)) {
                 if (getLineItemKey().equals(MZTAB_SAMPLE_ITEM_PREFIX)) {
                     // The line item key is ok, go ahead
+                    // check that the line item index has been set up
+                    if (getIndex() == DEFAULT_INDEX) {
+                        throw new LineItemParsingHandlerException("MISSING INDEX for '" + MZTAB_SAMPLE_ITEM_PREFIX + "'");
+                    }
                     return processEntry(context, lineNumber, offset);
                 }
             }
