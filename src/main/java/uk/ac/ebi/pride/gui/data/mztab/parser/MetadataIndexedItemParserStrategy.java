@@ -90,7 +90,9 @@ public abstract class MetadataIndexedItemParserStrategy {
         try {
             String afterFirstSquareBracket = lineItems[1].substring(lineItems[1].indexOf(']') + 1);
             if (afterFirstSquareBracket.indexOf('[') != -1) {
-                int index = getStrictIndex(afterFirstSquareBracket.substring(afterFirstSquareBracket.indexOf('[') + 1, afterFirstSquareBracket.indexOf(']')));
+                String indexStringToParse = afterFirstSquareBracket.substring(afterFirstSquareBracket.indexOf('[') + 1, afterFirstSquareBracket.indexOf(']'));
+                logger.debug("Processing property index '" + indexStringToParse + "'");
+                int index = getStrictIndex(indexStringToParse);
                 if (index < 0) {
                     throw new MetadataIndexedItemParserStrategyException("INVALID NEGATIVE property entry index");
                 }
@@ -122,15 +124,15 @@ public abstract class MetadataIndexedItemParserStrategy {
 
     public static boolean parseLine(MetaDataLineItemParsingHandler.IndexedLineItemWithIndexedPropertyDataEntry bean, String line) throws MetadataIndexedItemParserStrategyException {
         String[] lineItems = line.split("\t");
+        logger.debug(">>> >>> >>> PARSING indexed line item with indexed property <<< <<< <<<");
         try {
             if (lineItems.length == 3) {
                 // Get the data
+                getPropertyEntryIndexIfExists(bean, lineItems);
                 return getLineItemKey(bean, lineItems)
                         && getLineItemIndex(bean, lineItems)
                         && getPropertyKeyIfExists(bean, lineItems)
-                        && getPropertyValue(bean, lineItems)
-                        // Entry index is optional
-                        || getPropertyEntryIndexIfExists(bean, lineItems);
+                        && getPropertyValue(bean, lineItems);
             }
         } catch (Exception e) {
             throw new MetadataIndexedItemParserStrategyException(e.getMessage());
