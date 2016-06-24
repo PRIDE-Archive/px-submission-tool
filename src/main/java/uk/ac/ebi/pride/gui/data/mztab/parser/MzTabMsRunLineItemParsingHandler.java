@@ -26,10 +26,10 @@ public abstract class MzTabMsRunLineItemParsingHandler extends MetaDataLineItemP
 
     protected static final String MZTAB_MSRUN_ITEM_PREFIX = "ms_run";
     // Bean Defaults
-    private static final String DEFAULT_LINE_ITEM_KEY = "";
-    private static final int DEFAULT_INDEX = -1;
-    private static final String DEFAULT_PROPERTY_KEY = "";
-    private static final String DEFAULT_PROPERTY_VALUE = "";
+    protected static final String DEFAULT_LINE_ITEM_KEY = "";
+    protected static final int DEFAULT_INDEX = -1;
+    protected static final String DEFAULT_PROPERTY_KEY = "";
+    protected static final String DEFAULT_PROPERTY_VALUE = "";
     // Bean attributes
     private String lineItemKey = DEFAULT_LINE_ITEM_KEY;
     private int index = DEFAULT_INDEX;
@@ -113,12 +113,13 @@ public abstract class MzTabMsRunLineItemParsingHandler extends MetaDataLineItemP
         try {
             if (MetadataIndexedItemParserStrategy.parseLine(this, line)) {
                 if (getLineItemKey().equals(MZTAB_MSRUN_ITEM_PREFIX)) {
+                    // Check that we have a line item index
+                    if (getIndex() == DEFAULT_INDEX) {
+                        throw new LineItemParsingHandlerException("MISSING line item index for '" + MZTAB_MSRUN_ITEM_PREFIX + "'");
+                    }
                     // The line item key is ok, go ahead
-                    //TODO - REMOVE - logger.debug("Line item key is '" + getLineItemKey() + "' AND this parser is looking for '" + MZTAB_MSRUN_ITEM_PREFIX + "', GO AHEAD");
                     return processEntry(context, lineNumber, offset);
                 }
-                //TODO - REMOVE - logger.debug("Line item key is '" + getLineItemKey() + "' but this parser is looking for '" + MZTAB_MSRUN_ITEM_PREFIX + "'");
-                //TODO - REMOVE - return false;
             }
         } catch (MetadataIndexedItemParserStrategyException e) {
             throw new LineItemParsingHandlerException(e.getMessage());
