@@ -16,6 +16,9 @@ public abstract class MzTabSampleTissueLineItemParsingHandler extends MzTabSampl
     @Override
     protected boolean processEntry(MzTabParser context, long lineNumber, long offset) throws LineItemParsingHandlerException {
         if (getPropertyKey().equals(MZTAB_SAMPLE_TISSUE_PROPERTY_KEY)) {
+            if (getPropertyEntryIndex() == DEFAULT_PROPERTY_ENTRY_INDEX) {
+                throw new LineItemParsingHandlerException("Missing index for property key '" + MZTAB_SAMPLE_TISSUE_PROPERTY_KEY + "'");
+            }
             return doProcessEntry(context, lineNumber, offset);
         }
         return false;
