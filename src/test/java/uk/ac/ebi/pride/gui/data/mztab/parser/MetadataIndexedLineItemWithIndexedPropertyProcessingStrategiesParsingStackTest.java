@@ -92,6 +92,7 @@ public class MetadataIndexedLineItemWithIndexedPropertyProcessingStrategiesParsi
         subject.parseLine(context, mzTabLine, 1, 0);
     }
 
+    // Test for missing property entry index
     @Test(expected = LineItemParsingHandlerException.class)
     public void rejectLineWithMissingPropertyKeyIndex() {
         String mzTabLine = getMzTabLine(lineStart, lineItemKey, index, propertyKey, propertyEntryIndex, propertyValue);
@@ -108,6 +109,14 @@ public class MetadataIndexedLineItemWithIndexedPropertyProcessingStrategiesParsi
         subject.parseLine(context, mzTabLine, 1, 0);
     }
 
+    // Test for bad property index formatting
+    @Test(expected = LineItemParsingHandlerException.class)
+    public void rejectLineWithBadPropertyEntryIndexFormat() {
+        String mzTabLine = getMzTabLine(lineStart, lineItemKey, index, propertyKey, propertyEntryIndex, propertyValue);
+        String effectiveMztabLine = mzTabLine.substring(0, mzTabLine.indexOf(']') + 1)
+                + mzTabLine.substring(mzTabLine.indexOf(']') + 1).replaceFirst("\\[\\d+\\]", "[34.98]");
+        subject.parseLine(context, effectiveMztabLine, 1, 0);
+    }
     // Test for NAN index
     /*@Test(expected = LineItemParsingHandlerException.class)
     public void rejectLineWithNanIndex() {
