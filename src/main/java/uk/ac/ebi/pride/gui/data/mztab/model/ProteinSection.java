@@ -14,6 +14,8 @@ import java.util.Set;
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
+ *
+ * This class manages Protein Section data in an mzTab document
  */
 
 public class ProteinSection {
