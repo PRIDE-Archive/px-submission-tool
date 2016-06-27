@@ -43,7 +43,7 @@ public class PeptideSection {
     }
 
     // Present columns
-    private Set<ProteinSection.ColumnType> columnsFound = new HashSet<>();
+    private Set<PeptideSection.ColumnType> columnsFound = new HashSet<>();
 
     /**
      * Report a column present at the given index
@@ -51,7 +51,7 @@ public class PeptideSection {
      * @param index      where the reported column type has been found
      * @param columnType column type found
      */
-    public void addColumn(int index, ProteinSection.ColumnType columnType) {
+    public void addColumn(int index, PeptideSection.ColumnType columnType) {
         // NOTE - We ignore the index, as we don't need it at this stage
         columnsFound.add(columnType);
     }
@@ -61,7 +61,7 @@ public class PeptideSection {
      * @param columnType to look for
      * @return true if a particular column type has been reported, false otherwise
      */
-    public boolean isColumnTypePresent(ProteinSection.ColumnType columnType) {
+    public boolean isColumnTypePresent(PeptideSection.ColumnType columnType) {
         return columnsFound.contains(columnType);
     }
 
