@@ -67,8 +67,9 @@ public abstract class ProteinDataHeaderLineItemParsingHandler extends ProteinDat
             if (token.matches("^num_peptides_distinct_ms_run\\[\\d+\\]$")) {
                 return ProteinData.ColumnType.NUM_PEPTIDES_DISTINCT_MS_RUN;
             }
-            if (token.matches("^num_peptide_unique_ms_run\\[\\d+\\]$")) {
-                return ProteinData.ColumnType.NUM_PEPTIDE_UNIQUE_MS_RUN;
+            // WARNING - Correct this in the documentation
+            if (token.matches("^num_peptides_unique_ms_run\\[\\d+\\]$")) {
+                return ProteinData.ColumnType.NUM_PEPTIDES_UNIQUE_MS_RUN;
             }
             if (token.matches("^protein_abundance_assay\\[\\d+\\]$")) {
                 return ProteinData.ColumnType.PROTEIN_ABUNDANCE_ASSAY;
