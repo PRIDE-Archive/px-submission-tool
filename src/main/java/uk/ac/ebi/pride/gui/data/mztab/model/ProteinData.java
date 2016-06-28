@@ -81,7 +81,7 @@ public class ProteinData {
      * Validation algorithm for the protein section is, in part, coupled with the metadata section that describes the
      * mzTab document it belongs to.
      *
-     * @param metaData Metadata section that describes the mzTab document where this protein section belongs to
+     * @param mzTabDocument mzTab document where this protein section belongs to
      * @throws InvalidProteinSection thrown if this protein section is not valid
      */
     public void validate(MzTabDocument mzTabDocument) throws InvalidProteinSection {

@@ -73,7 +73,7 @@ public class PsmData {
      * Validation algorithm for this section is, in part, coupled with the metadata section that describes the
      * mzTab document it belongs to.
      *
-     * @param metaData Metadata section that describes the mzTab document where this section belongs to
+     * @param mzTabDocument mzTab document where this section belongs to
      * @throws InvalidProteinSection thrown if this protein section is not valid
      */
     public void validate(MzTabDocument mzTabDocument) throws InvalidProteinSection {
