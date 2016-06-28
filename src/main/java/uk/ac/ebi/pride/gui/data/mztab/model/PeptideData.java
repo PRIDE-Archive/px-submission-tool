@@ -8,42 +8,42 @@ import java.util.Set;
 /**
  * Project: px-submission-tool
  * Package: uk.ac.ebi.pride.gui.data.mztab.model
- * Timestamp: 2016-06-27 16:17
+ * Timestamp: 2016-06-27 16:05
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
  *
- * This class manages PSM data in an mzTab document
+ * This class manages Peptide data in an mzTab document
  */
 
-public class PsmSection {
+public class PeptideData {
 
     public enum ColumnType {
         SEQUENCE,
-        PSM_ID,
         ACCESSION,
         UNIQUE,
         DATABASE,
         DATABASE_VERSION,
         SEARCH_ENGINE,
-        SEARCH_ENGINE_SCORE,
+        BEST_SEARCH_ENGINE_SCORE,
         MODIFICATIONS,
-        SPECTRA_REF,
         RETENTION_TIME,
+        RETENTION_TIME_WINDOW,
         CHARGE,
-        EXP_MASS_TO_CHARGE,
-        CALC_MASS_TO_CHARGE,
-        PRE,
-        POST,
-        START,
-        END,
-        OPT_CUSTOM_ATTRIBUTE,
+        MASS_TO_CHARGE,
+        PEPTIDE_ABUNDANCE_STUDY_VARIABLE,
+        PEPTIDE_ABUNDANCE_STDEV_STUDY_VARIABLE,
+        PEPTIDE_ABUNDANCE_STD_ERROR_STUDY_VARIABLE,
+        SEARCH_ENGINE_SCORE_MS_RUN,
+        PEPTIDE_ABUNDANCE_ASSAY,
+        SPECTRA_REF,
+        OPT_CUSTOM_ATTIBUTE,
         RELIABILITY,
         URI
     }
 
     // Present columns
-    private Set<PsmSection.ColumnType> columnsFound = new HashSet<>();
+    private Set<PeptideData.ColumnType> columnsFound = new HashSet<>();
 
     /**
      * Report a column present at the given index
@@ -51,7 +51,7 @@ public class PsmSection {
      * @param index      where the reported column type has been found
      * @param columnType column type found
      */
-    public void addColumn(int index, PsmSection.ColumnType columnType) {
+    public void addColumn(int index, PeptideData.ColumnType columnType) {
         // NOTE - We ignore the index, as we don't need it at this stage
         columnsFound.add(columnType);
     }
@@ -61,12 +61,12 @@ public class PsmSection {
      * @param columnType to look for
      * @return true if a particular column type has been reported, false otherwise
      */
-    public boolean isColumnTypePresent(PsmSection.ColumnType columnType) {
+    public boolean isColumnTypePresent(PeptideData.ColumnType columnType) {
         return columnsFound.contains(columnType);
     }
 
     /**
-     * Validation algorithm for this section is, in part, coupled with the metadata section that describes the
+     * Validation algorithm for the peptide section is, in part, coupled with the metadata section that describes the
      * mzTab document it belongs to.
      *
      * @param metaData Metadata section that describes the mzTab document where this section belongs to

@@ -8,45 +8,42 @@ import java.util.Set;
 /**
  * Project: px-submission-tool
  * Package: uk.ac.ebi.pride.gui.data.mztab.model
- * Timestamp: 2016-06-27 16:23
+ * Timestamp: 2016-06-27 16:17
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
  *
- * This class manages Small Molecule data for an mzTab document
+ * This class manages PSM data in an mzTab document
  */
 
-public class SmallMoleculeSection {
+public class PsmData {
 
     public enum ColumnType {
-        IDENTIFIER,
-        CHEMICAL_FORMULA,
-        SMILES,
-        INCHI_KEY,
-        DESCRIPTION,
-        EXP_MASS_TO_CHARGE,
-        CALC_MASS_TO_CHARGE,
-        CHARGE,
-        RETENTION_TIME,
-        TAXID,
-        SPECIES,
+        SEQUENCE,
+        PSM_ID,
+        ACCESSION,
+        UNIQUE,
         DATABASE,
         DATABASE_VERSION,
-        SPECTRA_REF,
         SEARCH_ENGINE,
-        BEST_SEARCH_ENGINE_SCORE,
+        SEARCH_ENGINE_SCORE,
         MODIFICATIONS,
-        SMALLMOLECULE_ABUNDANCE_ASSAY,
-        SMALLMOLECULE_ABUNDANCE_STUDY_VARIABLE,
-        SMALLMOLECULE_STDEV_STUDY_VARIABLE,
-        SEARCH_ENGINE_SCORE_MS_RUN,
+        SPECTRA_REF,
+        RETENTION_TIME,
+        CHARGE,
+        EXP_MASS_TO_CHARGE,
+        CALC_MASS_TO_CHARGE,
+        PRE,
+        POST,
+        START,
+        END,
         OPT_CUSTOM_ATTRIBUTE,
         RELIABILITY,
         URI
     }
 
     // Present columns
-    private Set<SmallMoleculeSection.ColumnType> columnsFound = new HashSet<>();
+    private Set<PsmData.ColumnType> columnsFound = new HashSet<>();
 
     /**
      * Report a column present at the given index
@@ -54,7 +51,7 @@ public class SmallMoleculeSection {
      * @param index      where the reported column type has been found
      * @param columnType column type found
      */
-    public void addColumn(int index, SmallMoleculeSection.ColumnType columnType) {
+    public void addColumn(int index, PsmData.ColumnType columnType) {
         // NOTE - We ignore the index, as we don't need it at this stage
         columnsFound.add(columnType);
     }
@@ -64,7 +61,7 @@ public class SmallMoleculeSection {
      * @param columnType to look for
      * @return true if a particular column type has been reported, false otherwise
      */
-    public boolean isColumnTypePresent(SmallMoleculeSection.ColumnType columnType) {
+    public boolean isColumnTypePresent(PsmData.ColumnType columnType) {
         return columnsFound.contains(columnType);
     }
 
