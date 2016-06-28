@@ -162,7 +162,7 @@ public class MetaData {
     }
 
     // Validate Metadata
-    public void validate() throws InvalidMetaDataException {
+    public void validate(MzTabDocument mzTabDocument) throws InvalidMetaDataException {
         // Required attributes
         if (getVersion() == null) {
             throw new InvalidMetaDataException("Missing version information");

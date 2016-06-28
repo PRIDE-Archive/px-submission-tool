@@ -72,7 +72,7 @@ public class PeptideData {
      * @param metaData Metadata section that describes the mzTab document where this section belongs to
      * @throws InvalidProteinSection thrown if this protein section is not valid
      */
-    public void validate(MetaData metaData) throws InvalidProteinSection {
+    public void validate(MzTabDocument mzTabDocument) throws InvalidProteinSection {
         // TODO
     }
 
