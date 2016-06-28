@@ -13,6 +13,7 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
  * This branch of the hierarchy processes protein data
  */
 public abstract class ProteinDataLineItemParsingHandler extends LineItemParsingHandler {
+
     @Override
     protected boolean doParseLine(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException {
         return doParseLineItem(context, line, lineNumber, offset);
