@@ -29,11 +29,12 @@ public class MetaDataTest {
     public void emptyMetadataDoesnotValidate() {
         MetaData metaData = new MetaData();
         exception.expect(InvalidMetaDataException.class);
-        metaData.validate();
+        metaData.validate(new MzTabDocument());
     }
 
     @Test
     public void minimumInformationForValidation() throws MalformedURLException {
+        // TODO - This test may no longer work due to changes in the validation algorithm
         MetaData metaData = new MetaData();
         metaData.setTitle("Test Title");
         metaData.setVersion("1.0");
@@ -44,6 +45,6 @@ public class MetaDataTest {
         MsRunIdFormat msRunIdFormat = new MsRunIdFormat("PSI-MS", "MS:1000774", "multiple peak list nativeID format", CvParameter.DEFAULT_VALUE);
         MsRun msRun = new MsRun(msRunFormat, msRunIdFormat, new URL("file:/test.file"));
         metaData.updateMsRun(msRun, 1);
-        metaData.validate();
+        metaData.validate(new MzTabDocument());
     }
 }
