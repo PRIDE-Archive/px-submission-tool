@@ -69,6 +69,10 @@ public class PeptideData {
         return columnsFound.size();
     }
 
+    public boolean hasHeaderBeenSpecified() {
+        return (getNumberOfColumns() != 0);
+    }
+
     /**
      * Validation algorithm for the peptide section is, in part, coupled with the metadata section that describes the
      * mzTab document it belongs to.
