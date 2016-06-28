@@ -2,7 +2,6 @@ package uk.ac.ebi.pride.gui.data.mztab.model;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidMzTabDocument;
 
 /**
  * Project: px-submission-tool
@@ -16,7 +15,11 @@ public class MzTabDocument implements Validable {
     private static final Logger logger = LoggerFactory.getLogger(MzTabDocument.class);
 
     // mzTab Sections
-    private MetaData metaData;
+    private MetaData metaData = null;
+    private ProteinData proteinData = null;
+    private PsmData psmData = null;
+    private SmallMoleculeData smallMoleculeData = null;
+    private PeptideData peptideData = null;
 
     public MzTabDocument() {
         metaData = null;
@@ -28,6 +31,38 @@ public class MzTabDocument implements Validable {
 
     public void setMetaData(MetaData metaData) {
         this.metaData = metaData;
+    }
+
+    public ProteinData getProteinData() {
+        return proteinData;
+    }
+
+    public void setProteinData(ProteinData proteinData) {
+        this.proteinData = proteinData;
+    }
+
+    public PsmData getPsmData() {
+        return psmData;
+    }
+
+    public void setPsmData(PsmData psmData) {
+        this.psmData = psmData;
+    }
+
+    public SmallMoleculeData getSmallMoleculeData() {
+        return smallMoleculeData;
+    }
+
+    public void setSmallMoleculeData(SmallMoleculeData smallMoleculeData) {
+        this.smallMoleculeData = smallMoleculeData;
+    }
+
+    public PeptideData getPeptideData() {
+        return peptideData;
+    }
+
+    public void setPeptideData(PeptideData peptideData) {
+        this.peptideData = peptideData;
     }
 
     @Override
