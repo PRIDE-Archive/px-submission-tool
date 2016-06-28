@@ -73,6 +73,10 @@ public class ProteinData {
         return columnsFound.contains(columnType);
     }
 
+    public int getNumberOfColumns() {
+        return columnsFound.size();
+    }
+
     /**
      * Validation algorithm for the protein section is, in part, coupled with the metadata section that describes the
      * mzTab document it belongs to.

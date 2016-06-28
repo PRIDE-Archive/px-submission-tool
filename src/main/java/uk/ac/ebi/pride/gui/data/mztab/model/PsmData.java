@@ -65,6 +65,10 @@ public class PsmData {
         return columnsFound.contains(columnType);
     }
 
+    public int getNumberOfColumns() {
+        return columnsFound.size();
+    }
+
     /**
      * Validation algorithm for this section is, in part, coupled with the metadata section that describes the
      * mzTab document it belongs to.
