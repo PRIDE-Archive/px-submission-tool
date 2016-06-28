@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.gui.data.mztab.model.MetaData;
 import uk.ac.ebi.pride.gui.data.mztab.model.MzTabDocument;
+import uk.ac.ebi.pride.gui.data.mztab.model.ProteinData;
 import uk.ac.ebi.pride.gui.data.mztab.parser.readers.LineAndPositionAwareBufferedReader;
 import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.MzTabParserException;
 
@@ -137,7 +138,7 @@ public abstract class MzTabParser {
         }
     }
 
-    // Subproducts managing code
+    // Subproducts management code
     // MetaData Section
     public MetaData getMetaDataSection() {
         MetaData metaData = getMzTabDocument().getMetaData();
@@ -150,12 +151,16 @@ public abstract class MzTabParser {
         }
         return metaData;
     }
-
-    public final void setMetaDataSection(MetaData metaDataSection) throws MzTabParserException {
-        if (getMetaDataSection() != null) {
-            throw new MzTabParserException("A MetaData subproduct ALREADY IS in place");
+    // Protein Data manager (section)
+    public ProteinData getProteinDataSection() {
+        ProteinData proteinData = getMzTabDocument().getProteinData();
+        if (proteinData == null) {
+            // Create an empty protein data section
+            proteinData = new ProteinData();
+            // for this document
+            getMzTabDocument().setProteinData(proteinData);
         }
-        mzTabDocument.setMetaData(metaDataSection);
+        return proteinData;
     }
 
 }
