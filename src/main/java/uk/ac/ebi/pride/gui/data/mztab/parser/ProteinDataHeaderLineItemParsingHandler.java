@@ -93,7 +93,7 @@ public abstract class ProteinDataHeaderLineItemParsingHandler extends ProteinDat
     }
 
     // Check for duplicated section entry
-    private void checkForDuplicated(MzTabParser context, long lineNumber) {
+    private void checkForDuplicated(MzTabParser context, long lineNumber) throws LineItemParsingHandlerException {
         // This is a quick and lightweight check that we can perform independently of the processing we run on the actual
         // data in the header
         if (context.getProteinDataSection().hasHeaderBeenSpecified()) {
