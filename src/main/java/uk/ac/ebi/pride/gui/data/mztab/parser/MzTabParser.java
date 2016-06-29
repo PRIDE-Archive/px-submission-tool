@@ -2,9 +2,7 @@ package uk.ac.ebi.pride.gui.data.mztab.parser;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.ebi.pride.gui.data.mztab.model.MetaData;
-import uk.ac.ebi.pride.gui.data.mztab.model.MzTabDocument;
-import uk.ac.ebi.pride.gui.data.mztab.model.ProteinData;
+import uk.ac.ebi.pride.gui.data.mztab.model.*;
 import uk.ac.ebi.pride.gui.data.mztab.parser.readers.LineAndPositionAwareBufferedReader;
 import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.MzTabParserException;
 
@@ -161,6 +159,36 @@ public abstract class MzTabParser {
             getMzTabDocument().setProteinData(proteinData);
         }
         return proteinData;
+    }
+
+    // Peptide Data manager (section)
+    public PeptideData getPeptideDataSection() {
+        PeptideData peptideData = getMzTabDocument().getPeptideData();
+        if (peptideData == null) {
+            peptideData = new PeptideData();
+            getMzTabDocument().setPeptideData(peptideData);
+        }
+        return peptideData;
+    }
+
+    // PSM Data manager (section)
+    public PsmData getPsmDataSection() {
+        PsmData psmData = getMzTabDocument().getPsmData();
+        if (psmData == null) {
+            psmData = new PsmData();
+            getMzTabDocument().setPsmData(psmData);
+        }
+        return psmData;
+    }
+
+    // Small Molecule Data manager (section)
+    public SmallMoleculeData getSmallMoleculeDataSection() {
+        SmallMoleculeData smallMoleculeData = getMzTabDocument().getSmallMoleculeData();
+        if (smallMoleculeData == null) {
+            smallMoleculeData = new SmallMoleculeData();
+            getMzTabDocument().setSmallMoleculeData(smallMoleculeData);
+        }
+        return smallMoleculeData;
     }
 
 }
