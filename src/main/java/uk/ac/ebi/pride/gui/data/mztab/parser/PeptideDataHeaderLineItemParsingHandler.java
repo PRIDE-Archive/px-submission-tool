@@ -79,6 +79,7 @@ public abstract class PeptideDataHeaderLineItemParsingHandler extends PeptideDat
             if (token.matches("^uri$")) {
                 return PeptideData.ColumnType.URI;
             }
+            // Unrecognized column type
             return null;
         }
     }
