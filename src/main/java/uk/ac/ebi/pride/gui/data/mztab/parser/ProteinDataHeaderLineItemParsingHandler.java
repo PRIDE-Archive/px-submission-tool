@@ -3,6 +3,8 @@ package uk.ac.ebi.pride.gui.data.mztab.parser;
 import uk.ac.ebi.pride.gui.data.mztab.model.ProteinData;
 import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerException;
 
+import java.util.Arrays;
+
 /**
  * Project: px-submission-tool
  * Package: uk.ac.ebi.pride.gui.data.mztab.parser
@@ -92,6 +94,8 @@ public abstract class ProteinDataHeaderLineItemParsingHandler extends ProteinDat
 
     // Check for duplicated section entry
     private void checkForDuplicated(MzTabParser context, long lineNumber) {
+        // This is a quick and lightweight check that we can perform independently of the processing we run on the actual
+        // data in the header
         if (context.getProteinDataSection().hasHeaderBeenSpecified()) {
             throw new LineItemParsingHandlerException("DUPLICATED Protein HEADER found at line '" + lineNumber + "'");
         }
@@ -103,11 +107,15 @@ public abstract class ProteinDataHeaderLineItemParsingHandler extends ProteinDat
         if (lineItems[0].equals(MZTAB_PROTEIN_DATA_HEADER_KEYWORD)) {
             // Protein section header
             checkForDuplicated(context, lineNumber);
-            return doProcessHeaderColumns(context, lineItems, lineNumber, offset);
+            try {
+                return doProcessHeaderColumns(context, Arrays.copyOfRange(lineItems, 1, lineItems.length), lineNumber, offset);
+            } catch (Exception e) {
+                throw new LineItemParsingHandlerException(e.getMessage());
+            }
         }
         return false;
     }
 
     // Delegate processing
-    protected abstract boolean doProcessHeaderColumns(MzTabParser context, String[] lineItems, long lineNumber, long offset) throws LineItemParsingHandlerException;
+    protected abstract boolean doProcessHeaderColumns(MzTabParser context, String[] parsedHeaderTokens, long lineNumber, long offset) throws LineItemParsingHandlerException;
 }
