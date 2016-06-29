@@ -19,6 +19,7 @@ import static org.hamcrest.core.Is.is;
 public class ProteinColumnTypeMapperTest {
 
     // Let's explore the testing of a protected inner class via a class adapter and proxy pattern
+    // NOTE - I don't like the way I implemented this
     private class TestSubject extends ProteinDataHeaderLineItemParsingHandler {
 
         // It may look un-necessary to test all columns just for matching, but it will save time later in the future in
