@@ -165,6 +165,7 @@ public abstract class MzTabParser {
     public PeptideData getPeptideDataSection() {
         PeptideData peptideData = getMzTabDocument().getPeptideData();
         if (peptideData == null) {
+            logger.debug("Creating new peptide data object");
             peptideData = new PeptideData();
             getMzTabDocument().setPeptideData(peptideData);
         }
