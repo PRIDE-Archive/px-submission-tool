@@ -23,13 +23,11 @@ public class SectionHeaderProcessingStrategiesParsingStackUnrecognizedColumnToke
     private MzTabParser context;
     // Test case bean
     private String testDescription;
-    private Object expectedColumnType;
     private String headerLine;
     private LineItemParsingHandler testSubject;
 
-    public SectionHeaderProcessingStrategiesParsingStackUnrecognizedColumnTokensTest(String testDescription, Object expectedColumnType, String headerLine, LineItemParsingHandler testSubject) {
+    public SectionHeaderProcessingStrategiesParsingStackUnrecognizedColumnTokensTest(String testDescription, String headerLine, LineItemParsingHandler testSubject) {
         this.testDescription = testDescription;
-        this.expectedColumnType = expectedColumnType;
         this.headerLine = headerLine;
         this.testSubject = testSubject;
     }
@@ -49,7 +47,10 @@ public class SectionHeaderProcessingStrategiesParsingStackUnrecognizedColumnToke
         // Test configurations
         return Arrays.asList(new Object[][] {
                 // test description, expected column type (null if expected), column token, test subject
-                {"Unrecognized column type is not recognized", null, "PRH\tñlakjsdfklj", new QuickProteinDataHeaderLineItemParsingHandler()}
+                {"Unrecognized column type is rejected", "PRH\tñlakjsdfklj", new QuickProteinDataHeaderLineItemParsingHandler()},
+                {"Unrecognized column type is rejected", "PEH\tñlakjsdfklj", new QuickPeptideDataHeaderLineItemParsingHandler()},
+                {"Unrecognized column type is rejected", "PSH\tñlakjsdfklj", new QuickPsmDataHeaderLineItemParsingHandler()},
+                {"Unrecognized column type is rejected", "SMH\tñlakjsdfklj", new QuickSmallMoleculeDataHeaderLineItemParsingHandler()}
         });
     }
 }
