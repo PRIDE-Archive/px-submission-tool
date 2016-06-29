@@ -15,8 +15,6 @@ import java.util.Arrays;
 public abstract class ProteinDataEntryLineItemParsingHandler extends ProteinDataLineItemParsingHandler {
     private static final String MZTAB_PROTEIN_DATA_ENTRY_LINE_KEYWORD = "PRT";
 
-    // Mapping algorithm
-
     @Override
     protected boolean doParseLineItem(MzTabParser context, String line, long lineNumber, long offset) throws LineItemParsingHandlerException {
         String[] lineItems = line.split("\t");
