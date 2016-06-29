@@ -5,7 +5,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.mockito.Mockito;
+import uk.ac.ebi.pride.gui.data.mztab.model.PeptideData;
 import uk.ac.ebi.pride.gui.data.mztab.model.ProteinData;
+import uk.ac.ebi.pride.gui.data.mztab.model.PsmData;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -61,7 +63,10 @@ public class SectionHeaderProcessingStrategiesParsingStackExpectedColumnTypeTest
         // Test configurations
         return Arrays.asList(new Object[][] {
                 // test description, expected column type (null if expected), column token, test subject
-                {"Unrecognized column type is not recognized", ProteinData.ColumnType.DATABASE, "PRH\tdatabase", new QuickProteinDataHeaderLineItemParsingHandler()}
+                {"Matches expected column type", ProteinData.ColumnType.DATABASE, "PRH\tdatabase", new QuickProteinDataHeaderLineItemParsingHandler()},
+                {"Matches expected column type", PeptideData.ColumnType.SEARCH_ENGINE_SCORE_MS_RUN, "PRH\tsearch_engine_score[1]_ms_run[1]", new QuickPeptideDataHeaderLineItemParsingHandler()},
+                {"Matches expected column type", PsmData.ColumnType.OPT_CUSTOM_ATTRIBUTE, "PRH\topt_this_is_my_custom_attribute", new QuickPsmDataHeaderLineItemParsingHandler()},
+                {"Matches expected column type", ProteinData.ColumnType.BEST_SEARCH_ENGINE_SCORE, "PRH\tbest_search_engine_score[1]", new QuickSmallMoleculeDataHeaderLineItemParsingHandler()}
         });
     }
 }
