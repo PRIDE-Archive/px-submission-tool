@@ -2,6 +2,7 @@ package uk.ac.ebi.pride.gui.data.mztab.parser;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidMetaDataException;
 import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerException;
 import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.ParserStateException;
 
@@ -30,9 +31,13 @@ public abstract class MetaDataParserState extends ParserState {
     }
 
     @Override
-    protected void doValidateSubProduct(MzTabParser context) {
+    protected void doValidateSubProduct(MzTabParser context) throws ParserStateException {
         // Delegate validation to the product itself, for the given context
-        context.getMetaDataSection().validate(context.getMzTabDocument());
+        try {
+            context.getMetaDataSection().validate(context.getMzTabDocument());
+        } catch (InvalidMetaDataException e) {
+            throw new ParserStateException("Invalid validation of Meta Data section due to:\n" + e.getMessage());
+        }
     }
 
     @Override

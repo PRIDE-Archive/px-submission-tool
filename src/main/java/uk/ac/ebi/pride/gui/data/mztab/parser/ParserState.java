@@ -39,7 +39,7 @@ public abstract class ParserState {
     // Delegate to subclasses
     // Line item parsing handler
     protected abstract LineItemParsingHandler getLineItemParsingHandler();
-    protected abstract void doValidateSubProduct(MzTabParser context);
+    protected abstract void doValidateSubProduct(MzTabParser context) throws ParserStateException;
     // Get this state ID name
     protected abstract String getStateIdName();
 }
