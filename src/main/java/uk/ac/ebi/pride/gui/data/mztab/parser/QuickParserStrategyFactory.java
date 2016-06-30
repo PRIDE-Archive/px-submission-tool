@@ -23,4 +23,24 @@ public class QuickParserStrategyFactory implements StrategyParserStateFactory {
     public MetaDataParserState getMetaDataParserState() {
         return new QuickMetaDataParserState();
     }
+
+    @Override
+    public ProteinParserState getProteinParserState() {
+        return new QuickProteinParserState();
+    }
+
+    @Override
+    public PeptideParserState getPeptideParserState() {
+        return new QuickPeptideParserState();
+    }
+
+    @Override
+    public PsmParserState getPsmParserState() {
+        return new QuickPsmParserState();
+    }
+
+    @Override
+    public SmallMoleculeParserState getSmallMoleculeParserState() {
+        return new QuickSmallMoleculeParserState();
+    }
 }
