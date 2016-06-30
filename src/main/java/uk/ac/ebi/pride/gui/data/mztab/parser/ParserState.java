@@ -39,6 +39,7 @@ public abstract class ParserState {
     // Delegate to subclasses
     // Line item parsing handler
     protected abstract LineItemParsingHandler getLineItemParsingHandler();
+    // TODO By looking at the current delegates for subproduct validation, I could convert this method into a template method
     protected abstract void doValidateSubProduct(MzTabParser context) throws ParserStateException;
     // Get this state ID name
     protected abstract String getStateIdName();
