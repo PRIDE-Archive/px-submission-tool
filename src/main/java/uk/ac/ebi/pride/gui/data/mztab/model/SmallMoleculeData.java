@@ -1,6 +1,7 @@
 package uk.ac.ebi.pride.gui.data.mztab.model;
 
 import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidProteinSection;
+import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.InvalidSmallMoleculeSectionException;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -84,7 +85,7 @@ public class SmallMoleculeData {
      * @param mzTabDocument mzTab document where this section belongs to
      * @throws InvalidProteinSection thrown if this protein section is not valid
      */
-    public void validate(MzTabDocument mzTabDocument) throws InvalidProteinSection {
+    public void validate(MzTabDocument mzTabDocument) throws InvalidSmallMoleculeSectionException {
         // TODO
     }
 
