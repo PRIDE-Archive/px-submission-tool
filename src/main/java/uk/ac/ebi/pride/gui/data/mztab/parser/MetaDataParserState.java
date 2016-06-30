@@ -30,6 +30,12 @@ public abstract class MetaDataParserState extends ParserState {
     }
 
     @Override
+    protected void doValidateSubProduct(MzTabParser context) {
+        // Delegate validation to the product itself, for the given context
+        context.getMetaDataSection().validate(context.getMzTabDocument());
+    }
+
+    @Override
     public void parseLine(MzTabParser context, String line, long lineNumber, long offset) throws ParserStateException {
         // TODO - Remove the beginning ("MTD") of the line, as line item parsers don't introduce redundancy by checking
         // TODO - this is present, and they should only deal with the rest of the line, where the fact that we are in

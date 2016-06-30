@@ -44,12 +44,6 @@ public class QuickMetaDataParserState extends MetaDataParserState {
     }
 
     @Override
-    protected void doValidateSubProduct(MzTabParser context) {
-        // Delegate validation to the product itself, for the given context
-        context.getMetaDataSection().validate(context.getMzTabDocument());
-    }
-
-    @Override
     protected void doChangeState(MzTabParser context, ParserState newState) {
         // TODO
     }
