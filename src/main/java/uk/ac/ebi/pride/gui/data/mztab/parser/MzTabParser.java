@@ -103,15 +103,17 @@ public abstract class MzTabParser {
             try {
                 positionAwareLine = reader.readLine();
             } catch (IOException e) {
-                throw new MzTabParserException("Error parsing the mzTab file\n" + e.toString());
+                throw new MzTabParserException("Error parsing the mzTab file\n" + e.getMessage());
             }
             if (positionAwareLine != null) {
                 // Parse the line
                 parserState.parseLine(this, positionAwareLine.getLine(),
                         positionAwareLine.getLineNo(),
                         positionAwareLine.getOffset());
+            } else {
+                // We reached the end of the stream
+                break;
             }
-            break;
         }
     }
 
