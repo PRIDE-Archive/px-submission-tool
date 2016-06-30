@@ -42,9 +42,4 @@ public class QuickMetaDataParserState extends MetaDataParserState {
         }
         return lineItemParsingHandler;
     }
-
-    @Override
-    protected void doChangeState(MzTabParser context, ParserState newState) {
-        // TODO
-    }
 }
