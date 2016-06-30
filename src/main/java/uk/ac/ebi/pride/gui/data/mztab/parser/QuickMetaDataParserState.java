@@ -22,7 +22,7 @@ public class QuickMetaDataParserState extends MetaDataParserState {
     private LineItemParsingHandler lineItemParsingHandler = null;
 
     public QuickMetaDataParserState() {
-        // TODO Build the chain of metadata parser items
+        // Lazy building of the chain of responsibility that takes care of parsing the meta data section
     }
 
     private void buildLineItemParsingHandlerChain() {
@@ -45,7 +45,8 @@ public class QuickMetaDataParserState extends MetaDataParserState {
 
     @Override
     protected void doValidateSubProduct(MzTabParser context) {
-        // TODO
+        // Delegate validation to the product itself, for the given context
+        context.getMetaDataSection().validate(context.getMzTabDocument());
     }
 
     @Override
