@@ -1,7 +1,5 @@
 package uk.ac.ebi.pride.gui.data.mztab.parser;
 
-import uk.ac.ebi.pride.gui.data.mztab.model.MetaData;
-
 /**
  * Project: px-submission-tool
  * Package: uk.ac.ebi.pride.gui.data.mztab.parser
@@ -15,6 +13,10 @@ import uk.ac.ebi.pride.gui.data.mztab.model.MetaData;
 
 public interface StrategyParserStateFactory {
 
-    // Get a parser for the MetaData section
+    // Get parser
     MetaDataParserState getMetaDataParserState();
+    ProteinParserState getProteinParserState();
+    PeptideParserState getPeptideParserState();
+    PsmParserState getPsmParserState();
+    SmallMoleculeParserState getSmallMoleculeParserState();
 }
