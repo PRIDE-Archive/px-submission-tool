@@ -19,13 +19,28 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.ParserStateException;
 public abstract class ParserState {
     private static final Logger logger = LoggerFactory.getLogger(ParserState.class);
 
-    public abstract void parseLine(MzTabParser context, String line, long lineNumber, long offset) throws ParserStateException;
-    // Change state delegate
+    // Chain of responsibility for parsing metadata items
+    private LineItemParsingHandler lineItemParsingHandler = null;
+
+    protected final void setLineItemParsingHandler(LineItemParsingHandler lineItemParsingHandler) {
+        this.lineItemParsingHandler = lineItemParsingHandler;
+    }
+
+    protected final LineItemParsingHandler getLineItemParsingHandler() {
+        // Lazy building of the chain of responsibility that takes care of parsing the meta data section
+        if (lineItemParsingHandler == null) {
+            lineItemParsingHandler = buildLineItemParsingHandlerChain();
+        }
+        return lineItemParsingHandler;
+    }
+
+    // Change Parser State - Template Method
     protected final void changeState(MzTabParser context, ParserState newState) {
         doValidateSubProduct(context);
         doChangeState(context, newState);
     }
 
+    // Hook for modifying parser state change
     protected void doChangeState(MzTabParser context, ParserState newState) {
         // The responsibilities described for this quick parser at this time, it makes sense that all the different
         // strategies will do the same when it comes to change the state of the parser, as new parser states are created
@@ -37,10 +52,11 @@ public abstract class ParserState {
         context.changeState(newState);
     }
     // Delegate to subclasses
-    // Line item parsing handler
-    protected abstract LineItemParsingHandler getLineItemParsingHandler();
+    public abstract void parseLine(MzTabParser context, String line, long lineNumber, long offset) throws ParserStateException;
     // TODO By looking at the current delegates for subproduct validation, I could convert this method into a template method
     protected abstract void doValidateSubProduct(MzTabParser context) throws ParserStateException;
     // Get this state ID name
     protected abstract String getStateIdName();
+    // Director and builder of the chain of responsibility
+    protected abstract LineItemParsingHandler buildLineItemParsingHandlerChain();
 }
