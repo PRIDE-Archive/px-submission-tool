@@ -28,6 +28,10 @@ public class QuickMetaDataParserState extends MetaDataParserState {
     private void buildLineItemParsingHandlerChain() {
         // If we wanted more flexibility here, we could add another layer of indirection by externalizing the creation
         // of LineItemParsingHandlers
+        // This way of implementing a combination of Chain of Responsibility, Builder and Abstract Factory, gives us
+        // complete freedom to combine all sorts of final processing strategies for the line items, in a way that we can
+        // quickly change from ignoring a particular line entry to process it by choosing a different processing
+        // strategy among any of the available ones, globally
         // TODO
     }
 
@@ -41,11 +45,6 @@ public class QuickMetaDataParserState extends MetaDataParserState {
 
     @Override
     protected void doValidateProduct(MzTabParser context) {
-        // TODO
-    }
-
-    @Override
-    protected void doSetSubProduct(MzTabParser context) {
         // TODO
     }
 

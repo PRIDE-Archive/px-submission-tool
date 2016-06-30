@@ -23,14 +23,12 @@ public abstract class ParserState {
     // Change state delegate
     protected final void changeState(MzTabParser context, ParserState newState) {
         doValidateProduct(context);
-        doSetSubProduct(context);
         doChangeState(context, newState);
     }
     // Delegate to subclasses
     // Line item parsing handler
     protected abstract LineItemParsingHandler getLineItemParsingHandler();
     protected abstract void doValidateProduct(MzTabParser context);
-    protected abstract void doSetSubProduct(MzTabParser context);
     protected abstract void doChangeState(MzTabParser context, ParserState newState);
     // Get this state ID name
     protected abstract String getStateIdName();
