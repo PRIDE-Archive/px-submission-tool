@@ -44,7 +44,7 @@ public class QuickMetaDataParserState extends MetaDataParserState {
     }
 
     @Override
-    protected void doValidateProduct(MzTabParser context) {
+    protected void doValidateSubProduct(MzTabParser context) {
         // TODO
     }
 
