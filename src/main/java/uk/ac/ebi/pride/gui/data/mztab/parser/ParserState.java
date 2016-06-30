@@ -34,7 +34,7 @@ public abstract class ParserState {
         // should be taken upon state change. This gives the software both a general algorithm and a fine tune point,
         // both super classes and subclasses a "say" upon a state change. Any additional processing upon state change
         // will push this method down the class hierarchy
-        // TODO
+        context.changeState(newState);
     }
     // Delegate to subclasses
     // Line item parsing handler
