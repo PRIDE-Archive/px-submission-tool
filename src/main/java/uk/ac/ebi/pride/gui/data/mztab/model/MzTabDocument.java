@@ -68,7 +68,7 @@ public class MzTabDocument implements ValidableProduct {
     @Override
     public boolean validate() throws ValidationException {
         // TODO - Call Validate on every subproduct
-        // TODO - apply document wide validation criteria
+        // TODO - apply document wide validation criteria (like requirements depending on mzTab type and mode specified)
         return false;
     }
 }
