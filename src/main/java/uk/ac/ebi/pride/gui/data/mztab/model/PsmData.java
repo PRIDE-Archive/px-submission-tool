@@ -1,8 +1,5 @@
 package uk.ac.ebi.pride.gui.data.mztab.model;
 
-import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidProteinSection;
-import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.InvalidPsmSectionException;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -17,7 +14,7 @@ import java.util.Set;
  * This class manages PSM data in an mzTab document
  */
 
-public class PsmData {
+public class PsmData extends MzTabSection {
 
     public enum ColumnType {
         SEQUENCE,
@@ -72,17 +69,6 @@ public class PsmData {
 
     public boolean hasHeaderBeenSpecified() {
         return (getNumberOfColumns() != 0);
-    }
-
-    /**
-     * Validation algorithm for this section is, in part, coupled with the metadata section that describes the
-     * mzTab document it belongs to.
-     *
-     * @param mzTabDocument mzTab document where this section belongs to
-     * @throws InvalidProteinSection thrown if this protein section is not valid
-     */
-    public void validate(MzTabDocument mzTabDocument) throws InvalidPsmSectionException {
-        // TODO
     }
 
 }

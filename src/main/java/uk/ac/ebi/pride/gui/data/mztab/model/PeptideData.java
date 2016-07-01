@@ -1,8 +1,5 @@
 package uk.ac.ebi.pride.gui.data.mztab.model;
 
-import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidProteinSection;
-import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.InvalidPeptideSectionException;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -17,7 +14,7 @@ import java.util.Set;
  * This class manages Peptide data in an mzTab document
  */
 
-public class PeptideData {
+public class PeptideData extends MzTabSection {
 
     public enum ColumnType {
         SEQUENCE,
@@ -73,16 +70,4 @@ public class PeptideData {
     public boolean hasHeaderBeenSpecified() {
         return (getNumberOfColumns() != 0);
     }
-
-    /**
-     * Validation algorithm for the peptide section is, in part, coupled with the metadata section that describes the
-     * mzTab document it belongs to.
-     *
-     * @param mzTabDocument mzTab document where this section belongs to
-     * @throws InvalidProteinSection thrown if this protein section is not valid
-     */
-    public void validate(MzTabDocument mzTabDocument) throws InvalidPeptideSectionException {
-        // TODO
-    }
-
 }

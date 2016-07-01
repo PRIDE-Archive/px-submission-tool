@@ -2,7 +2,6 @@ package uk.ac.ebi.pride.gui.data.mztab.model;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidProteinSection;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -18,7 +17,7 @@ import java.util.Set;
  * This class manages Protein Section data in an mzTab document
  */
 
-public class ProteinData {
+public class ProteinData extends MzTabSection {
     private static final Logger logger = LoggerFactory.getLogger(ProteinData.class);
 
     // NOTE - This implementation of mzTab parser embedded in the px-submission-tool IS NOT a complete parser, it only
@@ -79,16 +78,5 @@ public class ProteinData {
 
     public boolean hasHeaderBeenSpecified() {
         return (getNumberOfColumns() != 0);
-    }
-
-    /**
-     * Validation algorithm for the protein section is, in part, coupled with the metadata section that describes the
-     * mzTab document it belongs to.
-     *
-     * @param mzTabDocument mzTab document where this protein section belongs to
-     * @throws InvalidProteinSection thrown if this protein section is not valid
-     */
-    public void validate(MzTabDocument mzTabDocument) throws InvalidProteinSection {
-        // TODO
     }
 }

@@ -2,7 +2,6 @@ package uk.ac.ebi.pride.gui.data.mztab.model;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidMetaDataException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,7 +15,7 @@ import java.util.Map;
  * All rights reserved.
  */
 
-public class MetaData {
+public class MetaData extends MzTabSection {
     private static final Logger logger = LoggerFactory.getLogger(MetaData.class);
 
     // mzTab modes
@@ -159,42 +158,5 @@ public class MetaData {
 
     public Sample getSampleData(int index) {
         return samples.get(index);
-    }
-
-    // Validate Metadata
-    public void validate(MzTabDocument mzTabDocument) throws InvalidMetaDataException {
-        // Required attributes
-        if (getVersion() == null) {
-            throw new InvalidMetaDataException("Missing version information");
-        }
-        if (getMode() == null) {
-            throw new InvalidMetaDataException("Missing mzTab mode information");
-        }
-        if (getType() == null) {
-            throw new InvalidMetaDataException("Missing mzTab type information");
-        }
-        // mzTab-ID is not required
-        // title is not required
-        if (getDescription() == null) {
-            throw new InvalidMetaDataException("Missing mzTab description");
-        }
-        // MS Run location is required
-        if (msRuns.isEmpty()) {
-            throw new InvalidMetaDataException("Missing ms-run[] entries");
-        } else {
-            boolean msrunLocationPresent = false;
-            // TODO - Rewrite validation criteria
-            /*for (MsRun item : msRuns
-                    ) {
-                if (item.getLocation() != null) {
-                    msrunLocationPresent = true;
-                    break;
-                }
-            }
-            if (!msrunLocationPresent) {
-                throw new InvalidMetaDataException("No ms-run location present!");
-            }*/
-        }
-        // TODO Consistency check
     }
 }
