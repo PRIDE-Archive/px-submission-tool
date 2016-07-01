@@ -35,8 +35,10 @@ public abstract class ParserState {
     }
 
     // Change Parser State - Template Method
-    protected final void changeState(MzTabParser context, ParserState newState) {
-        doValidateSubProduct(context);
+    protected final void changeState(MzTabParser context, ParserState newState) throws ParserStateException {
+        if (!doValidateSubProduct(context)) {
+            throw new ParserStateException("The current subproduct DOES NOT VALIDATE");
+        }
         doChangeState(context, newState);
     }
 
@@ -54,7 +56,7 @@ public abstract class ParserState {
     // Delegate to subclasses
     public abstract void parseLine(MzTabParser context, String line, long lineNumber, long offset) throws ParserStateException;
     // TODO By looking at the current delegates for subproduct validation, I could convert this method into a template method
-    protected abstract void doValidateSubProduct(MzTabParser context) throws ParserStateException;
+    protected abstract boolean doValidateSubProduct(MzTabParser context) throws ParserStateException;
     // Get this state ID name
     protected abstract String getStateIdName();
     // Director and builder of the chain of responsibility
