@@ -18,7 +18,8 @@ import static org.hamcrest.core.Is.is;
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
  * <p>
- * This is a bulk test to make sure that certain group of strategies have the same behavior in the parsing stack
+ * This is a bulk test to make sure that certain group of strategies have the same behavior in the parsing stack,
+ * designed for metadata parsing stacks
  */
 
 @RunWith(Parameterized.class)
