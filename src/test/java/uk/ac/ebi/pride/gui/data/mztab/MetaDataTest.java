@@ -29,7 +29,7 @@ public class MetaDataTest {
     public ExpectedException exception = ExpectedException.none();
 
     @Test
-    public void emptyMetadataDoesnotValidate() throws InvalidMzTabSectionException {
+    public void emptyMetadataDoesNotValidate() throws InvalidMzTabSectionException {
         MetaData metaData = new MetaData();
         assertThat("Empty metadata section does not validate", metaData.validate(new MzTabDocument(), new OneTimeDefaultValidatorMzTabSectionValidator()), is(false));
     }
