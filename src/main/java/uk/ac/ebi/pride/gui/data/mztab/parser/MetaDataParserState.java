@@ -2,7 +2,7 @@ package uk.ac.ebi.pride.gui.data.mztab.parser;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidMetaDataException;
+import uk.ac.ebi.pride.gui.data.mztab.model.InvalidMzTabSectionException;
 import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerException;
 import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.ParserStateException;
 
@@ -31,11 +31,11 @@ public abstract class MetaDataParserState extends ParserState {
     }
 
     @Override
-    protected void doValidateSubProduct(MzTabParser context) throws ParserStateException {
+    protected boolean doValidateSubProduct(MzTabParser context) throws ParserStateException {
         // Delegate validation to the product itself, for the given context
         try {
-            context.getMetaDataSection().validate(context.getMzTabDocument());
-        } catch (InvalidMetaDataException e) {
+            return context.getMetaDataSection().validate(context.getMzTabDocument(), context.getMzTabSectionValidator());
+        } catch (InvalidMzTabSectionException e) {
             throw new ParserStateException("Invalid validation of Meta Data section due to:\n" + e.getMessage());
         }
     }
@@ -57,13 +57,27 @@ public abstract class MetaDataParserState extends ParserState {
                     throw new ParserStateException("Error parsing line '" + lineNumber + "' ---> " + e.getMessage());
                 }
             } else if (line.startsWith("PRH")) {
-                // TODO Change state to parsing Proteins
+                // Change state to parsing Proteins
+                ProteinParserState proteinParserState = context.getParserStateFactory().getProteinParserState();
+                // Update the state
+                changeState(context, proteinParserState);
+                // Call the parser
+                proteinParserState.parseLine(context, line, lineNumber, offset);
             } else if (line.startsWith("PSH")) {
-                // TODO Change state to parsing PSMs
+                // Change state to parsing PSMs
+                PsmParserState psmParserState = context.getParserStateFactory().getPsmParserState();
+                changeState(context, psmParserState);
+                psmParserState.parseLine(context, line, lineNumber, offset);
             } else if (line.startsWith("PEH")) {
-                // TODO Change state to parsing Peptides
+                // Change state to parsing Peptides
+                PeptideParserState peptideParserState = context.getParserStateFactory().getPeptideParserState();
+                changeState(context, peptideParserState);
+                peptideParserState.parseLine(context, line, lineNumber, offset);
             } else if (line.startsWith("SMH")) {
-                // TODO Change state to parsing Small Molecules
+                // Change state to parsing Small Molecules
+                SmallMoleculeParserState smallMoleculeParserState = context.getParserStateFactory().getSmallMoleculeParserState();
+                changeState(context, smallMoleculeParserState);
+                smallMoleculeParserState.parseLine(context, line, lineNumber, offset);
             } else {
                 // UNEXPECTED Line content ERROR
                 throw new ParserStateException("UNEXPECTED LINE '" + line + "' at line number '" + lineNumber + "', offset '" + offset + "'");
