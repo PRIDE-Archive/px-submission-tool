@@ -74,6 +74,11 @@ public class Sample {
         public void setSampleCustomAttribute(SampleCustomAttribute sampleCustomAttribute) {
             this.sampleCustomAttribute = sampleCustomAttribute;
         }
+
+        public boolean validate() {
+            // TODO
+            return false;
+        }
     }
 
     // Bean
