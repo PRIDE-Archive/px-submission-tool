@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Project: px-submission-tool
@@ -150,6 +151,10 @@ public class MetaData extends MzTabSection {
         return msRuns.get(index);
     }
 
+    public Set<Integer> getAvailableMsRunIndexes() {
+        return msRuns.keySet();
+    }
+
     // Sample Entries management
     public void updateSampleData(Sample sample, int index) {
         logger.debug("Adding sample data entry, index " + index);
@@ -158,5 +163,18 @@ public class MetaData extends MzTabSection {
 
     public Sample getSampleData(int index) {
         return samples.get(index);
+    }
+
+    public Set<Integer> getAvailableSampleIndexes() {
+        return samples.keySet();
+    }
+
+    @Override
+    public boolean validate(MzTabDocument mzTabDocument, MzTabSectionValidator validator) throws InvalidMzTabSectionException {
+        try {
+            return validator.validate(mzTabDocument, this);
+        } catch (MzTabSectionValidatorException e) {
+            throw new InvalidMzTabSectionException("An ERROR occurred while validating MetaData mzTab section: " + e.getMessage());
+        }
     }
 }

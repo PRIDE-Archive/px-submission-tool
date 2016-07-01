@@ -79,4 +79,13 @@ public class ProteinData extends MzTabSection {
     public boolean hasHeaderBeenSpecified() {
         return (getNumberOfColumns() != 0);
     }
+
+    @Override
+    public boolean validate(MzTabDocument mzTabDocument, MzTabSectionValidator validator) throws InvalidMzTabSectionException {
+        try {
+            return validator.validate(mzTabDocument, this);
+        } catch (MzTabSectionValidatorException e) {
+            throw new InvalidMzTabSectionException("An ERROR occurred while validating Protein mzTab section: " + e.getMessage());
+        }
+    }
 }

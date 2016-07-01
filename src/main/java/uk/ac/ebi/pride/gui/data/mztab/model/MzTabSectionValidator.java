@@ -16,9 +16,4 @@ public abstract class MzTabSectionValidator {
     public abstract boolean validate(MzTabDocument mzTabDocument, PeptideData peptideData) throws MzTabSectionValidatorException;
     public abstract boolean validate(MzTabDocument mzTabDocument, PsmData psmData) throws MzTabSectionValidatorException;
     public abstract boolean validate(MzTabDocument mzTabDocument, SmallMoleculeData smallMoleculeData) throws MzTabSectionValidatorException;
-
-    public boolean validate(MzTabDocument mzTabDocument, MzTabSection mzTabSection) throws MzTabSectionValidatorException {
-        // We don't validate items of the superclass
-        return false;
-    }
 }

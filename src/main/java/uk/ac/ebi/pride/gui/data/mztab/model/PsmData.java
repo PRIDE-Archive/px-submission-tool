@@ -71,4 +71,12 @@ public class PsmData extends MzTabSection {
         return (getNumberOfColumns() != 0);
     }
 
+    @Override
+    public boolean validate(MzTabDocument mzTabDocument, MzTabSectionValidator validator) throws InvalidMzTabSectionException {
+        try {
+            return validator.validate(mzTabDocument, this);
+        } catch (MzTabSectionValidatorException e) {
+            throw new InvalidMzTabSectionException("An ERROR occurred while validating PSM mzTab section: " + e.getMessage());
+        }
+    }
 }
