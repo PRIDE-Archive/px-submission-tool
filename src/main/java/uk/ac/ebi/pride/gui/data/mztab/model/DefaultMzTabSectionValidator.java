@@ -10,31 +10,31 @@ package uk.ac.ebi.pride.gui.data.mztab.model;
  */
 public class DefaultMzTabSectionValidator extends MzTabSectionValidator {
     @Override
-    public boolean validate(MzTabDocument mzTabDocument, MetaData metaData) {
+    public boolean validate(MzTabDocument mzTabDocument, MetaData metaData) throws MzTabSectionValidatorException {
         // TODO
         return false;
     }
 
     @Override
-    public boolean validate(MzTabDocument mzTabDocument, ProteinData proteinData) {
+    public boolean validate(MzTabDocument mzTabDocument, ProteinData proteinData) throws MzTabSectionValidatorException {
         // TODO
        return false;
     }
 
     @Override
-    public boolean validate(MzTabDocument mzTabDocument, PeptideData peptideData) {
+    public boolean validate(MzTabDocument mzTabDocument, PeptideData peptideData) throws MzTabSectionValidatorException {
         // TODO
         return false;
     }
 
     @Override
-    public boolean validate(MzTabDocument mzTabDocument, PsmData psmData) {
+    public boolean validate(MzTabDocument mzTabDocument, PsmData psmData) throws MzTabSectionValidatorException {
         // TODO
         return false;
     }
 
     @Override
-    public boolean validate(MzTabDocument mzTabDocument, SmallMoleculeData smallMoleculeData) {
+    public boolean validate(MzTabDocument mzTabDocument, SmallMoleculeData smallMoleculeData) throws MzTabSectionValidatorException {
         // TODO
         return false;
     }
