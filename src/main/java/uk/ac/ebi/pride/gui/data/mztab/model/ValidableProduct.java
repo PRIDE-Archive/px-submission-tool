@@ -11,6 +11,6 @@ package uk.ac.ebi.pride.gui.data.mztab.model;
  * This is me, writing interfaces on a hunch! hahaha!
  */
 
-public interface Validable {
+public interface ValidableProduct {
     boolean validate() throws ValidationException;
 }

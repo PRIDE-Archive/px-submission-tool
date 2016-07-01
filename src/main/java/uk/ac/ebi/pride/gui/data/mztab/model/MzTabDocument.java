@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
  */
-public class MzTabDocument implements Validable {
+public class MzTabDocument implements ValidableProduct {
     private static final Logger logger = LoggerFactory.getLogger(MzTabDocument.class);
 
     // mzTab Sections
@@ -67,7 +67,8 @@ public class MzTabDocument implements Validable {
 
     @Override
     public boolean validate() throws ValidationException {
-        // TODO - Validation criteria
+        // TODO - Call Validate on every subproduct
+        // TODO - apply document wide validation criteria
         return false;
     }
 }
