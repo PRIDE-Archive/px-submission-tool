@@ -11,6 +11,9 @@ import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidProteinSection;
  * All rights reserved.
  *
  * Common behaviour across all the sections
+ *
+ * I'm not using this really... but I'll leave it here as a preventive thing for future needs, I can always remove it later
+ * if I don't use it for anything
  */
 public interface MzTabSection {
     /**
