@@ -14,7 +14,7 @@ import java.util.Set;
  * This class manages PSM data in an mzTab document
  */
 
-public class PsmData extends MzTabSection {
+public class PsmData implements MzTabSection {
 
     public enum ColumnType {
         SEQUENCE,

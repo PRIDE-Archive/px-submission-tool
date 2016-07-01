@@ -12,12 +12,12 @@ import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidProteinSection;
  *
  * Common behaviour across all the sections
  */
-public abstract class MzTabSection {
+public interface MzTabSection {
     /**
      * Implements the validation of a particular subsection by using the given validation strategy
      * @param mzTabDocument context for performing the validation
      * @param validator validation algorithm/strategy
      * @throws InvalidProteinSection thrown if the section is not valid
      */
-    public abstract boolean validate(MzTabDocument mzTabDocument, MzTabSectionValidator validator) throws InvalidMzTabSectionException;
+    boolean validate(MzTabDocument mzTabDocument, MzTabSectionValidator validator) throws InvalidMzTabSectionException;
 }

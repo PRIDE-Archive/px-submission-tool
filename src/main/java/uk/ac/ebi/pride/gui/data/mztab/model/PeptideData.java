@@ -14,7 +14,7 @@ import java.util.Set;
  * This class manages Peptide data in an mzTab document
  */
 
-public class PeptideData extends MzTabSection {
+public class PeptideData implements MzTabSection {
 
     public enum ColumnType {
         SEQUENCE,

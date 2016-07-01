@@ -17,7 +17,7 @@ import java.util.Set;
  * This class manages Protein Section data in an mzTab document
  */
 
-public class ProteinData extends MzTabSection {
+public class ProteinData implements MzTabSection {
     private static final Logger logger = LoggerFactory.getLogger(ProteinData.class);
 
     // NOTE - This implementation of mzTab parser embedded in the px-submission-tool IS NOT a complete parser, it only

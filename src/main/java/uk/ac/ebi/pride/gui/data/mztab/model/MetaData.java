@@ -16,7 +16,7 @@ import java.util.Set;
  * All rights reserved.
  */
 
-public class MetaData extends MzTabSection {
+public class MetaData implements MzTabSection {
     private static final Logger logger = LoggerFactory.getLogger(MetaData.class);
 
     // mzTab modes

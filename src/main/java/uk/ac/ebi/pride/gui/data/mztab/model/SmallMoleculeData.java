@@ -14,7 +14,7 @@ import java.util.Set;
  * This class manages Small Molecule data for an mzTab document
  */
 
-public class SmallMoleculeData extends MzTabSection {
+public class SmallMoleculeData implements MzTabSection {
 
     public enum ColumnType {
         IDENTIFIER,
