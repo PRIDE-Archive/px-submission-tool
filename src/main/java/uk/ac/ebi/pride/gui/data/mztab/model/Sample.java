@@ -17,7 +17,7 @@ import java.util.Map;
  * This class models a Sample in mzTab metadata section
  */
 
-public class Sample implements Validable {
+public class Sample {
     private static final Logger logger = LoggerFactory.getLogger(Sample.class);
 
     public static class DataEntry {
@@ -102,7 +102,6 @@ public class Sample implements Validable {
         return dataEntries.get(index);
     }
 
-    @Override
     public boolean validate() throws ValidationException {
         // TODO
         return false;
