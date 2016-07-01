@@ -19,7 +19,11 @@ public abstract class MzTabSection {
      * @param validator validation algorithm/strategy
      * @throws InvalidProteinSection thrown if the section is not valid
      */
-    public void validate(MzTabDocument mzTabDocument, MzTabSectionValidator validator) throws InvalidProteinSection {
-        validator.validate(mzTabDocument, this);
+    public boolean validate(MzTabDocument mzTabDocument, MzTabSectionValidator validator) throws InvalidMzTabSection {
+        try {
+            return validator.validate(mzTabDocument, this);
+        } catch (MzTabSectionValidatorException e) {
+            throw new InvalidMzTabSection("An ERROR occurred while validating mzTab section: " + e.getMessage());
+        }
     }
 }
