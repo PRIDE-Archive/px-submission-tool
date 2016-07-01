@@ -1,5 +1,7 @@
 package uk.ac.ebi.pride.gui.data.mztab.parser;
 
+import uk.ac.ebi.pride.gui.data.mztab.model.MzTabSectionValidator;
+
 /**
  * Project: px-submission-tool
  * Package: uk.ac.ebi.pride.gui.data.mztab.parser
@@ -20,6 +22,11 @@ public class DummyMzTabParser extends MzTabParser {
     // For testing line item handlers, a parser state factory will never be used
     @Override
     protected StrategyParserStateFactory getParserStateFactory() {
+        return null;
+    }
+
+    @Override
+    protected MzTabSectionValidator getMzTabSectionValidator() {
         return null;
     }
 }

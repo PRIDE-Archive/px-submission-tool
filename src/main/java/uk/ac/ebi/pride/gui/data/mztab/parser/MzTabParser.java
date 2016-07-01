@@ -73,10 +73,6 @@ public abstract class MzTabParser {
         parserState = newState;
     }
 
-
-    // Delegate steps
-    protected abstract StrategyParserStateFactory getParserStateFactory();
-
     /**
      * Several object hierarchies have been designed and implemented here to achieve low coupling, flexibility, extendability,
      * etc. But, at some point you need to stop putting levels of indirection, otherwise, your code could grow exponentially.
@@ -114,6 +110,15 @@ public abstract class MzTabParser {
                 // We reached the end of the stream
                 break;
             }
+        }
+        // Product Validation
+        try {
+            if (!getMzTabDocument().validate()) {
+                throw new MzTabParserException("The parsed mzTab document DOES NOT VALIDATE");
+            }
+            logger.info("parsed mzTab document has been successfully validated");
+        } catch (ValidationException e) {
+            throw new MzTabParserException("An ERROR occurred while validating the parsed mzTab document: " + e.getMessage());
         }
     }
 
@@ -192,5 +197,11 @@ public abstract class MzTabParser {
         }
         return smallMoleculeData;
     }
+
+    // Delegate
+    // Parser factory for creating line item parsers
+    protected abstract StrategyParserStateFactory getParserStateFactory();
+    // mzTab validation strategy set by the particular mzTab parser
+    protected abstract MzTabSectionValidator getMzTabSectionValidator();
 
 }
