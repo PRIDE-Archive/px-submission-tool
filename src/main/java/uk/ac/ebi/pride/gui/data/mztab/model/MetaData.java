@@ -78,7 +78,14 @@ public class MetaData implements MzTabSection {
     private Map<Integer, MsRun> msRuns;
     // samples
     private Map<Integer, Sample> samples;
-    // TODO
+    // TODO - Capture the following extra attributes
+    // TODO indexed protein_search_engine_score
+    // TODO indexed peptide_search_engine_score
+    // TODO indexed psm_search_engine_score
+    // TODO indexed smallmolecule_search_engine_score
+    // NOTE - it says on the documentation that they must be reported for every search engine score reported in the
+    // corresponding section
+    // TODO - --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
 
     public MetaData() {
         version = null;
