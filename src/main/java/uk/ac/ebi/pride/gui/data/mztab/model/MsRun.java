@@ -58,7 +58,17 @@ public class MsRun {
     }
 
     public boolean validate() throws ValidationException {
-        // TODO - Validation Criteria
-        return false;
+        // Validation Criteria
+        // location must always be reported
+        if (location == null) {
+            logger.error("MISSING ms-run location information");
+            return false;
+        }
+        // If ms-run format is reported, ms-run id_format is required
+        if ((msRunFormat != null) && (msRunIdFormat == null)) {
+            logger.error("ms-run format specified, but MISSING ms-run ID_format");
+            return false;
+        }
+        return true;
     }
 }
