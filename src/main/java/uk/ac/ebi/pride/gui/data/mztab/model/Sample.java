@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Project: px-submission-tool
@@ -76,8 +77,13 @@ public class Sample {
         }
 
         public boolean validate() {
-            // TODO
-            return false;
+            // No special requirements for a data entry to be valid, so we'll run a check on those attributes in the
+            // data entry that have been set
+            return getSpecies().validate()
+                    && getTissue().validate()
+                    && getCellType().validate()
+                    && getDisease().validate()
+                    && getSampleCustomAttribute().validate();
         }
     }
 
@@ -107,8 +113,21 @@ public class Sample {
         return dataEntries.get(index);
     }
 
+    public Set<Integer> getDataEntryIndexes() {
+        return dataEntries.keySet();
+    }
+
     public boolean validate() throws ValidationException {
-        // TODO
-        return false;
+        // No particular validation requirements for a sample, so we'll just run validation checks on all its data
+        // entries
+        for (int dataEntryIndex :
+                getDataEntryIndexes()) {
+            if (!getDataEntry(dataEntryIndex).validate()) {
+                logger.error("Sample Data Entry with index '" + dataEntryIndex + "' FAILED VALIDATION CRITERIA");
+                return false;
+            }
+        }
+        // Everything validated up to this point
+        return true;
     }
 }
