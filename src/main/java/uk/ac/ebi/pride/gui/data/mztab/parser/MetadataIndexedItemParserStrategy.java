@@ -128,10 +128,15 @@ public abstract class MetadataIndexedItemParserStrategy {
         try {
             if (lineItems.length == 3) {
                 // Get the data
+                // Property key is optional
+                getPropertyKeyIfExists(bean, lineItems);
+                // That property to be indexed is also optional
                 getPropertyEntryIndexIfExists(bean, lineItems);
+                // This way, we can reuse this algorithm for elements that are like fixed_mod[index],
+                // fixed_mod[index]-propertyKey, sample[index]-description, sample[index]-species[property_key_index]
+                // TODO - I could probably refactor this later, to merge several type of line item attributes
                 return getLineItemKey(bean, lineItems)
                         && getLineItemIndex(bean, lineItems)
-                        && getPropertyKeyIfExists(bean, lineItems)
                         && getPropertyValue(bean, lineItems);
             }
         } catch (Exception e) {
