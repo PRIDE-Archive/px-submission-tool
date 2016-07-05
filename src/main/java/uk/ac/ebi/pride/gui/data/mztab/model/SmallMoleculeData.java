@@ -17,31 +17,42 @@ import java.util.Set;
 public class SmallMoleculeData implements MzTabSection {
 
     public enum ColumnType {
-        IDENTIFIER,
-        CHEMICAL_FORMULA,
-        SMILES,
-        INCHI_KEY,
-        DESCRIPTION,
-        EXP_MASS_TO_CHARGE,
-        CALC_MASS_TO_CHARGE,
-        CHARGE,
-        RETENTION_TIME,
-        TAXID,
-        SPECIES,
-        DATABASE,
-        DATABASE_VERSION,
-        SPECTRA_REF,
-        SEARCH_ENGINE,
-        BEST_SEARCH_ENGINE_SCORE,
-        MODIFICATIONS,
-        SMALLMOLECULE_ABUNDANCE_ASSAY,
-        SMALLMOLECULE_ABUNDANCE_STUDY_VARIABLE,
-        SMALLMOLECULE_STDEV_STUDY_VARIABLE,
-        SMALLMOLECULE_STD_ERROR_STUDY_VARIABLE,
-        SEARCH_ENGINE_SCORE_MS_RUN,
-        OPT_CUSTOM_ATTRIBUTE,
-        RELIABILITY,
-        URI
+        IDENTIFIER("identifier"),
+        CHEMICAL_FORMULA("chemical_formula"),
+        SMILES("smiles"),
+        INCHI_KEY("inchi_key"),
+        DESCRIPTION("description"),
+        EXP_MASS_TO_CHARGE("exp_mass_to_charge"),
+        CALC_MASS_TO_CHARGE("calc_mass_to_charge"),
+        CHARGE("charge"),
+        RETENTION_TIME("retention_time"),
+        TAXID("taxid"),
+        SPECIES("species"),
+        DATABASE("database"),
+        DATABASE_VERSION("database_version"),
+        SPECTRA_REF("spectra_ref"),
+        SEARCH_ENGINE("search_engine"),
+        BEST_SEARCH_ENGINE_SCORE("best_search_engine_score[1-n]"),
+        MODIFICATIONS("modifications"),
+        SMALLMOLECULE_ABUNDANCE_ASSAY("smallmolecule_abundance_assay[1-n]"),
+        SMALLMOLECULE_ABUNDANCE_STUDY_VARIABLE("smallmolecule_abundance_study_variable[1-n]"),
+        SMALLMOLECULE_STDEV_STUDY_VARIABLE("smallmolecule_stdev_study_variable[1-n]"),
+        SMALLMOLECULE_STD_ERROR_STUDY_VARIABLE("smallmolecule_std_error_study_variable[1-n]"),
+        SEARCH_ENGINE_SCORE_MS_RUN("search_engine_score[1-n]_ms_run[1-n]"),
+        OPT_CUSTOM_ATTRIBUTE("opt_{identifier}_*"),
+        RELIABILITY("reliability"),
+        URI("uri");
+
+        private String colTypeToString = "";
+
+        ColumnType(String colTypeToString) {
+            this.colTypeToString = colTypeToString;
+        }
+
+        @Override
+        public String toString() {
+            return colTypeToString;
+        }
     }
 
     // Present columns
