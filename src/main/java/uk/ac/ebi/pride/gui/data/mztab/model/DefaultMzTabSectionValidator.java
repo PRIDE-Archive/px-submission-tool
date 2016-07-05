@@ -334,7 +334,6 @@ public class DefaultMzTabSectionValidator extends MzTabSectionValidator {
                 testingSet = id_com;
             }
         } else if (mzTabDocument.getMetaData().getType() == MetaData.MzTabType.QUANTIFICATION) {
-            // TODO Check "spectra_ref" presence if MS2 based quantification is used
             if (mzTabDocument.getMetaData().getMode() == MetaData.MzTabMode.SUMMARY) {
                 // quantification type - summary mode
                 testingSet = qu_sum;
@@ -359,7 +358,107 @@ public class DefaultMzTabSectionValidator extends MzTabSectionValidator {
 
     @Override
     public boolean validate(MzTabDocument mzTabDocument, SmallMoleculeData smallMoleculeData) throws MzTabSectionValidatorException {
-        // TODO
-        return false;
+        // Required columns for mzTab Identification type in Summary mode
+        Set<SmallMoleculeData.ColumnType> id_sum = new HashSet<>();
+        // Required columns for mzTab Identification type in Complete mode
+        Set<SmallMoleculeData.ColumnType> id_com = new HashSet<>();
+        // Required columns for mzTab Quantification type in Summary mode
+        Set<SmallMoleculeData.ColumnType> qu_sum = new HashSet<>();
+        // Required columns for mzTab Quantification type in Complete mode
+        Set<SmallMoleculeData.ColumnType> qu_com = new HashSet<>();
+        // Supported modes
+        Set<MetaData.MzTabMode> supportedModes = new HashSet<>(Arrays.asList(MetaData.MzTabMode.COMPLETE, MetaData.MzTabMode.SUMMARY));
+        // Supported types
+        Set<MetaData.MzTabType> supportedTypes = new HashSet<>(Arrays.asList(MetaData.MzTabType.IDENTIFICATION, MetaData.MzTabType.QUANTIFICATION));
+        // Fill in the required columns
+        id_sum.addAll(Arrays.asList(
+                SmallMoleculeData.ColumnType.IDENTIFIER, SmallMoleculeData.ColumnType.CHEMICAL_FORMULA,
+                SmallMoleculeData.ColumnType.SMILES, SmallMoleculeData.ColumnType.INCHI_KEY,
+                SmallMoleculeData.ColumnType.DESCRIPTION, SmallMoleculeData.ColumnType.EXP_MASS_TO_CHARGE,
+                SmallMoleculeData.ColumnType.CALC_MASS_TO_CHARGE, SmallMoleculeData.ColumnType.CHARGE,
+                SmallMoleculeData.ColumnType.RETENTION_TIME, SmallMoleculeData.ColumnType.TAXID,
+                SmallMoleculeData.ColumnType.SPECIES, SmallMoleculeData.ColumnType.DATABASE,
+                SmallMoleculeData.ColumnType.DATABASE_VERSION, SmallMoleculeData.ColumnType.SPECTRA_REF,
+                SmallMoleculeData.ColumnType.SEARCH_ENGINE, SmallMoleculeData.ColumnType.BEST_SEARCH_ENGINE_SCORE,
+                SmallMoleculeData.ColumnType.MODIFICATIONS
+        ));
+        id_com.addAll(Arrays.asList(
+                SmallMoleculeData.ColumnType.IDENTIFIER, SmallMoleculeData.ColumnType.CHEMICAL_FORMULA,
+                SmallMoleculeData.ColumnType.SMILES, SmallMoleculeData.ColumnType.INCHI_KEY,
+                SmallMoleculeData.ColumnType.DESCRIPTION, SmallMoleculeData.ColumnType.EXP_MASS_TO_CHARGE,
+                SmallMoleculeData.ColumnType.CALC_MASS_TO_CHARGE, SmallMoleculeData.ColumnType.CHARGE,
+                SmallMoleculeData.ColumnType.RETENTION_TIME, SmallMoleculeData.ColumnType.TAXID,
+                SmallMoleculeData.ColumnType.SPECIES, SmallMoleculeData.ColumnType.DATABASE,
+                SmallMoleculeData.ColumnType.DATABASE_VERSION, SmallMoleculeData.ColumnType.SPECTRA_REF,
+                SmallMoleculeData.ColumnType.SEARCH_ENGINE, SmallMoleculeData.ColumnType.BEST_SEARCH_ENGINE_SCORE,
+                SmallMoleculeData.ColumnType.MODIFICATIONS
+        ));
+        qu_sum.addAll(Arrays.asList(
+                SmallMoleculeData.ColumnType.IDENTIFIER, SmallMoleculeData.ColumnType.CHEMICAL_FORMULA,
+                SmallMoleculeData.ColumnType.SMILES, SmallMoleculeData.ColumnType.INCHI_KEY,
+                SmallMoleculeData.ColumnType.DESCRIPTION, SmallMoleculeData.ColumnType.EXP_MASS_TO_CHARGE,
+                SmallMoleculeData.ColumnType.CALC_MASS_TO_CHARGE, SmallMoleculeData.ColumnType.CHARGE,
+                SmallMoleculeData.ColumnType.RETENTION_TIME, SmallMoleculeData.ColumnType.TAXID,
+                SmallMoleculeData.ColumnType.SPECIES, SmallMoleculeData.ColumnType.DATABASE,
+                SmallMoleculeData.ColumnType.DATABASE_VERSION, SmallMoleculeData.ColumnType.SPECTRA_REF,
+                SmallMoleculeData.ColumnType.SEARCH_ENGINE, SmallMoleculeData.ColumnType.BEST_SEARCH_ENGINE_SCORE,
+                SmallMoleculeData.ColumnType.MODIFICATIONS
+        ));
+        qu_com.addAll(Arrays.asList(
+                SmallMoleculeData.ColumnType.IDENTIFIER, SmallMoleculeData.ColumnType.CHEMICAL_FORMULA,
+                SmallMoleculeData.ColumnType.SMILES, SmallMoleculeData.ColumnType.INCHI_KEY,
+                SmallMoleculeData.ColumnType.DESCRIPTION, SmallMoleculeData.ColumnType.EXP_MASS_TO_CHARGE,
+                SmallMoleculeData.ColumnType.CALC_MASS_TO_CHARGE, SmallMoleculeData.ColumnType.CHARGE,
+                SmallMoleculeData.ColumnType.RETENTION_TIME, SmallMoleculeData.ColumnType.TAXID,
+                SmallMoleculeData.ColumnType.SPECIES, SmallMoleculeData.ColumnType.DATABASE,
+                SmallMoleculeData.ColumnType.DATABASE_VERSION, SmallMoleculeData.ColumnType.SPECTRA_REF,
+                SmallMoleculeData.ColumnType.SEARCH_ENGINE, SmallMoleculeData.ColumnType.BEST_SEARCH_ENGINE_SCORE,
+                SmallMoleculeData.ColumnType.MODIFICATIONS, SmallMoleculeData.ColumnType.SEARCH_ENGINE_SCORE_MS_RUN
+        ));
+        // Check for supported mode
+        if (!supportedModes.contains(mzTabDocument.getMetaData().getMode())) {
+            throw new MzTabSectionValidatorException("VALIDATION OF MZTAB MODE '" + mzTabDocument.getMetaData().getMode() + "' IS NOT SUPPORTED");
+        }
+        // Check for supported type
+        if (!supportedTypes.contains(mzTabDocument.getMetaData().getType())) {
+            throw new MzTabSectionValidatorException("VALIDATION OF MZTAB TYPE '" + mzTabDocument.getMetaData().getType() + "' IS NOT SUPPORTED");
+        }
+        // Select the testing set
+        Set<SmallMoleculeData.ColumnType> testingSet = null;
+        if (mzTabDocument.getMetaData().getType() == MetaData.MzTabType.IDENTIFICATION) {
+            if (mzTabDocument.getMetaData().getMode() == MetaData.MzTabMode.SUMMARY) {
+                // identification type - summary mode
+                testingSet = id_sum;
+            } else if (mzTabDocument.getMetaData().getMode() == MetaData.MzTabMode.COMPLETE) {
+                // identification type - complete mode
+                testingSet = id_com;
+            }
+        } else if (mzTabDocument.getMetaData().getType() == MetaData.MzTabType.QUANTIFICATION) {
+            // TODO Check smallmolecule_abundance_assay[1-n] if assays reported
+            // TODO If study vars reported ---->
+            // TODO smallmolecule_abundance_study_variable[1-n]
+            // TODO smallmolecule_stdev_study_variable[1-n]
+            // TODO smallmolecule_std_error_study_variable[1-n]
+            // TODO <---
+            if (mzTabDocument.getMetaData().getMode() == MetaData.MzTabMode.SUMMARY) {
+                // quantification type - summary mode
+                testingSet = qu_sum;
+            } else if (mzTabDocument.getMetaData().getMode() == MetaData.MzTabMode.COMPLETE) {
+                // quantification type - complete mode
+                testingSet = qu_com;
+            }
+        }
+        // Check the required columns
+        if (!smallMoleculeData.checkThatAllGivenColumnTypesArePresent(testingSet)) {
+            logger.error("Small Molecule section IS NOT VALID because of the following missing required columns:");
+            for (SmallMoleculeData.ColumnType missingColumnType :
+                    smallMoleculeData.getMissingColumnTypesFromRequiredColumnTypes(testingSet)) {
+                logger.error("MISSING Small Molecule Data column '" + missingColumnType.toString() + "' for mzTab "
+                        + mzTabDocument.getMetaData().getType().toString() + " Type, "
+                        + mzTabDocument.getMetaData().getMode().toString() + " Mode");
+            }
+            return false;
+        }
+        return true;
     }
 }
