@@ -79,7 +79,8 @@ public class MetaData implements MzTabSection {
     // samples
     private Map<Integer, Sample> samples;
     // TODO - Capture the following extra attributes
-    // TODO indexed protein_search_engine_score
+    // indexed protein_search_engine_score
+    private Map<Integer, ProteinSearchEngineScore> proteinSearchEngineScores;
     // TODO indexed peptide_search_engine_score
     // TODO indexed psm_search_engine_score
     // TODO indexed smallmolecule_search_engine_score
@@ -96,6 +97,7 @@ public class MetaData implements MzTabSection {
         description = null;
         msRuns = new HashMap<>();
         samples = new HashMap<>();
+        proteinSearchEngineScores = new HashMap<>();
     }
 
     // Getters/Setters
@@ -174,6 +176,19 @@ public class MetaData implements MzTabSection {
 
     public Set<Integer> getAvailableSampleIndexes() {
         return samples.keySet();
+    }
+
+    // Protein search engine score management
+    public ProteinSearchEngineScore updateProteinSearchEngineScore(ProteinSearchEngineScore proteinSearchEngineScore, int index) {
+        return proteinSearchEngineScores.put(index, proteinSearchEngineScore);
+    }
+
+    public ProteinSearchEngineScore getProteinSearchEngineScore(int index) {
+        return proteinSearchEngineScores.get(index);
+    }
+
+    public Set<Integer> getAvailableProteinSearchEngineScoreIndexes() {
+        return proteinSearchEngineScores.keySet();
     }
 
     @Override
