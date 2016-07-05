@@ -71,6 +71,26 @@ public class PeptideData implements MzTabSection {
         return (getNumberOfColumns() != 0);
     }
 
+    /**
+     * Check that a set of column types are ALL present in this section
+     * @param columnTypes set of required column types
+     * @return true if they are all present, false otherwise
+     */
+    public boolean checkThatAllGivenColumnTypesArePresent(Set<ColumnType> columnTypes) {
+        return columnsFound.containsAll(columnTypes);
+    }
+
+    /**
+     * For a given set of column types, calculate which of them are missing in this section
+     * @param columnTypes set of column types
+     * @return a set of missing column types among the given ones in this section, empty set if they're all present
+     */
+    public Set<ColumnType> getMissingColumnTypesFromRequiredColumnTypes(Set<ColumnType> columnTypes) {
+        Set<ColumnType> result = new HashSet<>(columnTypes);
+        result.removeAll(columnsFound);
+        return result;
+    }
+
     @Override
     public boolean validate(MzTabDocument mzTabDocument, MzTabSectionValidator validator) throws InvalidMzTabSectionException {
         try {
