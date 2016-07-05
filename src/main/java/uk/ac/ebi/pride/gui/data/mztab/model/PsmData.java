@@ -17,27 +17,38 @@ import java.util.Set;
 public class PsmData implements MzTabSection {
 
     public enum ColumnType {
-        SEQUENCE,
-        PSM_ID,
-        ACCESSION,
-        UNIQUE,
-        DATABASE,
-        DATABASE_VERSION,
-        SEARCH_ENGINE,
-        SEARCH_ENGINE_SCORE,
-        MODIFICATIONS,
-        SPECTRA_REF,
-        RETENTION_TIME,
-        CHARGE,
-        EXP_MASS_TO_CHARGE,
-        CALC_MASS_TO_CHARGE,
-        PRE,
-        POST,
-        START,
-        END,
-        OPT_CUSTOM_ATTRIBUTE,
-        RELIABILITY,
-        URI
+        SEQUENCE("sequence"),
+        PSM_ID("PSM_ID"),
+        ACCESSION("accession"),
+        UNIQUE("unique"),
+        DATABASE("database"),
+        DATABASE_VERSION("database_version"),
+        SEARCH_ENGINE("search_engine"),
+        SEARCH_ENGINE_SCORE("search_engine_score[1-n]"),
+        MODIFICATIONS("modifications"),
+        SPECTRA_REF("spectra_ref"),
+        RETENTION_TIME("retention_time"),
+        CHARGE("charge"),
+        EXP_MASS_TO_CHARGE("exp_mass_to_charge"),
+        CALC_MASS_TO_CHARGE("calc_mass_to_charge"),
+        PRE("pre"),
+        POST("post"),
+        START("start"),
+        END("end"),
+        OPT_CUSTOM_ATTRIBUTE(""),
+        RELIABILITY("reliability"),
+        URI("uri");
+
+        private String colTypeToString = "";
+
+        ColumnType(String colTypeToString) {
+            this.colTypeToString = colTypeToString;
+        }
+
+        @Override
+        public String toString() {
+            return colTypeToString;
+        }
     }
 
     // Present columns
