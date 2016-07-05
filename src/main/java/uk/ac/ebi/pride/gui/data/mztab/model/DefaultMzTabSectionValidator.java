@@ -436,9 +436,9 @@ public class DefaultMzTabSectionValidator extends MzTabSectionValidator {
         } else if (mzTabDocument.getMetaData().getType() == MetaData.MzTabType.QUANTIFICATION) {
             // TODO Check smallmolecule_abundance_assay[1-n] if assays reported
             // TODO If study vars reported ---->
-            // TODO smallmolecule_abundance_study_variable[1-n]
-            // TODO smallmolecule_stdev_study_variable[1-n]
-            // TODO smallmolecule_std_error_study_variable[1-n]
+            // TODO Check smallmolecule_abundance_study_variable[1-n]
+            // TODO Check smallmolecule_stdev_study_variable[1-n]
+            // TODO Check smallmolecule_std_error_study_variable[1-n]
             // TODO <---
             if (mzTabDocument.getMetaData().getMode() == MetaData.MzTabMode.SUMMARY) {
                 // quantification type - summary mode
