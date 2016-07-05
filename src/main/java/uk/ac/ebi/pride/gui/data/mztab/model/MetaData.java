@@ -78,15 +78,16 @@ public class MetaData implements MzTabSection {
     private Map<Integer, MsRun> msRuns;
     // samples
     private Map<Integer, Sample> samples;
-    // TODO - Capture the following extra attributes
     // indexed protein_search_engine_score
     private Map<Integer, ProteinSearchEngineScore> proteinSearchEngineScores;
-    // TODO indexed peptide_search_engine_score
-    // TODO indexed psm_search_engine_score
-    // TODO indexed smallmolecule_search_engine_score
+    // indexed peptide_search_engine_score
+    private Map<Integer, PeptideSearchEngineScore> peptideSearchEngineScores;
+    // indexed psm_search_engine_score
+    private Map<Integer, PsmSearchEngineScore> psmSearchEngineScores;
+    // indexed small molecule_search_engine_score
+    private Map<Integer, SmallMoleculeSearchEngineScore> smallMoleculeSearchEngineScores;
     // NOTE - it says on the documentation that they must be reported for every search engine score reported in the
     // corresponding section
-    // TODO - --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- ---
 
     public MetaData() {
         version = null;
@@ -98,6 +99,9 @@ public class MetaData implements MzTabSection {
         msRuns = new HashMap<>();
         samples = new HashMap<>();
         proteinSearchEngineScores = new HashMap<>();
+        peptideSearchEngineScores = new HashMap<>();
+        psmSearchEngineScores = new HashMap<>();
+        smallMoleculeSearchEngineScores = new HashMap<>();
     }
 
     // Getters/Setters
@@ -191,7 +195,46 @@ public class MetaData implements MzTabSection {
         return proteinSearchEngineScores.keySet();
     }
 
+    // Peptide search engine score management
+    public PeptideSearchEngineScore updatePeptideSearchEngineScore(PeptideSearchEngineScore peptideSearchEngineScore, int index) {
+        return peptideSearchEngineScores.put(index, peptideSearchEngineScore);
+    }
+
+    public PeptideSearchEngineScore getPeptideSearchEngineScore(int index) {
+        return peptideSearchEngineScores.get(index);
+    }
+
+    public Set<Integer> getAvailablePeptideSearchEngineScoreIndexes() {
+        return peptideSearchEngineScores.keySet();
+    }
+
+    // PSM search engine score management
+    public PsmSearchEngineScore updatePsmSearchEngineScore(PsmSearchEngineScore psmSearchEngineScore, int index) {
+        return psmSearchEngineScores.put(index, psmSearchEngineScore);
+    }
+
+    public PsmSearchEngineScore getPsmSearchEngineScore(int index) {
+        return psmSearchEngineScores.get(index);
+    }
+
+    public Set<Integer> getAvailablePsmSearchEngineScoreIndexes() {
+        return psmSearchEngineScores.keySet();
+    }
+
+    // Small Molecule search engine score management
+    public SmallMoleculeSearchEngineScore updateSmallMoleculeSearchEngineScore(SmallMoleculeSearchEngineScore smallMoleculeSearchEngineScore, int index) {
+        return smallMoleculeSearchEngineScores.put(index, smallMoleculeSearchEngineScore);
+    }
+
+    public SmallMoleculeSearchEngineScore getSmallMoleculeSearchEngineScore(int index) {
+        return smallMoleculeSearchEngineScores.get(index);
+    }
+
+    public Set<Integer> getAvailableSmallMoleculeSearchEngineScore() {
+        return smallMoleculeSearchEngineScores.keySet();
+    }
     @Override
+
     public boolean validate(MzTabDocument mzTabDocument, MzTabSectionValidator validator) throws InvalidMzTabSectionException {
         try {
             return validator.validate(mzTabDocument, this);
