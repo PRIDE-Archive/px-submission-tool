@@ -105,6 +105,21 @@ public abstract class MetadataIndexedItemParserStrategy {
         return false;
     }
 
+    // Parse indexed items without any other properties
+    public static boolean parseLine(MetaDataLineItemParsingHandler.IndexedLineItemBean bean, String line) throws MetadataIndexedItemParserStrategyException {
+        String[] lineItems = line.split("\t");
+        try {
+            if (lineItems.length == 3) {
+                // Extract data
+                return getLineItemKey(bean, lineItems)
+                        && getLineItemIndex(bean, lineItems);
+            }
+        } catch (Exception e) {
+            throw new MetadataIndexedItemParserStrategyException(e.getMessage());
+        }
+        return false;
+    }
+
     // Parse indexed items with properties
     public static boolean parseLine(MetaDataLineItemParsingHandler.IndexedLineItemWithPropertyBean bean, String line) throws MetadataIndexedItemParserStrategyException {
         String[] lineItems = line.split("\t");
