@@ -17,27 +17,38 @@ import java.util.Set;
 public class PeptideData implements MzTabSection {
 
     public enum ColumnType {
-        SEQUENCE,
-        ACCESSION,
-        UNIQUE,
-        DATABASE,
-        DATABASE_VERSION,
-        SEARCH_ENGINE,
-        BEST_SEARCH_ENGINE_SCORE,
-        MODIFICATIONS,
-        RETENTION_TIME,
-        RETENTION_TIME_WINDOW,
-        CHARGE,
-        MASS_TO_CHARGE,
-        PEPTIDE_ABUNDANCE_STUDY_VARIABLE,
-        PEPTIDE_ABUNDANCE_STDEV_STUDY_VARIABLE,
-        PEPTIDE_ABUNDANCE_STD_ERROR_STUDY_VARIABLE,
-        SEARCH_ENGINE_SCORE_MS_RUN,
-        PEPTIDE_ABUNDANCE_ASSAY,
-        SPECTRA_REF,
-        OPT_CUSTOM_ATTIBUTE,
-        RELIABILITY,
-        URI
+        SEQUENCE("sequence"),
+        ACCESSION("accession"),
+        UNIQUE("unique"),
+        DATABASE("database"),
+        DATABASE_VERSION("database_version"),
+        SEARCH_ENGINE("search_engine"),
+        BEST_SEARCH_ENGINE_SCORE("best_search_engine_score[1-n]"),
+        MODIFICATIONS("modifications"),
+        RETENTION_TIME("retention_time"),
+        RETENTION_TIME_WINDOW("retention_time_window"),
+        CHARGE("charge"),
+        MASS_TO_CHARGE("mass_to_charge"),
+        PEPTIDE_ABUNDANCE_STUDY_VARIABLE("peptide_abundance_study_variable[1-n]"),
+        PEPTIDE_ABUNDANCE_STDEV_STUDY_VARIABLE("peptide_abundance_stdev_study_variable[1-n]"),
+        PEPTIDE_ABUNDANCE_STD_ERROR_STUDY_VARIABLE("peptide_abundance_std_error_study_variable[1-n]"),
+        SEARCH_ENGINE_SCORE_MS_RUN("search_engine_score[1-n]_ms_run[1-n]"),
+        PEPTIDE_ABUNDANCE_ASSAY("peptide_abundance_assay[1-n]"),
+        SPECTRA_REF("spectra_ref"),
+        OPT_CUSTOM_ATTIBUTE("opt_{identifier}_*"),
+        RELIABILITY("reliability"),
+        URI("uri");
+
+        private String colTypeToString = "";
+
+        ColumnType(String colTypeToString) {
+            this.colTypeToString = colTypeToString;
+        }
+
+        @Override
+        public String toString() {
+            return colTypeToString;
+        }
     }
 
     // Present columns
