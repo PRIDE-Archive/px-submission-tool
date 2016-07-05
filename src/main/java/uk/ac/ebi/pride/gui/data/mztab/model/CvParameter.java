@@ -40,6 +40,13 @@ public abstract class CvParameter {
         this(cv.label, cv.accession, cv.name, cv.value);
     }
 
+    public CvParameter() {
+        label = DEFAULT_VALUE;
+        accession = DEFAULT_VALUE;
+        name = DEFAULT_VALUE;
+        value = DEFAULT_VALUE;
+    }
+
     public String getLabel() {
         logger.debug("Get label '" + label + "'");
         return label;
