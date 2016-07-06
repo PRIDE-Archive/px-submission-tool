@@ -86,7 +86,7 @@ public class MetaData implements MzTabSection {
     private Map<Integer, PsmSearchEngineScore> psmSearchEngineScores;
     // indexed small molecule_search_engine_score
     private Map<Integer, SmallMoleculeSearchEngineScore> smallMoleculeSearchEngineScores;
-    // NOTE - it says on the documentation that they must be reported for every search engine score reported in the
+    // TODO - NOTE - it says on the documentation that they must be reported for every search engine score reported in the
     // corresponding section
 
     public MetaData() {
