@@ -55,6 +55,7 @@ public abstract class CvParameter {
     public void setLabel(String label) throws InvalidCvParameterException {
         logger.debug("Set label '" + label + "'");
         this.label = label;
+        // REVISIT validation
         if (!this.validate())
             this.reportInvalidCvParameter();
     }
@@ -67,6 +68,7 @@ public abstract class CvParameter {
     public void setAccession(String accession) throws InvalidCvParameterException {
         logger.debug("Set accession '" + accession + "'");
         this.accession = accession;
+        // REVISIT validation
         if (!this.validate())
             this.reportInvalidCvParameter();
     }
@@ -79,6 +81,7 @@ public abstract class CvParameter {
     public void setName(String name) throws InvalidCvParameterException {
         logger.debug("Set name '" + name + "'");
         this.name = name;
+        // REVISIT validation
         if (!this.validate())
             this.reportInvalidCvParameter();
     }
@@ -91,6 +94,7 @@ public abstract class CvParameter {
     public void setValue(String value) throws InvalidCvParameterException {
         logger.debug("Set value '" + value + "'");
         this.value = value;
+        // REVISIT validation
         if (!this.validate())
             this.reportInvalidCvParameter();
     }
