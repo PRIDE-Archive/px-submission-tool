@@ -115,6 +115,7 @@ public class MetadataIndexedLineItemProcessingStrategiesParsingStackTest {
                 subject.parseLine(context, mzTabLine, 1, 0), is(true));
     }
 
+    // TODO Add *_search_engine_score[1-n] parsing stack tests
     @Parameterized.Parameters
     public static Collection<Object[]> subjectsToTest() {
         return Arrays.asList(new Object[][]{
