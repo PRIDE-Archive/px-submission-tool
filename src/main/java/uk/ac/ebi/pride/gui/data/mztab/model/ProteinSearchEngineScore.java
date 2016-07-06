@@ -20,6 +20,4 @@ public class ProteinSearchEngineScore extends CvParameter {
         super(cv);
     }
 
-    public ProteinSearchEngineScore() {
-    }
 }
