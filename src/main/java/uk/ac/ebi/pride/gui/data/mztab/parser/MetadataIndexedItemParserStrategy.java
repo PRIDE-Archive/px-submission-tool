@@ -80,7 +80,7 @@ public abstract class MetadataIndexedItemParserStrategy {
         return true;
     }
 
-    private static boolean getPropertyValue(MetaDataLineItemParsingHandler.IndexedLineItemWithPropertyBean bean, String[] lineItems) throws MetadataIndexedItemParserStrategyException {
+    private static boolean getPropertyValue(MetaDataLineItemParsingHandler.LineItemBean bean, String[] lineItems) throws MetadataIndexedItemParserStrategyException {
         bean.setPropertyValue(lineItems[2].trim());
         return true;
     }
@@ -112,7 +112,8 @@ public abstract class MetadataIndexedItemParserStrategy {
             if (lineItems.length == 3) {
                 // Extract data
                 return getLineItemKey(bean, lineItems)
-                        && getLineItemIndex(bean, lineItems);
+                        && getLineItemIndex(bean, lineItems)
+                        && getPropertyValue(bean, lineItems);
             }
         } catch (Exception e) {
             throw new MetadataIndexedItemParserStrategyException(e.getMessage());

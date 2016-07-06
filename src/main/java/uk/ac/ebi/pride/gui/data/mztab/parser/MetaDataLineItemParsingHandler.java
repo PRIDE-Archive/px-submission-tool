@@ -22,6 +22,8 @@ public abstract class MetaDataLineItemParsingHandler extends LineItemParsingHand
     protected interface LineItemBean {
         String getLineItemKey();
         void setLineItemKey(String lineItemKey);
+        void setPropertyValue(String pv);
+        String getPropertyValue();
     }
 
     protected interface IndexedLineItemBean extends LineItemBean {
@@ -32,8 +34,6 @@ public abstract class MetaDataLineItemParsingHandler extends LineItemParsingHand
     protected interface IndexedLineItemWithPropertyBean extends IndexedLineItemBean {
         String getPropertyKey();
         void setPropertyKey(String pk);
-        String getPropertyValue();
-        void setPropertyValue(String pv);
     }
 
     protected interface IndexedLineItemWithIndexedPropertyDataEntry extends IndexedLineItemWithPropertyBean {
