@@ -11,11 +11,15 @@ import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidCvParameterException;
  * All rights reserved.
  */
 public class ProteinSearchEngineScore extends CvParameter {
+
     public ProteinSearchEngineScore(String label, String accession, String name, String value) throws InvalidCvParameterException {
         super(label, accession, name, value);
     }
 
     public ProteinSearchEngineScore(CvParameter cv) {
         super(cv);
+    }
+
+    public ProteinSearchEngineScore() {
     }
 }
