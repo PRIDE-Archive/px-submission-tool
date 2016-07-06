@@ -21,10 +21,10 @@ public abstract class CvParameter {
     // Default value
     public static final String DEFAULT_VALUE = "";
     // Bean
-    private String label;
-    private String accession;
-    private String name;
-    private String value;
+    private String label = DEFAULT_VALUE;
+    private String accession = DEFAULT_VALUE;
+    private String name = DEFAULT_VALUE;
+    private String value = DEFAULT_VALUE;
 
     public CvParameter(String label, String accession, String name, String value) throws InvalidCvParameterException {
         this.label = label;
@@ -38,13 +38,6 @@ public abstract class CvParameter {
 
     public CvParameter(CvParameter cv) {
         this(cv.label, cv.accession, cv.name, cv.value);
-    }
-
-    public CvParameter() {
-        label = DEFAULT_VALUE;
-        accession = DEFAULT_VALUE;
-        name = DEFAULT_VALUE;
-        value = DEFAULT_VALUE;
     }
 
     public String getLabel() {
