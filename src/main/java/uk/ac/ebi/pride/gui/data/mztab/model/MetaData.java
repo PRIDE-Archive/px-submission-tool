@@ -79,15 +79,29 @@ public class MetaData implements MzTabSection {
     // samples
     private Map<Integer, Sample> samples;
     // indexed protein_search_engine_score
+    // TODO - NOTE - it says on the documentation that they must be reported for every search engine score reported in the corresponding section
     private Map<Integer, ProteinSearchEngineScore> proteinSearchEngineScores;
     // indexed peptide_search_engine_score
+    // TODO - NOTE - it says on the documentation that they must be reported for every search engine score reported in the corresponding section
     private Map<Integer, PeptideSearchEngineScore> peptideSearchEngineScores;
     // indexed psm_search_engine_score
+    // TODO - NOTE - it says on the documentation that they must be reported for every search engine score reported in the corresponding section
     private Map<Integer, PsmSearchEngineScore> psmSearchEngineScores;
     // indexed small molecule_search_engine_score
+    // TODO - NOTE - it says on the documentation that they must be reported for every search engine score reported in the corresponding section
     private Map<Integer, SmallMoleculeSearchEngineScore> smallMoleculeSearchEngineScores;
-    // TODO - NOTE - it says on the documentation that they must be reported for every search engine score reported in the
-    // corresponding section
+    // Fixed modification entries
+    private Map<Integer, FixedMod> fixedMods;
+    // Variable modification entries
+    private Map<Integer, VariableMod> variableMods;
+    private QuantificationMethod quantificationMethod;
+    private ProteinQuantificationUnit proteinQuantificationUnit;
+    private PeptideQuantificationUnit peptideQuantificationUnit;
+    private SmallMoleculeQuantificationUnit smallMoleculeQuantificationUnit;
+    // assay entries
+    private Map<Integer, Assay> assays;
+    // study_variable entries
+    private Map<Integer, StudyVariable> studyVariables;
 
     public MetaData() {
         version = null;
@@ -102,6 +116,14 @@ public class MetaData implements MzTabSection {
         peptideSearchEngineScores = new HashMap<>();
         psmSearchEngineScores = new HashMap<>();
         smallMoleculeSearchEngineScores = new HashMap<>();
+        fixedMods = new HashMap<>();
+        variableMods = new HashMap<>();
+        assays = new HashMap<>();
+        studyVariables = new HashMap<>();
+        quantificationMethod = null;
+        proteinQuantificationUnit = null;
+        peptideQuantificationUnit = null;
+        smallMoleculeQuantificationUnit = null;
     }
 
     // Getters/Setters
@@ -152,6 +174,38 @@ public class MetaData implements MzTabSection {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public QuantificationMethod getQuantificationMethod() {
+        return quantificationMethod;
+    }
+
+    public void setQuantificationMethod(QuantificationMethod quantificationMethod) {
+        this.quantificationMethod = quantificationMethod;
+    }
+
+    public ProteinQuantificationUnit getProteinQuantificationUnit() {
+        return proteinQuantificationUnit;
+    }
+
+    public void setProteinQuantificationUnit(ProteinQuantificationUnit proteinQuantificationUnit) {
+        this.proteinQuantificationUnit = proteinQuantificationUnit;
+    }
+
+    public PeptideQuantificationUnit getPeptideQuantificationUnit() {
+        return peptideQuantificationUnit;
+    }
+
+    public void setPeptideQuantificationUnit(PeptideQuantificationUnit peptideQuantificationUnit) {
+        this.peptideQuantificationUnit = peptideQuantificationUnit;
+    }
+
+    public SmallMoleculeQuantificationUnit getSmallMoleculeQuantificationUnit() {
+        return smallMoleculeQuantificationUnit;
+    }
+
+    public void setSmallMoleculeQuantificationUnit(SmallMoleculeQuantificationUnit smallMoleculeQuantificationUnit) {
+        this.smallMoleculeQuantificationUnit = smallMoleculeQuantificationUnit;
     }
 
     // MsRun Entries management
@@ -230,11 +284,63 @@ public class MetaData implements MzTabSection {
         return smallMoleculeSearchEngineScores.get(index);
     }
 
-    public Set<Integer> getAvailableSmallMoleculeSearchEngineScore() {
+    public Set<Integer> getAvailableSmallMoleculeSearchEngineScoreIndexes() {
         return smallMoleculeSearchEngineScores.keySet();
     }
-    @Override
 
+    // Fixed modifications management
+    public FixedMod updateFixedMod(FixedMod fixedMod, int index) {
+        return fixedMods.put(index, fixedMod);
+    }
+
+    public FixedMod getFixedMod(int index) {
+        return fixedMods.get(index);
+    }
+
+    public Set<Integer> getAvailableFixedModIndexes() {
+        return fixedMods.keySet();
+    }
+
+    // Variable modifications management
+    public VariableMod updateVariableMod(VariableMod variableMod, int index) {
+        return variableMods.put(index, variableMod);
+    }
+
+    public VariableMod getVariableMod(int index) {
+        return variableMods.get(index);
+    }
+
+    public Set<Integer> getAvailableVariableModIndexes() {
+        return variableMods.keySet();
+    }
+
+    // Assays management
+    public Assay updateAssay(Assay assay, int index) {
+        return assays.put(index, assay);
+    }
+
+    public Assay getAssay(int index) {
+        return assays.get(index);
+    }
+
+    public Set<Integer> getAvailableAssayIndexes() {
+        return assays.keySet();
+    }
+
+    // Study variable entries management
+    public StudyVariable updateStudyVariable(StudyVariable studyVariable, int index) {
+        return studyVariables.put(index, studyVariable);
+    }
+
+    public StudyVariable getStudyVariable(int index) {
+        return studyVariables.get(index);
+    }
+
+    public Set<Integer> getAvailableStudyVariableIndexes() {
+        return studyVariables.keySet();
+    }
+
+    @Override
     public boolean validate(MzTabDocument mzTabDocument, MzTabSectionValidator validator) throws InvalidMzTabSectionException {
         try {
             return validator.validate(mzTabDocument, this);
