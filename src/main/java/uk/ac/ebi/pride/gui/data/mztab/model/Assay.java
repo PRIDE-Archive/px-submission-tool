@@ -77,15 +77,17 @@ public class Assay {
         this.quantificationReagent = new QuantificationReagent(quantificationReagent);
     }
 
-    public boolean hasBeenSet() {
-        return (getMsRunRefIndex() != DEFAULT_INDEX_VALUE)
-                || (getSampleRefIndex() != DEFAULT_INDEX_VALUE)
-                || (quantificationReagent != null);
+    public boolean hasMsRunRefBeenSet() {
+        return (getMsRunRefIndex() != DEFAULT_INDEX_VALUE);
+    }
+
+    public boolean hasSampleRefBeenSet() {
+        return (getSampleRefIndex() != DEFAULT_INDEX_VALUE);
     }
 
     // Solve references
     public boolean solveReferences(MzTabDocument context) {
-        if (!hasBeenSet()) {
+        if (!(hasMsRunRefBeenSet() || hasSampleRefBeenSet())) {
             logger.error("No references has been set for samples or ms-runs for this assay entry");
             return false;
         }
