@@ -2,7 +2,7 @@ package uk.ac.ebi.pride.gui.data.mztab.parser;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.MetadataIndexedItemParserStrategyException;
+import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.MetadataLineItemParserStrategyException;
 
 /**
  * Project: px-submission-tool
@@ -21,49 +21,49 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.MetadataIndexedItemParse
 public abstract class MetadataLineItemParserStrategy {
     private static final Logger logger = LoggerFactory.getLogger(MetadataLineItemParserStrategy.class);
 
-    private static int getStrictIndex(String s) throws MetadataIndexedItemParserStrategyException {
+    private static int getStrictIndex(String s) throws MetadataLineItemParserStrategyException {
         int index = -1;
         if (!s.isEmpty()) {
             try {
                 index = Integer.valueOf(s);
             } catch (NumberFormatException e) {
-                throw new MetadataIndexedItemParserStrategyException(e.getMessage());
+                throw new MetadataLineItemParserStrategyException(e.getMessage());
             }
         } else {
-            throw new MetadataIndexedItemParserStrategyException("CANNOT PARSE INDEX out of EMPTY STRING");
+            throw new MetadataLineItemParserStrategyException("CANNOT PARSE INDEX out of EMPTY STRING");
         }
         return index;
     }
 
-    private static boolean getLineItemKey(MetaDataLineItemParsingHandler.LineItemBean bean, String[] lineItems) throws MetadataIndexedItemParserStrategyException {
+    private static boolean getLineItemKey(MetaDataLineItemParsingHandler.LineItemBean bean, String[] lineItems) throws MetadataLineItemParserStrategyException {
         try {
             String lineItemKey = lineItems[1].substring(0, lineItems[1].indexOf('['));
             logger.debug("Parsed line item key '" + lineItemKey + "'");
             bean.setLineItemKey(lineItemKey);
         } catch (IndexOutOfBoundsException e) {
-            throw new MetadataIndexedItemParserStrategyException(e.getMessage());
+            throw new MetadataLineItemParserStrategyException(e.getMessage());
         }
         return true;
     }
 
-    private static boolean getLineItemIndex(MetaDataLineItemParsingHandler.IndexedLineItemBean bean, String[] lineItems) throws MetadataIndexedItemParserStrategyException {
+    private static boolean getLineItemIndex(MetaDataLineItemParsingHandler.IndexedLineItemBean bean, String[] lineItems) throws MetadataLineItemParserStrategyException {
         String integerString = null;
         try {
             integerString = lineItems[1].substring(lineItems[1].indexOf('[') + 1, lineItems[1].indexOf(']'));
         } catch (IndexOutOfBoundsException e) {
-            throw new MetadataIndexedItemParserStrategyException(e.getMessage());
+            throw new MetadataLineItemParserStrategyException(e.getMessage());
         }
         logger.debug("Reading line item index '" + integerString + "'");
         int index = getStrictIndex(integerString);
         // Check that it is possitive
         if (index < 0) {
-            throw new MetadataIndexedItemParserStrategyException("INVALID NEGATIVE line item index");
+            throw new MetadataLineItemParserStrategyException("INVALID NEGATIVE line item index");
         }
         bean.setIndex(index);
         return true;
     }
 
-    private static boolean getPropertyKeyIfExists(MetaDataLineItemParsingHandler.IndexedLineItemWithPropertyBean bean, String[] lineItems) throws MetadataIndexedItemParserStrategyException {
+    private static boolean getPropertyKeyIfExists(MetaDataLineItemParsingHandler.IndexedLineItemWithPropertyBean bean, String[] lineItems) throws MetadataLineItemParserStrategyException {
         try {
             String propertyKey = lineItems[1].substring(lineItems[1].indexOf(']') + 2).trim();
             if (propertyKey.indexOf('[') != -1) {
@@ -80,12 +80,12 @@ public abstract class MetadataLineItemParserStrategy {
         return true;
     }
 
-    private static boolean getPropertyValue(MetaDataLineItemParsingHandler.LineItemBean bean, String[] lineItems) throws MetadataIndexedItemParserStrategyException {
+    private static boolean getPropertyValue(MetaDataLineItemParsingHandler.LineItemBean bean, String[] lineItems) throws MetadataLineItemParserStrategyException {
         bean.setPropertyValue(lineItems[2].trim());
         return true;
     }
 
-    private static boolean getPropertyEntryIndexIfExists(MetaDataLineItemParsingHandler.IndexedLineItemWithIndexedPropertyDataEntry bean, String[] lineItems) throws MetadataIndexedItemParserStrategyException {
+    private static boolean getPropertyEntryIndexIfExists(MetaDataLineItemParsingHandler.IndexedLineItemWithIndexedPropertyDataEntry bean, String[] lineItems) throws MetadataLineItemParserStrategyException {
         // We need to get the second index in the entry
         try {
             String afterFirstSquareBracket = lineItems[1].substring(lineItems[1].indexOf(']') + 1);
@@ -94,7 +94,7 @@ public abstract class MetadataLineItemParserStrategy {
                 logger.debug("Processing property index '" + indexStringToParse + "'");
                 int index = getStrictIndex(indexStringToParse);
                 if (index < 0) {
-                    throw new MetadataIndexedItemParserStrategyException("INVALID NEGATIVE property entry index");
+                    throw new MetadataLineItemParserStrategyException("INVALID NEGATIVE property entry index");
                 }
                 bean.setPropertyEntryIndex(index);
                 return true;
@@ -106,7 +106,7 @@ public abstract class MetadataLineItemParserStrategy {
     }
 
     // Parse a not indexed line item
-    public static boolean parseLine(MetaDataLineItemParsingHandler.LineItemBean bean, String line) throws MetadataIndexedItemParserStrategyException {
+    public static boolean parseLine(MetaDataLineItemParsingHandler.LineItemBean bean, String line) throws MetadataLineItemParserStrategyException {
         String[] lineItems = line.split("\t");
         try {
             if (lineItems.length == 3) {
@@ -114,13 +114,13 @@ public abstract class MetadataLineItemParserStrategy {
                         && getPropertyValue(bean, lineItems);
             }
         } catch (Exception e) {
-            throw new MetadataIndexedItemParserStrategyException(e.getMessage());
+            throw new MetadataLineItemParserStrategyException(e.getMessage());
         }
         return false;
     }
 
     // Parse indexed items without any other properties
-    public static boolean parseLine(MetaDataLineItemParsingHandler.IndexedLineItemBean bean, String line) throws MetadataIndexedItemParserStrategyException {
+    public static boolean parseLine(MetaDataLineItemParsingHandler.IndexedLineItemBean bean, String line) throws MetadataLineItemParserStrategyException {
         String[] lineItems = line.split("\t");
         try {
             if (lineItems.length == 3) {
@@ -130,13 +130,13 @@ public abstract class MetadataLineItemParserStrategy {
                         && getPropertyValue(bean, lineItems);
             }
         } catch (Exception e) {
-            throw new MetadataIndexedItemParserStrategyException(e.getMessage());
+            throw new MetadataLineItemParserStrategyException(e.getMessage());
         }
         return false;
     }
 
     // Parse indexed items with properties
-    public static boolean parseLine(MetaDataLineItemParsingHandler.IndexedLineItemWithPropertyBean bean, String line) throws MetadataIndexedItemParserStrategyException {
+    public static boolean parseLine(MetaDataLineItemParsingHandler.IndexedLineItemWithPropertyBean bean, String line) throws MetadataLineItemParserStrategyException {
         String[] lineItems = line.split("\t");
         try {
             if (lineItems.length == 3) {
@@ -147,12 +147,12 @@ public abstract class MetadataLineItemParserStrategy {
                         && getPropertyValue(bean, lineItems);
             }
         } catch (Exception e) {
-            throw new MetadataIndexedItemParserStrategyException(e.getMessage());
+            throw new MetadataLineItemParserStrategyException(e.getMessage());
         }
         return false;
     }
 
-    public static boolean parseLine(MetaDataLineItemParsingHandler.IndexedLineItemWithIndexedPropertyDataEntry bean, String line) throws MetadataIndexedItemParserStrategyException {
+    public static boolean parseLine(MetaDataLineItemParsingHandler.IndexedLineItemWithIndexedPropertyDataEntry bean, String line) throws MetadataLineItemParserStrategyException {
         String[] lineItems = line.split("\t");
         logger.debug(">>> >>> >>> PARSING indexed line item with indexed property <<< <<< <<<");
         try {
@@ -170,7 +170,7 @@ public abstract class MetadataLineItemParserStrategy {
                         && getPropertyValue(bean, lineItems);
             }
         } catch (Exception e) {
-            throw new MetadataIndexedItemParserStrategyException(e.getMessage());
+            throw new MetadataLineItemParserStrategyException(e.getMessage());
         }
         return false;
     }

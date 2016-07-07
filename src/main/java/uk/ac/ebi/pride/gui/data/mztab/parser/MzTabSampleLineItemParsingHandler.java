@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.gui.data.mztab.model.Sample;
 import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerException;
-import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.MetadataIndexedItemParserStrategyException;
+import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.MetadataLineItemParserStrategyException;
 
 /**
  * Project: px-submission-tool
@@ -115,7 +115,7 @@ public abstract class MzTabSampleLineItemParsingHandler extends MetaDataLineItem
         cleanBean();
         logger.debug(">>> PARSING LINE ITEM: " + line);
         try {
-            if (MetadataIndexedItemParserStrategy.parseLine(this, line)) {
+            if (MetadataLineItemParserStrategy.parseLine(this, line)) {
                 if (getLineItemKey().equals(MZTAB_SAMPLE_ITEM_PREFIX)) {
                     // The line item key is ok, go ahead
                     // check that the line item index has been set up
@@ -125,7 +125,7 @@ public abstract class MzTabSampleLineItemParsingHandler extends MetaDataLineItem
                     return processEntry(context, lineNumber, offset);
                 }
             }
-        } catch (MetadataIndexedItemParserStrategyException e) {
+        } catch (MetadataLineItemParserStrategyException e) {
             throw new LineItemParsingHandlerException(e.getMessage());
         }
         return false;

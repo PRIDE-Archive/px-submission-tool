@@ -3,7 +3,7 @@ package uk.ac.ebi.pride.gui.data.mztab.parser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.gui.data.mztab.model.MsRun;
-import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.MetadataIndexedItemParserStrategyException;
+import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.MetadataLineItemParserStrategyException;
 import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerException;
 
 /**
@@ -111,7 +111,7 @@ public abstract class MzTabMsRunLineItemParsingHandler extends MetaDataLineItemP
         cleanBean();
         logger.debug(">>> PARSING LINE ITEM: " + line);
         try {
-            if (MetadataIndexedItemParserStrategy.parseLine(this, line)) {
+            if (MetadataLineItemParserStrategy.parseLine(this, line)) {
                 if (getLineItemKey().equals(MZTAB_MSRUN_ITEM_PREFIX)) {
                     // Check that we have a line item index
                     if (getIndex() == DEFAULT_INDEX) {
@@ -121,7 +121,7 @@ public abstract class MzTabMsRunLineItemParsingHandler extends MetaDataLineItemP
                     return processEntry(context, lineNumber, offset);
                 }
             }
-        } catch (MetadataIndexedItemParserStrategyException e) {
+        } catch (MetadataLineItemParserStrategyException e) {
             throw new LineItemParsingHandlerException(e.getMessage());
         }
         return false;
