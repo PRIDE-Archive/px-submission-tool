@@ -102,6 +102,7 @@ public class MetaData implements MzTabSection {
     private Map<Integer, Assay> assays;
     // study_variable entries
     private Map<Integer, StudyVariable> studyVariables;
+    private Map<Integer, Software> softwareEntries;
 
     public MetaData() {
         version = null;
@@ -124,6 +125,7 @@ public class MetaData implements MzTabSection {
         proteinQuantificationUnit = null;
         peptideQuantificationUnit = null;
         smallMoleculeQuantificationUnit = null;
+        softwareEntries = new HashMap<>();
     }
 
     // Getters/Setters
@@ -338,6 +340,19 @@ public class MetaData implements MzTabSection {
 
     public Set<Integer> getAvailableStudyVariableIndexes() {
         return studyVariables.keySet();
+    }
+
+    // Software entries management
+    public Software updateSoftware(Software software, int index) {
+        return softwareEntries.put(index, software);
+    }
+
+    public Software getSoftware(int index) {
+        return softwareEntries.get(index);
+    }
+
+    public Set<Integer> getAvailableSoftwareEntryIndexes() {
+        return softwareEntries.keySet();
     }
 
     @Override
