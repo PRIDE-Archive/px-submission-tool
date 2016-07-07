@@ -73,8 +73,8 @@ public class Assay {
         return quantificationReagent;
     }
 
-    public void setQuantificationReagent(QuantificationReagent quantificationReagent) {
-        this.quantificationReagent = quantificationReagent;
+    public void setQuantificationReagent(CvParameter quantificationReagent) {
+        this.quantificationReagent = new QuantificationReagent(quantificationReagent);
     }
 
     public boolean hasBeenSet() {
