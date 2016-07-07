@@ -9,8 +9,8 @@ package uk.ac.ebi.pride.gui.data.mztab.parser.exceptions;
  * All rights reserved.
  */
 
-public class MetadataIndexedItemParserStrategyException extends RuntimeException {
-    public MetadataIndexedItemParserStrategyException(String message) {
+public class MetadataLineItemParserStrategyException extends RuntimeException {
+    public MetadataLineItemParserStrategyException(String message) {
         super(message);
     }
 }

@@ -20,7 +20,7 @@ import static org.hamcrest.text.IsEqualIgnoringCase.equalToIgnoringCase;
  * All rights reserved.
  */
 @RunWith(Parameterized.class)
-public class MetadataIndexedItemParserStrategyBulkTest {
+public class MetadataLineItemParserStrategyBulkTest {
     private String lineStart;
     private String lineItemKey;
     private int index;
@@ -32,7 +32,7 @@ public class MetadataIndexedItemParserStrategyBulkTest {
         return section + "\t" + item + "[" + itemIndex + "]-" + attribute + "\t" + attributeValue;
     }
 
-    public MetadataIndexedItemParserStrategyBulkTest(String lineStart, String lineItemKey, int index, String propertyKey, String propertyValue, String testDescription) {
+    public MetadataLineItemParserStrategyBulkTest(String lineStart, String lineItemKey, int index, String propertyKey, String propertyValue, String testDescription) {
         this.lineStart = lineStart;
         this.lineItemKey = lineItemKey;
         this.index = index;
@@ -45,7 +45,7 @@ public class MetadataIndexedItemParserStrategyBulkTest {
     public void checkThatParseDataMatchesOriginal() {
         DummyIndexedLineItemWithPropertyBean bean = new DummyIndexedLineItemWithPropertyBean();
         assertThat("mzTab line with missing fields passes",
-                MetadataIndexedItemParserStrategy.parseLine(bean, getMzTabLine(lineStart, lineItemKey, index, propertyKey, propertyValue)),
+                MetadataLineItemParserStrategy.parseLine(bean, getMzTabLine(lineStart, lineItemKey, index, propertyKey, propertyValue)),
                 is(true));
         assertThat(testDescription, bean.getLineItemKey(), equalToIgnoringCase(lineItemKey));
         assertThat(testDescription, bean.getIndex() == index, is(true));

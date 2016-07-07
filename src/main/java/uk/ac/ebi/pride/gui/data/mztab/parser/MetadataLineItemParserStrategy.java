@@ -18,8 +18,8 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.MetadataIndexedItemParse
  * It captures the data into the given bean
  */
 
-public abstract class MetadataIndexedItemParserStrategy {
-    private static final Logger logger = LoggerFactory.getLogger(MetadataIndexedItemParserStrategy.class);
+public abstract class MetadataLineItemParserStrategy {
+    private static final Logger logger = LoggerFactory.getLogger(MetadataLineItemParserStrategy.class);
 
     private static int getStrictIndex(String s) throws MetadataIndexedItemParserStrategyException {
         int index = -1;
@@ -101,6 +101,20 @@ public abstract class MetadataIndexedItemParserStrategy {
             }
         } catch (IndexOutOfBoundsException e) {
             // No property index
+        }
+        return false;
+    }
+
+    // Parse a not indexed line item
+    public static boolean parseLine(MetaDataLineItemParsingHandler.LineItemBean bean, String line) throws MetadataIndexedItemParserStrategyException {
+        String[] lineItems = line.split("\t");
+        try {
+            if (lineItems.length == 3) {
+                return getLineItemKey(bean, lineItems)
+                        && getPropertyValue(bean, lineItems);
+            }
+        } catch (Exception e) {
+            throw new MetadataIndexedItemParserStrategyException(e.getMessage());
         }
         return false;
     }
