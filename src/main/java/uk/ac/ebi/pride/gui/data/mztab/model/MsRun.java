@@ -23,6 +23,8 @@ public class MsRun {
     private MsRunFormat msRunFormat = null;
     private MsRunIdFormat msRunIdFormat = null;
     private URL location = null;
+    private MsRunHashMethod hashMethod = null;
+    private String hash = null;
 
     public MsRun() {
     }
@@ -57,6 +59,22 @@ public class MsRun {
         this.location = location;
     }
 
+    public MsRunHashMethod getHashMethod() {
+        return hashMethod;
+    }
+
+    public void setHashMethod(MsRunHashMethod hashMethod) {
+        this.hashMethod = hashMethod;
+    }
+
+    public String getHash() {
+        return hash;
+    }
+
+    public void setHash(String hash) {
+        this.hash = hash;
+    }
+
     public boolean validate() throws ValidationException {
         // Validation Criteria
         // location must always be reported
@@ -67,6 +85,10 @@ public class MsRun {
         // If ms-run format is reported, ms-run id_format is required
         if ((msRunFormat != null) && (msRunIdFormat == null)) {
             logger.error("ms-run format specified, but MISSING ms-run ID_format");
+            return false;
+        }
+        if ((hash != null) && (hashMethod == null)) {
+            logger.error("ms_run hash is present BUT ms_run hash_method IS MISSING!");
             return false;
         }
         return true;
