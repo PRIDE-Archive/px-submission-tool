@@ -6,6 +6,7 @@ import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidCvParameterException;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Project: px-submission-tool
@@ -46,6 +47,10 @@ public class Software {
 
     public String updateSetting(int index, String setting) {
         return settings.put(index, setting);
+    }
+
+    public Set<Integer> getReportedSettingsIndexes() {
+        return settings.keySet();
     }
 
     public boolean validate(MzTabDocument context) throws ValidationException {
