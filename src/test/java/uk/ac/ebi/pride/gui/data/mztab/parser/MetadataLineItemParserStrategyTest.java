@@ -1,7 +1,7 @@
 package uk.ac.ebi.pride.gui.data.mztab.parser;
 
 import org.junit.Test;
-import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.MetadataIndexedItemParserStrategyException;
+import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.MetadataLineItemParserStrategyException;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -24,7 +24,7 @@ public class MetadataLineItemParserStrategyTest {
         assertThat("False on empty line", MetadataLineItemParserStrategy.parseLine(new DummyIndexedLineItemWithPropertyBean(), ""), is(false));
     }
 
-    @Test(expected = MetadataIndexedItemParserStrategyException.class)
+    @Test(expected = MetadataLineItemParserStrategyException.class)
     public void cantParseMalformedLines() {
         assertThat("False for not mzTab line", MetadataLineItemParserStrategy.parseLine(new DummyIndexedLineItemWithPropertyBean(), "this is not valid"), is(false));
         assertThat("False for all malformed mzTab line, when only line start is present",
