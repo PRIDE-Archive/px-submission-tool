@@ -2,7 +2,6 @@ package uk.ac.ebi.pride.gui.data.mztab.model;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidCvParameterException;
 
 /**
  * Project: px-submission-tool
@@ -17,15 +16,6 @@ public class Assay {
 
     // WARNING - Only part of the assay[1-n] attributes in the metadata section are modeled here
     // TODO - Complete this bean with all properies of assay
-    public class QuantificationReagent extends CvParameter {
-        public QuantificationReagent(String label, String accession, String name, String value) throws InvalidCvParameterException {
-            super(label, accession, name, value);
-        }
-
-        public QuantificationReagent(CvParameter cv) {
-            super(cv);
-        }
-    }
 
     private int DEFAULT_INDEX_VALUE = -1;
     // For parsing time
@@ -73,8 +63,8 @@ public class Assay {
         return quantificationReagent;
     }
 
-    public void setQuantificationReagent(CvParameter quantificationReagent) {
-        this.quantificationReagent = new QuantificationReagent(quantificationReagent);
+    public void setQuantificationReagent(QuantificationReagent quantificationReagent) {
+        this.quantificationReagent = quantificationReagent;
     }
 
     public boolean hasMsRunRefBeenSet() {
@@ -126,6 +116,21 @@ public class Assay {
                 logger.error("MISSING REQUIRED ms_run_ref information for this assay, in mzTab mode COMPLETE");
                 return false;
             }
+        }
+        // These validations will surely be redundant when looking at the big picture, but they make perfect sense
+        // algorithmically speaking, and in terms of responsibilities
+        // WARNING - I'VE REMOVED THESE VALIDATIONS, as I can't assure there are no circular dependencies
+        /*if ((getMsRunRef() != null) && (!getMsRunRef().validate())) {
+            logger.error("INVALID Assay because its referenced ms_run DOES NOT VALIDATE");
+            return false;
+        }
+        if ((getSampleRef() != null) && (!getSampleRef().validate())) {
+            logger.error("INVALID Assay because its referenced sample is not valid");
+            return false;
+        }*/
+        if ((getQuantificationReagent() != null) && (!getQuantificationReagent().validate())) {
+            logger.error("INVALID Assay because its quantification reagent IS NOT VALID");
+            return false;
         }
         return true;
     }

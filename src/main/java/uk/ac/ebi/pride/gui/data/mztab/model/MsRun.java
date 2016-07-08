@@ -78,17 +78,21 @@ public class MsRun {
     public boolean validate() throws ValidationException {
         // Validation Criteria
         // location must always be reported
-        if (location == null) {
+        if (getLocation() == null) {
             logger.error("MISSING ms-run location information");
             return false;
         }
         // If ms-run format is reported, ms-run id_format is required
-        if ((msRunFormat != null) && (msRunIdFormat == null)) {
+        if ((getMsRunFormat() != null) && (getMsRunIdFormat() == null)) {
             logger.error("ms-run format specified, but MISSING ms-run ID_format");
             return false;
         }
-        if ((hash != null) && (hashMethod == null)) {
+        if ((getHash() != null) && (getHashMethod() == null)) {
             logger.error("ms_run hash is present BUT ms_run hash_method IS MISSING!");
+            return false;
+        }
+        if ((getHashMethod() != null) && (!getHashMethod().validate())) {
+            logger.error("This ms_run DOES NOT VALIDATE because its hash_method IS INVALID");
             return false;
         }
         return true;
