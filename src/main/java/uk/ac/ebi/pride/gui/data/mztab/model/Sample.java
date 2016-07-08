@@ -79,11 +79,28 @@ public class Sample {
         public boolean validate() {
             // No special requirements for a data entry to be valid, so we'll run a check on those attributes in the
             // data entry that have been set
-            return getSpecies().validate()
-                    && getTissue().validate()
-                    && getCellType().validate()
-                    && getDisease().validate()
-                    && getSampleCustomAttribute().validate();
+            if ((getSpecies() != null) && (!getSpecies().validate())) {
+                logger.error("INVALID Species information for sample data entry");
+                return false;
+            }
+            if ((getTissue() != null) && (!getTissue().validate())) {
+                logger.error("INVALID Tissue information for sample data entry");
+                return false;
+            }
+            if ((getCellType() != null) && (!getCellType().validate())) {
+                logger.error("INVALID Cell Type information for sample data entry");
+                return false;
+            }
+            if ((getDisease() != null) && (!getDisease().validate())) {
+                logger.error("INVALID Disease information for sample data entry");
+                return false;
+            }
+            if ((getSampleCustomAttribute() != null) && (!getSampleCustomAttribute().validate())) {
+                logger.error("INVALID Sample custom attribute for sample data entry");
+                return false;
+            }
+            // It is valid!
+            return true;
         }
     }
 
