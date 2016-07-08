@@ -413,7 +413,7 @@ public class DefaultMzTabSectionValidator extends MzTabSectionValidator {
                 testingSet = id_com;
             }
         } else if (mzTabDocument.getMetaData().getType() == MetaData.MzTabType.QUANTIFICATION) {
-            // TODO Check "spectra_ref" presence if MS2 based quantification is used
+            // TODO Check "spectra_ref" presence if MS2 based quantification is used (NO EXAMPLE OF THIS COULD BE FOUND)
             if (mzTabDocument.getMetaData().getMode() == MetaData.MzTabMode.SUMMARY) {
                 // quantification type - summary mode
                 testingSet = qu_sum;
@@ -606,12 +606,19 @@ public class DefaultMzTabSectionValidator extends MzTabSectionValidator {
                 testingSet = id_com;
             }
         } else if (mzTabDocument.getMetaData().getType() == MetaData.MzTabType.QUANTIFICATION) {
-            // TODO Check smallmolecule_abundance_assay[1-n] if assays reported
-            // TODO If study vars reported ---->
-            // TODO Check smallmolecule_abundance_study_variable[1-n]
-            // TODO Check smallmolecule_stdev_study_variable[1-n]
-            // TODO Check smallmolecule_std_error_study_variable[1-n]
-            // TODO <---
+            // Check smallmolecule_abundance_assay[1-n] if assays reported
+            if (mzTabDocument.getMetaData().getAvailableAssayIndexes().size() > 0) {
+                testingSet.add(SmallMoleculeData.ColumnType.SMALLMOLECULE_ABUNDANCE_ASSAY);
+            }
+            // If study vars reported
+            if (mzTabDocument.getMetaData().getAvailableStudyVariableIndexes().size() > 0) {
+                // Check smallmolecule_abundance_study_variable[1-n]
+                testingSet.add(SmallMoleculeData.ColumnType.SMALLMOLECULE_ABUNDANCE_STUDY_VARIABLE);
+                // Check smallmolecule_stdev_study_variable[1-n]
+                testingSet.add(SmallMoleculeData.ColumnType.SMALLMOLECULE_STDEV_STUDY_VARIABLE);
+                // Check smallmolecule_std_error_study_variable[1-n]
+                testingSet.add(SmallMoleculeData.ColumnType.SMALLMOLECULE_STD_ERROR_STUDY_VARIABLE);
+            }
             if (mzTabDocument.getMetaData().getMode() == MetaData.MzTabMode.SUMMARY) {
                 // quantification type - summary mode
                 testingSet = qu_sum;
