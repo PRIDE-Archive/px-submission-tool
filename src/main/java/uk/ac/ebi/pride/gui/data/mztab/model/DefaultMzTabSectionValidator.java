@@ -17,10 +17,12 @@ import java.util.Set;
  */
 public class DefaultMzTabSectionValidator extends MzTabSectionValidator {
     private static final Logger logger = LoggerFactory.getLogger(DefaultMzTabSectionValidator.class);
+    // TODO - All Data sections but metadata have a similar validation algorithm ---> REFACTOR IT OUT!!!
 
     /**
      * This is part of the validation strategy for mzTab metadata section, as we care only about what we require to be
      * present in terms of this section alone.
+     *
      * @param mzTabDocument
      * @param metaData
      * @return
@@ -57,7 +59,7 @@ public class DefaultMzTabSectionValidator extends MzTabSectionValidator {
         // Check for ID_file
         if (metaData.getFileId() == null) {
             // TODO - Revisit this in the future to make sure file ID is not mandatory
-            logger.warn("Missin 'file ID' information in mzTab metadata section!");
+            logger.warn("Missing 'file ID' information in mzTab metadata section!");
         }
         // Validate ms-run entries
         for (int msRunIndex :
@@ -89,9 +91,179 @@ public class DefaultMzTabSectionValidator extends MzTabSectionValidator {
                         + sampleIndex + "' due to " + e.getMessage());
             }
         }
-        // TODO Cross-check *_search_engine_score with their corresponding sections
-        // TODO fixed_mod and variable_mod MUST be reported
+        // Check that protein_search_engine_score[1-n] is present when protein section is
+        if (mzTabDocument.getProteinData() != null) {
+            if (metaData.getAvailableProteinSearchEngineScoreIndexes().size() == 0) {
+                logger.error("Protein section is present, but THERE IS NO PROTEIN SEARCH ENGINE SCORE");
+                return false;
+            }
+        }
+        // Validate each protein search engine score
+        for (int index :
+                metaData.getAvailableProteinSearchEngineScoreIndexes()) {
+            if (!metaData.getProteinSearchEngineScore(index).validate()) {
+                logger.error("Protein search engine score with index '" + index + "' IS INVALID!");
+                return false;
+            }
+        }
+        // Check that peptide_search_engine_score[1-n] is present when peptide section is
+        if (mzTabDocument.getPeptideData() != null) {
+            if (metaData.getAvailablePeptideSearchEngineScoreIndexes().size() == 0) {
+                logger.error("Peptide section is present, but THERE IS NO PEPTIDE SEARCH ENGINE SCORE");
+                return false;
+            }
+        }
+        // Validate each peptide search engine score
+        for (int index :
+                metaData.getAvailablePeptideSearchEngineScoreIndexes()) {
+            if (!metaData.getPeptideSearchEngineScore(index).validate()) {
+                logger.error("Peptide search engine score with index '" + index + "' IS INVALID!");
+                return false;
+            }
+        }
+        // Check that psm_search_engine_score[1-n] is present when PSM section is
+        if (mzTabDocument.getPsmData() != null) {
+            if (metaData.getAvailablePsmSearchEngineScoreIndexes().size() == 0) {
+                logger.error("PSM section is present, but THERE IS NO PSM SEARCH ENGINE SCORE");
+                return false;
+            }
+        }
+        // Validate each psm search engine score
+        for (int index :
+                metaData.getAvailablePsmSearchEngineScoreIndexes()) {
+            if (!metaData.getPsmSearchEngineScore(index).validate()) {
+                logger.error("PSM search engine score with index '" + index + "' IS INVALID!");
+                return false;
+            }
+        }
+        // Check that smallmolecule_search_engine_score[1-n] is present when Small Molecule section is
+        if (mzTabDocument.getSmallMoleculeData() != null) {
+            if (metaData.getAvailableSmallMoleculeSearchEngineScoreIndexes().size() == 0) {
+                logger.error("Small Molecule section is present, but THERE IS NO SMALL MOLECULE SEARCH ENGINE SCORE");
+                return false;
+            }
+        }
+        // Validate each small molecule search engine score
+        for (int index :
+                metaData.getAvailableSmallMoleculeSearchEngineScoreIndexes()) {
+            if (!metaData.getSmallMoleculeSearchEngineScore(index).validate()) {
+                logger.error("Small molecule search engine score with index '" + index + "' IS INVALID!");
+                return false;
+            }
+        }
+        // FixedMod is always reported
+        if (metaData.getAvailableFixedModIndexes().size() == 0) {
+            logger.error("NO fixed_mod have been reported!");
+            return false;
+        }
+        // Validate each fixed modification
+        for (int index :
+                metaData.getAvailableFixedModIndexes()) {
+            if (!metaData.getFixedMod(index).validate()) {
+                logger.error("Fixed modification with index '" + index + "' IS INVALID!");
+                return false;
+            }
+        }
+        // VariableMod is always reported
+        if (metaData.getAvailableVariableModIndexes().size() == 0) {
+            logger.error("NO variable modifications have been reported!");
+            return false;
+        }
+        // Validate each variable modification
+        for (int index :
+                metaData.getAvailableVariableModIndexes()) {
+            if (!metaData.getVariableMod(index).validate()) {
+                logger.error("Variable modification with index '" + index + "' IS INVALID!!!");
+                return false;
+            }
+        }
+        // Validate study variables
+        // Required
+        if ((metaData.getType() == MetaData.MzTabType.QUANTIFICATION) && (metaData.getAvailableStudyVariableIndexes().size() == 0)) {
+            logger.error("mzTab type QUANTIFICATION but NO STUDY VARIABLES have been provided");
+            return false;
+        }
+        for (int index :
+                metaData.getAvailableStudyVariableIndexes()) {
+            if (!metaData.getStudyVariable(index).validate(mzTabDocument)) {
+                logger.error("Study variable with index '" + index + "' IS INVALID!!!");
+                return false;
+            }
+        }
+        // Quantification method
+        if ((metaData.getType() == MetaData.MzTabType.QUANTIFICATION) && (metaData.getMode() == MetaData.MzTabMode.COMPLETE)) {
+            if (metaData.getQuantificationMethod() == null) {
+                logger.error("MISSING quantification method, required when mzTab type QUANTIFICATION, and mode COMPLETE");
+                return false;
+            }
+        }
+        if ((metaData.getQuantificationMethod() != null) && (!metaData.getQuantificationMethod().validate())) {
+            logger.error("Provided quantification method DOES NOT VALIDATE!");
+            return false;
+        }
+        // Protein, peptide and small molecule quantification units
+        if (metaData.getType() == MetaData.MzTabType.QUANTIFICATION) {
+            // Validate Protein quantification unit
+            if ((mzTabDocument.getProteinData() != null) && (metaData.getProteinQuantificationUnit() == null)) {
+                logger.error("MISSING Protein quantification unit information but Protein SECTION IS PRESENT");
+                return false;
+            }
+            if (!metaData.getProteinQuantificationUnit().validate()) {
+                logger.error("given Protein quantification unit DOES NOT VALIDATE");
+                return false;
+            }
+            // Validate Peptide quantification unit
+            if ((mzTabDocument.getPeptideData() != null) && (metaData.getPeptideQuantificationUnit() == null)) {
+                logger.error("MISSING Peptide quantification unit information but Peptide SECTION IS PRESENT");
+                return false;
+            }
+            if (!metaData.getPeptideQuantificationUnit().validate()) {
+                logger.error("given Peptide quantification unit DOES NOT VALIDATE");
+                return false;
+            }
+            // Validate Small Molecule quantification unit
+            if ((mzTabDocument.getSmallMoleculeData() != null) && (metaData.getSmallMoleculeQuantificationUnit() == null)) {
+                logger.error("MISSING Small Molecule quantification unit information but Small Molecule SECTION IS PRESENT");
+                return false;
+            }
+            if (!metaData.getSmallMoleculeQuantificationUnit().validate()) {
+                logger.error("given Small Molecule quantification unit DOES NOT VALIDATE");
+                return false;
+            }
+        }
+        // Validate Assays, required when quantification and complete
+        if ((metaData.getType() == MetaData.MzTabType.QUANTIFICATION) && (metaData.getMode() == MetaData.MzTabMode.COMPLETE)) {
+            if (metaData.getAvailableAssayIndexes().size() == 0) {
+                logger.error("MISSING Assays information required in mzTab type QUANTIFICATION, mode COMPLETE");
+                return false;
+            }
+        }
+        for (int index :
+                metaData.getAvailableAssayIndexes()) {
+            if (!metaData.getAssay(index).validate(mzTabDocument)) {
+                logger.error("Assay with index '" + index + "' DOES NOT VALIDATE");
+                return false;
+            }
+        }
+        // Validate Software information, required in mzTab mode COMPLETE
+        if (metaData.getMode() == MetaData.MzTabMode.COMPLETE) {
+            if (metaData.getAvailableSoftwareEntryIndexes().size() == 0) {
+                logger.error("MISSING Software information, required in mzTab mode COMPLETE");
+                return false;
+            }
+        }
+        for (int index :
+                metaData.getAvailableSoftwareEntryIndexes()) {
+            if (!metaData.getSoftware(index).validate(mzTabDocument)) {
+                logger.error("Software entry with index '" + index + "' DOES NOT VALIDATE");
+                return false;
+            }
+        }
+
         // Up to this point, this section validates
+        // WARNING - NOTE - Although some of the conditions are tested multiple times, each validation criteria has been
+        // implemented redundantly checking on mzTab type or mode on purpose, to ease read of code for future
+        // maintainers/contributors, and because it poses no real threat to software performance
         return true;
     }
 
@@ -182,7 +354,7 @@ public class DefaultMzTabSectionValidator extends MzTabSectionValidator {
             return false;
         }
         // No column interdependencies need to be checked
-       return true;
+        return true;
     }
 
     @Override
