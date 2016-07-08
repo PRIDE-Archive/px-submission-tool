@@ -12,5 +12,5 @@ package uk.ac.ebi.pride.gui.data.mztab.model;
  */
 
 public interface ValidableProduct {
-    boolean validate() throws ValidationException;
+    boolean validate(MzTabSectionValidator validator) throws ValidationException;
 }
