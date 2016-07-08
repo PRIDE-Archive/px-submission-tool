@@ -117,6 +117,8 @@ public class StudyVariable {
                 }
             }
         }
+        // NOTE - No further validations on assays or samples because we don't own them, this will prevent potentially
+        // deadlocks due to circular references
         return true;
     }
 }
