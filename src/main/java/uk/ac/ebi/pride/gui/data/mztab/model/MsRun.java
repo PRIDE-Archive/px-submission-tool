@@ -79,12 +79,20 @@ public class MsRun {
         // Validation Criteria
         // location must always be reported
         if (getLocation() == null) {
-            logger.error("MISSING ms-run location information");
+            logger.error("MISSING ms_run location information");
             return false;
         }
         // If ms-run format is reported, ms-run id_format is required
         if ((getMsRunFormat() != null) && (getMsRunIdFormat() == null)) {
-            logger.error("ms-run format specified, but MISSING ms-run ID_format");
+            logger.error("ms_run format specified, but MISSING ms-run ID_format");
+            return false;
+        }
+        if ((getMsRunFormat() != null) && (!getMsRunFormat().validate())) {
+            logger.error("ms_run format IS INVALID");
+            return false;
+        }
+        if ((getMsRunIdFormat() != null) && (!getMsRunIdFormat().validate())) {
+            logger.error("ms_run ID format IS INVALID");
             return false;
         }
         if ((getHash() != null) && (getHashMethod() == null)) {
