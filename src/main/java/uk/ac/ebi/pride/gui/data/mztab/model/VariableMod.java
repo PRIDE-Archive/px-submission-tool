@@ -64,6 +64,10 @@ public class VariableMod {
             logger.error("MISSING value for variable_mod metadata attribute");
             return false;
         }
+        if (!getValue().validate()) {
+            logger.error("variable_mod value IS INVALID!!!");
+            return false;
+        }
         return true;
     }
 }

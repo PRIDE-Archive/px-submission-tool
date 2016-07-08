@@ -15,27 +15,27 @@ import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidCvParameterException;
 public class FixedMod {
     private static final Logger logger = LoggerFactory.getLogger(FixedMod.class);
 
-    public class FixedModeValue extends CvParameter {
-        public FixedModeValue(String label, String accession, String name, String value) throws InvalidCvParameterException {
+    public class FixedModValue extends CvParameter {
+        public FixedModValue(String label, String accession, String name, String value) throws InvalidCvParameterException {
             super(label, accession, name, value);
         }
 
-        public FixedModeValue(CvParameter cv) {
+        public FixedModValue(CvParameter cv) {
             super(cv);
         }
     }
 
     // Bean
-    private FixedModeValue value = null;
+    private FixedModValue value = null;
     private String site = null;
     private String position = null;
 
-    public FixedModeValue getValue() {
+    public FixedModValue getValue() {
         return value;
     }
 
     public void setValue(CvParameter value) {
-        this.value = new FixedModeValue(value);
+        this.value = new FixedModValue(value);
     }
 
     public String getSite() {
@@ -58,6 +58,10 @@ public class FixedMod {
         // There must be a value
         if (getValue() == null) {
             logger.error("MISSING value for fixed_mod item");
+            return false;
+        }
+        if (!getValue().validate()) {
+            logger.error("fixed_mod value IS INVALID!");
             return false;
         }
         return true;
