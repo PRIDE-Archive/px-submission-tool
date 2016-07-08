@@ -112,6 +112,7 @@ public class Assay {
     public boolean validate(MzTabDocument context) throws ValidationException {
         // Solve references
         if (!solveReferences(context)) {
+            logger.error("This Assay entry DOES NOT VALIDATE because of references mapping problems");
             return false;
         }
         // Quantification reagent is required for Complete mode
