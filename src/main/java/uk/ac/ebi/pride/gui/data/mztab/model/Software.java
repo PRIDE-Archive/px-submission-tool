@@ -56,6 +56,7 @@ public class Software {
     public boolean validate(MzTabDocument context) throws ValidationException {
         if (context.getMetaData().getMode() == MetaData.MzTabMode.COMPLETE) {
             if (getValue() == null) {
+                logger.error("Software entry DOES NOT VALIDATE because its value is missing");
                 return false;
             }
         }
