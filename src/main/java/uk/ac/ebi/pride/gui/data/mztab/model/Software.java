@@ -60,6 +60,10 @@ public class Software {
                 return false;
             }
         }
+        if ((getValue() != null) && (!getValue().validate())) {
+            logger.error("Software value DOES NOT VALIDATE");
+            return false;
+        }
         return true;
     }
 }
