@@ -112,8 +112,9 @@ public abstract class MzTabParser {
             }
         }
         // Product Validation
+        // TODO - Redundant product validation, I'll revisit/remove it later
         try {
-            if (!getMzTabDocument().validate()) {
+            if (!getMzTabDocument().validate(getMzTabSectionValidator())) {
                 throw new MzTabParserException("The parsed mzTab document DOES NOT VALIDATE");
             }
             logger.info("parsed mzTab document has been successfully validated");
@@ -135,7 +136,7 @@ public abstract class MzTabParser {
     // Product validation by delegation
     protected void doValidateProduct() {
         if (getMzTabDocument() != null) {
-            if (!getMzTabDocument().validate()) {
+            if (!getMzTabDocument().validate(getMzTabSectionValidator())) {
                 throw new MzTabParserException("The parsed mzTab document IS NOT VALID!");
             }
         } else {
