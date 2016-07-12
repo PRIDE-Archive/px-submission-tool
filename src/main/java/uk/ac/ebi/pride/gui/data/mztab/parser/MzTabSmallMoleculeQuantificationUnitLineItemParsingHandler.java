@@ -12,7 +12,7 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.MetadataLineItemParserSt
  * All rights reserved.
  */
 public abstract class MzTabSmallMoleculeQuantificationUnitLineItemParsingHandler extends MetaDataLineItemParsingHandler implements MetaDataLineItemParsingHandler.LineItemBean {
-    protected static final String MZTAB_SMALL_MOLECULE_QUANTIFICATION_UNIT = "smallmolecule_quantification_unit";
+    protected static final String MZTAB_SMALL_MOLECULE_QUANTIFICATION_UNIT = "small_molecule-quantification_unit";
 
     // TODO - Refactor in the future to create external beans that handle this?
 // Bean defaults
