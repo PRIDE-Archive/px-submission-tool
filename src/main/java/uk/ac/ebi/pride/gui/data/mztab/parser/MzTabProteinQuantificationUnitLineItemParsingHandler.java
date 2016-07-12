@@ -11,7 +11,7 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.MetadataLineItemParserSt
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
  */
-public abstract class MzTabProteinQuantificationMethodLineItemParsingHandler extends MetaDataLineItemParsingHandler implements MetaDataLineItemParsingHandler.LineItemBean {
+public abstract class MzTabProteinQuantificationUnitLineItemParsingHandler extends MetaDataLineItemParsingHandler implements MetaDataLineItemParsingHandler.LineItemBean {
     protected static final String MZTAB_PROTEIN_QUANTIFICATION_UNIT = "protein_quantification_unit";
 
     // TODO - Refactor in the future to create external beans that handle this?

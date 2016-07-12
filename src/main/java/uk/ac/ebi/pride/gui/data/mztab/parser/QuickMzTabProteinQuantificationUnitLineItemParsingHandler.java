@@ -11,7 +11,7 @@ import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.LineItemParsingHandlerEx
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
  */
-public class QuickMzTabProteinQuantificationMethodLineItemParsingHandler extends MzTabProteinQuantificationMethodLineItemParsingHandler {
+public class QuickMzTabProteinQuantificationUnitLineItemParsingHandler extends MzTabProteinQuantificationUnitLineItemParsingHandler {
     private void checkForDuplicatedEntry(MzTabParser context, long lineNumber) throws LineItemParsingHandlerException {
         if (context.getMetaDataSection().getProteinQuantificationUnit() != null) {
             throw new LineItemParsingHandlerException("DUPLICATED protein quantification method entry found at line '" + lineNumber + "'");
