@@ -4,6 +4,10 @@ import uk.ac.ebi.pride.gui.data.mztab.exceptions.InvalidCvParameterException;
 import uk.ac.ebi.pride.gui.data.mztab.model.CvParameter;
 import uk.ac.ebi.pride.gui.data.mztab.parser.exceptions.CvParameterParserException;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Project: px-submission-tool
  * Package: uk.ac.ebi.pride.gui.data.mztab.parser
@@ -39,10 +43,19 @@ public class CvParameterParser {
             throw new CvParameterParserException("Missing closing ']'");
         }
         String[] csvItems = s.substring(1, s.indexOf(']')).split(",");
-        if (csvItems.length != 4) {
-            throw new CvParameterParserException("This entry contains ONLY " + csvItems.length + " comma separated items");
+        List<String> insertItems = new ArrayList<>(Arrays.asList(csvItems));
+        while (insertItems.size() != 4) {
+            // Add possible missing items
+            insertItems.add("");
         }
-        CvParameter cvParameter = new CoreCvParameter(csvItems[0].trim(), csvItems[1].trim(), csvItems[2].trim(), csvItems[3].trim());
+        /*if (csvItems.length != 4) {
+            throw new CvParameterParserException("This entry contains ONLY " + csvItems.length + " comma separated items");
+        }*/
+        //CvParameter cvParameter = new CoreCvParameter(csvItems[0].trim(), csvItems[1].trim(), csvItems[2].trim(), csvItems[3].trim());
+        CvParameter cvParameter = new CoreCvParameter(insertItems.get(0).trim(),
+                insertItems.get(1).trim(),
+                insertItems.get(2).trim(),
+                insertItems.get(3).trim());
         return cvParameter;
     }
 }
