@@ -102,10 +102,12 @@ public abstract class MzTabSoftwareLineItemParsingHandler extends MetaDataLineIt
         cleanBean();
         try {
             if (MetadataLineItemParserStrategy.parseLine(this, line)) {
-                if (getIndex() == DEFAULT_INDEX) {
-                    throw new LineItemParsingHandlerException("MISSING INDEX for '" + MZTAB_SOFTWARE_ITEM_KEY + "' at line '" + lineNumber + "'");
+                if (getLineItemKey().equals(MZTAB_SOFTWARE_ITEM_KEY)) {
+                    if (getIndex() == DEFAULT_INDEX) {
+                        throw new LineItemParsingHandlerException("MISSING INDEX for '" + MZTAB_SOFTWARE_ITEM_KEY + "' at line '" + lineNumber + "'");
+                    }
+                    return processEntry(context, lineNumber, offset);
                 }
-                return processEntry(context, lineNumber, offset);
             }
         } catch (MetadataLineItemParserStrategyException e) {
             throw new LineItemParsingHandlerException(e.getMessage());
