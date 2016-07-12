@@ -37,7 +37,12 @@ public abstract class MetadataLineItemParserStrategy {
 
     private static boolean getLineItemKey(MetaDataLineItemParsingHandler.LineItemBean bean, String[] lineItems) throws MetadataLineItemParserStrategyException {
         try {
-            String lineItemKey = lineItems[1].substring(0, lineItems[1].indexOf('['));
+            String lineItemKey = "";
+            if (lineItems[1].indexOf('[') == -1) {
+                lineItemKey = lineItems[1];
+            } else {
+                lineItemKey = lineItems[1].substring(0, lineItems[1].indexOf('['));
+            }
             logger.debug("Parsed line item key '" + lineItemKey + "'");
             bean.setLineItemKey(lineItemKey);
         } catch (IndexOutOfBoundsException e) {
@@ -108,6 +113,7 @@ public abstract class MetadataLineItemParserStrategy {
     // Parse a not indexed line item
     public static boolean parseLine(MetaDataLineItemParsingHandler.LineItemBean bean, String line) throws MetadataLineItemParserStrategyException {
         String[] lineItems = line.split("\t");
+        logger.debug(">>> LineItemBean LINE PARSER: '" + line);
         try {
             if (lineItems.length == 3) {
                 return getLineItemKey(bean, lineItems)
