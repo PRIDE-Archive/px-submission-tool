@@ -79,6 +79,7 @@ public class DefaultMzTabSectionValidator extends MzTabSectionValidator {
             logger.error("ms-run location MUST be reported, but it is MISSING in the current mzTab data");
             return false;
         }
+        // Sample validation
         for (int sampleIndex :
                 metaData.getAvailableSampleIndexes()) {
             try {
