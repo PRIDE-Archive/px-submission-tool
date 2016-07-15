@@ -323,6 +323,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                     result.setUrlBasedResultFilePresent(true);
                 }
 
+                // TODO - Refactor, comparing to not being fileType RESULT makes no sense here, as we know, without a doubt, fileType is RESULT
                 if (fileFormat == null || !ProjectFileType.RESULT.equals(fileType)) {
                     result.setUnsupportedResultFile(true);
                 } else {
