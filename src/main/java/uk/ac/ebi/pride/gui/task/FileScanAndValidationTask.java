@@ -74,6 +74,8 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         boolean noRawFile = submission.getDataFileByType(ProjectFileType.RAW).isEmpty();
         boolean noSearchFile = submission.getDataFileByType(ProjectFileType.SEARCH).isEmpty();
 
+        // TODO Get mzTab file, I assume only one is allowed, and that it belongs to the "result" file type
+
         List<DataFile> resultDataFiles = submission.getDataFileByType(ProjectFileType.RESULT);
         boolean noResultFile = resultDataFiles.isEmpty();
 
@@ -96,6 +98,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidResultFileWarning());
             }
 
+            // TODO These are result files, thus, I imagine that you have to choose between prideXml XOR mzIdentML XOR mzTab
             // cannot have both PRIDE xml and mzIdentML at the same time
             if (!noPrideXml && !noMzIdentML) {
                 return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMultipleResultFileFormatWarning());
