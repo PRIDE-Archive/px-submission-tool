@@ -164,6 +164,9 @@ public class AddFileSelectionAction extends AbstractAction {
          * @return true means file with the same exists
          */
         private boolean hasSameFileName(DataFile dataFile) {
+            // TODO - I recommend using a different data structure here that keeps track of DataFiles and their names
+            // TODO - using a set for the names, otherwise, when the list of files is too long, this method is very
+            // TODO - inefficient
             Submission submission = ((AppContext) App.getInstance().getDesktopContext()).getSubmissionRecord().getSubmission();
             List<DataFile> dataFiles = submission.getDataFiles();
             for (DataFile file : dataFiles) {
