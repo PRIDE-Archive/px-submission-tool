@@ -2,6 +2,7 @@ package uk.ac.ebi.pride.gui.data.mztab.parser.readers;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.data.util.FileUtil;
 
 import java.io.*;
 
@@ -56,6 +57,10 @@ public class LineAndPositionAwareBufferedReader {
     public static int howManyCrlfChars(String fileName) throws IOException {
         logger.debug("Detecting line break type in the file '" + fileName + "'");
         BufferedInputStream in = new BufferedInputStream(new FileInputStream(fileName));
+        return howManyCrlfChars(in);
+    }
+
+    public static int howManyCrlfChars(InputStream in) throws IOException {
         try {
             int b = 0;
             while ((b = in.read()) != -1) {
@@ -77,7 +82,7 @@ public class LineAndPositionAwareBufferedReader {
                     return 1;
                 }
             }
-            logger.error("Line break could not be identified for file '" + fileName + "'");
+            logger.error("Line break type could not be identified !!");
         } finally {
             in.close();
         }
@@ -87,7 +92,17 @@ public class LineAndPositionAwareBufferedReader {
     public LineAndPositionAwareBufferedReader(String fileName) throws IOException {
         ncrlf = howManyCrlfChars(fileName);
         logger.debug("Creating reader for file '" + fileName + "'");
-        reader = new LineNumberReader(new FileReader(fileName));
+        //reader = new LineNumberReader(new FileReader(fileName));
+        // TODO - To my future self: if, at any time in the future, you need to refactor the parser out of the
+        // TODO - submission tool, keep in mind this coupling point, where we use FileUtil getFileInputStream method
+        // TODO - for opening an InputStream
+        reader = new LineNumberReader(new InputStreamReader(FileUtil.getFileInputStream(new File(fileName))));
+    }
+
+    public LineAndPositionAwareBufferedReader(File file) throws IOException {
+        ncrlf = howManyCrlfChars(FileUtil.getFileInputStream(file));
+        logger.debug("Creating reader for file '" + file.getName() + "'");
+        reader = new LineNumberReader(new InputStreamReader(FileUtil.getFileInputStream(file)));
     }
 
     /**
@@ -100,7 +115,7 @@ public class LineAndPositionAwareBufferedReader {
         //logger.debug("Line read '" + line + "', position '" + offset + "', line number '" + reader.getLineNumber() + "'");
         PositionAwareLine readLine = null;
         if (line != null) {
-            readLine = new PositionAwareLine((int)reader.getLineNumber(), offset, line);
+            readLine = new PositionAwareLine(reader.getLineNumber(), offset, line);
             offset += line.getBytes().length + ncrlf;
         }
         return readLine;
