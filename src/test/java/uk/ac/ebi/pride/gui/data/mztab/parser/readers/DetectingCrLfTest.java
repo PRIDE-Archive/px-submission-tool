@@ -4,12 +4,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.nio.file.Path;
+import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Project: px-submission-tool
@@ -32,11 +32,15 @@ public class DetectingCrLfTest {
         this.fileName = fileName;
     }
 
+    private String getTestFilePath(String fileName) throws URISyntaxException {
+        return Paths.get(Paths.get(this.getClass().getClassLoader().getResource("sample_data").toURI()).toAbsolutePath().toString()
+                + "/"
+                + fileName).toString();
+    }
+
     @Test
-    public void testUnixFileLf() throws Exception {
-        String routePrefix = Paths.get(this.getClass().getClassLoader().getResource("sample_data").toURI()).toAbsolutePath().toString();
-        String filePath = Paths.get(routePrefix + "/" + fileName).toString();
-        assertEquals("Number of characters used for new line in file '" + fileName + "'", expected, LineAndPositionAwareBufferedReader.howManyCrlfChars(filePath));
+    public void testNewLineCharacterDetectionUsingFileName() throws Exception {
+        assertEquals("Number of characters used for new line in file '" + fileName + "'", expected, LineAndPositionAwareBufferedReader.howManyCrlfChars(getTestFilePath(fileName)));
     }
 
     @Parameterized.Parameters
