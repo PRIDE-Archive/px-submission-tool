@@ -26,7 +26,7 @@ import static org.junit.Assert.assertThat;
  * All rights reserved.
  */
 @RunWith(Parameterized.class)
-public class FilePositionAndLineGzippedFilesTest {
+public class GenericFilePositionAndLineTest {
     private long expectedPosition;
     private long expectedLineNumber;
     private String expectedLineStart;
@@ -35,8 +35,8 @@ public class FilePositionAndLineGzippedFilesTest {
     @Rule
     public ExpectedException exception = ExpectedException.none();
 
-    public FilePositionAndLineGzippedFilesTest(long expectedPosition, long expectedLineNumber, String expectedLineStart,
-                                   int readNLines, String fileName) {
+    public GenericFilePositionAndLineTest(long expectedPosition, long expectedLineNumber, String expectedLineStart,
+                                          int readNLines, String fileName) {
         this.expectedPosition = expectedPosition;
         this.expectedLineNumber = expectedLineNumber;
         this.expectedLineStart = expectedLineStart;
