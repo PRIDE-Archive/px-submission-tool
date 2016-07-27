@@ -45,11 +45,13 @@ public class FilePositionAndLineTest {
         this.fileName = fileName;
     }
 
-    @Test
-    public void detectLineAndPosition() throws IOException, URISyntaxException {
-        String routePrefix = Paths.get(this.getClass().getClassLoader().getResource("sample_data").toURI()).toAbsolutePath().toString();
-        String filePath = Paths.get(routePrefix + "/" + fileName).toString();
-        LineAndPositionAwareBufferedReader reader = new LineAndPositionAwareBufferedReader(filePath);
+    private String getTestFilePath(String fileName) throws URISyntaxException {
+        return Paths.get(Paths.get(this.getClass().getClassLoader().getResource("sample_data").toURI()).toAbsolutePath().toString()
+                + "/"
+                + fileName).toString();
+    }
+
+    private void doRunDetectionTest(LineAndPositionAwareBufferedReader reader) throws IOException, URISyntaxException {
         LineAndPositionAwareBufferedReader.PositionAwareLine positionAwareLine = null;
         int linesToRead = readNLines;
         while (linesToRead > 0) {
@@ -59,6 +61,12 @@ public class FilePositionAndLineTest {
         assertEquals("Line number for file '" + fileName + "'", readNLines, positionAwareLine.getLineNo());
         assertEquals("Position for file '" + fileName + "'", expectedPosition, positionAwareLine.getOffset());
         assertThat(positionAwareLine.getLine(), CoreMatchers.startsWith(expectedLineStart));
+    }
+
+    @Test
+    public void detectLineAndPosition() throws IOException, URISyntaxException {
+        LineAndPositionAwareBufferedReader reader = new LineAndPositionAwareBufferedReader(getTestFilePath(fileName));
+        doRunDetectionTest(reader);
     }
 
     @Parameterized.Parameters
