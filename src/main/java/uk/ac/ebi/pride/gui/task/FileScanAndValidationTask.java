@@ -71,6 +71,10 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         List<DataFile> mzIdentMLDataFiles = submission.getDataFilesByFormat(MassSpecFileFormat.MZIDENTML);
         boolean noMzIdentML = mzIdentMLDataFiles.isEmpty();
 
+        // Get provided mzTab files
+        List<DataFile> mzTabDataFiles = submission.getDataFilesByFormat(MassSpecFileFormat.MZTAB);
+        boolean mzTabFilesHaveBeenProvided = !mzTabDataFiles.isEmpty();
+
         boolean noRawFile = submission.getDataFileByType(ProjectFileType.RAW).isEmpty();
         boolean noSearchFile = submission.getDataFileByType(ProjectFileType.SEARCH).isEmpty();
 
@@ -94,14 +98,17 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             }
             setProgress(40);
 
-            if (noPrideXml && noMzIdentML && !quickValidationResult.isUrlBasedResultFilePresent()) {
+            if (noPrideXml && noMzIdentML && !mzTabFilesHaveBeenProvided && !quickValidationResult.isUrlBasedResultFilePresent()) {
                 return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidResultFileWarning());
             }
 
-            // TODO These are result files, thus, I imagine that you have to choose between prideXml XOR mzIdentML XOR mzTab
             // cannot have both PRIDE xml and mzIdentML at the same time
             if (!noPrideXml && !noMzIdentML) {
-                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMultipleResultFileFormatWarning());
+                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMultipleResultFileFormatWarning("PRIDE XML", "mzIdentML"));
+            } else if (!noPrideXml && mzTabFilesHaveBeenProvided) {
+                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMultipleResultFileFormatWarning("PRIDE XML", "mzTab"));
+            } else if (!noMzIdentML && mzTabFilesHaveBeenProvided) {
+                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMultipleResultFileFormatWarning("mzIdentML", "mzTab"));
             }
 
             if (!noPrideXml) {
@@ -124,7 +131,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 }
                 setProgress(60);
 
-                // cannot have mzIdentML which do contain spectra data reference
+                // mzIdentML files are required to contain reference to original spectrum files
                 List<DataFile> invalidMzIdentMLSpectraDataFiles = runMzIdentMLSpectraDataValidation(mzIdentMLDataFiles);
                 if (invalidMzIdentMLSpectraDataFiles.size() > 0) {
                     return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidMzIdentMLSpectraDataWarning(invalidMzIdentMLSpectraDataFiles));
@@ -139,6 +146,13 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                     return validationMessage;
                 }
                 setProgress(80);
+            }
+
+            if (mzTabFilesHaveBeenProvided) {
+                // TODO validate the file (parse + validation)
+                // TODO extract SampleMetaData information from the mzTabFile
+                // mzTab files to validate
+                List<DataFile> invalidMzTabFiles = validateMzTabFiles(mzTabDataFiles);
             }
         } else if (submissionType.equals(SubmissionType.PARTIAL)) {
             // should have both search engine output and raw files
@@ -205,6 +219,11 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         setProgress(100);
 
         return new DataFileValidationMessage(ValidationState.SUCCESS);
+    }
+
+    private List<DataFile> validateMzTabFiles(List<DataFile> mzTabDataFiles) {
+        // TODO
+        return null;
     }
 
     private void scanForFileMappings() {
@@ -335,6 +354,8 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                         result.setPrideXml(true);
                     } else if (MassSpecFileFormat.MZIDENTML.equals(fileFormat)) {
                         result.setMzIdentML(true);
+                    } else if (MassSpecFileFormat.MZTAB.equals(fileFormat)) {
+                        result.setMztab(true);
                     }
                 }
             } else if (ProjectFileType.RAW.equals(fileType)) {
@@ -647,6 +668,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         boolean urlBasedResultFilePresent;
         boolean prideXml;
         boolean mzIdentML;
+        boolean mztab;
         boolean unsupportedResultFile;
         boolean supportedRawFile;
         boolean unsupportedRawFile;
@@ -687,6 +709,14 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
 
         public void setMzIdentML(boolean mzIdentML) {
             this.mzIdentML = mzIdentML;
+        }
+
+        public void setMztab(boolean mztab) {
+            this.mztab = mztab;
+        }
+
+        public boolean hasMzTab() {
+            return mztab;
         }
 
         public boolean hasUnsupportedResultFile() {

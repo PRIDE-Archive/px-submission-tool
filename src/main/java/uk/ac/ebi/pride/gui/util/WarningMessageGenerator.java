@@ -31,9 +31,9 @@ public final class WarningMessageGenerator {
         return "<html>" + "<b>Invalid result file detected, please submit either PRIDE XML or mzIdentML</b><br/>" + "</html>";
     }
 
-    public static String getMultipleResultFileFormatWarning() {
+    public static String getMultipleResultFileFormatWarning(String formatA, String formatB) {
 
-        return "<html>" + "<b>Both PRIDE XML and mzIdentML detected, please submit one result file format only</b><br/>" + "</html>";
+        return "<html>" + "<b>Both " + formatA + " and " + formatB + " detected, please submit one result file format only</b><br/>" + "</html>";
     }
 
     public static String getInvalidMzIdentMLVersionWarning(List<DataFile> mzIdentMLFiles) {
