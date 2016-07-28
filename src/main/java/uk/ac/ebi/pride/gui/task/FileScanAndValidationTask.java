@@ -9,6 +9,9 @@ import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.SampleMetaData;
 import uk.ac.ebi.pride.data.model.Submission;
+import uk.ac.ebi.pride.data.mztab.parser.MzTabFullDocumentQuickParser;
+import uk.ac.ebi.pride.data.mztab.parser.MzTabParser;
+import uk.ac.ebi.pride.data.mztab.parser.exceptions.MzTabParserException;
 import uk.ac.ebi.pride.data.util.FileUtil;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
 import uk.ac.ebi.pride.data.validation.SubmissionValidator;
@@ -148,11 +151,21 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 setProgress(80);
             }
 
+            // mzTab files support
             if (mzTabFilesHaveBeenProvided) {
-                // TODO validate the file (parse + validation)
-                // TODO extract SampleMetaData information from the mzTabFile
+                // validate the file (parse + validation)
                 // mzTab files to validate
                 List<DataFile> invalidMzTabFiles = validateMzTabFiles(mzTabDataFiles);
+                setProgress(65);
+                if (invalidMzTabFiles.size() > 0) {
+                    return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidFilesWarning(invalidMzTabFiles));
+                }
+                // extract SampleMetaData information from the mzTabFile
+                for (DataFile mzTabDataFile :
+                        mzTabDataFiles) {
+                    mzTabDataFile.setSampleMetaData(MzTabHelper.getSampleMetaData(mzTabDataFile.getMzTabDocument()));
+                }
+                setProgress(80);
             }
         } else if (submissionType.equals(SubmissionType.PARTIAL)) {
             // should have both search engine output and raw files
@@ -205,11 +218,13 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getUnsupportedRawFileWarning());
         }
 
+        setProgress(90);
         // cannot have submission px file
         if (quickValidationResult.hasSubmissionPxFile()) {
             return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getSubmissionPxWarning());
         }
 
+        setProgress(95);
         // pre-scan for file relation
         // but only for non-bulkmode
         if (!appContext.isBulkMode()) {
@@ -222,8 +237,19 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
     }
 
     private List<DataFile> validateMzTabFiles(List<DataFile> mzTabDataFiles) {
-        // TODO
-        return null;
+        List<DataFile> invalidFiles = new ArrayList<>();
+        for (DataFile dataFile :
+                mzTabDataFiles) {
+            // Use the full document quick parser to get the MzTabDocuments in the DataFile objects
+            MzTabParser parser = new MzTabFullDocumentQuickParser(dataFile.getFile());
+            try {
+                parser.parse();
+            } catch (MzTabParserException e) {
+                logger.error("Invalid mzTab file '" + dataFile.getFile().getName() + "'");
+                invalidFiles.add(dataFile);
+            }
+        }
+        return invalidFiles;
     }
 
     private void scanForFileMappings() {
