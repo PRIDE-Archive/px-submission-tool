@@ -28,7 +28,7 @@ public final class WarningMessageGenerator {
     }
 
     public static String getInvalidResultFileWarning() {
-        return "<html>" + "<b>Invalid result file detected, please submit either PRIDE XML or mzIdentML</b><br/>" + "</html>";
+        return "<html>" + "<b>Invalid result file detected, please submit either PRIDE XML, mzIdentML or mzTab</b><br/>" + "</html>";
     }
 
     public static String getMultipleResultFileFormatWarning(String formatA, String formatB) {
@@ -47,6 +47,20 @@ public final class WarningMessageGenerator {
         }
         errMsg.append("</html>");
 
+        return errMsg.toString();
+    }
+
+    public static String getInvalidFilesWarning(List<DataFile> invalidDataFiles) {
+        StringBuilder errMsg = new StringBuilder();
+        errMsg.append("<html>");
+        errMsg.append("<b>The following files ARE NOT VALID</b><br/>");
+        for (DataFile dataFile :
+                invalidDataFiles) {
+            errMsg.append("<li>");
+            errMsg.append(dataFile.getFile().getName());
+            errMsg.append("</li>");
+        }
+        errMsg.append("</html>");
         return errMsg.toString();
     }
 
