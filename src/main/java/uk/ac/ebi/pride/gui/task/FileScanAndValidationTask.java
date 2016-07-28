@@ -160,10 +160,18 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 if (invalidMzTabFiles.size() > 0) {
                     return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidFilesWarning(invalidMzTabFiles));
                 }
+                int currentProgressValue = 70;
+                setProgress(currentProgressValue);
                 // extract SampleMetaData information from the mzTabFile
+                int increment = 0;
+                if (mzTabDataFiles.size() > 0) {
+                    increment = 10 / mzTabDataFiles.size(); // Yes, I want the int truncated float here
+                }
                 for (DataFile mzTabDataFile :
                         mzTabDataFiles) {
                     mzTabDataFile.setSampleMetaData(MzTabHelper.getSampleMetaData(mzTabDataFile.getMzTabDocument()));
+                    currentProgressValue += increment;
+                    setProgress(currentProgressValue);
                 }
                 setProgress(80);
             }
