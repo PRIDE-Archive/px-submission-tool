@@ -245,7 +245,11 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             try {
                 parser.parse();
             } catch (MzTabParserException e) {
-                logger.error("Invalid mzTab file '" + dataFile.getFile().getName() + "'");
+                logger.error("Invalid mzTab file '"
+                        + dataFile.getFile().getName()
+                        + "', MAIN ERROR: '"
+                        + e.getMessage()
+                        + "'. PLEASE, REFER TO LOG FILES FOR MORE DETAILED INFORMATION");
                 invalidFiles.add(dataFile);
             }
         }
