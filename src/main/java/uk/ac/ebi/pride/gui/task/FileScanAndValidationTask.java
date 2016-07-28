@@ -452,32 +452,13 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         for (CvParam param : cvParams) {
             String cvLabel = param.getCvLabel();
 
-            SampleMetaData.Type type = getSampleMetaDataType(cvLabel);
+            SampleMetaData.Type type = SampleInformationScanHelper.getSampleMetaDataType(cvLabel);
 
             if (type != null) {
                 uk.ac.ebi.pride.data.model.CvParam value = new uk.ac.ebi.pride.data.model.CvParam(cvLabel, param.getAccession(), param.getName(), null);
                 sampleMetaData.addMetaData(type, value);
             }
         }
-    }
-
-    /**
-     * Get sample metadata type
-     */
-    private SampleMetaData.Type getSampleMetaDataType(String cvLabel) {
-        SampleMetaData.Type type = null;
-
-        if (cvLabel.equalsIgnoreCase(uk.ac.ebi.pride.data.util.Constant.NEWT)) {
-            type = SampleMetaData.Type.SPECIES;
-        } else if (cvLabel.equalsIgnoreCase(uk.ac.ebi.pride.data.util.Constant.BTO)) {
-            type = SampleMetaData.Type.TISSUE;
-        } else if (cvLabel.equalsIgnoreCase(uk.ac.ebi.pride.data.util.Constant.CL)) {
-            type = SampleMetaData.Type.CELL_TYPE;
-        } else if (cvLabel.equalsIgnoreCase(uk.ac.ebi.pride.data.util.Constant.DOID)) {
-            type = SampleMetaData.Type.DISEASE;
-        }
-
-        return type;
     }
 
     /**
