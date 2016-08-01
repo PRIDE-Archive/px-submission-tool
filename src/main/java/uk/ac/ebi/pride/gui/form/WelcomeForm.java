@@ -1,5 +1,7 @@
 package uk.ac.ebi.pride.gui.form;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 import uk.ac.ebi.pride.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.action.LoadSubmissionFileAction;
@@ -13,6 +15,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 
 /**
  * This form shows welcome messages
@@ -21,6 +25,7 @@ import java.awt.event.ActionListener;
  * @version $Id$
  */
 public class WelcomeForm extends Form {
+    private static final Logger logger = LoggerFactory.getLogger(WelcomeForm.class);
 
     private static final String FULL_SUBMISSION_OPTION = "FULL_SUBMISSION";
     private static final String PARTIAL_SUBMISSION_OPTION = "PARTIAL_SUBMISSION";
@@ -71,7 +76,12 @@ public class WelcomeForm extends Form {
 
         JLabel titleLabel = new JLabel(appContext.getProperty("welcome.before.start.title"));
         titleLabel.setFont(titlePanel.getFont().deriveFont(16f).deriveFont(Font.BOLD));
-        titlePanel.add(titleLabel, BorderLayout.NORTH);
+        titlePanel.add(titleLabel, BorderLayout.WEST);
+        JCheckBox trainingModeCheckBox = new JCheckBox();
+        trainingModeCheckBox.setText(appContext.getProperty("training.mode.toggle.checkbox.text"));
+        trainingModeCheckBox.addItemListener(new TrainingModeOptionListener());
+        trainingModeCheckBox.setToolTipText(appContext.getProperty("training.mode.toggle.checkbox.help.text"));
+        titlePanel.add(trainingModeCheckBox, BorderLayout.EAST);
 //        JLabel descPanel = new JLabel(appContext.getProperty("welcome.before.start.desc"));
 //        titlePanel.add(descPanel, BorderLayout.CENTER);
         titlePanel.add(Box.createRigidArea(new Dimension(10, 10)), BorderLayout.SOUTH);
@@ -259,6 +269,23 @@ public class WelcomeForm extends Form {
 //                partialSubmissionButton.setForeground(Color.BLACK);
 //                fullSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("welcome.full.submission.button.title.large.icon")));
 //                partialSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("welcome.partial.submission.button.title.selected.large.icon")));
+            }
+        }
+    }
+
+    /**
+     * This listener updates "training mode" status
+     */
+    private class TrainingModeOptionListener implements ItemListener {
+
+        @Override
+        public void itemStateChanged(ItemEvent e) {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                logger.info("TRAINING MODE ACTIVATED");
+                appContext.setTrainingModeFlag(true);
+            } else {
+                logger.info("TRAINING MODE DE-ACTIVATED");
+                appContext.setTrainingModeFlag(false);
             }
         }
     }

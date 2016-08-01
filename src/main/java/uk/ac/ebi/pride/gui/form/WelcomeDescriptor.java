@@ -45,6 +45,7 @@ public class WelcomeDescriptor extends ContextAwareNavigationPanelDescriptor imp
     @Override
     public void displayingPanel() {
         if (!updateChecked) {
+            // TODO - is this working?
             Task newTask = new CheckForUpdateTask();
             newTask.addTaskListener(this);
             // set task's gui blocker

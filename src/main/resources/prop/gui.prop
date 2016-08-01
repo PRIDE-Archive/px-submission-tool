@@ -411,3 +411,7 @@ feedback.button.submit.submitting_state.icon = icon/16x16/loading.gif
 
 # General icons
 icon.warning.normal.small = icon/64x64/warning.png
+
+# Training mode
+training.mode.toggle.checkbox.text = Training Mode (no submission)
+training.mode.toggle.checkbox.help.text = Check this box to activate 'Training Mode' for this submission session
