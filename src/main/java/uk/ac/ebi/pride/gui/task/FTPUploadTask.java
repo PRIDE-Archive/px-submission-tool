@@ -166,7 +166,9 @@ public class FTPUploadTask extends TaskAdapter<Void, UploadMessage> implements T
         DataFile fileToUpload = fileToSubmit.iterator().next();
         fileToSubmit.remove(fileToUpload);
         logger.debug("Upload file: " + fileToUpload.getFileName());
-        Task task = new FileFTPUploadTask(fileToUpload, submissionRecord.getUploadDetail());
+        //Task task = new FileFTPUploadTask(fileToUpload, submissionRecord.getUploadDetail());
+        // TODO Get FTP upload service from factory
+        Task task = UploadServiceFactory.createFileFtpUploadTask(fileToUpload, submissionRecord.getUploadDetail());
         //Task task = new FakeFileFTPUploadTask(fileToUpload, submissionRecord.getUploadDetail());
         List<Object> owners = this.getOwners();
         for (Object owner : owners) {

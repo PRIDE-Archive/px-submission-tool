@@ -269,6 +269,13 @@ public class FeedbackFormController extends Form implements ActionListener {
 
     public boolean doSubmitFeedbackOnClose() {
         //return (model.isFeedbackSubmitted() || doSubmitFeedback());
+        // Don't mind about feedback when in 'training mode'
+        if (appContext.isTrainingModeFlag()) {
+            // I'm pretty sure this could be beautify in the future from the OOP point of view but, right now, this is
+            // the smallest change that accomplishes this goal given the current requirements
+            logger.info("Skipping Feedback submission when working in 'training mode'");
+            return true;
+        }
         if (!model.isFeedbackSubmitted()) {
             JOptionPane.showMessageDialog((Component) null, App.getInstance().getDesktopContext().getProperty("feedback.form.confirmation_dialog.message"),
                     "Feedback", JOptionPane.OK_OPTION, GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.confirmation_dialog.icon")));

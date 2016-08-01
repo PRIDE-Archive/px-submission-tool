@@ -147,13 +147,17 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
 
         if (uploadMethod.equals(UploadMethod.FTP)) {
             // create ftp directory before uploading
-            task = new CreateFTPDirectoryTask(uploadDetail);
+            //task = new CreateFTPDirectoryTask(uploadDetail);
+            // TODO - Get FTP directory creator from factory
+            task = UploadServiceFactory.createFtpDirectoryTask(uploadDetail);
             // DEBUG - Following line for a fake upload
             // task = new FakeCreateFTPDirectoryTask(uploadDetail);
             task.addTaskListener(createFTPDirectoryTaskListener);
         } else if (uploadMethod.equals(UploadMethod.ASPERA)) {
             // start aspera upload straight away
-            task = new PersistedAsperaUploadTask(submissionRecord);
+            //task = new PersistedAsperaUploadTask(submissionRecord);
+            // TODO - Get FTP directory creator from factory
+            task = UploadServiceFactory.createPersistedAsperaUploadTask(submissionRecord);
             // DEBUG - Following line for a fake upload
             // task = new FakeCreateFTPDirectoryTask(uploadDetail);
             task.addTaskListener(uploadTaskListener);
@@ -217,7 +221,6 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
 
     @Override
     public void beforeHidingForNextPanel() {
-        // TODO - Hook for feedback data submission ?
         logger.debug("SubmissionDescriptor::beforeHidingForNextPanel() - call");
         if (feedbackDescriptor.beforeHidingForNextPanel())
             app.shutdown(null);
@@ -382,7 +385,9 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             form.enabledSuccessButton(true);
 
             // complete submission task
-            Task task = new CompleteSubmissionTask(appContext.getSubmissionRecord());
+            //Task task = new CompleteSubmissionTask(appContext.getSubmissionRecord());
+            // TODO Get submission task from factory
+            Task task = UploadServiceFactory.createCompleteSubmissionTask(appContext.getSubmissionRecord());
             // DEBUG - Following line for a fake upload
             // Task task = new FakeCompleteSubmissionTask(appContext.getSubmissionRecord());
             task.addTaskListener(completeSubmissionTaskListener);
