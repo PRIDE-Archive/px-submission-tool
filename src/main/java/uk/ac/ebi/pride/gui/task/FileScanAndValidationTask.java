@@ -251,7 +251,10 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             // Use the full document quick parser to get the MzTabDocuments in the DataFile objects
             MzTabParser parser = new MzTabFullDocumentQuickParser(dataFile.getFile());
             try {
+                // Parse the file
                 parser.parse();
+                // Set the product document in the DataFile itself for later use
+                dataFile.setMzTabDocument(parser.getMzTabDocument());
             } catch (MzTabParserException e) {
                 logger.error("Invalid mzTab file '"
                         + dataFile.getFile().getName()
