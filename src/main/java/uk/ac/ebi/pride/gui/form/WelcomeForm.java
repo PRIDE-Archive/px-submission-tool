@@ -7,6 +7,7 @@ import uk.ac.ebi.pride.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.action.LoadSubmissionFileAction;
 import uk.ac.ebi.pride.gui.form.comp.HeaderPanel;
 import uk.ac.ebi.pride.gui.form.dialog.ResubmissionDialog;
+import uk.ac.ebi.pride.gui.prop.PropertyChangeHelper;
 import uk.ac.ebi.pride.gui.util.BorderUtil;
 import uk.ac.ebi.pride.gui.util.ColourUtil;
 import uk.ac.ebi.pride.gui.util.HttpUtil;
@@ -27,14 +28,16 @@ import java.awt.event.ItemListener;
 public class WelcomeForm extends Form {
     private static final Logger logger = LoggerFactory.getLogger(WelcomeForm.class);
 
+    private PropertyChangeBroadcaster propertyChangeBroadcaster = null;
+
     private static final String FULL_SUBMISSION_OPTION = "FULL_SUBMISSION";
     private static final String PARTIAL_SUBMISSION_OPTION = "PARTIAL_SUBMISSION";
-
 
     private ResubmissionDialog resubmissionDialog;
 
 
     public WelcomeForm() {
+        propertyChangeBroadcaster = new PropertyChangeBroadcaster();
         initComponents();
     }
 
@@ -242,7 +245,6 @@ public class WelcomeForm extends Form {
         return linkPanel;
     }
 
-
     /**
      * Listener to perform actions when a submission option is selected
      */
@@ -273,6 +275,24 @@ public class WelcomeForm extends Form {
         }
     }
 
+    public PropertyChangeHelper getPropertyChangeHelper() {
+        return propertyChangeBroadcaster;
+    }
+
+    private PropertyChangeBroadcaster getPropertyChangeBroadcaster() {
+        return propertyChangeBroadcaster;
+    }
+
+    public class PropertyChangeBroadcaster extends uk.ac.ebi.pride.gui.prop.PropertyChangeHelper {
+        // Events
+        // Training mode toggle
+        public static final String TRAINING_MODE_TOGGLE = "training_mode_toggle";
+
+        public void fireTrainingModeToggle(boolean oldValue, boolean newValue) {
+            firePropertyChange(TRAINING_MODE_TOGGLE, oldValue, newValue);
+        }
+    }
+
     /**
      * This listener updates "training mode" status
      */
@@ -283,9 +303,11 @@ public class WelcomeForm extends Form {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 logger.info("TRAINING MODE ACTIVATED");
                 appContext.setTrainingModeFlag(true);
+                getPropertyChangeBroadcaster().fireTrainingModeToggle(false, true);
             } else {
                 logger.info("TRAINING MODE DE-ACTIVATED");
                 appContext.setTrainingModeFlag(false);
+                getPropertyChangeBroadcaster().fireTrainingModeToggle(true, false);
             }
         }
     }

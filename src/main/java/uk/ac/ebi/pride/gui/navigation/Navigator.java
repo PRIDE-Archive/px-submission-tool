@@ -50,6 +50,11 @@ public class Navigator extends JPanel implements PropertyChangeListener {
     private JButton nextButton;
 
     /**
+     * Tittle panel
+     */
+    private NavigationTitlePanel titlePanel = null;
+
+    /**
      * Id of the panel about to become current panel
      */
     private Object stagingPanelId;
@@ -82,7 +87,7 @@ public class Navigator extends JPanel implements PropertyChangeListener {
      * Initialize title panel
      */
     private void initTitlePanel() {
-        NavigationTitlePanel titlePanel = new NavigationTitlePanel();
+        titlePanel = new NavigationTitlePanel();
         // layout
         titlePanel.setLayout(new BorderLayout());
 
@@ -293,9 +298,17 @@ public class Navigator extends JPanel implements PropertyChangeListener {
             handleBeforeHidingForPreviousPanelResult(evt);
         } else if (NavigationPanelDescriptor.BEFORE_SUBMITTING_FEEDBACK_PROPERTY.equals(propName)) {
             handleBeforeSubmittingFeedback(evt);
+        } else if (NavigationPanelDescriptor.TRAINING_MODE_TOGGLE_PROPERTY.equals(propName)) {
+            handleTrainingModeToggle(evt);
         } else if (NavigationPanelDescriptor.BEFORE_FINISH_PROPERTY.equals(propName)) {
             handleFinishResult(evt);
         }
+    }
+
+    private void handleTrainingModeToggle(PropertyChangeEvent evt) {
+        // TODO
+        logger.info("Handling Training mode event");
+        titlePanel.toggleTrainingMode();
     }
 
     /**

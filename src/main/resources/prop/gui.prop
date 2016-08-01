@@ -1,5 +1,6 @@
 # proteomxchange logo
 px.logo = icon/logo/logo.png
+px.logo.trainingMode = icon/logo/logo-training_mode.png
 
 # welcome panel
 incomplete.submission.record.dialog.title = Incomplete submission found
@@ -415,3 +416,4 @@ icon.warning.normal.small = icon/64x64/warning.png
 # Training mode
 training.mode.toggle.checkbox.text = Training Mode (no submission)
 training.mode.toggle.checkbox.help.text = Check this box to activate 'Training Mode' for this submission session
+training.mode.application.title.logo = icon/logo/logo-training_mode.png
