@@ -84,7 +84,7 @@ public class AppContext extends DesktopContext {
     private String openFilePath;
 
     // Training mode flag
-    private boolean trainingModeFlag = true;
+    private boolean trainingModeFlag = false;
 
     public AppContext() {
         this.submissionRecord = new SubmissionRecord();
