@@ -146,20 +146,13 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         Task task = null;
 
         if (uploadMethod.equals(UploadMethod.FTP)) {
-            // create ftp directory before uploading
-            //task = new CreateFTPDirectoryTask(uploadDetail);
-            // TODO - Get FTP directory creator from factory
+            // Get FTP directory creator from factory
             task = UploadServiceFactory.createFtpDirectoryTask(uploadDetail);
-            // DEBUG - Following line for a fake upload
-            // task = new FakeCreateFTPDirectoryTask(uploadDetail);
             task.addTaskListener(createFTPDirectoryTaskListener);
         } else if (uploadMethod.equals(UploadMethod.ASPERA)) {
             // start aspera upload straight away
-            //task = new PersistedAsperaUploadTask(submissionRecord);
-            // TODO - Get FTP directory creator from factory
+            // Get FTP directory creator from factory
             task = UploadServiceFactory.createPersistedAsperaUploadTask(submissionRecord);
-            // DEBUG - Following line for a fake upload
-            // task = new FakeCreateFTPDirectoryTask(uploadDetail);
             task.addTaskListener(uploadTaskListener);
         }
         if (task != null) {
@@ -385,11 +378,8 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             form.enabledSuccessButton(true);
 
             // complete submission task
-            //Task task = new CompleteSubmissionTask(appContext.getSubmissionRecord());
-            // TODO Get submission task from factory
+            // Get submission task from factory
             Task task = UploadServiceFactory.createCompleteSubmissionTask(appContext.getSubmissionRecord());
-            // DEBUG - Following line for a fake upload
-            // Task task = new FakeCompleteSubmissionTask(appContext.getSubmissionRecord());
             task.addTaskListener(completeSubmissionTaskListener);
             task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
             appContext.addTask(task);
