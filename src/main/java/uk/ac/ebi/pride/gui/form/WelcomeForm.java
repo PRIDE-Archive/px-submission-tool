@@ -2,6 +2,7 @@ package uk.ac.ebi.pride.gui.form;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 import uk.ac.ebi.pride.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.action.LoadSubmissionFileAction;
@@ -29,6 +30,8 @@ public class WelcomeForm extends Form {
     private static final Logger logger = LoggerFactory.getLogger(WelcomeForm.class);
 
     private PropertyChangeBroadcaster propertyChangeBroadcaster = null;
+    private TrainingModeCheckBoxController trainingModeCheckBoxController = new TrainingModeCheckBoxController();
+    private JCheckBox trainingModeCheckBox = null;
 
     private static final String FULL_SUBMISSION_OPTION = "FULL_SUBMISSION";
     private static final String PARTIAL_SUBMISSION_OPTION = "PARTIAL_SUBMISSION";
@@ -49,6 +52,9 @@ public class WelcomeForm extends Form {
         // create mission statement panel
         JPanel submissionOptionPanel = createSubmissionOptionPanel();
         this.add(submissionOptionPanel, BorderLayout.CENTER);
+
+        // Training update
+        trainingModeCheckBoxController.init(trainingModeCheckBox);
     }
 
     /**
@@ -80,7 +86,7 @@ public class WelcomeForm extends Form {
         JLabel titleLabel = new JLabel(appContext.getProperty("welcome.before.start.title"));
         titleLabel.setFont(titlePanel.getFont().deriveFont(16f).deriveFont(Font.BOLD));
         titlePanel.add(titleLabel, BorderLayout.WEST);
-        JCheckBox trainingModeCheckBox = new JCheckBox();
+        trainingModeCheckBox = new JCheckBox();
         trainingModeCheckBox.setText(appContext.getProperty("training.mode.toggle.checkbox.text"));
         trainingModeCheckBox.addItemListener(new TrainingModeOptionListener());
         trainingModeCheckBox.setToolTipText(appContext.getProperty("training.mode.toggle.checkbox.help.text"));
@@ -293,6 +299,25 @@ public class WelcomeForm extends Form {
         }
     }
 
+    private class TrainingModeCheckBoxController {
+        public void update(JCheckBox checkBox) {
+            if (!appContext.isTrainingModeFlag()) {
+                // Hide the checkbox
+                checkBox.setVisible(false);
+            } else {
+                checkBox.setVisible(true);
+            }
+        }
+
+        public void init(JCheckBox trainingModeCheckBox) {
+            update(trainingModeCheckBox);
+            String trainingModeStatus = System.getProperty("training.mode.status");
+            if ((trainingModeStatus != null) && (trainingModeStatus.equals(AppContext.TRAINING_MODE_STATUS_ON))) {
+                trainingModeCheckBox.doClick();
+            }
+        }
+    }
+
     /**
      * This listener updates "training mode" status
      */
@@ -309,6 +334,7 @@ public class WelcomeForm extends Form {
                 appContext.setTrainingModeFlag(false);
                 getPropertyChangeBroadcaster().fireTrainingModeToggle(true, false);
             }
+            trainingModeCheckBoxController.update((JCheckBox)e.getSource());
         }
     }
 

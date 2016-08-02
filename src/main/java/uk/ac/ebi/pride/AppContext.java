@@ -48,6 +48,9 @@ public class AppContext extends DesktopContext {
     public static final String ADD_NEW_SAMPLE_METADATA_ENTRY = "addNewSampleMetaDataEntry";
     public static final String REMOVE_SAMPLE_METADATA_ENTRY = "removeSampleMetaDataEntry";
 
+    // Training mode status values
+    public static final String TRAINING_MODE_STATUS_ON = "on";
+
     /**
      * The data model of the whole GUI
      */
@@ -81,7 +84,7 @@ public class AppContext extends DesktopContext {
     private String openFilePath;
 
     // Training mode flag
-    private boolean trainingModeFlag = false;
+    private boolean trainingModeFlag = true;
 
     public AppContext() {
         this.submissionRecord = new SubmissionRecord();

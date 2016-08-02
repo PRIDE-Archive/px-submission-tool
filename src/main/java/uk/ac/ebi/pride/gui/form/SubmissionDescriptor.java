@@ -177,7 +177,6 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         logger.debug("Before hiding for previous panel");
 
         // show a option dialog to warning user that the download will be stopped
-        // TODO - Hook for feedback data submission ?
         logger.debug("SubmissionDescriptor::beforeHidingForPreviousPanel() - call");
         if (isFinished) {
             //clearSubmissionRecord();

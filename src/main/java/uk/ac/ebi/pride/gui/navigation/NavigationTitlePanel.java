@@ -1,5 +1,7 @@
 package uk.ac.ebi.pride.gui.navigation;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.gui.GUIUtilities;
@@ -14,6 +16,7 @@ import java.awt.*;
  * @version $Id$
  */
 public class NavigationTitlePanel extends JPanel {
+    private static final Logger logger = LoggerFactory.getLogger(NavigationTitlePanel.class);
     private ImageIcon pxLogo;
 
     // Factory method
@@ -57,7 +60,8 @@ public class NavigationTitlePanel extends JPanel {
     // Training mode visual handling, this could be done in a different way, more OOP friendly and elegant but,
     // it's just the minimum core needed to cover the requirement for training mode visual aids, it can be refactored
     // in the future
-    public void toggleTrainingMode() {
+    public void updateLogo() {
+        logger.debug("Updating NavigationTitlePanel Logo");
         pxLogo = getLogo();
         setPreferredSize(new Dimension(pxLogo.getIconWidth(), pxLogo.getIconHeight() + 20));
         this.validate();

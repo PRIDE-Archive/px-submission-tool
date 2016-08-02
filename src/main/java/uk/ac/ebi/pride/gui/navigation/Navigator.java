@@ -6,6 +6,7 @@ import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.desktop.DesktopContext;
+import uk.ac.ebi.pride.gui.form.FeedbackSubmissionHelper;
 import uk.ac.ebi.pride.gui.form.comp.NonOpaquePanel;
 
 import javax.swing.*;
@@ -306,9 +307,8 @@ public class Navigator extends JPanel implements PropertyChangeListener {
     }
 
     private void handleTrainingModeToggle(PropertyChangeEvent evt) {
-        // TODO
         logger.info("Handling Training mode event");
-        titlePanel.toggleTrainingMode();
+        titlePanel.updateLogo();
     }
 
     /**
@@ -340,6 +340,8 @@ public class Navigator extends JPanel implements PropertyChangeListener {
         NavigationPanelDescriptor currPanel = navigationModel.getCurrentPanelDescriptor();
         titleLabel.setText(currPanel.getTitle());
         descLabel.setText(currPanel.getDescription());
+        // I need to update the logo here, as I miss the first event
+        titlePanel.updateLogo();
     }
 
     /**
@@ -420,11 +422,12 @@ public class Navigator extends JPanel implements PropertyChangeListener {
     private void handleBeforeSubmittingFeedback(PropertyChangeEvent evt) {
         cancelButton.setVisible(false);
         backButton.setVisible(true);
-        backButton.setEnabled(false);
+        backButton.setEnabled(!FeedbackSubmissionHelper.isFeedbackMandatory());
         backButton.setText(App.getInstance().getDesktopContext().getProperty("new.submission.button.label"));
         Icon newIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("new.submission.button.small.icon"));
         backButton.setIcon(newIcon);
         nextButton.setVisible(true);
+        nextButton.setEnabled(!FeedbackSubmissionHelper.isFeedbackMandatory());
         //nextButton.setEnabled(true);
         //nextButton.setText(App.getInstance().getDesktopContext().getProperty("feedback.button.submit.label"));
         //Icon finishIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("finish.button.small.icon"));

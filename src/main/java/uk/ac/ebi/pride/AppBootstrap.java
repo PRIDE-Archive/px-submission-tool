@@ -81,6 +81,15 @@ public class AppBootstrap {
             cmdBuffer.append(uploadProtocol);
         }
 
+        // Get training setting
+        String trainingModeStatus = bootstrapProps.getProperty("training.mode.status");
+        if (trainingModeStatus != null) {
+            if (trainingModeStatus.equals(AppContext.TRAINING_MODE_STATUS_ON)) {
+                cmdBuffer.append(" -Dtraining.mode.status=");
+                cmdBuffer.append(trainingModeStatus);
+            }
+        }
+
         cmdBuffer.append(" ");
         cmdBuffer.append(App.class.getName());
         return cmdBuffer;

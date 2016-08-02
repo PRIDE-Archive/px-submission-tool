@@ -269,17 +269,15 @@ public class FeedbackFormController extends Form implements ActionListener {
 
     public boolean doSubmitFeedbackOnClose() {
         //return (model.isFeedbackSubmitted() || doSubmitFeedback());
-        // Don't mind about feedback when in 'training mode'
-        if (appContext.isTrainingModeFlag()) {
+        // Is feedback mandatory?
+        if (FeedbackSubmissionHelper.isFeedbackMandatory()) {
             // I'm pretty sure this could be beautify in the future from the OOP point of view but, right now, this is
             // the smallest change that accomplishes this goal given the current requirements
-            logger.info("Skipping Feedback submission when working in 'training mode'");
-            return true;
-        }
-        if (!model.isFeedbackSubmitted()) {
-            JOptionPane.showMessageDialog((Component) null, App.getInstance().getDesktopContext().getProperty("feedback.form.confirmation_dialog.message"),
-                    "Feedback", JOptionPane.OK_OPTION, GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.confirmation_dialog.icon")));
-            return false;
+            if (!model.isFeedbackSubmitted()) {
+                JOptionPane.showMessageDialog((Component) null, App.getInstance().getDesktopContext().getProperty("feedback.form.confirmation_dialog.message"),
+                        "Feedback", JOptionPane.OK_OPTION, GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.confirmation_dialog.icon")));
+                return false;
+            }
         }
         return true;
     }
@@ -287,10 +285,14 @@ public class FeedbackFormController extends Form implements ActionListener {
     public boolean doSubmitFeedback(TaskListenerAdapter descriptorListener) {
         if (model.isFeedbackSubmitted())
             return true;
-        if (!model.isFeedbackProvided() ) {
-            JOptionPane.showMessageDialog((Component) null, App.getInstance().getDesktopContext().getProperty("feedback.form.confirmation_dialog.message"),
-                    "Feedback", JOptionPane.OK_OPTION, GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.confirmation_dialog.icon")));
-            return false;
+        if (FeedbackSubmissionHelper.isFeedbackMandatory()) {
+            // I'm pretty sure this could be beautify in the future from the OOP point of view but, right now, this is
+            // the smallest change that accomplishes this goal given the current requirements
+            if (!model.isFeedbackProvided()) {
+                JOptionPane.showMessageDialog((Component) null, App.getInstance().getDesktopContext().getProperty("feedback.form.confirmation_dialog.message"),
+                        "Feedback", JOptionPane.OK_OPTION, GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("feedback.form.confirmation_dialog.icon")));
+                return false;
+            }
         }
         model.setComment(feedbackAdditionalInfoText.getText());
         FeedbackSubmissionTask task = new FeedbackSubmissionTask(this);
@@ -343,13 +345,17 @@ public class FeedbackFormController extends Form implements ActionListener {
         updateRadioButtonsAspect();
     }
 
-    // TODO - Feedback submission task
+    // Feedback submission task
     private class FeedbackSubmissionTask extends TaskAdapter<Boolean, Void> {
         // Feedback model
         private FeedbackFormController formController;
 
         public FeedbackSubmissionTask(FeedbackFormController controller) {
             formController = controller;
+        }
+
+        public FeedbackFormController getController() {
+            return formController;
         }
 
         @Override
@@ -359,7 +365,7 @@ public class FeedbackFormController extends Form implements ActionListener {
         }
     }
 
-    // TODO - Feedback submission task listener
+    // Feedback submission task listener
     private class FeedbackSubmissionTaskListener extends TaskListenerAdapter<Boolean, Void> {
         // Form controller
         private FeedbackFormController formController;
