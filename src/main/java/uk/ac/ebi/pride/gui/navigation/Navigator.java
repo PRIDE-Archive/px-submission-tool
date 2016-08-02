@@ -308,6 +308,11 @@ public class Navigator extends JPanel implements PropertyChangeListener {
 
     private void handleTrainingModeToggle(PropertyChangeEvent evt) {
         logger.info("Handling Training mode event");
+        // TODO - This should be refactored in the future, when property changes in the training checkbox will trigger
+        // TODO - an action on a Mediator object that will interact with different things, e.g. disabling file uploads,
+        // TODO - making feedback not mandatory, updating the logo of the main window, etc. That's the proper way to do
+        // TODO - it, but it all depends on whether this tool survives long enough to make that refactoring worth it or
+        // TODO - not.
         titlePanel.updateLogo();
     }
 
