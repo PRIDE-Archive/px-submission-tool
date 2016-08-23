@@ -81,8 +81,6 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         boolean noRawFile = submission.getDataFileByType(ProjectFileType.RAW).isEmpty();
         boolean noSearchFile = submission.getDataFileByType(ProjectFileType.SEARCH).isEmpty();
 
-        // TODO Get mzTab file, I assume only one is allowed, and that it belongs to the "result" file type
-
         List<DataFile> resultDataFiles = submission.getDataFileByType(ProjectFileType.RESULT);
         boolean noResultFile = resultDataFiles.isEmpty();
 
