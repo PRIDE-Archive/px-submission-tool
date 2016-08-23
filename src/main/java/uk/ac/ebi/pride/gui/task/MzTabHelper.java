@@ -43,9 +43,12 @@ public class MzTabHelper {
                     addCvParameterToSampleMetaData(sampleMetaData, dataEntry.getDisease(), SampleMetaData.Type.DISEASE);
                     addCvParameterToSampleMetaData(sampleMetaData, dataEntry.getSpecies(), SampleMetaData.Type.SPECIES);
                     addCvParameterToSampleMetaData(sampleMetaData, dataEntry.getTissue(), SampleMetaData.Type.TISSUE);
+                    // TODO Get Instrument
                     // TODO - WARNING -- custom sample metadata type is allowed in mzTab files but not covered by SampleMetaData.Type
                 }
             }
+            // Get quantification method
+            addCvParameterToSampleMetaData(sampleMetaData, mzTabMetaData.getQuantificationMethod(), SampleMetaData.Type.QUANTIFICATION_METHOD);
         }
         return sampleMetaData;
     }
