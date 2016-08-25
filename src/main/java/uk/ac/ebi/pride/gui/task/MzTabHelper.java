@@ -9,6 +9,8 @@ import uk.ac.ebi.pride.data.mztab.model.MetaData;
 import uk.ac.ebi.pride.data.mztab.model.MzTabDocument;
 import uk.ac.ebi.pride.data.mztab.model.Sample;
 
+import java.util.Set;
+
 /**
  * Project: px-submission-tool
  * Package: uk.ac.ebi.pride.gui.task
@@ -16,7 +18,7 @@ import uk.ac.ebi.pride.data.mztab.model.Sample;
  * ---
  * © 2016 Manuel Bernal Llinares <mbdebian@gmail.com>
  * All rights reserved.
- *
+ * <p>
  * This class is a Facade for processing and/or manipulating information in an MzTabDocument
  */
 public class MzTabHelper {
@@ -43,12 +45,26 @@ public class MzTabHelper {
                     addCvParameterToSampleMetaData(sampleMetaData, dataEntry.getDisease(), SampleMetaData.Type.DISEASE);
                     addCvParameterToSampleMetaData(sampleMetaData, dataEntry.getSpecies(), SampleMetaData.Type.SPECIES);
                     addCvParameterToSampleMetaData(sampleMetaData, dataEntry.getTissue(), SampleMetaData.Type.TISSUE);
-                    // TODO Get Instrument
-                    // TODO - WARNING -- custom sample metadata type is allowed in mzTab files but not covered by SampleMetaData.Type
                 }
             }
             // Get quantification method
             addCvParameterToSampleMetaData(sampleMetaData, mzTabMetaData.getQuantificationMethod(), SampleMetaData.Type.QUANTIFICATION_METHOD);
+            Set<Integer> instrumentIndexes = mzTabMetaData.getAvailableInstrumentEntryIndexes();
+            if (instrumentIndexes.size() > 0) {
+                // Process instrument information, basically by adding all its associated annotations to
+                // Sample Metadata as INSTRUMENT metadata type
+                for (int index :
+                        instrumentIndexes) {
+                    addCvParameterToSampleMetaData(sampleMetaData, mzTabMetaData.getInstrument(index).getName(), SampleMetaData.Type.INSTRUMENT);
+                    addCvParameterToSampleMetaData(sampleMetaData, mzTabMetaData.getInstrument(index).getSource(), SampleMetaData.Type.INSTRUMENT);
+                    addCvParameterToSampleMetaData(sampleMetaData, mzTabMetaData.getInstrument(index).getDetector(), SampleMetaData.Type.INSTRUMENT);
+                    for (int analyzerIndex :
+                            mzTabMetaData.getInstrument(index).getAvailableAnalyzerIndexes()) {
+                        addCvParameterToSampleMetaData(sampleMetaData, mzTabMetaData.getInstrument(index).getAnalyzerEntry(analyzerIndex), SampleMetaData.Type.INSTRUMENT);
+                    }
+                }
+            }
+            // TODO - WARNING -- custom sample metadata type is allowed in mzTab files but not covered by SampleMetaData.Type
         }
         return sampleMetaData;
     }
