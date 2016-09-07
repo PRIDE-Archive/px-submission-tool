@@ -89,7 +89,7 @@ public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor 
 
     private void getPrideUserDetail(PrideLoginForm form) {
         String username = form.getUserName().trim();
-        String password = new String (form.getPassword()).trim();
+        String password = new String(form.getPassword()).trim();
         // record user name and password
         SubmissionRecord submissionRecord = appContext.getSubmissionRecord();
         submissionRecord.setUserName(username);
@@ -186,16 +186,15 @@ public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor 
                 JEditorPane ep = new JEditorPane("text/html", "<html><body style=\"" + style + "\">" //
                         + appContext.getProperty("pride.login.error.message")
                         + "</body></html>");
-                ep.addHyperlinkListener(new HyperlinkListener()
-                {
+                ep.addHyperlinkListener(new HyperlinkListener() {
                     @Override
-                    public void hyperlinkUpdate(HyperlinkEvent e)
-                    { try {
-                        if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED))
-                            Desktop.getDesktop().browse(e.getURL().toURI());
-                    } catch (Exception ex) {
-                        //couldn't display error message
-                    }
+                    public void hyperlinkUpdate(HyperlinkEvent e) {
+                        try {
+                            if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED))
+                                Desktop.getDesktop().browse(e.getURL().toURI());
+                        } catch (Exception ex) {
+                            //couldn't display error message
+                        }
                     }
                 });
                 ep.setEditable(false);
