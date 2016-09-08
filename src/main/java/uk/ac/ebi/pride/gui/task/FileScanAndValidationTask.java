@@ -267,6 +267,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                     mzTabFile.getMzTabDocument().getMetaData().getAvailableMsRunIndexes()) {
                 // According to mzTab format specification, not only the presence of ms-run is mandatory, but also a
                 // location specification. This can be null, so we need to take care of that case
+                // TODO - QUESTION - What if the mzTab references a URL that is not a file, and this has not been included in the submission files, but it is accesible on the internet? Is it considered a miss-reference?
                 if ((mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation() != null)
                         && (!dataFiles.contains(mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString()))) {
                     // The referenced file is not part of the submission files
