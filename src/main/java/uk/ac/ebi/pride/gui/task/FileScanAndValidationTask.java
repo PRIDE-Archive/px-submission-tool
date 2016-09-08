@@ -23,6 +23,8 @@ import uk.ac.ebi.pride.jaxb.xml.unmarshaller.PrideXmlUnmarshallerFactory;
 
 import javax.xml.bind.JAXBException;
 import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -172,6 +174,11 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                     setProgress(currentProgressValue);
                 }
                 setProgress(80);
+                // TODO - Scan mzTab files for ms-run file references that may be missing in the list of provided files,
+                // TODO - This could render those mzTab files invalid
+                Map<DataFile, Set<String>> mzTabFilesMissingReferencedFiles = new HashMap<>();
+                mzTabFilesMissingReferencedFiles = checkMzTabFileReferences(mzTabDataFiles);
+                // TODO - Throw error if missing referenced files
             }
         } else if (submissionType.equals(SubmissionType.PARTIAL)) {
             // should have both search engine output and raw files
@@ -240,6 +247,41 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         setProgress(100);
 
         return new DataFileValidationMessage(ValidationState.SUCCESS);
+    }
+
+    private Map<DataFile, Set<String>> checkMzTabFileReferences(List<DataFile> mzTabDataFiles) {
+        Map<DataFile, Set<String>> filesMissingReferences = new HashMap<>();
+        Set<String> dataFiles = new HashSet<>();
+        for (DataFile dataFile :
+                submission.getDataFiles()) {
+            try {
+                // If the datafile is not a file, it is a URL
+                dataFiles.add((dataFile.isFile() ? new URL("file://" + dataFile.getFilePath().toString()).toString() : dataFile.getUrl().toString()));
+            } catch (MalformedURLException e) {
+                logger.error("PLEASE, REVIEW file reference '" + dataFile.getFilePath().toString() + "' as it could not be parsed as a URL, by adding 'file://' protocol");
+            }
+        }
+        for (DataFile mzTabFile :
+                mzTabDataFiles) {
+            for (int msRunIndex :
+                    mzTabFile.getMzTabDocument().getMetaData().getAvailableMsRunIndexes()) {
+                // According to mzTab format specification, not only the presence of ms-run is mandatory, but also a
+                // location specification. This can be null, so we need to take care of that case
+                if ((mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation() != null)
+                        && (!dataFiles.contains(mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString()))) {
+                    // The referenced file is not part of the submission files
+                    logger.error("mzTab file '" + mzTabFile.getFilePath() + "' references MISSING FILE '" + mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString() + "'");
+                    if (!filesMissingReferences.containsKey(mzTabFile)) {
+                        filesMissingReferences.put(mzTabFile, new HashSet<String>());
+                    }
+                    // Flag the current file as invalid, because of missing references
+                    filesMissingReferences.get(mzTabFile).add(mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString());
+                    // And keep checking for other referenced files, to give the user a complete report of all the
+                    // missing files in one go
+                }
+            }
+        }
+        return filesMissingReferences;
     }
 
     private List<DataFile> validateMzTabFiles(List<DataFile> mzTabDataFiles) {
