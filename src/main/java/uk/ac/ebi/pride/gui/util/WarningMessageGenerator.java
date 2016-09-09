@@ -6,6 +6,8 @@ import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 
 import javax.swing.*;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Rui Wang
@@ -60,6 +62,26 @@ public final class WarningMessageGenerator {
             errMsg.append(dataFile.getFile().getName());
             errMsg.append("</li>");
         }
+        errMsg.append("</html>");
+        return errMsg.toString();
+    }
+
+    public static String getMissingReferencedFilesWarning(Map<DataFile, Set<String>> invalidFiles) {
+        StringBuilder errMsg = new StringBuilder();
+        errMsg.append("<html>");
+        errMsg.append("<b>The following files REFERENCE MISSING FILES</b><br/>");
+        errMsg.append("<ol>");
+        for (DataFile dataFile :
+                invalidFiles.keySet()) {
+            errMsg.append("<li>" + dataFile.getFile().getName() + "</li>");
+            errMsg.append("<ul>");
+            for (String missingFile :
+                    invalidFiles.get(dataFile)) {
+                errMsg.append("<li>" + missingFile + "</li>");
+            }
+            errMsg.append("</ul>");
+        }
+        errMsg.append("</ol>");
         errMsg.append("</html>");
         return errMsg.toString();
     }
