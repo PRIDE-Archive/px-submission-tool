@@ -173,12 +173,16 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                     currentProgressValue += increment;
                     setProgress(currentProgressValue);
                 }
-                setProgress(80);
-                // TODO - Scan mzTab files for ms-run file references that may be missing in the list of provided files,
-                // TODO - This could render those mzTab files invalid
+                setProgress(75);
+                // Scan mzTab files for ms-run file references that may be missing in the list of provided files,
+                // this could render those mzTab files invalid
                 Map<DataFile, Set<String>> mzTabFilesMissingReferencedFiles = new HashMap<>();
                 mzTabFilesMissingReferencedFiles = checkMzTabFileReferences(mzTabDataFiles);
-                // TODO - Throw error if missing referenced files
+                // Throw error if missing referenced files
+                if (mzTabFilesMissingReferencedFiles.size() > 0) {
+                    return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMissingReferencedFilesWarning(mzTabFilesMissingReferencedFiles));
+                }
+                setProgress(80);
             }
         } else if (submissionType.equals(SubmissionType.PARTIAL)) {
             // should have both search engine output and raw files
@@ -267,7 +271,12 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                     mzTabFile.getMzTabDocument().getMetaData().getAvailableMsRunIndexes()) {
                 // According to mzTab format specification, not only the presence of ms-run is mandatory, but also a
                 // location specification. This can be null, so we need to take care of that case
-                // TODO - QUESTION - What if the mzTab references a URL that is not a file, and this has not been included in the submission files, but it is accesible on the internet? Is it considered a miss-reference?
+                // QUESTION - What if the mzTab references a URL that is not a file, and this has not been included in
+                //              the submission files, but it is accesible on the internet? Is it considered a missed
+                //              reference?
+                // AGREEMENT - URL attachements are not allowed in the submission process, thus, any mzTab file that
+                //              contains URL references to non-local files, has to be considered invalid and the user
+                //              will get notified about the missing references
                 if ((mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation() != null)
                         && (!dataFiles.contains(mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString()))) {
                     // The referenced file is not part of the submission files
