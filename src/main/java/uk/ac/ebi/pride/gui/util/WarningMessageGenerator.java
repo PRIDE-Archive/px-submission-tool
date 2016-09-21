@@ -6,6 +6,8 @@ import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 
 import javax.swing.*;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Rui Wang
@@ -28,12 +30,12 @@ public final class WarningMessageGenerator {
     }
 
     public static String getInvalidResultFileWarning() {
-        return "<html>" + "<b>Invalid result file detected, please submit either PRIDE XML or mzIdentML</b><br/>" + "</html>";
+        return "<html>" + "<b>Invalid result file detected, please submit either PRIDE XML, mzIdentML or mzTab</b><br/>" + "</html>";
     }
 
-    public static String getMultipleResultFileFormatWarning() {
+    public static String getMultipleResultFileFormatWarning(String formatA, String formatB) {
 
-        return "<html>" + "<b>Both PRIDE XML and mzIdentML detected, please submit one result file format only</b><br/>" + "</html>";
+        return "<html>" + "<b>Both " + formatA + " and " + formatB + " detected, please submit one result file format only</b><br/>" + "</html>";
     }
 
     public static String getInvalidMzIdentMLVersionWarning(List<DataFile> mzIdentMLFiles) {
@@ -47,6 +49,40 @@ public final class WarningMessageGenerator {
         }
         errMsg.append("</html>");
 
+        return errMsg.toString();
+    }
+
+    public static String getInvalidFilesWarning(List<DataFile> invalidDataFiles) {
+        StringBuilder errMsg = new StringBuilder();
+        errMsg.append("<html>");
+        errMsg.append("<b>The following files ARE NOT VALID</b><br/>");
+        for (DataFile dataFile :
+                invalidDataFiles) {
+            errMsg.append("<li>");
+            errMsg.append(dataFile.getFile().getName());
+            errMsg.append("</li>");
+        }
+        errMsg.append("</html>");
+        return errMsg.toString();
+    }
+
+    public static String getMissingReferencedFilesWarning(Map<DataFile, Set<String>> invalidFiles) {
+        StringBuilder errMsg = new StringBuilder();
+        errMsg.append("<html>");
+        errMsg.append("<b>The following files REFERENCE MISSING FILES</b><br/>");
+        errMsg.append("<ol>");
+        for (DataFile dataFile :
+                invalidFiles.keySet()) {
+            errMsg.append("<li>" + dataFile.getFile().getName() + "</li>");
+            errMsg.append("<ul>");
+            for (String missingFile :
+                    invalidFiles.get(dataFile)) {
+                errMsg.append("<li>" + missingFile + "</li>");
+            }
+            errMsg.append("</ul>");
+        }
+        errMsg.append("</ol>");
+        errMsg.append("</html>");
         return errMsg.toString();
     }
 

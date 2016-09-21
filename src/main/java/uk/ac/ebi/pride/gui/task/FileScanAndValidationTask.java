@@ -9,6 +9,9 @@ import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.SampleMetaData;
 import uk.ac.ebi.pride.data.model.Submission;
+import uk.ac.ebi.pride.data.mztab.parser.MzTabFullDocumentQuickParser;
+import uk.ac.ebi.pride.data.mztab.parser.MzTabParser;
+import uk.ac.ebi.pride.data.mztab.parser.exceptions.MzTabParserException;
 import uk.ac.ebi.pride.data.util.FileUtil;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
 import uk.ac.ebi.pride.data.validation.SubmissionValidator;
@@ -20,6 +23,8 @@ import uk.ac.ebi.pride.jaxb.xml.unmarshaller.PrideXmlUnmarshallerFactory;
 
 import javax.xml.bind.JAXBException;
 import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -71,6 +76,10 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         List<DataFile> mzIdentMLDataFiles = submission.getDataFilesByFormat(MassSpecFileFormat.MZIDENTML);
         boolean noMzIdentML = mzIdentMLDataFiles.isEmpty();
 
+        // Get provided mzTab files
+        List<DataFile> mzTabDataFiles = submission.getDataFilesByFormat(MassSpecFileFormat.MZTAB);
+        boolean mzTabFilesHaveBeenProvided = !mzTabDataFiles.isEmpty();
+
         boolean noRawFile = submission.getDataFileByType(ProjectFileType.RAW).isEmpty();
         boolean noSearchFile = submission.getDataFileByType(ProjectFileType.SEARCH).isEmpty();
 
@@ -92,13 +101,17 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             }
             setProgress(40);
 
-            if (noPrideXml && noMzIdentML && !quickValidationResult.isUrlBasedResultFilePresent()) {
+            if (noPrideXml && noMzIdentML && !mzTabFilesHaveBeenProvided && !quickValidationResult.isUrlBasedResultFilePresent()) {
                 return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidResultFileWarning());
             }
 
             // cannot have both PRIDE xml and mzIdentML at the same time
             if (!noPrideXml && !noMzIdentML) {
-                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMultipleResultFileFormatWarning());
+                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMultipleResultFileFormatWarning("PRIDE XML", "mzIdentML"));
+            } else if (!noPrideXml && mzTabFilesHaveBeenProvided) {
+                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMultipleResultFileFormatWarning("PRIDE XML", "mzTab"));
+            } else if (!noMzIdentML && mzTabFilesHaveBeenProvided) {
+                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMultipleResultFileFormatWarning("mzIdentML", "mzTab"));
             }
 
             if (!noPrideXml) {
@@ -121,7 +134,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 }
                 setProgress(60);
 
-                // cannot have mzIdentML which do contain spectra data reference
+                // mzIdentML files are required to contain reference to original spectrum files
                 List<DataFile> invalidMzIdentMLSpectraDataFiles = runMzIdentMLSpectraDataValidation(mzIdentMLDataFiles);
                 if (invalidMzIdentMLSpectraDataFiles.size() > 0) {
                     return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidMzIdentMLSpectraDataWarning(invalidMzIdentMLSpectraDataFiles));
@@ -134,6 +147,40 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                     DataFileValidationMessage validationMessage = new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMzIdentMLPeakListFilWarning());
                     validationMessage.addDataFileValidationResults(invalidMzIdentMLPeakListFiles);
                     return validationMessage;
+                }
+                setProgress(80);
+            }
+
+            // mzTab files support
+            if (mzTabFilesHaveBeenProvided) {
+                // validate the file (parse + validation)
+                // mzTab files to validate
+                List<DataFile> invalidMzTabFiles = validateMzTabFiles(mzTabDataFiles);
+                setProgress(65);
+                if (invalidMzTabFiles.size() > 0) {
+                    return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidFilesWarning(invalidMzTabFiles));
+                }
+                int currentProgressValue = 70;
+                setProgress(currentProgressValue);
+                // extract SampleMetaData information from the mzTabFile
+                int increment = 0;
+                if (mzTabDataFiles.size() > 0) {
+                    increment = 10 / mzTabDataFiles.size(); // Yes, I want the int truncated float here
+                }
+                for (DataFile mzTabDataFile :
+                        mzTabDataFiles) {
+                    mzTabDataFile.setSampleMetaData(MzTabHelper.getSampleMetaData(mzTabDataFile.getMzTabDocument()));
+                    currentProgressValue += increment;
+                    setProgress(currentProgressValue);
+                }
+                setProgress(75);
+                // Scan mzTab files for ms-run file references that may be missing in the list of provided files,
+                // this could render those mzTab files invalid
+                Map<DataFile, Set<String>> mzTabFilesMissingReferencedFiles = new HashMap<>();
+                mzTabFilesMissingReferencedFiles = checkMzTabFileReferences(mzTabDataFiles);
+                // Throw error if missing referenced files
+                if (mzTabFilesMissingReferencedFiles.size() > 0) {
+                    return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMissingReferencedFilesWarning(mzTabFilesMissingReferencedFiles));
                 }
                 setProgress(80);
             }
@@ -188,11 +235,13 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getUnsupportedRawFileWarning());
         }
 
+        setProgress(90);
         // cannot have submission px file
         if (quickValidationResult.hasSubmissionPxFile()) {
             return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getSubmissionPxWarning());
         }
 
+        setProgress(95);
         // pre-scan for file relation
         // but only for non-bulkmode
         if (!appContext.isBulkMode()) {
@@ -202,6 +251,70 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         setProgress(100);
 
         return new DataFileValidationMessage(ValidationState.SUCCESS);
+    }
+
+    private Map<DataFile, Set<String>> checkMzTabFileReferences(List<DataFile> mzTabDataFiles) {
+        Map<DataFile, Set<String>> filesMissingReferences = new HashMap<>();
+        Set<String> dataFiles = new HashSet<>();
+        for (DataFile dataFile :
+                submission.getDataFiles()) {
+            try {
+                // If the datafile is not a file, it is a URL
+                dataFiles.add((dataFile.isFile() ? new URL("file://" + dataFile.getFilePath().toString()).toString() : dataFile.getUrl().toString()));
+            } catch (MalformedURLException e) {
+                logger.error("PLEASE, REVIEW file reference '" + dataFile.getFilePath().toString() + "' as it could not be parsed as a URL, by adding 'file://' protocol");
+            }
+        }
+        for (DataFile mzTabFile :
+                mzTabDataFiles) {
+            for (int msRunIndex :
+                    mzTabFile.getMzTabDocument().getMetaData().getAvailableMsRunIndexes()) {
+                // According to mzTab format specification, not only the presence of ms-run is mandatory, but also a
+                // location specification. This can be null, so we need to take care of that case
+                // QUESTION - What if the mzTab references a URL that is not a file, and this has not been included in
+                //              the submission files, but it is accesible on the internet? Is it considered a missed
+                //              reference?
+                // AGREEMENT - URL attachements are not allowed in the submission process, thus, any mzTab file that
+                //              contains URL references to non-local files, has to be considered invalid and the user
+                //              will get notified about the missing references
+                if ((mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation() != null)
+                        && (!dataFiles.contains(mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString()))) {
+                    // The referenced file is not part of the submission files
+                    logger.error("mzTab file '" + mzTabFile.getFilePath() + "' references MISSING FILE '" + mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString() + "'");
+                    if (!filesMissingReferences.containsKey(mzTabFile)) {
+                        filesMissingReferences.put(mzTabFile, new HashSet<String>());
+                    }
+                    // Flag the current file as invalid, because of missing references
+                    filesMissingReferences.get(mzTabFile).add(mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString());
+                    // And keep checking for other referenced files, to give the user a complete report of all the
+                    // missing files in one go
+                }
+            }
+        }
+        return filesMissingReferences;
+    }
+
+    private List<DataFile> validateMzTabFiles(List<DataFile> mzTabDataFiles) {
+        List<DataFile> invalidFiles = new ArrayList<>();
+        for (DataFile dataFile :
+                mzTabDataFiles) {
+            // Use the full document quick parser to get the MzTabDocuments in the DataFile objects
+            MzTabParser parser = new MzTabFullDocumentQuickParser(dataFile.getFile());
+            try {
+                // Parse the file
+                parser.parse();
+                // Set the product document in the DataFile itself for later use
+                dataFile.setMzTabDocument(parser.getMzTabDocument());
+            } catch (MzTabParserException e) {
+                logger.error("Invalid mzTab file '"
+                        + dataFile.getFile().getName()
+                        + "', MAIN ERROR: '"
+                        + e.getMessage()
+                        + "'. PLEASE, REFER TO LOG FILES FOR MORE DETAILED INFORMATION");
+                invalidFiles.add(dataFile);
+            }
+        }
+        return invalidFiles;
     }
 
     private void scanForFileMappings() {
@@ -306,6 +419,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
 
         for (DataFile dataFile : dataFiles) {
             String fileName = dataFile.getFileName();
+            logger.debug("runQuickValidation(): SubmissionValidator.validateDataFile(" + fileName + ")");
             if (SubmissionValidator.validateDataFile(dataFile).hasError()) {
                 logger.debug("runQuickValidation(): SubmissionValidator.validateDataFile(" + fileName + ").hasError() = " + SubmissionValidator.validateDataFile(dataFile).hasError());
                 result.incrementNumOfInvalidFiles();
@@ -322,6 +436,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                     result.setUrlBasedResultFilePresent(true);
                 }
 
+                // TODO - Refactor, comparing to not being fileType RESULT makes no sense here, as we know, without a doubt, fileType is RESULT
                 if (fileFormat == null || !ProjectFileType.RESULT.equals(fileType)) {
                     result.setUnsupportedResultFile(true);
                 } else {
@@ -330,6 +445,8 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                         result.setPrideXml(true);
                     } else if (MassSpecFileFormat.MZIDENTML.equals(fileFormat)) {
                         result.setMzIdentML(true);
+                    } else if (MassSpecFileFormat.MZTAB.equals(fileFormat)) {
+                        result.setMztab(true);
                     }
                 }
             } else if (ProjectFileType.RAW.equals(fileType)) {
@@ -426,32 +543,13 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         for (CvParam param : cvParams) {
             String cvLabel = param.getCvLabel();
 
-            SampleMetaData.Type type = getSampleMetaDataType(cvLabel);
+            SampleMetaData.Type type = SampleInformationScanHelper.getSampleMetaDataType(cvLabel);
 
             if (type != null) {
                 uk.ac.ebi.pride.data.model.CvParam value = new uk.ac.ebi.pride.data.model.CvParam(cvLabel, param.getAccession(), param.getName(), null);
                 sampleMetaData.addMetaData(type, value);
             }
         }
-    }
-
-    /**
-     * Get sample metadata type
-     */
-    private SampleMetaData.Type getSampleMetaDataType(String cvLabel) {
-        SampleMetaData.Type type = null;
-
-        if (cvLabel.equalsIgnoreCase(uk.ac.ebi.pride.data.util.Constant.NEWT)) {
-            type = SampleMetaData.Type.SPECIES;
-        } else if (cvLabel.equalsIgnoreCase(uk.ac.ebi.pride.data.util.Constant.BTO)) {
-            type = SampleMetaData.Type.TISSUE;
-        } else if (cvLabel.equalsIgnoreCase(uk.ac.ebi.pride.data.util.Constant.CL)) {
-            type = SampleMetaData.Type.CELL_TYPE;
-        } else if (cvLabel.equalsIgnoreCase(uk.ac.ebi.pride.data.util.Constant.DOID)) {
-            type = SampleMetaData.Type.DISEASE;
-        }
-
-        return type;
     }
 
     /**
@@ -642,6 +740,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         boolean urlBasedResultFilePresent;
         boolean prideXml;
         boolean mzIdentML;
+        boolean mztab;
         boolean unsupportedResultFile;
         boolean supportedRawFile;
         boolean unsupportedRawFile;
@@ -682,6 +781,14 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
 
         public void setMzIdentML(boolean mzIdentML) {
             this.mzIdentML = mzIdentML;
+        }
+
+        public void setMztab(boolean mztab) {
+            this.mztab = mztab;
+        }
+
+        public boolean hasMzTab() {
+            return mztab;
         }
 
         public boolean hasUnsupportedResultFile() {
