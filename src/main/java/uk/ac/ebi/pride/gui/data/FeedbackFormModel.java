@@ -3,6 +3,7 @@ package uk.ac.ebi.pride.gui.data;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.gui.form.FeedbackSubmissionHelper;
 import uk.ac.ebi.pride.px.CompositeReport;
 import uk.ac.ebi.pride.px.ReportFactory;
 import uk.ac.ebi.pride.px.SubmissionRecordReport;
@@ -89,30 +90,34 @@ public class FeedbackFormModel {
     }
 
     public boolean save() {
-        if (!feedbackProvided) {
-            logger.debug("No feedback has been provided, and the user didn't reject providing feedback.");
-            return false;
+        if (FeedbackSubmissionHelper.isFeedbackMandatory()) {
+            if (!isFeedbackProvided()) {
+                logger.debug("No feedback has been provided, and the user didn't reject providing feedback.");
+                return false;
+            }
+            if (!isFeedbackSubmitted()) {
+                // Do send feedback
+                CompositeReport compositeReport = ReportFactory.getFactory().getCompositeReport();
+                compositeReport.add(submissionRecordReport);
+                compositeReport.add(userFeedbackReport);
+                ReportBuilder builder = new GoogleSpreadsheetBuilder(
+                        App.getInstance().getDesktopContext().getProperty("libpxreport.keyfile.path"),
+                        App.getInstance().getDesktopContext().getProperty("libpxreport.account.id"),
+                        App.getInstance().getDesktopContext().getProperty("libpxreport.spreadsheet.title"),
+                        App.getInstance().getDesktopContext().getProperty("libpxreport.spreadsheet.worksheet.title"),
+                        App.getInstance().getDesktopContext().getProperty("libpxreport.client.service.name"));
+                compositeReport.save(builder);
+                try {
+                    ReportProduct product = builder.getProduct();
+                } catch (ReportBuilderException e) {
+                    logger.error("Something, happened when submitting the report, but I'm not addressing this right now");
+                }
+                logger.debug("Submitting feedback from user...");
+                logger.info("User feedback for submission reference '" + submissionRecordReport.getSubmissionReference() + "', rating '" + getRating() + "', comments '" + getComment() + "'");
+            }
+        } else {
+            logger.debug("No actual feedback submission will be performed at the model level, as it is not mandatory");
         }
-        if (isFeedbackSubmitted())
-            return true;
-        // Do send feedback
-        CompositeReport compositeReport = ReportFactory.getFactory().getCompositeReport();
-        compositeReport.add(submissionRecordReport);
-        compositeReport.add(userFeedbackReport);
-        ReportBuilder builder = new GoogleSpreadsheetBuilder(
-                App.getInstance().getDesktopContext().getProperty("libpxreport.keyfile.path"),
-                App.getInstance().getDesktopContext().getProperty("libpxreport.account.id"),
-                App.getInstance().getDesktopContext().getProperty("libpxreport.spreadsheet.title"),
-                App.getInstance().getDesktopContext().getProperty("libpxreport.spreadsheet.worksheet.title"),
-                App.getInstance().getDesktopContext().getProperty("libpxreport.client.service.name"));
-        compositeReport.save(builder);
-        try {
-            ReportProduct product = builder.getProduct();
-        } catch (ReportBuilderException e) {
-            logger.error("Something, happened when submitting the report, but I'm not addressing this right now");
-        }
-        logger.debug("Submitting feedback from user...");
-        logger.info("User feedback for submission reference '" + submissionRecordReport.getSubmissionReference() + "', rating '" + getRating() + "', comments '" + getComment() + "'");
         feedbackSubmitted = true;
         return true;
     }

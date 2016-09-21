@@ -18,6 +18,8 @@ import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 
 import javax.help.HelpBroker;
 import javax.swing.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.util.List;
 
@@ -31,9 +33,12 @@ public class WelcomeDescriptor extends ContextAwareNavigationPanelDescriptor imp
     private static final Logger logger = LoggerFactory.getLogger(WelcomeDescriptor.class);
 
     private boolean updateChecked = false;
+    private WelcomeForm welcomeForm = null;
 
     public WelcomeDescriptor(String id, String title, String desc) {
         super(id, title, desc, new WelcomeForm());
+        welcomeForm = (WelcomeForm) getNavigationPanel();
+        welcomeForm.getPropertyChangeHelper().addPropertyChangeListener(new TrainingModeListener());
     }
 
     @Override
@@ -45,6 +50,7 @@ public class WelcomeDescriptor extends ContextAwareNavigationPanelDescriptor imp
     @Override
     public void displayingPanel() {
         if (!updateChecked) {
+            // TODO - is this working?
             Task newTask = new CheckForUpdateTask();
             newTask.addTaskListener(this);
             // set task's gui blocker
@@ -161,5 +167,16 @@ public class WelcomeDescriptor extends ContextAwareNavigationPanelDescriptor imp
 
     @Override
     public void progress(TaskEvent<Integer> progress) {
+    }
+
+    private class TrainingModeListener implements PropertyChangeListener {
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) {
+            String propName = evt.getPropertyName();
+            logger.debug("Property change event: " + propName);
+            if (WelcomeForm.PropertyChangeBroadcaster.TRAINING_MODE_TOGGLE.equals(propName)) {
+                firePropertyChange(TRAINING_MODE_TOGGLE_PROPERTY, evt.getOldValue(), evt.getNewValue());
+            }
+        }
     }
 }

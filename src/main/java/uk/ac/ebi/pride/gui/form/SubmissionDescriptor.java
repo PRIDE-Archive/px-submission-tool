@@ -146,16 +146,13 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         Task task = null;
 
         if (uploadMethod.equals(UploadMethod.FTP)) {
-            // create ftp directory before uploading
-            task = new CreateFTPDirectoryTask(uploadDetail);
-            // DEBUG - Following line for a fake upload
-            // task = new FakeCreateFTPDirectoryTask(uploadDetail);
+            // Get FTP directory creator from factory
+            task = UploadServiceFactory.createFtpDirectoryTask(uploadDetail);
             task.addTaskListener(createFTPDirectoryTaskListener);
         } else if (uploadMethod.equals(UploadMethod.ASPERA)) {
             // start aspera upload straight away
-            task = new PersistedAsperaUploadTask(submissionRecord);
-            // DEBUG - Following line for a fake upload
-            // task = new FakeCreateFTPDirectoryTask(uploadDetail);
+            // Get FTP directory creator from factory
+            task = UploadServiceFactory.createPersistedAsperaUploadTask(submissionRecord);
             task.addTaskListener(uploadTaskListener);
         }
         if (task != null) {
@@ -180,7 +177,6 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         logger.debug("Before hiding for previous panel");
 
         // show a option dialog to warning user that the download will be stopped
-        // TODO - Hook for feedback data submission ?
         logger.debug("SubmissionDescriptor::beforeHidingForPreviousPanel() - call");
         if (isFinished) {
             //clearSubmissionRecord();
@@ -217,7 +213,6 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
 
     @Override
     public void beforeHidingForNextPanel() {
-        // TODO - Hook for feedback data submission ?
         logger.debug("SubmissionDescriptor::beforeHidingForNextPanel() - call");
         if (feedbackDescriptor.beforeHidingForNextPanel())
             app.shutdown(null);
@@ -382,9 +377,8 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             form.enabledSuccessButton(true);
 
             // complete submission task
-            Task task = new CompleteSubmissionTask(appContext.getSubmissionRecord());
-            // DEBUG - Following line for a fake upload
-            // Task task = new FakeCompleteSubmissionTask(appContext.getSubmissionRecord());
+            // Get submission task from factory
+            Task task = UploadServiceFactory.createCompleteSubmissionTask(appContext.getSubmissionRecord());
             task.addTaskListener(completeSubmissionTaskListener);
             task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
             appContext.addTask(task);

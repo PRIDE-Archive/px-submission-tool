@@ -39,6 +39,12 @@ public class NavigationPanelDescriptor extends PropertyChangeHelper {
      */
     public static final String BEFORE_SUBMITTING_FEEDBACK_PROPERTY = "beforeSubmittingFeedbackProperty";
 
+    // Training mode properties
+    /**
+     * This property is the event that fires when training mode checkbox is touched
+     */
+    public static final String TRAINING_MODE_TOGGLE_PROPERTY = "training_mode_toggle_property";
+
     /**
      * Indicate finish of the navigation
      */

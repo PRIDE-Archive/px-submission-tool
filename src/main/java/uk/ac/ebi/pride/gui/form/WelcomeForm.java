@@ -1,10 +1,14 @@
 package uk.ac.ebi.pride.gui.form;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 import uk.ac.ebi.pride.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.action.LoadSubmissionFileAction;
 import uk.ac.ebi.pride.gui.form.comp.HeaderPanel;
 import uk.ac.ebi.pride.gui.form.dialog.ResubmissionDialog;
+import uk.ac.ebi.pride.gui.prop.PropertyChangeHelper;
 import uk.ac.ebi.pride.gui.util.BorderUtil;
 import uk.ac.ebi.pride.gui.util.ColourUtil;
 import uk.ac.ebi.pride.gui.util.HttpUtil;
@@ -13,6 +17,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 
 /**
  * This form shows welcome messages
@@ -21,15 +27,20 @@ import java.awt.event.ActionListener;
  * @version $Id$
  */
 public class WelcomeForm extends Form {
+    private static final Logger logger = LoggerFactory.getLogger(WelcomeForm.class);
+
+    private PropertyChangeBroadcaster propertyChangeBroadcaster = null;
+    private TrainingModeCheckBoxController trainingModeCheckBoxController = new TrainingModeCheckBoxController();
+    private JCheckBox trainingModeCheckBox = null;
 
     private static final String FULL_SUBMISSION_OPTION = "FULL_SUBMISSION";
     private static final String PARTIAL_SUBMISSION_OPTION = "PARTIAL_SUBMISSION";
-
 
     private ResubmissionDialog resubmissionDialog;
 
 
     public WelcomeForm() {
+        propertyChangeBroadcaster = new PropertyChangeBroadcaster();
         initComponents();
     }
 
@@ -41,6 +52,9 @@ public class WelcomeForm extends Form {
         // create mission statement panel
         JPanel submissionOptionPanel = createSubmissionOptionPanel();
         this.add(submissionOptionPanel, BorderLayout.CENTER);
+
+        // Training update
+        trainingModeCheckBoxController.init(trainingModeCheckBox);
     }
 
     /**
@@ -71,7 +85,12 @@ public class WelcomeForm extends Form {
 
         JLabel titleLabel = new JLabel(appContext.getProperty("welcome.before.start.title"));
         titleLabel.setFont(titlePanel.getFont().deriveFont(16f).deriveFont(Font.BOLD));
-        titlePanel.add(titleLabel, BorderLayout.NORTH);
+        titlePanel.add(titleLabel, BorderLayout.WEST);
+        trainingModeCheckBox = new JCheckBox();
+        trainingModeCheckBox.setText(appContext.getProperty("training.mode.toggle.checkbox.text"));
+        trainingModeCheckBox.addItemListener(new TrainingModeOptionListener());
+        trainingModeCheckBox.setToolTipText(appContext.getProperty("training.mode.toggle.checkbox.help.text"));
+        titlePanel.add(trainingModeCheckBox, BorderLayout.EAST);
 //        JLabel descPanel = new JLabel(appContext.getProperty("welcome.before.start.desc"));
 //        titlePanel.add(descPanel, BorderLayout.CENTER);
         titlePanel.add(Box.createRigidArea(new Dimension(10, 10)), BorderLayout.SOUTH);
@@ -232,7 +251,6 @@ public class WelcomeForm extends Form {
         return linkPanel;
     }
 
-
     /**
      * Listener to perform actions when a submission option is selected
      */
@@ -260,6 +278,63 @@ public class WelcomeForm extends Form {
 //                fullSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("welcome.full.submission.button.title.large.icon")));
 //                partialSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("welcome.partial.submission.button.title.selected.large.icon")));
             }
+        }
+    }
+
+    public PropertyChangeHelper getPropertyChangeHelper() {
+        return propertyChangeBroadcaster;
+    }
+
+    private PropertyChangeBroadcaster getPropertyChangeBroadcaster() {
+        return propertyChangeBroadcaster;
+    }
+
+    public class PropertyChangeBroadcaster extends uk.ac.ebi.pride.gui.prop.PropertyChangeHelper {
+        // Events
+        // Training mode toggle
+        public static final String TRAINING_MODE_TOGGLE = "training_mode_toggle";
+
+        public void fireTrainingModeToggle(boolean oldValue, boolean newValue) {
+            firePropertyChange(TRAINING_MODE_TOGGLE, oldValue, newValue);
+        }
+    }
+
+    private class TrainingModeCheckBoxController {
+        public void update(JCheckBox checkBox) {
+            if (!appContext.isTrainingModeFlag()) {
+                // Hide the checkbox
+                checkBox.setVisible(false);
+            } else {
+                checkBox.setVisible(true);
+            }
+        }
+
+        public void init(JCheckBox trainingModeCheckBox) {
+            update(trainingModeCheckBox);
+            String trainingModeStatus = System.getProperty("training.mode.status");
+            if ((trainingModeStatus != null) && (trainingModeStatus.equals(AppContext.TRAINING_MODE_STATUS_ON))) {
+                trainingModeCheckBox.doClick();
+            }
+        }
+    }
+
+    /**
+     * This listener updates "training mode" status
+     */
+    private class TrainingModeOptionListener implements ItemListener {
+
+        @Override
+        public void itemStateChanged(ItemEvent e) {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                logger.info("TRAINING MODE ACTIVATED");
+                appContext.setTrainingModeFlag(true);
+                getPropertyChangeBroadcaster().fireTrainingModeToggle(false, true);
+            } else {
+                logger.info("TRAINING MODE DE-ACTIVATED");
+                appContext.setTrainingModeFlag(false);
+                getPropertyChangeBroadcaster().fireTrainingModeToggle(true, false);
+            }
+            trainingModeCheckBoxController.update((JCheckBox)e.getSource());
         }
     }
 

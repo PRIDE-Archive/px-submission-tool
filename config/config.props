@@ -11,3 +11,14 @@
 #  by removing '#', and use either aspera or ftp in your settings
 
 px.upload.protocol = aspera
+
+# Training mode configuration
+#
+# When working with the tool in 'training mode', the user is able to go through the whole submission process as usual but,
+# at the end of the process, no actual submission will be done, this means the files will not be uploaded and the submission
+# will not be registered.
+# Also, providing feedback will not be required, so the user is allowed to omit it and either close the application or
+# start another submission.
+#
+# (status is 'on' or 'off')
+training.mode.status = off
