@@ -1,5 +1,6 @@
 package uk.ac.ebi.pride.gui.task;
 
+import org.apache.commons.io.FilenameUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
@@ -260,7 +261,9 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 submission.getDataFiles()) {
             try {
                 // If the datafile is not a file, it is a URL
-                dataFiles.add((dataFile.isFile() ? new URL("file://" + dataFile.getFilePath().toString()).toString() : dataFile.getUrl().toString()));
+                URL dataFileToAdd = (dataFile.isFile() ? new URL("file://" + dataFile.getFilePath().toString()) : dataFile.getUrl());
+                // We only care about file names
+                dataFiles.add(FilenameUtils.getName(dataFileToAdd.toString()));
             } catch (MalformedURLException e) {
                 logger.error("PLEASE, REVIEW file reference '" + dataFile.getFilePath().toString() + "' as it could not be parsed as a URL, by adding 'file://' protocol");
             }
@@ -278,7 +281,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 //              contains URL references to non-local files, has to be considered invalid and the user
                 //              will get notified about the missing references
                 if ((mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation() != null)
-                        && (!dataFiles.contains(mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString()))) {
+                        && (!dataFiles.contains(FilenameUtils.getName(mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString())))) {
                     // The referenced file is not part of the submission files
                     logger.error("mzTab file '" + mzTabFile.getFilePath() + "' references MISSING FILE '" + mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString() + "'");
                     if (!filesMissingReferences.containsKey(mzTabFile)) {
