@@ -305,11 +305,11 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                             // Log the error
                             errorLogMsg = "mzTab file '" + mzTabFile.getFilePath()
                                     + "' references NON-Peak List file '"
-                                    + mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString()
+                                    + referencedFile
                                     + "', which is NOT ALLOWED";
                             // Report the error
                             errorEntry = "NON-Peak List referenced file '"
-                                    + mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString()
+                                    + referencedFile
                                     + "', is NOT ALLOWED";
                         }
                     }
