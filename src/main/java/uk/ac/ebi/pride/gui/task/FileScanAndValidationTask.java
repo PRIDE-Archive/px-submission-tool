@@ -256,14 +256,14 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
 
     private Map<DataFile, Set<String>> checkMzTabFileReferences(List<DataFile> mzTabDataFiles) {
         Map<DataFile, Set<String>> filesMissingReferences = new HashMap<>();
-        Set<String> dataFiles = new HashSet<>();
+        Map<String, DataFile> dataFiles = new HashMap<>();
         for (DataFile dataFile :
                 submission.getDataFiles()) {
             try {
                 // If the datafile is not a file, it is a URL
                 URL dataFileToAdd = (dataFile.isFile() ? new URL("file://" + dataFile.getFilePath().toString()) : dataFile.getUrl());
                 // We only care about file names
-                dataFiles.add(FilenameUtils.getName(dataFileToAdd.toString()));
+                dataFiles.put(FilenameUtils.getName(dataFileToAdd.toString()), dataFile);
             } catch (MalformedURLException e) {
                 logger.error("PLEASE, REVIEW file reference '" + dataFile.getFilePath().toString() + "' as it could not be parsed as a URL, by adding 'file://' protocol");
             }
@@ -280,18 +280,58 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 // AGREEMENT - URL attachements are not allowed in the submission process, thus, any mzTab file that
                 //              contains URL references to non-local files, has to be considered invalid and the user
                 //              will get notified about the missing references
-                if ((mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation() != null)
-                        && (!dataFiles.contains(FilenameUtils.getName(mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString())))) {
-                    // The referenced file is not part of the submission files
-                    logger.error("mzTab file '" + mzTabFile.getFilePath() + "' references MISSING FILE '" + mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString() + "'");
+                boolean errorFlagged = false;
+                String errorLogMsg = "";
+                String errorEntry = "";
+                if (mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation() != null) {
+                    String referencedFile = FilenameUtils.getName(mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString());
+                    if (!dataFiles.keySet().contains(referencedFile)) {
+                        // Flag the error
+                        errorFlagged = true;
+                        // The referenced file is not part of the submission files
+                        // Error log message
+                        errorLogMsg = "mzTab file '" + mzTabFile.getFilePath()
+                                + "' references MISSING FILE '"
+                                + mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString()
+                                + "'";
+                        // Error Entry
+                        errorEntry = mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString();
+                    } else {
+                        // The file is in the list of files part of the current submission process
+                        // Check that the referenced file is a Peak List file
+                        if (dataFiles.get(referencedFile).getFileType() != ProjectFileType.PEAK) {
+                            // Flag the error
+                            errorFlagged = true;
+                            // Log the error
+                            errorLogMsg = "mzTab file '" + mzTabFile.getFilePath()
+                                    + "' references NON-Peak List file '"
+                                    + mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString()
+                                    + "', which is NOT ALLOWED";
+                            // Report the error
+                            errorEntry = "NON-Peak List referenced file '"
+                                    + mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString()
+                                    + "', is NOT ALLOWED";
+                        }
+                    }
+                } else {
+                    // ms-run location can't be null for submission purposes
+                    errorFlagged = true;
+                    errorLogMsg = "mzTab file '" + mzTabFile.getFilePath()
+                            + "' references a NULL ms-run location, this is NOT ALLOWED for submissions";
+                    errorEntry = "NULL ms-run location is NOT ALLOWED for submissions";
+                }
+                // Check if an error has been found
+                if (errorFlagged) {
+                    // Log the error
+                    logger.error(errorLogMsg);
+                    // Create the error entry for the current file
                     if (!filesMissingReferences.containsKey(mzTabFile)) {
                         filesMissingReferences.put(mzTabFile, new HashSet<String>());
                     }
-                    // Flag the current file as invalid, because of missing references
-                    filesMissingReferences.get(mzTabFile).add(mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString());
-                    // And keep checking for other referenced files, to give the user a complete report of all the
-                    // missing files in one go
+                    filesMissingReferences.get(mzTabFile).add(errorEntry);
                 }
+                // And keep checking for other referenced files, to give the user a complete report of all the
+                // missing files in one go
             }
         }
         return filesMissingReferences;
