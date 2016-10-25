@@ -150,6 +150,13 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                     return validationMessage;
                 }
                 setProgress(80);
+
+                // cannot have mzIdentML spectra data files related to non-peak files
+                List<DataFile> invalidMzIdentMLPeakFiles = runMzIdentMLPeakFilesValidation(submission.getDataFiles());
+                if (invalidMzIdentMLPeakFiles.size() > 0) {
+                    return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidMzIdentMLPeakFilesaWarning(invalidMzIdentMLPeakFiles));
+                }
+                setProgress(82);
             }
 
             // mzTab files support
@@ -692,6 +699,34 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             }
         }
 
+        return invalidMzIdentMLFiles;
+    }
+
+    /**
+     * Validate whether mzIdentML relates to peak files or not
+     *
+     * @param dataFiles a list of all data files
+     * @return a list of invalid mzIdentMl files which don't relate to peak files
+     * section
+     * @throws IOException
+     */
+    private List<DataFile> runMzIdentMLPeakFilesValidation(List<DataFile> dataFiles) throws IOException {
+        List<DataFile> invalidMzIdentMLFiles = new ArrayList<>();
+        for (DataFile dataFile : dataFiles) {
+            if (MassSpecFileFormat.MZIDENTML.equals(dataFile.getFileFormat())) {
+                Set<String> peakListFileNames = parsePeakListFileNames(dataFile.getFile());
+                for (String peakListFileName : peakListFileNames) {
+                    for (DataFile spectraFile : dataFiles) {
+                        String spectraFileName = FileUtil.getDecompressedFileName(spectraFile.getFile());
+                        if (peakListFileName.equalsIgnoreCase(spectraFileName)) {
+                            if (spectraFile.getFileType() != ProjectFileType.PEAK) {
+                                invalidMzIdentMLFiles.add(dataFile);
+                            }
+                        }
+                    }
+                }
+            }
+        }
         return invalidMzIdentMLFiles;
     }
 
