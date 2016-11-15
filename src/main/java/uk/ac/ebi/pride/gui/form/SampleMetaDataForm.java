@@ -2,6 +2,8 @@ package uk.ac.ebi.pride.gui.form;
 
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.validation.SubmissionValidator;
+import uk.ac.ebi.pride.data.validation.ValidationMessage;
+import uk.ac.ebi.pride.data.validation.ValidationReport;
 import uk.ac.ebi.pride.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.table.TableFactory;
 import uk.ac.ebi.pride.gui.form.table.model.ResultFileTableModel;
@@ -14,6 +16,8 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Form component to collection sample metadata for each result file
@@ -121,34 +125,31 @@ public class SampleMetaDataForm extends Form {
     public ValidationState doValidation() {
         boolean valid = true;
         int cnt = 0;
-
         java.util.List<DataFile> resultFiles = appContext.getSubmissionFilesByType(ProjectFileType.RESULT);
+        ArrayList<String> errorMessages = new ArrayList<>();
         for (DataFile resultFile : resultFiles) {
-            if (SubmissionValidator.validateSampleMetaDataEntry(resultFile, true).hasError()) {
+            ValidationReport validationReport = SubmissionValidator.validateSampleMetaDataEntry(resultFile, true);
+            if (validationReport.hasError()) {
                 valid = false;
                 cnt++;
+                for (ValidationMessage message : validationReport.getMessages()) {
+                    if (message.getType().equals(ValidationMessage.Type.ERROR)) {
+                        errorMessages.add(message.getMessage());
+                    }
+                }
             }
         }
-
         if (valid) {
             return ValidationState.SUCCESS;
-        } else {
-            // show balloon warning tip
+        } else {  // show balloon warning tip
             if (warningBalloonTip != null) {
-                // close previous balloon tip
-                warningBalloonTip.closeBalloon();
+                warningBalloonTip.closeBalloon(); // close previous balloon tip
             }
-
-            // create a new one
-            // construct error message
-
-            // Create the balloon tip
-            JLabel newWarningContents = new JLabel("<html>" + "<b>Please ensure all result files have complete experimental details:</b><br/>" + "<li>" + cnt + " result files have incomplete details" + "</li>" + "</html>");
+            JLabel newWarningContents = new JLabel("<html>" + "<b>Please ensure all result files have complete experimental details:</b><br/>"
+                + "<li>" + cnt + " result files have incomplete details" + "</li>" + "</b><br/>" + Arrays.toString(errorMessages.toArray()) + "</html>");
             newWarningContents.setIcon(GUIUtilities.loadIcon(appContext.getProperty("warning.message.icon")));
-
             warningBalloonTip = BalloonTipUtil.createErrorBalloonTip(resultFileTable, newWarningContents);
             showWarnings();
-
             return ValidationState.ERROR;
         }
     }
