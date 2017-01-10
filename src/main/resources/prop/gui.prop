@@ -132,7 +132,7 @@ pride.login.password.tooltip = Your password
 pride.login.username.error.message = User name cannot be empty
 pride.login.password.error.message = Password cannot be empty
 pride.login.error.title = Login
-pride.login.error.message = <b>Failed to login.<br>Please register first if you don't have an account:<br/><a href="http://www.ebi.ac.uk/pride/archive/register">Register a new PRIDE account</a><br/>Are you connected to the Internet via a proxy? Then you will need to enter your proxy details:<br/><a href="http://www.ebi.ac.uk/pride/help/archive/faq#PX-proxy-settings">How to manually set the proxy details</a>
+pride.login.error.message = <b>Failed to login.<br><a href="http://www.ebi.ac.uk/pride/archive/users/forgotpassword">Reset your password?</a><p>Please register first if you don't have an account:<br><a href="http://www.ebi.ac.uk/pride/archive/register">Register a new PRIDE account</a><p>Are you connected to the Internet via a proxy?<br><a href="http://www.ebi.ac.uk/pride/help/archive/faq#PX-proxy-settings">How to manually set the proxy details</a><p>Try checking out Twitter <a href="https://twitter.com/pride_ebi">@pride_ebi</a><br>or get in touch via email <a href="mailto:pride-support@ebi.ac.uk?Subject=Failed to login" target="_top">pride-support@ebi.ac.uk</a>
 pride.login.resubmission.error.message = Failed to login. Please ensure you have the correct user name and password.
 pride.login.button.loading.small.icon = icon/16x16/loading.gif
 pride.login.create.account.title = Register New User
