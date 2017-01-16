@@ -1,7 +1,7 @@
 package uk.ac.ebi.pride.gui.form.table.renderer;
 
 import uk.ac.ebi.pride.App;
-import uk.ac.ebi.pride.gui.GUIUtilities;
+import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 
 import javax.swing.*;
 import javax.swing.table.TableCellRenderer;

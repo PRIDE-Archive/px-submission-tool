@@ -2,8 +2,8 @@ package uk.ac.ebi.pride.gui.util;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.ebi.pride.gui.desktop.Desktop;
-import uk.ac.ebi.pride.gui.desktop.DesktopContext;
+import uk.ac.ebi.pride.toolsuite.gui.desktop.Desktop;
+import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
 
 import javax.swing.*;
 import java.io.BufferedReader;

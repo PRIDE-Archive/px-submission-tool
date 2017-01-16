@@ -5,7 +5,7 @@
 package uk.ac.ebi.pride.gui.form.panel;
 
 import uk.ac.ebi.pride.data.validation.SubmissionValidator;
-import uk.ac.ebi.pride.gui.GUIUtilities;
+import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.combo.model.ExperimentMethodSelectionModel;
 import uk.ac.ebi.pride.gui.form.combo.renderer.ExperimentMethodComboRenderer;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwarePanel;

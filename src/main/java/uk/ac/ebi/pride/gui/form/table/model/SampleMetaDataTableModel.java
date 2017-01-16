@@ -2,7 +2,7 @@ package uk.ac.ebi.pride.gui.form.table.model;
 
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
-import uk.ac.ebi.pride.data.Tuple;
+import uk.ac.ebi.pride.utilities.util.Tuple;
 import uk.ac.ebi.pride.data.model.CvParam;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.SampleMetaData;

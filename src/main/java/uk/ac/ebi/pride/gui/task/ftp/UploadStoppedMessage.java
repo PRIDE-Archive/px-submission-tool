@@ -1,7 +1,7 @@
 package uk.ac.ebi.pride.gui.task.ftp;
 
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
-import uk.ac.ebi.pride.gui.task.Task;
+import uk.ac.ebi.pride.toolsuite.gui.task.Task;
 
 /**
  * Error message indicates upload has stopped with files failed to be uploaded

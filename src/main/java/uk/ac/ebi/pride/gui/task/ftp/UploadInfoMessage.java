@@ -1,7 +1,7 @@
 package uk.ac.ebi.pride.gui.task.ftp;
 
 import uk.ac.ebi.pride.data.model.DataFile;
-import uk.ac.ebi.pride.gui.task.Task;
+import uk.ac.ebi.pride.toolsuite.gui.task.Task;
 
 /**
  * Information about the upload, can be used to notifying which file is being uploaded.

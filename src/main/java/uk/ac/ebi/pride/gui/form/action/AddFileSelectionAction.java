@@ -5,10 +5,10 @@ import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
-import uk.ac.ebi.pride.gui.GUIUtilities;
-import uk.ac.ebi.pride.gui.blocker.DefaultGUIBlocker;
-import uk.ac.ebi.pride.gui.blocker.GUIBlocker;
-import uk.ac.ebi.pride.gui.task.TaskAdapter;
+import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
+import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
+import uk.ac.ebi.pride.toolsuite.gui.blocker.GUIBlocker;
+import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 
 import javax.swing.*;

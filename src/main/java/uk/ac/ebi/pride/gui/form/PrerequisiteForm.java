@@ -1,7 +1,7 @@
 package uk.ac.ebi.pride.gui.form;
 
 import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
-import uk.ac.ebi.pride.gui.GUIUtilities;
+import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.comp.GradientRoundedPanel;
 import uk.ac.ebi.pride.gui.form.comp.RoundedPanel;
 import uk.ac.ebi.pride.gui.util.BorderUtil;

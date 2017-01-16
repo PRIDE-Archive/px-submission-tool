@@ -8,7 +8,8 @@ import org.springframework.web.client.RestTemplate;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
-import uk.ac.ebi.pride.gui.desktop.DesktopContext;
+import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
+import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 import uk.ac.ebi.pride.web.util.template.SecureRestTemplateFactory;
 
 import java.util.Properties;

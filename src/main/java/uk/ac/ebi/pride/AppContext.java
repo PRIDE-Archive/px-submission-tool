@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.data.model.*;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
-import uk.ac.ebi.pride.gui.desktop.DesktopContext;
+import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 

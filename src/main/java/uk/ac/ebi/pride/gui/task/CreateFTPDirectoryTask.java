@@ -8,6 +8,7 @@ import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.gui.task.ftp.UploadErrorMessage;
 import uk.ac.ebi.pride.gui.task.ftp.UploadMessage;
 import uk.ac.ebi.pride.gui.task.ftp.UploadSuccessMessage;
+import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 
 import java.io.File;
 import java.io.IOException;

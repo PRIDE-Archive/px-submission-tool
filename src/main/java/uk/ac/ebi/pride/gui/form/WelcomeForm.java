@@ -4,11 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
-import uk.ac.ebi.pride.gui.GUIUtilities;
+import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.action.LoadSubmissionFileAction;
 import uk.ac.ebi.pride.gui.form.comp.HeaderPanel;
 import uk.ac.ebi.pride.gui.form.dialog.ResubmissionDialog;
-import uk.ac.ebi.pride.gui.prop.PropertyChangeHelper;
+import uk.ac.ebi.pride.toolsuite.gui.prop.PropertyChangeHelper;
 import uk.ac.ebi.pride.gui.util.BorderUtil;
 import uk.ac.ebi.pride.gui.util.ColourUtil;
 import uk.ac.ebi.pride.gui.util.HttpUtil;
@@ -289,7 +289,7 @@ public class WelcomeForm extends Form {
         return propertyChangeBroadcaster;
     }
 
-    public class PropertyChangeBroadcaster extends uk.ac.ebi.pride.gui.prop.PropertyChangeHelper {
+    public class PropertyChangeBroadcaster extends uk.ac.ebi.pride.toolsuite.gui.prop.PropertyChangeHelper {
         // Events
         // Training mode toggle
         public static final String TRAINING_MODE_TOGGLE = "training_mode_toggle";

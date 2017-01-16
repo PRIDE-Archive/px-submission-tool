@@ -2,9 +2,9 @@ package uk.ac.ebi.pride.gui.form.dialog;
 
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
-import uk.ac.ebi.pride.gui.task.Task;
-import uk.ac.ebi.pride.gui.task.TaskEvent;
-import uk.ac.ebi.pride.gui.task.TaskListener;
+import uk.ac.ebi.pride.toolsuite.gui.task.Task;
+import uk.ac.ebi.pride.toolsuite.gui.task.TaskEvent;
+import uk.ac.ebi.pride.toolsuite.gui.task.TaskListener;
 
 import javax.swing.*;
 import java.awt.*;

@@ -6,12 +6,16 @@ import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.data.exception.SubmissionFileException;
 import uk.ac.ebi.pride.data.io.SubmissionFileWriter;
 import uk.ac.ebi.pride.data.model.DataFile;
-import uk.ac.ebi.pride.gui.blocker.DefaultGUIBlocker;
-import uk.ac.ebi.pride.gui.blocker.GUIBlocker;
+import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
+import uk.ac.ebi.pride.toolsuite.gui.blocker.GUIBlocker;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
 import uk.ac.ebi.pride.gui.task.ftp.*;
 import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.gui.util.SubmissionRecordSerializer;
+import uk.ac.ebi.pride.toolsuite.gui.task.Task;
+import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
+import uk.ac.ebi.pride.toolsuite.gui.task.TaskEvent;
+import uk.ac.ebi.pride.toolsuite.gui.task.TaskListener;
 
 import java.io.File;
 import java.io.IOException;
