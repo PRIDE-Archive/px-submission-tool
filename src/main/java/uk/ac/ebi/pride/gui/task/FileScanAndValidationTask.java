@@ -732,7 +732,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
     }
 
     /**
-     * validate whether the peak list files referenced by mzIdentML files are
+     * Validate whether the peak list files referenced by mzIdentML files are
      * present
      *
      * @param dataFiles a list of all data files
@@ -740,8 +740,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
      * name
      */
     private Map<DataFile, List<String>> runMzIdentMLPeakListFileScanAndValidation(List<DataFile> dataFiles) throws IOException {
-        Map<DataFile, List<String>> invalidMzIdentMLFiles = new HashMap<DataFile, List<String>>();
-
+        Map<DataFile, List<String>> invalidMzIdentMLFiles = new HashMap<>();
         for (DataFile dataFile : dataFiles) {
             if (MassSpecFileFormat.MZIDENTML.equals(dataFile.getFileFormat())) {
                 Set<String> peakListFileNames = parsePeakListFileNames(dataFile.getFile());
@@ -751,19 +750,16 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                         String spectraFileName = FileUtil.getDecompressedFileName(spectraFile.getFile());
                         if (peakListFileName.equalsIgnoreCase(spectraFileName)) {
                             present = true;
-                            // add file mapping
                             if (!dataFile.getFileMappings().contains(spectraFile)) {
-                                spectraFile.setFileType(ProjectFileType.PEAK);
                                 dataFile.addFileMapping(spectraFile);
                             }
                             break;
                         }
                     }
-
                     if (!present) {
                         List<String> nonePresentPreakListFiles = invalidMzIdentMLFiles.get(dataFile);
                         if (nonePresentPreakListFiles == null) {
-                            nonePresentPreakListFiles = new ArrayList<String>();
+                            nonePresentPreakListFiles = new ArrayList<>();
                             invalidMzIdentMLFiles.put(dataFile, nonePresentPreakListFiles);
                         }
                         nonePresentPreakListFiles.add(peakListFileName);
@@ -771,7 +767,6 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 }
             }
         }
-
         return invalidMzIdentMLFiles;
     }
 
