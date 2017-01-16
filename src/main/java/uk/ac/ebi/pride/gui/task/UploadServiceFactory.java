@@ -5,6 +5,7 @@ import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
+import uk.ac.ebi.pride.toolsuite.gui.task.Task;
 
 /**
  * Project: px-submission-tool

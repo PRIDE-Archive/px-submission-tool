@@ -11,11 +11,12 @@ import uk.ac.ebi.pride.data.io.SubmissionFileWriter;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.gui.aspera.AsperaFileUploader;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
-import uk.ac.ebi.pride.gui.desktop.DesktopContext;
+import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
 import uk.ac.ebi.pride.gui.task.ftp.*;
 import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.gui.util.OSDetector;
 import uk.ac.ebi.pride.gui.util.SubmissionRecordSerializer;
+import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 
 import java.io.File;
 import java.io.IOException;

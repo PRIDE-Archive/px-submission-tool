@@ -1,8 +1,9 @@
 package uk.ac.ebi.pride.gui.task;
 
 import uk.ac.ebi.pride.App;
-import uk.ac.ebi.pride.gui.desktop.DesktopContext;
+import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
 import uk.ac.ebi.pride.gui.util.UpdateChecker;
+import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 
 /**
  * @author Rui Wang

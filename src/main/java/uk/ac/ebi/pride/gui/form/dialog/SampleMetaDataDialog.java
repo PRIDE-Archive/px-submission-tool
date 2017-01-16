@@ -5,7 +5,7 @@ import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.SampleMetaData;
 import uk.ac.ebi.pride.data.util.Constant;
 import uk.ac.ebi.pride.data.util.ExperimentalFactorUtil;
-import uk.ac.ebi.pride.gui.GUIUtilities;
+import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.combo.model.ResultFileSelectionModel;
 import uk.ac.ebi.pride.gui.form.combo.renderer.ResultFileMetaDataComboRenderer;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareDialog;

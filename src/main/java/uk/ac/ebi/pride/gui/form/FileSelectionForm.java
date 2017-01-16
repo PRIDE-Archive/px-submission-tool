@@ -2,12 +2,12 @@ package uk.ac.ebi.pride.gui.form;
 
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
-import uk.ac.ebi.pride.gui.GUIUtilities;
+import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.action.AddFileSelectionAction;
 import uk.ac.ebi.pride.gui.form.dialog.FileSelectionValidationErrorDialog;
 import uk.ac.ebi.pride.gui.form.table.TableFactory;
-import uk.ac.ebi.pride.gui.task.TaskEvent;
-import uk.ac.ebi.pride.gui.task.TaskListener;
+import uk.ac.ebi.pride.toolsuite.gui.task.TaskEvent;
+import uk.ac.ebi.pride.toolsuite.gui.task.TaskListener;
 import uk.ac.ebi.pride.gui.util.BalloonTipUtil;
 import uk.ac.ebi.pride.gui.util.BorderUtil;
 import uk.ac.ebi.pride.gui.util.DataFileValidationMessage;

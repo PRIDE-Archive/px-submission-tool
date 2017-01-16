@@ -1,7 +1,7 @@
 package uk.ac.ebi.pride.gui.form.action;
 
 import uk.ac.ebi.pride.App;
-import uk.ac.ebi.pride.gui.GUIUtilities;
+import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.dialog.AddURLDialog;
 
 import javax.swing.*;

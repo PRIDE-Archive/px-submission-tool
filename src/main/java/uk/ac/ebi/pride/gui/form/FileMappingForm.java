@@ -5,7 +5,7 @@
 package uk.ac.ebi.pride.gui.form;
 
 import uk.ac.ebi.pride.data.model.DataFile;
-import uk.ac.ebi.pride.gui.GUIUtilities;
+import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.table.TableFactory;
 import uk.ac.ebi.pride.gui.form.table.model.SourceFileMappngTableModel;
 import uk.ac.ebi.pride.gui.form.table.model.TargetFileMappingTableModel;

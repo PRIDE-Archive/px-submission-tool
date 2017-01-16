@@ -2,7 +2,7 @@ package uk.ac.ebi.pride.gui.form.dialog;
 
 import uk.ac.ebi.pride.data.model.ProjectMetaData;
 import uk.ac.ebi.pride.data.model.Submission;
-import uk.ac.ebi.pride.gui.GUIUtilities;
+import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareDialog;
 import uk.ac.ebi.pride.gui.form.comp.NonOpaquePanel;
 import uk.ac.ebi.pride.gui.form.panel.ResubmissionPanel;

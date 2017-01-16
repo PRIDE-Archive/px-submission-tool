@@ -1,6 +1,6 @@
 package uk.ac.ebi.pride.gui.navigation;
 
-import uk.ac.ebi.pride.gui.prop.PropertyChangeHelper;
+import uk.ac.ebi.pride.toolsuite.gui.prop.PropertyChangeHelper;
 
 import java.util.*;
 

@@ -4,7 +4,7 @@ import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.validation.SubmissionValidator;
 import uk.ac.ebi.pride.data.validation.ValidationMessage;
 import uk.ac.ebi.pride.data.validation.ValidationReport;
-import uk.ac.ebi.pride.gui.GUIUtilities;
+import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.table.TableFactory;
 import uk.ac.ebi.pride.gui.form.table.model.ResultFileTableModel;
 import uk.ac.ebi.pride.gui.form.table.model.SampleMetaDataTableModel;

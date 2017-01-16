@@ -3,7 +3,7 @@ package uk.ac.ebi.pride.gui.form;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
-import uk.ac.ebi.pride.gui.GUIUtilities;
+import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.comp.HeaderPanel;
 import uk.ac.ebi.pride.gui.util.BorderUtil;
 

@@ -21,6 +21,7 @@ import uk.ac.ebi.pride.jaxb.model.CvParam;
 import uk.ac.ebi.pride.jaxb.model.SampleDescription;
 import uk.ac.ebi.pride.jaxb.xml.unmarshaller.PrideXmlUnmarshaller;
 import uk.ac.ebi.pride.jaxb.xml.unmarshaller.PrideXmlUnmarshallerFactory;
+import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 
 import javax.xml.bind.JAXBException;
 import java.io.*;

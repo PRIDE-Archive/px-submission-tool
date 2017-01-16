@@ -3,6 +3,7 @@ package uk.ac.ebi.pride.gui.task;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.gui.task.ftp.UploadMessage;
 import uk.ac.ebi.pride.gui.task.ftp.UploadSuccessMessage;
+import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 
 /**
  * Fake create ftp directory task

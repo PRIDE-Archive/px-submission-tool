@@ -7,7 +7,7 @@ import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.data.io.SubmissionFileWriter;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
-import uk.ac.ebi.pride.gui.GUIUtilities;
+import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwarePanel;
 import uk.ac.ebi.pride.gui.util.BalloonTipUtil;
 

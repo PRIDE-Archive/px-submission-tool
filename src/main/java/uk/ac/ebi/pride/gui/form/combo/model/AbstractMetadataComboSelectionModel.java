@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.data.model.CvParam;
-import uk.ac.ebi.pride.gui.EDTUtils;
+import uk.ac.ebi.pride.toolsuite.gui.EDTUtils;
 import uk.ac.ebi.pride.gui.util.CvFileUtil;
 import uk.ac.ebi.pride.toolsuite.ols.dialog.OLSDialog;
 import uk.ac.ebi.pride.toolsuite.ols.dialog.OLSInputable;
@@ -101,7 +101,7 @@ public abstract class AbstractMetadataComboSelectionModel extends AbstractListMo
                 Runnable run = new Runnable() {
                     @Override
                     public void run() {
-                        new OLSDialog(((App) App.getInstance()).getMainFrame(), AbstractMetadataComboSelectionModel.this, true, "", ontology, "", preselectedOntologies);
+                        new OLSDialog(((App) App.getInstance()).getMainFrame(), AbstractMetadataComboSelectionModel.this, true, "", ontology, "", preselectedOntologies, true);
                     }};
                 EDTUtils.invokeLater(run);
             }

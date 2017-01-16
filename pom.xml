@@ -54,14 +54,11 @@
         <uk.ac.ebi.pride.archive-archive-data-provider-api.version>2.0.7</uk.ac.ebi.pride.archive-archive-data-provider-api.version>
         <uk.ac.ebi.pride.web-pride-web-utils.version>1.3.11</uk.ac.ebi.pride.web-pride-web-utils.version>
         <uk.ac.ebi.pride.jaxb-pride-jaxb.version>1.0.18</uk.ac.ebi.pride.jaxb-pride-jaxb.version>
-        <!-- TODO - I haven't been able to find the repo for groupId=uk.ac.ebi.pride, artifactId=pride-utilities -->
-        <uk.ac.ebi.pride-pride-utilities.version>0.1.17</uk.ac.ebi.pride-pride-utilities.version>
+        <uk.ac.ebi.pride.utilities-pride-utilities.version>2.0.14</uk.ac.ebi.pride.utilities-pride-utilities.version>
+        <uk.ac.ebi.pride.toolsuite-inspector-swing-utils.version>2.0.3</uk.ac.ebi.pride.toolsuite-inspector-swing-utils.version>
         <uk.ac.ebi.pride-px-submission-core.version>2.0.12</uk.ac.ebi.pride-px-submission-core.version>
         <uk.ac.ebi.pride.px-libpxreport.version>1.1</uk.ac.ebi.pride.px-libpxreport.version>
-        <uk.ac.ebi.pride.toolsuite-ols-dialog.version>3.4.8</uk.ac.ebi.pride.toolsuite-ols-dialog.version>
-        <!-- TODO - This is NOT REFERENCED here in the POM file. It is NOT REFERENCED in any other file -->
-        <!-- <jmzidentml.version>1.2.0</jmzidentml.version> -->
-        <!-- The previous property has been replaced by the following one, regarding jmzidentml -->
+        <uk.ac.ebi.pride.toolsuite-ols-dialog.version>3.4.9</uk.ac.ebi.pride.toolsuite-ols-dialog.version>
         <uk.ac.ebi.jmzidml-jmzidentml.version>1.2.6</uk.ac.ebi.jmzidml-jmzidentml.version>
 
         <!-- Pending maven rearchitecting -->
@@ -93,9 +90,14 @@
         </dependency>
         <!-- pride utility classes-->
         <dependency>
-            <groupId>uk.ac.ebi.pride</groupId>
+            <groupId>uk.ac.ebi.pride.utilities</groupId>
             <artifactId>pride-utilities</artifactId>
-            <version>${uk.ac.ebi.pride-pride-utilities.version}</version>
+            <version>${uk.ac.ebi.pride.utilities-pride-utilities.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>uk.ac.ebi.pride.toolsuite</groupId>
+            <artifactId>inspector-swing-utils</artifactId>
+            <version>${uk.ac.ebi.pride.toolsuite-inspector-swing-utils.version}</version>
         </dependency>
         <!-- swing related libraries-->
         <dependency>

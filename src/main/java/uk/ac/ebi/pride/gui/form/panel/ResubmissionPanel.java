@@ -5,13 +5,13 @@
 package uk.ac.ebi.pride.gui.form.panel;
 
 import uk.ac.ebi.pride.App;
-import uk.ac.ebi.pride.gui.GUIUtilities;
-import uk.ac.ebi.pride.gui.blocker.DefaultGUIBlocker;
-import uk.ac.ebi.pride.gui.blocker.GUIBlocker;
+import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
+import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
+import uk.ac.ebi.pride.toolsuite.gui.blocker.GUIBlocker;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwarePanel;
 import uk.ac.ebi.pride.gui.task.GetPXSubmissionDetailTask;
-import uk.ac.ebi.pride.gui.task.TaskEvent;
-import uk.ac.ebi.pride.gui.task.TaskListener;
+import uk.ac.ebi.pride.toolsuite.gui.task.TaskEvent;
+import uk.ac.ebi.pride.toolsuite.gui.task.TaskListener;
 import uk.ac.ebi.pride.gui.util.BalloonTipUtil;
 import uk.ac.ebi.pride.gui.util.ColourUtil;
 import uk.ac.ebi.pride.gui.util.Constant;

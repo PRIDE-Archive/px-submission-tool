@@ -10,6 +10,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.gui.util.Constant;
+import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 
 import java.io.BufferedReader;
 import java.io.IOException;
