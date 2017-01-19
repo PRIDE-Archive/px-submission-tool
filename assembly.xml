@@ -55,11 +55,20 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/aspera</directory>
-            <outputDirectory>${assembly.dir}/aspera</outputDirectory>
+            <directory>${project.basedir}/aspera/bin</directory>
+            <outputDirectory>${assembly.dir}/aspera/bin</outputDirectory>
             <includes>
                 <include>**/**</include>
             </includes>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/aspera/etc</directory>
+            <outputDirectory>${assembly.dir}/aspera/etc</outputDirectory>
+            <includes>
+                <include>**/**</include>
+            </includes>
+            <fileMode>0644</fileMode>
         </fileSet>
         <!-- Include access keys for Google API -->
         <fileSet>
