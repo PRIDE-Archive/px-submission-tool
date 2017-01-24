@@ -8,6 +8,7 @@ import javax.swing.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author Rui Wang
@@ -174,6 +175,13 @@ public final class WarningMessageGenerator {
     public static String getInvalidFileWarning(int numOfInvalidFiles) {
 
         return String.valueOf(numOfInvalidFiles) + " invalid files detected, the file must exist and not empty.";
+    }
+
+    /**
+     * Show warning of invalid files including reports
+     */
+    public static String getInvalidFileWarning(int numOfInvalidFiles, List<String> validationErrorMessages) {
+        return String.valueOf(numOfInvalidFiles) + " invalid files detected:\n" + validationErrorMessages.stream().map(Object::toString).collect(Collectors.joining("\n"));
     }
 
     /**
