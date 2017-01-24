@@ -15,7 +15,8 @@ import uk.ac.ebi.pride.data.mztab.parser.MzTabParser;
 import uk.ac.ebi.pride.data.mztab.parser.exceptions.MzTabParserException;
 import uk.ac.ebi.pride.data.util.FileUtil;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
-import uk.ac.ebi.pride.data.validation.SubmissionValidator;
+import uk.ac.ebi.pride.data.validation.*;
+import uk.ac.ebi.pride.data.validation.ValidationMessage;
 import uk.ac.ebi.pride.gui.util.*;
 import uk.ac.ebi.pride.jaxb.model.CvParam;
 import uk.ac.ebi.pride.jaxb.model.SampleDescription;
@@ -30,6 +31,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Validate all the files selected in the file selection step
@@ -66,7 +68,11 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
 
         // cannot have invalidate files
         if (quickValidationResult.getNumOfInvalidFiles() > 0) {
-            return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidFileWarning(quickValidationResult.numOfInvalidFiles));
+            //return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidFileWarning(quickValidationResult.numOfInvalidFiles));
+            // Assuming we only get Validation Messages of type ERROR, but we check anyway
+            return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidFileWarning(quickValidationResult.numOfInvalidFiles,
+                    quickValidationResult.getValidationReport().getMessages().stream()
+                            .filter(m -> m.getType() == ValidationMessage.Type.ERROR).map(m -> m.getMessage()).collect(Collectors.toList())));
         }
         setProgress(20);
 
@@ -471,9 +477,13 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         for (DataFile dataFile : dataFiles) {
             String fileName = dataFile.getFileName();
             logger.debug("runQuickValidation(): SubmissionValidator.validateDataFile(" + fileName + ")");
-            if (SubmissionValidator.validateDataFile(dataFile).hasError()) {
-                logger.debug("runQuickValidation(): SubmissionValidator.validateDataFile(" + fileName + ").hasError() = " + SubmissionValidator.validateDataFile(dataFile).hasError());
+            ValidationReport validationReport = SubmissionValidator.validateDataFile(dataFile);
+            if (validationReport.hasError()) {
+                logger.error("runQuickValidation(): SubmissionValidator.validateDataFile(" + fileName + ") ERROR: "
+                        + validationReport.getMessages().stream().map(e -> e.toString()).reduce(",", String::concat));
                 result.incrementNumOfInvalidFiles();
+                // Combine the reports
+                result.getValidationReport().combine(validationReport);
             }
 
             if (Constant.PX_SUBMISSION_SUMMARY_FILE.equals(fileName)) {
@@ -810,6 +820,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
 
     private static class QuickValidationResult {
 
+        // WARNING - Why nothing has been initialized?
         boolean supportedResultFile;
         boolean urlBasedResultFilePresent;
         boolean prideXml;
@@ -824,6 +835,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         boolean submissionPxFile;
         boolean imagingRawFile;
         boolean imagingDataFile;
+        private ValidationReport validationReport = new ValidationReport();
 
         public boolean hasSupportedResultFile() {
             return supportedResultFile;
@@ -959,6 +971,15 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
 
         public void setImagingDataFile(boolean imagingDataFile) {
             this.imagingDataFile = imagingDataFile;
+        }
+
+
+        public ValidationReport getValidationReport() {
+            return validationReport;
+        }
+
+        public void setValidationReport(ValidationReport validationReport) {
+            this.validationReport = validationReport;
         }
     }
 }
