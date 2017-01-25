@@ -7,4 +7,4 @@ PX Submission Tool is a desktop application to submit the data to proteomeXchang
 
 # Quick Download 
 
-ftp://ftp.pride.ebi.ac.uk/pride/resources/tools/submission-tool/latest/desktop/px-submission-tool.zip
+[<img src="https://raw.githubusercontent.com/PRIDE-Toolsuite/pride-inspector/master/wiki/download.png">](http://www.ebi.ac.uk/pride/resources/tools/submission-tool/latest/desktop/px-submission-tool.zip)
