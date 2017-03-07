@@ -16,9 +16,8 @@ import uk.ac.ebi.pride.gui.util.*;
 import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.List;
 import java.util.regex.Matcher;
 
 /**
@@ -49,6 +48,13 @@ public class AdditionalProjectMetadataPanel extends ContextAwarePanel {
         } catch (IOException e) {
             logger.error("Failed to parse default project tags from file", e);
         }
+
+        // I do it this way because, apparently, the original developer wanted to preserve insertion order, for whatever
+        // reasong, when reading the tags, so I won't change that, but I'll change this because we want those tags to
+        // show up in alphabetical order. I don't like it, but it'll do the job
+        List<String> cvs = new ArrayList<String>(defaultParentProjects);
+        Collections.sort(cvs);
+        defaultParentProjects = cvs;
 
         String parentProjectDescription = appContext.getProperty("project.tag.desc.message");
         parentProjectDescLabel = new JLabel(parentProjectDescription);

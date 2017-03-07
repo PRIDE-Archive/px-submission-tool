@@ -20,6 +20,7 @@ public final class CvFileUtil {
     }
 
     public static Collection<String> parseByLine(String file) throws IOException {
+        // NOTE - TODO - Is it important to to preserve the insertion order?
         Collection<String> values = new LinkedHashSet<String>();
 
         InputStream defaultInstrumentStream = CvFileUtil.class.getClassLoader().getResourceAsStream(file);
