@@ -72,7 +72,7 @@ public class FileSelectionForm extends Form implements TaskListener<DataFileVali
         helpButton.setForeground(Color.blue);
         CSH.setHelpIDString(helpButton, "help.file.type");
         helpButton.addActionListener(new CSH.DisplayHelpFromSource(appContext.getMainHelpBroker()));
-        helpButton.setPreferredSize(new Dimension(200, 40));
+        helpButton.setPreferredSize(new Dimension(240, 40));
         helpPanel.add(helpButton);
 
         buttonPane.add(helpPanel, BorderLayout.EAST);
