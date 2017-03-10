@@ -49,37 +49,29 @@
                     </tr>
                     <tr class="piRowOdd">
                         <td width="20%">RESULT</td>
-                        <td width="20%">Required for complete submissions</td>
-                        <td>Experiment result files, either PRIDE XML or mzIdentML are supported.</td>
+                        <td width="20%">Required (for <strong>Complete Submissions</strong>), not applicable for Partial Submissions.</td>
+                        <td>Results of peptide/protein identification. Usually produced and exported by the Search Engine. mzIdentML and mzTab are the main supported file formats. A legacy file format, PRIDE XML is also accepted but no longer actively supported. </td>
                     </tr>
                     <tr class="piRowEven">
                         <td width="20%">RAW</td>
-                        <td width="20%">Required</td>
-                        <td>MS instrument raw output such as: BRUKER baf files or non-processed mzML/mzXML files. if
-                            your raw outputs
-                            are directories, please zip them.
+                        <td width="20%">Required for <strong>both Complete and Partial Submissions</strong></td>
+                        <td>MS instrument raw output, for example Thermo .raw or Bruker .baf files. Non-processed mzML or mzXML files are also accepted. In cases where instrument output is contained in directories (e.g. Waters Synapt instruments), those should be zipped.
                         </td>
                     </tr>
                     <tr class="piRowOdd">
                         <td width="20%">SEARCH</td>
-                        <td width="20%">Required for partial submission, optional for complete submission (recommend to
-                            include)
-                        </td>
-                        <td>Search engine output or analysis pipeline output files, such as: Mascot .dat, X!Tandem XML
-                            files.
-                        </td>
+                        <td width="20%">Required (for <strong>Partial Submissions</strong>), Optional for Complete Submissions (recommended to include).</td>
+                        <td>Search Engine or analysis pipeline output. The files should contain peptide and protein identifications. Examples include MASCOT .dat files, or Proteome Discoverer .msf files. </td>
                     </tr>
                     <tr class="piRowEven">
                         <td width="20%">PEAK</td>
-                        <td width="20%">Required when mzIdentML is submitted, optional for partial submission (recommend
-                            to include)
-                        </td>
-                        <td>Processed peak list, such as: mgf, dta, ms2, pkl or processed mzML/mzXML files</td>
+                        <td width="20%">Required for <strong>mzIdentML-based Complete submissions</strong>. Recommended for Partial submissions.</td>
+                        <td>Processed peak list files, such as: mgf, dta, ms2, pkl, or processed mzML/mzXML files.</td>
                     </tr>
                     <tr class="piRowOdd">
                         <td width="20%">QUANT</td>
                         <td width="20%">Optional</td>
-                        <td>Quantification analysis output files, such as: MaxQuant output file, mzQuantML, etc</td>
+                        <td>Quantification analysis output files, for example: list of protein fold changes, MaxQuant proteinGroups.txt file, mzQuantML.</td>
                     </tr>
                     <tr class="piRowEven">
                         <td width="20%">GEL</td>
@@ -89,16 +81,16 @@
                     <tr class="piRowOdd">
                         <td width="20%">FASTA</td>
                         <td width="20%">Optional</td>
-                        <td>Sequence database file which contains protein sequences used by the search engine</td>
+                        <td>Sequence Database file which contains protein sequences used by the Search Engine</td>
                     </tr>
                     <tr class="piRowEven">
                         <td width="20%">SPECTRUM_LIBRARY</td>
                         <td width="20%">Optional</td>
-                        <td>spectra library file used during the analysis</td>
+                        <td>When applicable, the files used to perform mass Spectral Search.</td>
                     </tr>
                     <tr class="piRowOdd">
                         <td width="20%">MS_IMAGE_DATA</td>
-                        <td width="20%">Optional, but required when there are MS image raw files</td>
+                        <td width="20%">Optional, but <strong>required when there are MS image raw files</strong></td>
                         <td>MS image data, such as: imzML</td>
                     </tr>
                     <tr class="piRowEven">
