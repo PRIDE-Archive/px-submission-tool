@@ -8,6 +8,7 @@ import javax.swing.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * @author Rui Wang
@@ -30,18 +31,18 @@ public final class WarningMessageGenerator {
     }
 
     public static String getInvalidResultFileWarning() {
-        return "<html>" + "<b>Invalid result file detected, please submit either PRIDE XML, mzIdentML or mzTab</b><br/>" + "</html>";
+        return "<html>" + "<b>Invalid result file detected, please submit results in any of the supported file formats (see accompanying documentation)</b><br/>" + "</html>";
     }
 
     public static String getMultipleResultFileFormatWarning(String formatA, String formatB) {
 
-        return "<html>" + "<b>Both " + formatA + " and " + formatB + " detected, please submit one result file format only</b><br/>" + "</html>";
+        return "<html>" + "<b>Both " + formatA + " and " + formatB + " detected, please submit results using one file format only</b><br/>" + "</html>";
     }
 
     public static String getInvalidMzIdentMLVersionWarning(List<DataFile> mzIdentMLFiles) {
         StringBuilder errMsg = new StringBuilder();
         errMsg.append("<html>");
-        errMsg.append("<b>The following mzIdentML are not version  1.1.0 </b><br/>");
+        errMsg.append("<b>The following mzIdentML are not version 1.1.0 </b><br/>");
         for (DataFile mzIdentMLFile : mzIdentMLFiles) {
             errMsg.append("<li>");
             errMsg.append(mzIdentMLFile.getFile().getName());
@@ -69,7 +70,7 @@ public final class WarningMessageGenerator {
     public static String getMissingReferencedFilesWarning(Map<DataFile, Set<String>> invalidFiles) {
         StringBuilder errMsg = new StringBuilder();
         errMsg.append("<html>");
-        errMsg.append("<b>The following files REFERENCE MISSING FILES</b><br/>");
+        errMsg.append("<b>The following files, REFERENCE MISSING FILES</b><br/>");
         errMsg.append("<ol>");
         for (DataFile dataFile :
                 invalidFiles.keySet()) {
@@ -103,7 +104,7 @@ public final class WarningMessageGenerator {
     public static String getInvalidMzIdentMLPeakFilesaWarning(List<DataFile> mzIdentMLFiles) {
         StringBuilder errMsg = new StringBuilder();
         errMsg.append("<html>");
-        errMsg.append("<b>The following mzIdentML are not referenced to 'peak' files</b><br/>");
+        errMsg.append("<b>The following mzIdentML are not referenced to 'PEAK' files</b><br/>");
         for (DataFile mzIdentMLFile : mzIdentMLFiles) {
             errMsg.append("<li>");
             errMsg.append(mzIdentMLFile.getFile().getName());
@@ -125,8 +126,8 @@ public final class WarningMessageGenerator {
      */
     public static boolean showSupportedSearchFileWarning() {
         int n = JOptionPane.showConfirmDialog(((App) App.getInstance()).getMainFrame(),
-                "<html>Your search engine output can be converted to PRIDE XML using PRIDE Converter 2 (http://code.google.com/p/pride-converter-2/).<br/>" +
-                        "Once converted, a complete ProteomeXchagne submission can be made instead. <br/><br/>" +
+                "<html>If you’re using <i>Mascot</i> Search Files, please, export them to mzIdentML directly.<br/>" +
+                        "Once converted, a complete ProteomeXchagne submission can be made instead.<br/><br/>" +
                         "<b>Would you like to continue with the current partial submission?</b><html>",
                 "Convertible Search Engine Output Detected",
                 JOptionPane.YES_NO_OPTION,
@@ -177,6 +178,13 @@ public final class WarningMessageGenerator {
     }
 
     /**
+     * Show warning of invalid files including reports
+     */
+    public static String getInvalidFileWarning(int numOfInvalidFiles, List<String> validationErrorMessages) {
+        return String.valueOf(numOfInvalidFiles) + " invalid files detected:\n" + validationErrorMessages.stream().map(Object::toString).collect(Collectors.joining("\n"));
+    }
+
+    /**
      * Show warning for missing files
      */
     public static String getMissedFileWarning(SubmissionType submissionType,
@@ -189,7 +197,7 @@ public final class WarningMessageGenerator {
 
         if (submissionType.equals(SubmissionType.COMPLETE) && !hasResultFile) {
             errMsg.append("<li>");
-            errMsg.append("PRIDE XML or mzIdentML (plus spectrum files)");
+            errMsg.append("mzIdentML or mzTab Result files (plus spectrum files)");
             errMsg.append("</li>");
         }
 
@@ -215,12 +223,12 @@ public final class WarningMessageGenerator {
      */
     public static String getUnsupportedResultFileWarning() {
 
-        return "<html>" + "<b>Unsupported result files found</b><br/>" + "Please only add supported result files (PRIDE XML or mzIdentML)" + "</html>";
+        return "<html>" + "<b>Unsupported result files found</b><br/>" + "Please only add mzIdentML or mzTab Result Files" + "</html>";
     }
 
     public static String getUnsupportedSearchFileWarning() {
 
-        return "<html>" + "<b>Unsupported search files found</b><br/>" + "Please choose complete submission option if you have either PRIDE XML or mzIdentML" + "</html>";
+        return "<html>" + "<b>Unsupported search files found</b><br/>" + "Please choose complete submission option if you have results in mzIdentML or mzTab format" + "</html>";
     }
 
     public static String getMissingImageDataFileWarning() {
