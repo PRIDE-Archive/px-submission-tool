@@ -147,7 +147,7 @@ lab.head.email.tooltip = Email address of the lab head
 lab.head.email.error.message = Email address must be valid
 lab.head.affiliation.hint = Lab head's affiliation, such as: department, lab, institute and country
 lab.head.affiliation.tooltip = Affiliation of the lab head
-lab.head.affiliation.error.message = Affiliation cannot be empty
+lab.head.affiliation.error.message = Affiliation cannot be empty, and must be <500 characters long.
 
 
 # sample metadata labels and icons

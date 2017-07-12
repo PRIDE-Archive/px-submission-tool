@@ -100,8 +100,8 @@ public class PrideLoginPanel extends ContextAwareHeaderPanel {
             warningBalloonTip.closeBalloon();
         }
 
-        // user name
-        if (SubmissionValidator.validateName(userNameField.getText()).hasError()) {
+        // validate username
+        if (SubmissionValidator.validateUserName(userNameField.getText()).hasError()) {
             if (showWarning) {
                 warningBalloonTip = BalloonTipUtil.createErrorBalloonTip(userNameField, appContext.getProperty("pride.login.username.error.message"));
                 warningBalloonTip.setVisible(true);
