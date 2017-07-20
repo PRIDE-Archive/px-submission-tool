@@ -122,4 +122,20 @@ public class PrideLoginForm extends Form {
     public void setEmail(String email) {
         prideLoginPanel.setEmail(email);
     }
+
+    public String getCountry() {
+        return prideLoginPanel.getCountry();
+    }
+
+    public void setCountry(String country) {
+        prideLoginPanel.setCountry(country);
+    }
+
+    public String getOrcid() {
+        return prideLoginPanel.getOrcid();
+    }
+
+    public void setOrcid(String orcid) {
+        prideLoginPanel.setOrcid(orcid);
+    }
 }

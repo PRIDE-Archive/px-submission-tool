@@ -31,6 +31,8 @@ public class PrideLoginPanel extends ContextAwareHeaderPanel {
     private String submitterName;
     private String affiliation;
     private String email;
+    private String country;
+    private String orcid;
 
     public PrideLoginPanel() {
         initComponents();
@@ -233,4 +235,40 @@ public class PrideLoginPanel extends ContextAwareHeaderPanel {
     private JPasswordField passwordField;
     private JButton newUserButton;
     // JFormDesigner - End of variables declaration  //GEN-END:variables
+
+    /**
+     * Gets orcid.
+     *
+     * @return Value of orcid.
+     */
+    public String getOrcid() {
+        return orcid;
+    }
+
+    /**
+     * Sets new country.
+     *
+     * @param country New value of country.
+     */
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    /**
+     * Gets country.
+     *
+     * @return Value of country.
+     */
+    public String getCountry() {
+        return country;
+    }
+
+    /**
+     * Sets new orcid.
+     *
+     * @param orcid New value of orcid.
+     */
+    public void setOrcid(String orcid) {
+        this.orcid = orcid;
+    }
 }
