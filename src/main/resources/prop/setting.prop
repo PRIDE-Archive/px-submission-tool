@@ -7,13 +7,13 @@ px.submission.tool.width = 800
 px.submission.tool.height = 750
 
 # url for retrieving pride user details
-pride.user.detail.url = http://www.proteomexchange.org/archive-submission-ws/submission/user
+pride.user.detail.url = http://ves-hx-43:8080/pride/archive/submissionuserws/submission/user
 
 # url for retrieving px ftp upload details
-px.upload.detail.url = http://www.proteomexchange.org/archive-submission-ws/submission/upload/{method}
+px.upload.detail.url =  http://ves-hx-43:8080/pride/archive/submissionuserws/submission/upload/{method}
 
 # url for completing px submission
-px.submission.complete.url = http://www.proteomexchange.org/archive-submission-ws/submission/submit
+px.submission.complete.url =  http://ves-hx-43:8080/pride/archive/submissionuserws/submission/submit
 
 # url for proteomexchange
 px.web.url = http://www.proteomexchange.org/
