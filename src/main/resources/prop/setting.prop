@@ -19,15 +19,15 @@ px.submission.complete.url = http://www.proteomexchange.org/archive-submission-w
 px.web.url = http://www.proteomexchange.org/
 
 # url for proteomexchange guideline
-px.submission.guideline.web.url = http://www.proteomexchange.org/submission-proteomexchange-pride
+px.submission.guideline.web.url = http://www.proteomexchange.org/submission/index.html
 
 # url for pride new account
-pride.new.account.url = http://www.ebi.ac.uk/pride/startRegistration.do
+pride.new.account.url = https://www.ebi.ac.uk/pride/archive/register
 
 # urls for px submission tool
 px.submission.tool.update.url = http://www.ebi.ac.uk/pride/resources/tools/submission-tool
 px.submission.tool.url = http://www.proteomexchange.org/submission/index.html
-px.submission.summary.file.format.url = http://www.proteomexchange.org/sites/proteomexchange.org/files/documents/proteomexchange_submission_summary_version_2.0.pdf
+px.submission.summary.file.format.url = http://www.proteomexchange.org/docs/Submission_Summary_File_Format.pdf
 
 # url for resubmission
 px.submission.detail.url = http://www.proteomexchange.org/archive-submission-ws/resubmission/projects
