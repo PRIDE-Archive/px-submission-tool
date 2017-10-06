@@ -1,5 +1,7 @@
 package uk.ac.ebi.pride.gui.form;
 
+import org.apache.commons.lang3.StringUtils;
+import sun.java2d.loops.ProcessPath;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.archive.submission.model.user.ContactDetail;
 import uk.ac.ebi.pride.data.model.Contact;
@@ -72,6 +74,7 @@ public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor 
         form.setSubmitterName(contact.getName());
         form.setAffiliation(contact.getAffiliation());
         form.setEmail(contact.getEmail());
+        //todo
     }
 
     @Override
@@ -114,20 +117,46 @@ public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor 
     @Override
     public void succeed(TaskEvent<ContactDetail> event) {
         ContactDetail details = event.getValue();
-
         if (details != null) {
-            // set name and affiliation
-            updateFormContent(details);
+            if (StringUtils.isEmpty(details.getCountry())) {
+                showAskUserDetailsUpdatePane();
 
+            }
+            updateFormContent(details); // set name and affiliation
             saveFormContent();
-
-            // hide warnings
-            PrideLoginForm form = (PrideLoginForm) getNavigationPanel();
+            PrideLoginForm form = (PrideLoginForm) getNavigationPanel(); // hide warnings
             form.hideWarnings();
-
-            // notify success
-            firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, false, true);
+            firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, false, true); // notify success
         }
+    }
+
+    private void showAskUserDetailsUpdatePane() {
+        JLabel label = new JLabel();
+        Font font = label.getFont();
+        StringBuilder style = new StringBuilder("font-family:" + font.getFamily() + ";");
+        style.append("font-weight:").append(font.isBold() ? "bold" : "normal").append(";");
+        style.append("font-size:").append(font.getSize()).append("pt;");
+        // html content
+        JEditorPane ep = new JEditorPane("text/html", "<html><body style=\"" + style + "\">" //
+            + appContext.getProperty("pride.login.ask.update.details")
+            + "</body></html>");
+        ep.addHyperlinkListener(new HyperlinkListener() {
+            @Override
+            public void hyperlinkUpdate(HyperlinkEvent e) {
+                try {
+                    if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED))
+                        Desktop.getDesktop().browse(e.getURL().toURI());
+                } catch (Exception ex) {
+                    //couldn't display error message
+                }
+            }
+        });
+        ep.setEditable(false);
+        ep.setBackground(label.getBackground());
+        JOptionPane.showConfirmDialog(app.getMainFrame(),
+            ep,
+            appContext.getProperty("pride.login.ask.update.title"),
+            JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
     }
 
     /**
@@ -152,14 +181,16 @@ public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor 
 
     private void updateFormContent(ContactDetail details) {
         PrideLoginForm form = (PrideLoginForm) getNavigationPanel();
-
         String submitterName = details.getFirstName() + " " + details.getLastName();
         String affiliation = details.getAffiliation();
         String email = details.getEmail();
-
+        String country = details.getCountry();
+        String orcid = details.getOrcid();
         form.setSubmitterName(submitterName);
         form.setAffiliation(affiliation);
         form.setEmail(email);
+        form.setCountry(country);
+        form.setOrcid(orcid);
     }
 
     @Override
@@ -184,8 +215,8 @@ public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor 
                 style.append("font-size:" + font.getSize() + "pt;");
                 // html content
                 JEditorPane ep = new JEditorPane("text/html", "<html><body style=\"" + style + "\">" //
-                        + appContext.getProperty("pride.login.error.message")
-                        + "</body></html>");
+                    + appContext.getProperty("pride.login.error.message")
+                    + "</body></html>");
                 ep.addHyperlinkListener(new HyperlinkListener() {
                     @Override
                     public void hyperlinkUpdate(HyperlinkEvent e) {
@@ -200,11 +231,13 @@ public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor 
                 ep.setEditable(false);
                 ep.setBackground(label.getBackground());
                 JOptionPane.showConfirmDialog(app.getMainFrame(),
-                        ep,
-                        appContext.getProperty("pride.login.error.title"),
-                        JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
+                    ep,
+                    appContext.getProperty("pride.login.error.title"),
+                    JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
             }
         };
+
+
         EventQueue.invokeLater(eventDispatcher);
     }
 

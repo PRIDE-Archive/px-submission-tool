@@ -136,6 +136,8 @@ pride.login.error.message = <b>Failed to login.<br><a href="http://www.ebi.ac.uk
 pride.login.resubmission.error.message = Failed to login. Please ensure you have the correct user name and password.
 pride.login.button.loading.small.icon = icon/16x16/loading.gif
 pride.login.create.account.title = Register New User
+pride.login.ask.update.title = Please update your user details
+pride.login.ask.update.details = We now require additional information about your user account.<br>Please can you <a href="http://www.ebi.ac.uk/pride/archive/users/profile/edit">update your details</a>?
 
 # lab head labels and icons
 lab.head.explanation.desc = NOTE: We are collecting this information for grouping submissions by lab and as a contact backup.
