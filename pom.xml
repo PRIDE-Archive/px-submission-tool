@@ -98,6 +98,12 @@
             <groupId>uk.ac.ebi.pride.toolsuite</groupId>
             <artifactId>inspector-swing-utils</artifactId>
             <version>${uk.ac.ebi.pride.toolsuite-inspector-swing-utils.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-core</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- swing related libraries-->
         <dependency>
