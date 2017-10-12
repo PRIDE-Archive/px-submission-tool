@@ -118,9 +118,8 @@ public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor 
     public void succeed(TaskEvent<ContactDetail> event) {
         ContactDetail details = event.getValue();
         if (details != null) {
-            if (StringUtils.isEmpty(details.getCountry())) {
+            if (StringUtils.isEmpty(details.getCountry()) || StringUtils.isEmpty(details.getOrcid())) {
                 showAskUserDetailsUpdatePane();
-
             }
             updateFormContent(details); // set name and affiliation
             saveFormContent();
