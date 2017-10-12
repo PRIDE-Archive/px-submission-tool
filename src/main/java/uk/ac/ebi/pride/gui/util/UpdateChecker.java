@@ -40,14 +40,10 @@ public class UpdateChecker {
      */
     public boolean hasUpdate(String currentVersion) {
         boolean toUpdate = false;
-
-        // get the url for checking the update
         BufferedReader reader = null;
-
         try {
-            URL url = new URL(updateUrl);
-            // connect to the url
-            int response = ((HttpURLConnection) url.openConnection()).getResponseCode();
+            URL url = new URL(updateUrl); // get the url for checking the update
+            int response = ((HttpURLConnection) url.openConnection()).getResponseCode();  // connect to the url
             if (response != 404) {
                 // parse the web page
                 reader = new BufferedReader(new InputStreamReader(url.openStream()));
@@ -74,7 +70,6 @@ public class UpdateChecker {
                 }
             }
         }
-
         return toUpdate;
     }
 
@@ -82,7 +77,6 @@ public class UpdateChecker {
         String[] parts = currentVersion.split("-");
         String[] currentVersionNumbers = parts[0].split("\\.");
         String[] versionNumbers = version.split("\\.");
-
         for (int i = 0; i < currentVersionNumbers.length; i++) {
             int currentVersionNumber = Integer.parseInt(currentVersionNumbers[i]);
             int versionNumber = Integer.parseInt(versionNumbers[i]);
@@ -91,7 +85,6 @@ public class UpdateChecker {
             } else if (versionNumber < currentVersionNumber) {
                 break;
             }
-
         }
         return false;
     }
