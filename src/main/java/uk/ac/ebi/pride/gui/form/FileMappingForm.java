@@ -156,7 +156,7 @@ public class FileMappingForm extends Form {
                     "<b>Please make sure all '" + fileType + "' files have at least one 'raw' file mapping:</b><br/>" + "<li>" +
                     resultOrSearchCount + " '" + fileType + "' file" + (resultOrSearchCount<2 ? " is" : "s are") +
                     " missing file mappings." + "</li>" + "</html>");
-            } else { // (allRawFiles.equals(foundMappedRawFiles))
+            } else { // (!allRawFiles.equals(foundMappedRawFiles))
                 newWarningContents = new JLabel("<html>" +
                     "<b>Please make sure all 'raw' files have been mapped by at least one '" + fileType + "' file:</b><br/>" + "<li>" +
                     (allRawFiles.size()-foundMappedRawFiles.size()) + " 'raw' file" +
