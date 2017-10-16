@@ -18,7 +18,9 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * This form is responsible for assigning file mappings
@@ -27,7 +29,7 @@ import java.util.List;
  * @version $Id$
  */
 public class FileMappingForm extends Form {
-    public static final float DEFAULT_TITLE_FONT_SIZE = 15f;
+    private static final float DEFAULT_TITLE_FONT_SIZE = 15f;
 
     /**
      * Result file table
@@ -48,7 +50,7 @@ public class FileMappingForm extends Form {
      */
     private TargetFileMappingTableModel mappingFileTableModel;
 
-    public FileMappingForm() {
+    FileMappingForm() {
         initComponents();
     }
 
@@ -85,7 +87,7 @@ public class FileMappingForm extends Form {
 
         // scroll pane
         JScrollPane resultFileScrollPane = new JScrollPane(resultFileTable,
-                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+            JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         resultFilePanel.add(resultFileScrollPane, BorderLayout.CENTER);
 
         this.add(resultFilePanel);
@@ -116,7 +118,7 @@ public class FileMappingForm extends Form {
 
         //scroll pane
         JScrollPane mappingFileScrollPane = new JScrollPane(mappingFileTable,
-                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+            JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         mappingFilePanel.add(mappingFileScrollPane, BorderLayout.CENTER);
 
         this.add(mappingFilePanel);
@@ -124,39 +126,51 @@ public class FileMappingForm extends Form {
 
     @Override
     public ValidationState doValidation() {
-        boolean valid = true;
-        int cnt = 0;
-        List<DataFile> resultFiles = SubmissionType.COMPLETE.equals(appContext.getSubmissionType()) ?
-                appContext.getSubmissionFilesByType(ProjectFileType.RESULT) :
-                appContext.getSubmissionFilesByType(ProjectFileType.SEARCH);
-        for (DataFile resultFile : resultFiles) {
-            if (resultFile.getFileMappings().isEmpty() || !resultFile.hasRawMappings()) {
-                valid = false;
-                cnt++;
+        ValidationState result;
+        int resultOrSearchCount = 0;
+        List<DataFile> resultOrSearchFiles = SubmissionType.COMPLETE.equals(appContext.getSubmissionType()) ?
+            appContext.getSubmissionFilesByType(ProjectFileType.RESULT) :
+            appContext.getSubmissionFilesByType(ProjectFileType.SEARCH);
+        Set<DataFile> foundMappedRawFiles = new HashSet<>();
+        Set<DataFile> allRawFiles = new HashSet<>(appContext.getSubmissionFilesByType(ProjectFileType.RAW));
+        for (DataFile resultOrSearchFile : resultOrSearchFiles) {
+            if (resultOrSearchFile.getFileMappings().isEmpty() || !resultOrSearchFile.hasRawMappings()) {
+                resultOrSearchCount++;
+            } else if (!resultOrSearchFile.getFileMappings().isEmpty() && resultOrSearchFile.hasRawMappings()) {
+                List<DataFile> fileMappings = resultOrSearchFile.getFileMappings();
+                for (DataFile dataFile : fileMappings) {
+                    if (ProjectFileType.RAW.equals(dataFile.getFileType())) {
+                        foundMappedRawFiles.add(dataFile);
+                    }
+                }
             }
         }
-
-        if (valid) {
-            return ValidationState.SUCCESS;
-        } else {
-            // show balloon warning tip
+        if ((0<resultOrSearchCount) || (!allRawFiles.equals(foundMappedRawFiles))) {
+            String fileType = SubmissionType.COMPLETE.equals(appContext.getSubmissionType()) ? "result" : "search";
             if (warningBalloonTip != null) {
-                // close previous balloon tip
-                warningBalloonTip.closeBalloon();
+                warningBalloonTip.closeBalloon(); // close previous balloon tip
             }
-
-            // create a new one
-            // construct error message
-
-            // Create the balloon tip
-            JLabel newWarningContents = new JLabel("<html>" + "<b>Please make sure all result files have at least one RAW file mapping:</b><br/>" + "<li>" + cnt + " result files are missing file mappings" + "</li>" + "</html>");
+            JLabel newWarningContents;
+            if (0<resultOrSearchCount) {
+                newWarningContents = new JLabel("<html>" +
+                    "<b>Please make sure all '" + fileType + "' files have at least one 'raw' file mapping:</b><br/>" + "<li>" +
+                    resultOrSearchCount + " '" + fileType + "' file" + (resultOrSearchCount<2 ? " is" : "s are") +
+                    " missing file mappings." + "</li>" + "</html>");
+            } else { // (allRawFiles.equals(foundMappedRawFiles))
+                newWarningContents = new JLabel("<html>" +
+                    "<b>Please make sure all 'raw' files have been mapped by at least one '" + fileType + "' file:</b><br/>" + "<li>" +
+                    (allRawFiles.size()-foundMappedRawFiles.size()) + " 'raw' file" +
+                    ((allRawFiles.size()-foundMappedRawFiles.size())<2 ? " has" : "s have") +
+                    " not been mapped." + "</li>" + "</html>");
+            }
             newWarningContents.setIcon(GUIUtilities.loadIcon(appContext.getProperty("warning.message.icon")));
-
             warningBalloonTip = BalloonTipUtil.createErrorBalloonTip(resultFileTable, newWarningContents);
-            showWarnings();
-
-            return ValidationState.ERROR;
+            showWarnings(); // show balloon warning tip
+            result = ValidationState.ERROR;
+        } else {
+            result = ValidationState.SUCCESS;
         }
+        return result;
     }
 
     /**
