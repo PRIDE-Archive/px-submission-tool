@@ -44,10 +44,11 @@ aspera.EBI.user = prd_ascp
 aspera.EBI.password = path/to/keyFile?
 
 # aspera transfer parameters
-aspera.xfer.tcpPort = 22
+# aspera.xfer.tcpPort = 22
+aspera.xfer.tcpPort = 33001
 aspera.xfer.udpPort = 33001
-aspera.xfer.targetRateKbps = 10000000
-aspera.xfer.minimumRateKbps = 100
+aspera.xfer.targetRateKbps = 950000
+aspera.xfer.minimumRateKbps = 1000
 aspera.xfer.cookie = PRIDE-Aspera-1-Cookie
 aspera.xfer.token = PRIDE-Aspera-1-Token
 aspera.xfer.preCalculateJobSize = false
