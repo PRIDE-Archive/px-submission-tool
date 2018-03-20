@@ -118,7 +118,7 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
    * @return  root path in string
    */
   private String getAbsolutePath() throws UnsupportedEncodingException {
-    String jarDir = null;
+    String jarDir;
     String jarPath = AsperaGeneralTask.class.getProtectionDomain().getCodeSource().getLocation().getPath();
     logger.debug("Jar Path: {}", jarPath);
     String decodedJarPath = URLDecoder.decode(jarPath, "UTF-8");
