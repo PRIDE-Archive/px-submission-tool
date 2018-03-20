@@ -29,25 +29,42 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+/**
+ * Parent class, handles most Aspera transfer general functionality.
+ */
 public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage> {
 
-  AsperaGeneralTask() {
+  /**
+   * Default constructor, initializes class variables.
+   */
+  private AsperaGeneralTask() {
     this.filesToSubmit = Collections.synchronizedSet(new LinkedHashSet<File>());
     this.totalFileSize = 0;
   }
 
+  /**
+   * Constructor, initializes class variables including the submission record.
+   * @param submissionRecord the submission record to set
+   */
   AsperaGeneralTask(SubmissionRecord submissionRecord) {
     this();
     this.submissionRecord = submissionRecord;
   }
 
   public static final Logger logger = LoggerFactory.getLogger(AsperaGeneralTask.class);
+
+  /**
+   * The submission record.
+   */
   SubmissionRecord submissionRecord;
 
   /**
    * Set contains files need to be submitted along with the folder name
    */
   Set<File> filesToSubmit;
+  /**
+   * Iterator of the set of files to submit.
+   */
   Iterator<File> filesToSubmitIter;
 
   /**
@@ -55,7 +72,10 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
    */
   long totalFileSize;
 
-  void prepareSubmission() {
+  /**
+   * Prepare the Aspera-based submission.
+   */
+  private void prepareSubmission() {
     logger.debug("Preparing for uploading an entire submission");
     Set<File> files = Collections.synchronizedSet(new LinkedHashSet<File>());
     File submissionFile = createSubmissionFile();
@@ -72,6 +92,11 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
     filesToSubmitIter = filesToSubmit.iterator();
   }
 
+  /**
+   * Performs the Aspera upload in the background.
+   * @return null when completed
+   * @throws Exception any problems performing the Aspera upload.
+   */
   @Override
   protected Void doInBackground() throws Exception {
     serializeSubmissionReport();
@@ -81,10 +106,15 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
     return null;
   }
 
+  /**
+   * Handles uploading of files using Asopera
+   * @throws FaspManagerException problems using the Aspera API to perform the upload
+   * @throws UnsupportedEncodingException problems creating a temporary file
+   */
   abstract void asperaUpload() throws FaspManagerException, UnsupportedEncodingException ;
 
   /**
-   * Get the root path of Aspera binary
+   * Gets the root path of Aspera binary
    * @return  root path in string
    */
   private String getAbsolutePath() throws UnsupportedEncodingException {
@@ -102,6 +132,11 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
     return jarDir;
   }
 
+  /**
+   * Choses which version of the Aspera binary to use, depending on operating system.
+   * @return the aspera binary location as a String.
+   * @throws UnsupportedEncodingException Unable to create a temporary file.
+   */
   String chooseAsperaBinary() throws UnsupportedEncodingException {
     final OSDetector.OS os = OSDetector.getOS();
     final DesktopContext appContext = App.getInstance().getDesktopContext();
@@ -129,11 +164,10 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
   }
 
   /**
-   * Create submission file
-   *
-   * @return boolean true indicates success
+   * Creates a submission file
+   * @return boolean true for successfully creating a submission file, false otherwise.
    */
-  File createSubmissionFile() {
+  private File createSubmissionFile() {
     try {
       SecureRandom random = new SecureRandom();
       File tempDir = new File(System.getProperty("java.io.tmpdir") + File.separator + random.nextLong());
@@ -150,14 +184,22 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
     return null;
   }
 
-  void waitUpload() throws InitializationException, InterruptedException {
+  /**
+   * Waits fo the Aspera upload to complete.
+   * @throws InitializationException Problems starting the transfer.
+   * @throws InterruptedException Problems sleepging the method.
+   */
+  private void waitUpload() throws InitializationException, InterruptedException {
     FaspManager faspManager = FaspManager.getSingleton();
     while (faspManager.isRunning()) {
       Thread.sleep(30000);
     } // wait for Aspera transfer to finish
   }
 
-  void serializeSubmissionReport() {
+  /**
+   * Serializes the submission record.
+   */
+  private void serializeSubmissionReport() {
     try {
       SubmissionRecordSerializer.serialize(submissionRecord);
     } catch (IOException ioe) {
@@ -165,6 +207,9 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
     }
   }
 
+  /**
+   * Publishes a message if the transfer has been cancelled.
+   */
   @Override
   protected void cancelled() {
     publish(new UploadStoppedMessage(this, submissionRecord));

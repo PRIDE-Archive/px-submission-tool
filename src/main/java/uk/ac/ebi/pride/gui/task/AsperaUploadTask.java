@@ -11,11 +11,9 @@ import uk.ac.ebi.pride.gui.task.ftp.*;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
-import java.util.Collections;
-import java.util.LinkedHashSet;
 
 /**
- * Created by ilias
+ * Task to perform an Aspera upload.
  */
 
 public class AsperaUploadTask extends AsperaGeneralTask implements TransferListener {
@@ -24,13 +22,17 @@ public class AsperaUploadTask extends AsperaGeneralTask implements TransferListe
 
     /**
      * Constructor used for a new submission
-     *
      * @param submissionRecord submission record
      */
     public AsperaUploadTask(SubmissionRecord submissionRecord) {
         super(submissionRecord);
     }
 
+    /**
+     * Handles uploading of files using Asopera
+     * @throws FaspManagerException problems using the Aspera API to perform the upload
+     * @throws UnsupportedEncodingException problems creating a temporary file
+     */
     @Override
     void asperaUpload() throws FaspManagerException, UnsupportedEncodingException {
         String ascpLocation = chooseAsperaBinary();
@@ -50,6 +52,12 @@ public class AsperaUploadTask extends AsperaGeneralTask implements TransferListe
         logger.debug("TransferEvent ID: {}", transferId);
     }
 
+    /**
+     * Processes a file session event.
+     * @param transferEvent the transfer event
+     * @param sessionStats the session status
+     * @param fileInfo the file information
+     */
     @Override
     public void fileSessionEvent(TransferEvent transferEvent, SessionStats sessionStats, FileInfo fileInfo) {
         int totalNumOfFiles = submissionRecord.getSubmission().getDataFiles().size();

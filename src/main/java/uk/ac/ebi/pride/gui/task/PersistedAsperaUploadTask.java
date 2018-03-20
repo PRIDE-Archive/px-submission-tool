@@ -23,7 +23,7 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
     public static final Logger logger = LoggerFactory.getLogger(AsperaUploadTask.class);
 
     /**
-     * finished file count
+     * Finished file count
      */
     private int finishedFileCount;
 
@@ -36,6 +36,11 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
         super(submissionRecord);
     }
 
+    /**
+     * Handles uploading of files using Asopera
+     * @throws FaspManagerException problems using the Aspera API to perform the upload
+     * @throws UnsupportedEncodingException problems creating a temporary file
+     */
     void asperaUpload() throws FaspManagerException, UnsupportedEncodingException {
         String ascpLocation = chooseAsperaBinary();
         logger.debug("Aspera binary location {}", ascpLocation);
@@ -56,8 +61,6 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
      * For additional descriptions see the Aspera documentation
      * of the command line tool. For example at
      * http://download.asperasoft.com/download/docs/ascp/2.7/html/index.html
-     * <p/>
-     *
      * @return the default transfer parameters.
      */
     private static XferParams getDefaultTransferParams() {
@@ -77,12 +80,12 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
         xferParams.persist = true;
         return xferParams;
     }
-
-    @Override
-    protected void cancelled() {
-        publish(new UploadStoppedMessage(this, submissionRecord));
-    }
-
+    /**
+     * Processes a file session event.
+     * @param transferEvent the transfer event
+     * @param sessionStats the session status
+     * @param fileInfo the file information
+     */
     @Override
     public void fileSessionEvent(TransferEvent transferEvent, SessionStats sessionStats, FileInfo fileInfo) {
         FaspManager faspManager;
