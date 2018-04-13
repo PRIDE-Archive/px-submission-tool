@@ -47,7 +47,7 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
 
   /** Default constructor, initializes class variables. */
   private AsperaGeneralTask() {
-    this.filesToSubmit = Collections.synchronizedSet(new LinkedHashSet<File>());
+    this.filesToSubmit = Collections.synchronizedSet(new LinkedHashSet<>());
     this.totalFileSize = 0;
   }
 
@@ -64,7 +64,7 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
   /** Prepare the Aspera-based submission. */
   private void prepareSubmission() {
     logger.debug("Preparing for uploading an entire submission");
-    Set<File> files = Collections.synchronizedSet(new LinkedHashSet<File>());
+    Set<File> files = Collections.synchronizedSet(new LinkedHashSet<>());
     File submissionFile = createSubmissionFile();
     if (submissionFile != null) {
       files.add(submissionFile);
