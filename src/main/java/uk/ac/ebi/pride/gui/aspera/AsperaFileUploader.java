@@ -60,8 +60,6 @@ public class AsperaFileUploader {
         p.overwrite = Overwrite.DIFFERENT;
         p.generateManifest = Manifest.NONE;
         p.policy = Policy.FAIR;
-        p.cookie = appContext.getProperty("aspera.xfer.cookie");
-        p.token = appContext.getProperty("aspera.xfer.token");
         p.resumeCheck = Resume.SPARSE_CHECKSUM;
         p.preCalculateJobSize = Boolean.parseBoolean(appContext.getProperty("aspera.xfer.preCalculateJobSize"));
         p.createPath = Boolean.parseBoolean(appContext.getProperty("aspera.xfer.createPath"));
