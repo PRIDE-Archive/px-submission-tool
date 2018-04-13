@@ -29,14 +29,23 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-/**
- * Parent class, handles most Aspera transfer general functionality.
- */
+/** Parent class, handles most Aspera transfer general functionality. */
 public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage> {
 
-  /**
-   * Default constructor, initializes class variables.
-   */
+  public static final Logger logger = LoggerFactory.getLogger(AsperaGeneralTask.class);
+
+  /** The submission record. */
+  SubmissionRecord submissionRecord;
+
+  /** Set contains files need to be submitted along with the folder name */
+  Set<File> filesToSubmit;
+  /** Iterator of the set of files to submit. */
+  Iterator<File> filesToSubmitIter;
+
+  /** Total file size need to be uploaded */
+  long totalFileSize;
+
+  /** Default constructor, initializes class variables. */
   private AsperaGeneralTask() {
     this.filesToSubmit = Collections.synchronizedSet(new LinkedHashSet<File>());
     this.totalFileSize = 0;
@@ -44,6 +53,7 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
 
   /**
    * Constructor, initializes class variables including the submission record.
+   *
    * @param submissionRecord the submission record to set
    */
   AsperaGeneralTask(SubmissionRecord submissionRecord) {
@@ -51,30 +61,7 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
     this.submissionRecord = submissionRecord;
   }
 
-  public static final Logger logger = LoggerFactory.getLogger(AsperaGeneralTask.class);
-
-  /**
-   * The submission record.
-   */
-  SubmissionRecord submissionRecord;
-
-  /**
-   * Set contains files need to be submitted along with the folder name
-   */
-  Set<File> filesToSubmit;
-  /**
-   * Iterator of the set of files to submit.
-   */
-  Iterator<File> filesToSubmitIter;
-
-  /**
-   * Total file size need to be uploaded
-   */
-  long totalFileSize;
-
-  /**
-   * Prepare the Aspera-based submission.
-   */
+  /** Prepare the Aspera-based submission. */
   private void prepareSubmission() {
     logger.debug("Preparing for uploading an entire submission");
     Set<File> files = Collections.synchronizedSet(new LinkedHashSet<File>());
@@ -94,6 +81,7 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
 
   /**
    * Performs the Aspera upload in the background.
+   *
    * @return null when completed
    * @throws Exception any problems performing the Aspera upload.
    */
@@ -108,18 +96,21 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
 
   /**
    * Handles uploading of files using Asopera
+   *
    * @throws FaspManagerException problems using the Aspera API to perform the upload
    * @throws UnsupportedEncodingException problems creating a temporary file
    */
-  abstract void asperaUpload() throws FaspManagerException, UnsupportedEncodingException ;
+  abstract void asperaUpload() throws FaspManagerException, UnsupportedEncodingException;
 
   /**
    * Gets the root path of Aspera binary
-   * @return  root path in string
+   *
+   * @return root path in string
    */
   private String getAbsolutePath() throws UnsupportedEncodingException {
     String jarDir;
-    String jarPath = AsperaGeneralTask.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+    String jarPath =
+        AsperaGeneralTask.class.getProtectionDomain().getCodeSource().getLocation().getPath();
     logger.debug("Jar Path: {}", jarPath);
     String decodedJarPath = URLDecoder.decode(jarPath, "UTF-8");
     File jarFile = new File(decodedJarPath);
@@ -134,6 +125,7 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
 
   /**
    * Choses which version of the Aspera binary to use, depending on operating system.
+   *
    * @return the aspera binary location as a String.
    * @throws UnsupportedEncodingException Unable to create a temporary file.
    */
@@ -165,14 +157,18 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
 
   /**
    * Creates a submission file
+   *
    * @return boolean true for successfully creating a submission file, false otherwise.
    */
   private File createSubmissionFile() {
     try {
       SecureRandom random = new SecureRandom();
-      File tempDir = new File(System.getProperty("java.io.tmpdir") + File.separator + random.nextLong());
+      File tempDir =
+          new File(System.getProperty("java.io.tmpdir") + File.separator + random.nextLong());
       logger.info("Created temp directory? " + tempDir.mkdir());
-      File submissionFile = new File(tempDir.getAbsolutePath() + File.separator + Constant.PX_SUBMISSION_SUMMARY_FILE);
+      File submissionFile =
+          new File(
+              tempDir.getAbsolutePath() + File.separator + Constant.PX_SUBMISSION_SUMMARY_FILE);
       logger.info("Create temporary submission summary file : " + submissionFile.getAbsolutePath());
       SubmissionFileWriter.write(submissionRecord.getSubmission(), submissionFile);
       return submissionFile;
@@ -186,6 +182,7 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
 
   /**
    * Waits fo the Aspera upload to complete.
+   *
    * @throws InitializationException Problems starting the transfer.
    * @throws InterruptedException Problems sleepging the method.
    */
@@ -196,9 +193,7 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
     } // wait for Aspera transfer to finish
   }
 
-  /**
-   * Serializes the submission record.
-   */
+  /** Serializes the submission record. */
   private void serializeSubmissionReport() {
     try {
       SubmissionRecordSerializer.serialize(submissionRecord);
@@ -207,9 +202,7 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
     }
   }
 
-  /**
-   * Publishes a message if the transfer has been cancelled.
-   */
+  /** Publishes a message if the transfer has been cancelled. */
   @Override
   protected void cancelled() {
     publish(new UploadStoppedMessage(this, submissionRecord));
