@@ -51,19 +51,19 @@ public class AsperaFileUploader {
      * @return the default transfer parameters.
      */
     public static XferParams defaultTransferParams() {
-        XferParams p = new XferParams();
-        p.tcpPort = Integer.parseInt(appContext.getProperty("aspera.xfer.tcpPort"));
-        p.udpPort = Integer.parseInt(appContext.getProperty("aspera.xfer.udpPort")); // port used for data transfer
-        p.targetRateKbps = Integer.parseInt(appContext.getProperty("aspera.xfer.targetRateKbps")); // 10000000 Kbps (= 10 Gbps)
-        p.minimumRateKbps = Integer.parseInt(appContext.getProperty("aspera.xfer.minimumRateKbps")); //    100 Kbps
-        p.encryption = Encryption.DEFAULT;
-        p.overwrite = Overwrite.DIFFERENT;
-        p.generateManifest = Manifest.NONE;
-        p.policy = Policy.FAIR;
-        p.resumeCheck = Resume.SPARSE_CHECKSUM;
-        p.preCalculateJobSize = Boolean.parseBoolean(appContext.getProperty("aspera.xfer.preCalculateJobSize"));
-        p.createPath = Boolean.parseBoolean(appContext.getProperty("aspera.xfer.createPath"));
-        return p;
+        XferParams xferParams = new XferParams();
+        xferParams.tcpPort = Integer.parseInt(appContext.getProperty("aspera.xfer.tcpPort"));
+        xferParams.udpPort = Integer.parseInt(appContext.getProperty("aspera.xfer.udpPort")); // port used for data transfer
+        xferParams.targetRateKbps = Integer.parseInt(appContext.getProperty("aspera.xfer.targetRateKbps")); // 10000000 Kbps (= 10 Gbps)
+        xferParams.minimumRateKbps = Integer.parseInt(appContext.getProperty("aspera.xfer.minimumRateKbps")); //    100 Kbps
+        xferParams.encryption = Encryption.DEFAULT;
+        xferParams.overwrite = Overwrite.DIFFERENT;
+        xferParams.generateManifest = Manifest.NONE;
+        xferParams.policy = Policy.FAIR;
+        xferParams.resumeCheck = Resume.SPARSE_CHECKSUM;
+        xferParams.preCalculateJobSize = Boolean.parseBoolean(appContext.getProperty("aspera.xfer.preCalculateJobSize"));
+        xferParams.createPath = Boolean.parseBoolean(appContext.getProperty("aspera.xfer.createPath"));
+        return xferParams;
     }
 
     /**
