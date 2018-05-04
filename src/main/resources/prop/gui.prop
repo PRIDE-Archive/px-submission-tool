@@ -352,6 +352,8 @@ other.file.title = Other files
 file.non.zero.count.small.icon = icon/16x16/green_bullet.png
 file.zero.count.small.icon = icon/16x16/grey_bullet.png
 summary.submit.button.title = Submit
+summary.validate.button.title = Validate
+summary.validate.button.tooltip = Validate your complete submission before submitting
 
 # Help
 help.main.set=help/MainHelp.hs
