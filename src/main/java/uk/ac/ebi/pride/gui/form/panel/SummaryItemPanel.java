@@ -12,7 +12,6 @@ import uk.ac.ebi.pride.data.io.SubmissionFileWriter;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
-import uk.ac.ebi.pride.gui.navigation.Navigator;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwarePanel;
 import uk.ac.ebi.pride.gui.util.BalloonTipUtil;
@@ -47,10 +46,15 @@ public class SummaryItemPanel extends ContextAwarePanel
   private static final float DEFAULT_TITLE_FONT_SIZE = 13f;
   private static final String EXPORT_SUMMARY_ACTION = "exportSummary";
   private static final String VALIDATE_ACTION = "validate";
+
   Submission submission;
-//  Navigator navigator;
+  SubmissionType submissionType;
 
   public SummaryItemPanel() {
+    //get submission details
+    submission = appContext.getSubmissionRecord().getSubmission();
+    submissionType = submission.getProjectMetaData().getSubmissionType();
+
     appContext.addPropertyChangeListener(this);
     populateSummaryItemPanel();
   }
@@ -113,11 +117,6 @@ public class SummaryItemPanel extends ContextAwarePanel
     validationButton.setActionCommand(VALIDATE_ACTION);
     validationButton.addActionListener(this);
     this.add(validationButton, BorderLayout.PAGE_END);
-    //    navigator = ((App) App.getInstance()).getNavigator();
-    //    JButton validationButton = navigator.getValidationButton();
-    //    validationButton.setVisible(true);
-    submission = appContext.getSubmissionRecord().getSubmission();
-    SubmissionType submissionType = submission.getProjectMetaData().getSubmissionType();
     validationButton.setEnabled(submissionType.equals(SubmissionType.COMPLETE));
 
     // repaint
@@ -291,6 +290,13 @@ public class SummaryItemPanel extends ContextAwarePanel
     JOptionPane.showMessageDialog(null, message);
   }
 
+  /**
+   * This method is a command method to construct mzIdentML, MzTab or PRIDEXML validations
+   * using validation tools on ms-data-core-api
+   * @param dataFile
+   * @param fileFormat
+   * @return
+   */
   private String[] constructValidationCommand(DataFile dataFile, MassSpecFileFormat fileFormat) {
     File reportFile;
     boolean isFirstPeakFile = true;
@@ -335,9 +341,7 @@ public class SummaryItemPanel extends ContextAwarePanel
         CommandLine cmd = PGConverter.parseArgs(args);
         Report report = Validator.startValidation(cmd);
 
-        //getMetaData
-        //submission.getProjectMetaData().get
-
+        // TODO to be removed, this is for testing purpose only
         message += "Status            : " + report.getStatus() + "\n";
         message += "Total Protein     : " + report.getTotalProteins() + "\n";
         message += "Total Peptides    : " + report.getTotalPeptides() + "\n";
