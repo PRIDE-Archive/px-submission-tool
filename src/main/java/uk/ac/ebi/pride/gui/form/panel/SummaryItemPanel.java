@@ -12,6 +12,8 @@ import uk.ac.ebi.pride.data.io.SubmissionFileWriter;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
+import uk.ac.ebi.pride.gui.util.ValidationReportHTMLFormatUtil;
+import uk.ac.ebi.pride.gui.util.ValidationResults;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwarePanel;
 import uk.ac.ebi.pride.gui.util.BalloonTipUtil;
@@ -28,7 +30,6 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static uk.ac.ebi.pride.utilities.data.controller.tools.utils.Utility.*;
@@ -286,8 +287,11 @@ public class SummaryItemPanel extends ContextAwarePanel
         message += "\n\n";
       }
     }
-    message = runValidationCommands(validationCommands);
-    JOptionPane.showMessageDialog(null, message);
+    List<Report> reports = runValidationCommands(validationCommands);
+    // todo: make this static
+    ValidationReportHTMLFormatUtil formatUtil = new ValidationReportHTMLFormatUtil();
+    message = formatUtil.getValidationReportInHTML(submission, reports).toString();
+    ValidationResults validationReport = new ValidationResults(message);
   }
 
   /**
@@ -333,25 +337,16 @@ public class SummaryItemPanel extends ContextAwarePanel
    * @param validationCommands List of arrays of String
    * @return String
    */
-  private String runValidationCommands(List<String[]> validationCommands) {
-    String message = "";
+  private List<Report> runValidationCommands(List<String[]> validationCommands) {
+    List<Report> reports = new ArrayList<>();
     try {
       for (String[] args : validationCommands) {
-        message += "\nExecuting command: " + Arrays.toString(args) + "\n\n";
         CommandLine cmd = PGConverter.parseArgs(args);
-        Report report = Validator.startValidation(cmd);
-
-        // TODO to be removed, this is for testing purpose only
-        message += "Status            : " + report.getStatus() + "\n";
-        message += "Total Protein     : " + report.getTotalProteins() + "\n";
-        message += "Total Peptides    : " + report.getTotalPeptides() + "\n";
-        message += "Total Spectra      : " + report.getTotalSpecra() + "\n";
-        message += "Missing Id Spectra: " + report.getMissingIdSpectra() + "\n";
-        message += "DeltaMz Percent   : " + report.getDeltaMzPercent() + "\n";
+        reports.add(Validator.startValidation(cmd));
       }
     } catch (ParseException e) {
       logger.error("File validation error: " + e.getMessage());
     }
-    return message;
+    return reports;
   }
 }
