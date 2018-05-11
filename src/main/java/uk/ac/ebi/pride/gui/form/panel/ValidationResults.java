@@ -1,4 +1,6 @@
-package uk.ac.ebi.pride.gui.util;
+package uk.ac.ebi.pride.gui.form.panel;
+
+import uk.ac.ebi.pride.gui.util.Mail;
 
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;

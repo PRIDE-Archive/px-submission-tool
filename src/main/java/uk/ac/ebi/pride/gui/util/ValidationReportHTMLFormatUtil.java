@@ -16,22 +16,13 @@ import java.util.*;
 public class ValidationReportHTMLFormatUtil {
 
   private static final Logger logger = LoggerFactory.getLogger(ValidationReportHTMLFormatUtil.class);
-  int score = 0; // score to track if there's any error(s) found during the validation
+  int errorScore = 0; // errorScore to track if there's any error(s) found during the validation
 
   public StringBuilder getValidationReportInHTML(Submission submission, List<Report> reports) {
 
     StringBuilder htmlFormatted = new StringBuilder();
 
     htmlFormatted.append(
-        //          "<!DOCTYPE html>\n"
-        //              + "<html lang=\"en\">\n"
-        //              + "<head>\n"
-        //              + "<title>"
-        //              + "PX Submission Tool Validation Report"
-        //              + "</title>\n"
-        //              + "<meta http-equiv=\"Content-Type\" content=\"text/html;charset=utf-8\"
-        // />\n"
-        //              + "</head>"
         "<body>\n"
                 + "<div><h1>PX Submission Tool Validation Report</h1></div><br/><br/>");
     htmlFormatted.append(formatMetadata(getMetaData(submission)));
@@ -39,7 +30,6 @@ public class ValidationReportHTMLFormatUtil {
     htmlFormatted.append(formatFooter());
     htmlFormatted.append(
         "" + "</body>\n"
-        //              +"</html>"
         );
     logger.info("Generated html report: " + htmlFormatted.toString());
     return htmlFormatted;
@@ -75,7 +65,7 @@ public class ValidationReportHTMLFormatUtil {
 
     StringBuilder metadataSectionHTML = new StringBuilder();
 
-    metadataSectionHTML.append("<h4>Project Metadata</h4><br/><br/>");
+    metadataSectionHTML.append("<h2>Project Metadata</h2><br/>");
     for (Map.Entry<String, Object> entry : metadata.entrySet()) {
       metadataSectionHTML.append("<p>");
       metadataSectionHTML.append("<b>");
@@ -84,7 +74,6 @@ public class ValidationReportHTMLFormatUtil {
       metadataSectionHTML.append(entry.getValue());
       metadataSectionHTML.append("</p>");
     }
-    metadataSectionHTML.append("<br/><br/>");
     return metadataSectionHTML;
   }
 
@@ -101,8 +90,9 @@ public class ValidationReportHTMLFormatUtil {
             "#Identified spectra",
             "#Missing identified spectra");
     StringBuilder FileValidationsSectionHTML = new StringBuilder();
+    StringBuilder errors = new StringBuilder();
 
-    FileValidationsSectionHTML.append("<h4>File Validations</h4><br/><br/>");
+    FileValidationsSectionHTML.append("<h2>File Validations</h2><br/>");
     FileValidationsSectionHTML.append("<table>");
     // header
     FileValidationsSectionHTML.append("<tr>");
@@ -115,29 +105,37 @@ public class ValidationReportHTMLFormatUtil {
     // Row(s)
     FileValidationsSectionHTML.append("<tr>");
     for (Report report : reports) {
-      FileValidationsSectionHTML.append(formatRaw(report));
+      if (report.getStatus().equals("OK")) {
+        FileValidationsSectionHTML.append(formatRaw(report));
+      }else{
+        errors.append(report.getStatus());
+        logger.error(report.getStatus());
+        errors.append("<br/>");
+      }
     }
     FileValidationsSectionHTML.append("</tr>");
     FileValidationsSectionHTML.append("</table>");
     FileValidationsSectionHTML.append("<br/><br/>");
+    if(!errors.toString().equals("")){
+      FileValidationsSectionHTML.append("<p class=\"incorrect\">" + errors + "</p>");
+      errorScore++;
+    }
     return FileValidationsSectionHTML;
   }
 
   private StringBuilder formatFooter() {
     StringBuilder footerSectionHTML = new StringBuilder();
 
-//    <div class="incorrect"><h3>OVERALL VALIDATION SCORE: OK - 100%</h3></div>
-
-    int newScore = 100 - (score * 10);
+    int newScore = 100 - (errorScore * 10);
     footerSectionHTML.append("\n<div ");
     if (newScore == 100) {
-      footerSectionHTML.append("class=\"correct\"><h3>");
+      footerSectionHTML.append("class=\"correct\"><h3><b>");
       footerSectionHTML.append("OVERALL VALIDATION SCORE: OK - ").append(newScore);
     } else {
-      footerSectionHTML.append("class=\"incorrect\"><h3>");
+      footerSectionHTML.append("class=\"incorrect\"><h3><b>");
       footerSectionHTML.append("OVERALL VALIDATION SCORE: FAIL - ").append(newScore);
     }
-    footerSectionHTML.append("0%</h3></div>");
+    footerSectionHTML.append("%</b></h3></div>");
     return footerSectionHTML;
   }
 
@@ -148,15 +146,33 @@ public class ValidationReportHTMLFormatUtil {
     tableRawHTML.append(report.getFileName());
     tableRawHTML.append("</td>");
 
-    tableRawHTML.append("<td>");
+    // total proteins
+    if(report.getTotalProteins() == 0){
+      tableRawHTML.append("<td class=\"incorrect\">");
+      errorScore++;
+    }else{
+      tableRawHTML.append("<td>");
+    }
     tableRawHTML.append(report.getTotalProteins());
     tableRawHTML.append("</td>");
 
-    tableRawHTML.append("<td>");
+    // total peptides
+    if(report.getTotalPeptides() == 0){
+      tableRawHTML.append("<td class=\"incorrect\">");
+      errorScore++;
+    }else{
+      tableRawHTML.append("<td>");
+    }
     tableRawHTML.append(report.getTotalPeptides());
     tableRawHTML.append("</td>");
 
-    tableRawHTML.append("<td>");
+    // total Spectra
+    if(report.getTotalSpecra() == 0){
+      tableRawHTML.append("<td class=\"incorrect\">");
+      errorScore++;
+    }else{
+      tableRawHTML.append("<td>");
+    }
     tableRawHTML.append(report.getTotalSpecra());
     tableRawHTML.append("</td>");
 
@@ -168,11 +184,23 @@ public class ValidationReportHTMLFormatUtil {
     tableRawHTML.append(report.getDeltaMzPercent());
     tableRawHTML.append("</td>");
 
-    tableRawHTML.append("<td>");
+    // get total identified spectra
+    if(report.getIdentifiedSpectra() == 0){
+      tableRawHTML.append("<td class=\"incorrect\">");
+      errorScore++;
+    }else{
+      tableRawHTML.append("<td>");
+    }
     tableRawHTML.append(report.getIdentifiedSpectra());
     tableRawHTML.append("</td>");
 
-    tableRawHTML.append("<td>");
+    // missing spectra
+    if(report.getMissingIdSpectra() != 0){
+      tableRawHTML.append("<td class=\"incorrect\">");
+      errorScore++;
+    }else{
+      tableRawHTML.append("<td>");
+    }
     tableRawHTML.append(report.getMissingIdSpectra());
     tableRawHTML.append("</td>");
 

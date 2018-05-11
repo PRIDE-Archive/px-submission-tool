@@ -13,7 +13,6 @@ import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
 import uk.ac.ebi.pride.gui.util.ValidationReportHTMLFormatUtil;
-import uk.ac.ebi.pride.gui.util.ValidationResults;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwarePanel;
 import uk.ac.ebi.pride.gui.util.BalloonTipUtil;
@@ -311,6 +310,7 @@ public class SummaryItemPanel extends ContextAwarePanel
       reportFile = File.createTempFile("testResultFile", ".log");
       command.add("-" + ARG_VALIDATION);
       command.add("-" + arg_format);
+      command.add("-" + ARG_SCHEMA_VALIDATION);
       command.add(dataFile.getFilePath());
       if (!fileFormat.equals(MassSpecFileFormat.PRIDE)) {
         for (DataFile mappingFile : dataFile.getFileMappings()) {
@@ -342,6 +342,7 @@ public class SummaryItemPanel extends ContextAwarePanel
     try {
       for (String[] args : validationCommands) {
         CommandLine cmd = PGConverter.parseArgs(args);
+        logger.debug("Running: " + args.toString());
         reports.add(Validator.startValidation(cmd));
       }
     } catch (ParseException e) {
