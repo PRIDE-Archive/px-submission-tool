@@ -310,7 +310,6 @@ public class SummaryItemPanel extends ContextAwarePanel
       reportFile = File.createTempFile("testResultFile", ".log");
       command.add("-" + ARG_VALIDATION);
       command.add("-" + arg_format);
-      command.add("-" + ARG_SCHEMA_VALIDATION);
       command.add(dataFile.getFilePath());
       if (!fileFormat.equals(MassSpecFileFormat.PRIDE)) {
         for (DataFile mappingFile : dataFile.getFileMappings()) {
@@ -321,6 +320,7 @@ public class SummaryItemPanel extends ContextAwarePanel
           }
         }
       }
+      command.add("-" + ARG_SCHEMA_VALIDATION);
       command.add("-" + ARG_SKIP_SERIALIZATION);
       command.add("-" + ARG_REPORTFILE);
       command.add(reportFile.getAbsolutePath());
