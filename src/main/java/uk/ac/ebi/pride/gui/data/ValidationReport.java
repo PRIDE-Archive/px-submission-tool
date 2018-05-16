@@ -101,7 +101,7 @@ public class ValidationReport {
   }
 
   public String getSubmitter() {
-    return projectMetaData.getSubmitterContact().toString();
+    return projectMetaData.getSubmitterContact().getName() + "(" + projectMetaData.getSubmitterContact().getEmail() + ")";
   }
 
   public String getResubmissionPxAccession() {

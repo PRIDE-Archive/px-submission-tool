@@ -18,9 +18,7 @@ import javax.swing.text.Document;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 
-/**
- * @author Suresh Hewapathirana
- */
+/** @author Suresh Hewapathirana */
 public class ValidationResults implements ActionListener {
 
   JEditorPane jEditorPane = new JEditorPane();
@@ -28,14 +26,12 @@ public class ValidationResults implements ActionListener {
   JPanel buttonPanel = new JPanel();
   String htmlString;
 
-  public ValidationResults(String validationReport) {
+  protected ValidationResults(String validationReport) {
     this.htmlString = validationReport;
     initialize();
   }
 
-  /**
-   * Initialise the JFrame
-   */
+  /** Initialise the JFrame */
   private void initialize() {
 
     emailButton.addActionListener(this);
@@ -52,6 +48,7 @@ public class ValidationResults implements ActionListener {
     styleSheet.addRule("body {color:#000; font-family:times; margin: 4px; }");
     styleSheet.addRule(".correct {background-color: #00897b;}");
     styleSheet.addRule(".incorrect {background-color: #e53935;}");
+    styleSheet.addRule(".warning {background-color: ##ffeb3b;}");
     styleSheet.addRule("div {background-color: #00897b; text-align: center;}");
     styleSheet.addRule("h1, h3 {color: #ffffff;}");
     styleSheet.addRule("table {border: 1px solid black; width: 100%;}");
@@ -64,7 +61,7 @@ public class ValidationResults implements ActionListener {
 
     // Set JFrame layout and other properties
     JFrame frame = new JFrame("PX Submission Tool Validation Report");
-    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
     frame.getContentPane().setLayout(new BorderLayout());
     frame.getContentPane().add(pane, BorderLayout.CENTER);
     frame.getContentPane().add(buttonPanel, BorderLayout.SOUTH);
@@ -78,9 +75,7 @@ public class ValidationResults implements ActionListener {
     if (e.getSource().equals(emailButton)) {
       try {
         Mail.mailto(Mail.TO, Mail.SUBJECT, Mail.CONTENT);
-      } catch (IOException ex) {
-        Logger.getLogger(ValidationResults.class.getName()).log(Level.SEVERE, null, ex);
-      } catch (URISyntaxException ex) {
+      } catch (IOException | URISyntaxException ex) {
         Logger.getLogger(ValidationResults.class.getName()).log(Level.SEVERE, null, ex);
       }
     }

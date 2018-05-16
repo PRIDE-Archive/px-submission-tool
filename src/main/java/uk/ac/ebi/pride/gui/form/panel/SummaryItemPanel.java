@@ -51,7 +51,7 @@ public class SummaryItemPanel extends ContextAwarePanel
   SubmissionType submissionType;
 
   public SummaryItemPanel() {
-    //get submission details
+    // get submission details
     submission = appContext.getSubmissionRecord().getSubmission();
     submissionType = submission.getProjectMetaData().getSubmissionType();
 
@@ -294,8 +294,9 @@ public class SummaryItemPanel extends ContextAwarePanel
   }
 
   /**
-   * This method is a command method to construct mzIdentML, MzTab or PRIDEXML validations
-   * using validation tools on ms-data-core-api
+   * This method is a command method to construct mzIdentML, MzTab or PRIDEXML validations using
+   * validation tools on ms-data-core-api
+   *
    * @param dataFile
    * @param fileFormat
    * @return
@@ -304,7 +305,8 @@ public class SummaryItemPanel extends ContextAwarePanel
     File reportFile;
     boolean isFirstPeakFile = true;
     List<String> command = new ArrayList<>();
-    String arg_format = (!fileFormat.equals(MassSpecFileFormat.PRIDE))? fileFormat.getFileExtension(): "pridexml";
+    String arg_format =
+        (!fileFormat.equals(MassSpecFileFormat.PRIDE)) ? fileFormat.getFileExtension() : "pridexml";
 
     try {
       reportFile = File.createTempFile("testResultFile", ".log");
@@ -319,6 +321,11 @@ public class SummaryItemPanel extends ContextAwarePanel
             isFirstPeakFile = false;
           }
         }
+      }
+      if (fileFormat.equals(MassSpecFileFormat.MZIDENTML)
+          && (appContext.getProperty("fast.validation").equals("true"))) {
+        logger.debug("Fast Validation switched on");
+        command.add("-" + ARG_FAST_VALIDATION);
       }
       command.add("-" + ARG_SCHEMA_VALIDATION);
       command.add("-" + ARG_SKIP_SERIALIZATION);
@@ -342,7 +349,7 @@ public class SummaryItemPanel extends ContextAwarePanel
     try {
       for (String[] args : validationCommands) {
         CommandLine cmd = PGConverter.parseArgs(args);
-        logger.debug("Running: " + args.toString());
+        logger.debug("Running command: " + args.toString());
         reports.add(Validator.startValidation(cmd));
       }
     } catch (ParseException e) {

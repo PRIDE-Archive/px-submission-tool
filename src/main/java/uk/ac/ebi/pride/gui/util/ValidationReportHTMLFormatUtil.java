@@ -17,6 +17,7 @@ public class ValidationReportHTMLFormatUtil {
 
   private static final Logger logger = LoggerFactory.getLogger(ValidationReportHTMLFormatUtil.class);
   int errorScore = 0; // errorScore to track if there's any error(s) found during the validation
+  StringBuilder errorNotes =  new StringBuilder();
 
   public StringBuilder getValidationReportInHTML(Submission submission, List<Report> reports) {
 
@@ -90,7 +91,6 @@ public class ValidationReportHTMLFormatUtil {
             "#Identified spectra",
             "#Missing identified spectra");
     StringBuilder FileValidationsSectionHTML = new StringBuilder();
-    StringBuilder errors = new StringBuilder();
 
     FileValidationsSectionHTML.append("<h2>File Validations</h2><br/>");
     FileValidationsSectionHTML.append("<table>");
@@ -106,21 +106,100 @@ public class ValidationReportHTMLFormatUtil {
     FileValidationsSectionHTML.append("<tr>");
     for (Report report : reports) {
       if (report.getStatus().equals("OK")) {
-        FileValidationsSectionHTML.append(formatRaw(report));
+        FileValidationsSectionHTML.append(formatFileValidationTableRaw(report));
       }else{
-        errors.append(report.getStatus());
+        errorNotes.append(report.getStatus() + "<br/>");
         logger.error(report.getStatus());
-        errors.append("<br/>");
       }
     }
     FileValidationsSectionHTML.append("</tr>");
     FileValidationsSectionHTML.append("</table>");
     FileValidationsSectionHTML.append("<br/><br/>");
-    if(!errors.toString().equals("")){
-      FileValidationsSectionHTML.append("<p class=\"incorrect\">" + errors + "</p>");
+    if(!errorNotes.toString().equals("")){
+      FileValidationsSectionHTML.append("<p class=\"incorrect\">" + errorNotes.toString() + "</p>");
       errorScore++;
+      printErrorLogs(errorNotes.toString());
     }
     return FileValidationsSectionHTML;
+  }
+
+  private StringBuilder formatFileValidationTableRaw(Report report) {
+    StringBuilder tableRawHTML = new StringBuilder();
+
+    tableRawHTML.append("<td>");
+    tableRawHTML.append(report.getFileName());
+    tableRawHTML.append("</td>");
+
+    // total proteins
+    if(report.getTotalProteins() == 0){
+      tableRawHTML.append("<td class=\"incorrect\">");
+      errorNotes.append("Total number of proteins SHOULD be more than 0 <br/>");
+      errorScore++;
+    }else{
+      tableRawHTML.append("<td>");
+    }
+    tableRawHTML.append(report.getTotalProteins());
+    tableRawHTML.append("</td>");
+
+    // total peptides
+    if(report.getTotalPeptides() == 0){
+      tableRawHTML.append("<td class=\"incorrect\">");
+      errorNotes.append("Total number of peptides SHOULD be more than 0 <br/>");
+      errorScore++;
+    }else{
+      tableRawHTML.append("<td>");
+    }
+    tableRawHTML.append(report.getTotalPeptides());
+    tableRawHTML.append("</td>");
+
+    // total Spectra
+    if(report.getTotalSpecra() == 0){
+      tableRawHTML.append("<td class=\"incorrect\">");
+      errorNotes.append("Total number of spectra SHOULD be more than 0 <br/>");
+      errorScore++;
+    }else{
+      tableRawHTML.append("<td>");
+    }
+    tableRawHTML.append(report.getTotalSpecra());
+    tableRawHTML.append("</td>");
+
+    tableRawHTML.append("<td>");
+    tableRawHTML.append(report.getUniquePTMs().size());
+    tableRawHTML.append("</td>");
+
+    // total Spectra
+    if(report.getDeltaMzPercent() > 4.0){
+      tableRawHTML.append("<td class=\"warning\">");
+      errorNotes.append("Warning: It is recommended to keep DeltaMzPercent below 4% <br/>");
+    }else{
+      tableRawHTML.append("<td>");
+    }
+    tableRawHTML.append(report.getDeltaMzPercent());
+    tableRawHTML.append("</td>");
+
+    // get total identified spectra
+    if(report.getIdentifiedSpectra() == 0){
+      tableRawHTML.append("<td class=\"incorrect\">");
+      errorNotes.append("Total number of identified spectra SHOULD be more than 0 <br/>");
+      errorScore++;
+    }else{
+      tableRawHTML.append("<td>");
+    }
+    tableRawHTML.append(report.getIdentifiedSpectra());
+    tableRawHTML.append("</td>");
+
+    // missing spectra
+    if(report.getMissingIdSpectra() != 0){
+      tableRawHTML.append("<td class=\"incorrect\">");
+      errorNotes.append("Missing spectra found!<br/>");
+      errorScore++;
+    }else{
+      tableRawHTML.append("<td>");
+    }
+    tableRawHTML.append(report.getMissingIdSpectra());
+    tableRawHTML.append("</td>");
+
+    return tableRawHTML;
   }
 
   private StringBuilder formatFooter() {
@@ -139,71 +218,9 @@ public class ValidationReportHTMLFormatUtil {
     return footerSectionHTML;
   }
 
-  private StringBuilder formatRaw(Report report) {
-    StringBuilder tableRawHTML = new StringBuilder();
-
-    tableRawHTML.append("<td>");
-    tableRawHTML.append(report.getFileName());
-    tableRawHTML.append("</td>");
-
-    // total proteins
-    if(report.getTotalProteins() == 0){
-      tableRawHTML.append("<td class=\"incorrect\">");
-      errorScore++;
-    }else{
-      tableRawHTML.append("<td>");
-    }
-    tableRawHTML.append(report.getTotalProteins());
-    tableRawHTML.append("</td>");
-
-    // total peptides
-    if(report.getTotalPeptides() == 0){
-      tableRawHTML.append("<td class=\"incorrect\">");
-      errorScore++;
-    }else{
-      tableRawHTML.append("<td>");
-    }
-    tableRawHTML.append(report.getTotalPeptides());
-    tableRawHTML.append("</td>");
-
-    // total Spectra
-    if(report.getTotalSpecra() == 0){
-      tableRawHTML.append("<td class=\"incorrect\">");
-      errorScore++;
-    }else{
-      tableRawHTML.append("<td>");
-    }
-    tableRawHTML.append(report.getTotalSpecra());
-    tableRawHTML.append("</td>");
-
-    tableRawHTML.append("<td>");
-    tableRawHTML.append(report.getUniquePTMs().size());
-    tableRawHTML.append("</td>");
-
-    tableRawHTML.append("<td>");
-    tableRawHTML.append(report.getDeltaMzPercent());
-    tableRawHTML.append("</td>");
-
-    // get total identified spectra
-    if(report.getIdentifiedSpectra() == 0){
-      tableRawHTML.append("<td class=\"incorrect\">");
-      errorScore++;
-    }else{
-      tableRawHTML.append("<td>");
-    }
-    tableRawHTML.append(report.getIdentifiedSpectra());
-    tableRawHTML.append("</td>");
-
-    // missing spectra
-    if(report.getMissingIdSpectra() != 0){
-      tableRawHTML.append("<td class=\"incorrect\">");
-      errorScore++;
-    }else{
-      tableRawHTML.append("<td>");
-    }
-    tableRawHTML.append(report.getMissingIdSpectra());
-    tableRawHTML.append("</td>");
-
-    return tableRawHTML;
+  private void printErrorLogs(String errorMessage){
+    logger.error("++++++++++++++++++++++++++++++++++++++++\n");
+    logger.error(errorMessage + "\n");
+    logger.error("++++++++++++++++++++++++++++++++++++++++\n");
   }
 }
