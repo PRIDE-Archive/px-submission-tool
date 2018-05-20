@@ -12,6 +12,7 @@ import uk.ac.ebi.pride.data.io.SubmissionFileWriter;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
+import uk.ac.ebi.pride.gui.form.dialog.ValidationProgressDialog;
 import uk.ac.ebi.pride.gui.util.ValidationReportHTMLFormatUtil;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwarePanel;
@@ -30,6 +31,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 import static uk.ac.ebi.pride.utilities.data.controller.tools.utils.Utility.*;
 import static uk.ac.ebi.pride.utilities.data.controller.tools.utils.Utility.ARG_REPORTFILE;
@@ -46,6 +49,8 @@ public class SummaryItemPanel extends ContextAwarePanel
   private static final float DEFAULT_TITLE_FONT_SIZE = 13f;
   private static final String EXPORT_SUMMARY_ACTION = "exportSummary";
   private static final String VALIDATE_ACTION = "validate";
+  private static final String SINGLE_RESULT_FILE = "single";
+  private static final String MULTIPLE_RESULT_FILES = "multiple";
 
   Submission submission;
   SubmissionType submissionType;
@@ -101,6 +106,10 @@ public class SummaryItemPanel extends ContextAwarePanel
 
     this.add(summaryPanel, BorderLayout.CENTER);
 
+    JPanel buttonsPanel = new JPanel();
+    buttonsPanel.setLayout(new GridLayout(2, 1));
+
+
     // add export summary button
     JButton exportSummaryButton =
         new JButton(appContext.getProperty("export.summary.button.label"));
@@ -108,7 +117,7 @@ public class SummaryItemPanel extends ContextAwarePanel
         exportSummaryButton, appContext.getProperty("export.summary.button.tooltip"));
     exportSummaryButton.setActionCommand(EXPORT_SUMMARY_ACTION);
     exportSummaryButton.addActionListener(this);
-    this.add(exportSummaryButton, BorderLayout.EAST);
+    buttonsPanel.add(exportSummaryButton);
 
     // add validation button
     JButton validationButton = new JButton(appContext.getProperty("summary.validate.button.title"));
@@ -118,7 +127,9 @@ public class SummaryItemPanel extends ContextAwarePanel
     validationButton.addActionListener(this);
     this.add(validationButton, BorderLayout.PAGE_END);
     validationButton.setEnabled(submissionType.equals(SubmissionType.COMPLETE));
+    buttonsPanel.add(validationButton);
 
+    this.add(buttonsPanel, BorderLayout.EAST);
     // repaint
     this.revalidate();
     this.repaint();
@@ -210,7 +221,7 @@ public class SummaryItemPanel extends ContextAwarePanel
         exportSummary();
       }
       if (VALIDATE_ACTION.equals(e.getActionCommand())) {
-        validateFiles();
+        runBackgroundValidation();
       }
     } catch (Exception ex) {
       ex.printStackTrace();
@@ -276,21 +287,56 @@ public class SummaryItemPanel extends ContextAwarePanel
    * call ms-data-core-api to validate results files along with peak files
    */
   private void validateFiles() {
+    String validationHTMLReport = "";
     List<String[]> validationCommands = new ArrayList<>();
     List<DataFile> dataFiles = submission.getDataFiles();
-    String message = "";
+    dataFiles = filterByFileScanDepth(dataFiles);
 
     for (DataFile dataFile : dataFiles) {
       if (dataFile.getFileType().equals(ProjectFileType.RESULT)) {
         validationCommands.add(constructValidationCommand(dataFile, dataFile.getFileFormat()));
-        message += "\n\n";
+        validationHTMLReport += "\n\n";
       }
     }
     List<Report> reports = runValidationCommands(validationCommands);
     // todo: make this static
     ValidationReportHTMLFormatUtil formatUtil = new ValidationReportHTMLFormatUtil();
-    message = formatUtil.getValidationReportInHTML(submission, reports).toString();
-    ValidationResults validationReport = new ValidationResults(message);
+    validationHTMLReport = formatUtil.getValidationReportInHTML(submission, reports).toString();
+    ValidationResults validationReport = new ValidationResults(validationHTMLReport);
+  }
+
+  private List<DataFile> filterByFileScanDepth(List<DataFile> dataFiles) {
+    List<DataFile> filteredDataFiles = new ArrayList<>();
+    String scanDepth = App.getInstance().getDesktopContext().getProperty("validation.file.scan.depth").toLowerCase().trim();
+    logger.info("Found validation.file.scan.depth: " + scanDepth);
+    switch (scanDepth) {
+      case SINGLE_RESULT_FILE:
+        dataFiles = dataFiles.stream().filter(dataFile ->
+                        dataFile.isFile() &&
+                        dataFile.getFileFormat() == MassSpecFileFormat.MZIDENTML ||
+                        dataFile.getFileFormat() == MassSpecFileFormat.MZTAB ||
+                        dataFile.getFileFormat() == MassSpecFileFormat.PRIDE).collect(Collectors.toList());
+        // assume first one is the smallest
+        DataFile smallestDataFile = dataFiles.get(0);
+        for (DataFile dataFile: dataFiles){
+          if (dataFile.getFile().length() < smallestDataFile.getFile().length()) {
+            smallestDataFile = dataFile;
+          }
+        }
+        filteredDataFiles.add(smallestDataFile);
+        break;
+      case MULTIPLE_RESULT_FILES:
+        filteredDataFiles = dataFiles;
+        break;
+      default:
+        try {
+          throw new Exception(
+              "Invalid setting found for validation.file.scan.depth which expect either \"single\" or \"multiple\", but found:" + scanDepth);
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+    }
+    return filteredDataFiles;
   }
 
   /**
@@ -356,5 +402,51 @@ public class SummaryItemPanel extends ContextAwarePanel
       logger.error("File validation error: " + e.getMessage());
     }
     return reports;
+  }
+
+  private int runBackgroundValidation() {
+
+    ValidationProgressDialog validationProgessJframe =
+        new ValidationProgressDialog(null, "title", "message");
+    SwingWorker<Boolean, String> worker =
+        new SwingWorker<Boolean, String>() {
+
+          @Override
+          protected Boolean doInBackground() throws Exception {
+            validateFiles();
+            return true;
+          }
+
+          @Override
+          protected void process(List<String> chunks) {
+            String value = chunks.get(chunks.size() - 1);
+            System.out.println(value);
+          }
+
+          @Override
+          protected void done() {
+            if (isCancelled()) {
+              return;
+            }
+            try {
+              // Retrieve the return value of doInBackground.
+              boolean status = get();
+              logger.info("Validation completed with the status: " + status);
+              validationProgessJframe.dispose(); // close the dialog
+            } catch (InterruptedException e) {
+              // This is thrown if the thread's interrupted.
+              logger.error("Error:" + e);
+            } catch (ExecutionException e) {
+              // This is thrown if we throw an exception
+              // from doInBackground.
+              logger.error("Error:" + e);
+            }
+          }
+        };
+
+    worker.execute(); // this will start the processing on a separate thread
+    validationProgessJframe.setVisible(true);
+    worker.cancel(validationProgessJframe.shouldCancel); // stop further processing
+    return 0;
   }
 }

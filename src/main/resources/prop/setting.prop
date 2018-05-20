@@ -63,3 +63,5 @@ libpxreport.spreadsheet.worksheet.title = mainSheet
 
 # Result files validation
 fast.validation = true
+# "single" or "multiple" value excepted
+validation.file.scan.depth = single
