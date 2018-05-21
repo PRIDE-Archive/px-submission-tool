@@ -48,7 +48,7 @@ public class ValidationResults implements ActionListener {
     styleSheet.addRule("body {color:#000; font-family:times; margin: 4px; }");
     styleSheet.addRule(".correct {background-color: #00897b;}");
     styleSheet.addRule(".incorrect {background-color: #e53935;}");
-    styleSheet.addRule(".warning {background-color: ##ffeb3b;}");
+    styleSheet.addRule(".warning {background-color: #ffeb3b;}");
     styleSheet.addRule("div {background-color: #00897b; text-align: center;}");
     styleSheet.addRule("h1, h3 {color: #ffffff;}");
     styleSheet.addRule("table {border: 1px solid black; width: 100%;}");
