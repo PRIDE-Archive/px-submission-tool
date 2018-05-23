@@ -60,8 +60,3 @@ libpxreport.client.service.name = libpxreport
 libpxreport.account.id = libpxreport@pride-submission-reports.iam.gserviceaccount.com
 libpxreport.spreadsheet.title = px-submission-tool_userFeedback
 libpxreport.spreadsheet.worksheet.title = mainSheet
-
-# Result files validation
-fast.validation = true
-# "single" or "multiple" value excepted
-validation.file.scan.depth = single

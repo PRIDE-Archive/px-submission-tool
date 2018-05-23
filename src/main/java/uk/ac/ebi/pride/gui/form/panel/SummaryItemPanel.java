@@ -5,6 +5,7 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.AppBootstrap;
 import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
@@ -13,6 +14,7 @@ import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
 import uk.ac.ebi.pride.gui.form.dialog.ValidationProgressDialog;
+import uk.ac.ebi.pride.gui.util.ConfigUtil;
 import uk.ac.ebi.pride.gui.util.ValidationReportHTMLFormatUtil;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwarePanel;
@@ -307,7 +309,8 @@ public class SummaryItemPanel extends ContextAwarePanel
 
   private List<DataFile> filterByFileScanDepth(List<DataFile> dataFiles) {
     List<DataFile> filteredDataFiles = new ArrayList<>();
-    String scanDepth = App.getInstance().getDesktopContext().getProperty("validation.file.scan.depth").toLowerCase().trim();
+
+    String scanDepth = AppBootstrap.getBootstrapSettings().getProperty("validation.file.scan.depth").toLowerCase().trim();
     logger.info("Found validation.file.scan.depth: " + scanDepth);
     switch (scanDepth) {
       case SINGLE_RESULT_FILE:
@@ -369,7 +372,7 @@ public class SummaryItemPanel extends ContextAwarePanel
         }
       }
       if (fileFormat.equals(MassSpecFileFormat.MZIDENTML)
-          && (appContext.getProperty("fast.validation").equals("true"))) {
+          && ( AppBootstrap.getBootstrapSettings().getProperty("fast.validation").equals("true"))) {
         logger.debug("Fast Validation switched on");
         command.add("-" + ARG_FAST_VALIDATION);
       }
@@ -420,7 +423,6 @@ public class SummaryItemPanel extends ContextAwarePanel
           @Override
           protected void process(List<String> chunks) {
             String value = chunks.get(chunks.size() - 1);
-            System.out.println(value);
           }
 
           @Override

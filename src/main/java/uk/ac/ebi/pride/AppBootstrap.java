@@ -21,7 +21,7 @@ public class AppBootstrap {
     }
 
     /**
-     * Method to run the PX Submission Yool.
+     * Method to run the PX Submission tool.
      */
     private void go() {
         StringBuilder cmdBuffer = getCommand();
@@ -109,7 +109,7 @@ public class AppBootstrap {
      *
      * @return Properties   bootstrap settings.
      */
-    private Properties getBootstrapSettings() {
+    public static Properties getBootstrapSettings() {
         // load properties
         Properties props = new Properties();
 

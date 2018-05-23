@@ -92,7 +92,7 @@ public class ValidationReportHTMLFormatUtil {
             "#Missing identified spectra");
     StringBuilder FileValidationsSectionHTML = new StringBuilder();
 
-    FileValidationsSectionHTML.append("<h2>File Validations</h2><br/>");
+    FileValidationsSectionHTML.append("<br/><h2>File Validations</h2><br/>");
     FileValidationsSectionHTML.append("<table>");
     // header
     FileValidationsSectionHTML.append("<tr>");
