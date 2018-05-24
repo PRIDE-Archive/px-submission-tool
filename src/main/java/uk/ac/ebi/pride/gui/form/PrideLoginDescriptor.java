@@ -23,7 +23,9 @@ import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import java.awt.*;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author Rui Wang
@@ -116,29 +118,56 @@ public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor 
 
     @Override
     public void succeed(TaskEvent<ContactDetail> event) {
+        Set<String> updateRequiredFields = new HashSet<>();
         ContactDetail details = event.getValue();
         if (details != null) {
-            if (StringUtils.isEmpty(details.getCountry()) || StringUtils.isEmpty(details.getOrcid())) {
-                showAskUserDetailsUpdatePane();
+            if (StringUtils.isEmpty(details.getCountry())){
+                updateRequiredFields.add("Country");
             }
-            updateFormContent(details); // set name and affiliation
-            saveFormContent();
-            PrideLoginForm form = (PrideLoginForm) getNavigationPanel(); // hide warnings
-            form.hideWarnings();
-            firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, false, true); // notify success
+            if (StringUtils.isEmpty(details.getOrcid())) {
+                updateRequiredFields.add("Orcid");
+            }
+            if (true) {
+                updateRequiredFields.add("GDPR");
+            }
+
+            if (updateRequiredFields.size() > 0) {
+                showAskUserDetailsUpdatePane(updateRequiredFields);
+            }
+            if (false) {
+                updateFormContent(details); // set name and affiliation
+                saveFormContent();
+                PrideLoginForm form = (PrideLoginForm) getNavigationPanel(); // hide warnings
+                form.hideWarnings();
+                firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, false, true); // notify success
+            }
         }
     }
 
-    private void showAskUserDetailsUpdatePane() {
+    private void showAskUserDetailsUpdatePane(Set<String> updateRequiredFileds) {
         JLabel label = new JLabel();
         Font font = label.getFont();
         StringBuilder style = new StringBuilder("font-family:" + font.getFamily() + ";");
         style.append("font-weight:").append(font.isBold() ? "bold" : "normal").append(";");
         style.append("font-size:").append(font.getSize()).append("pt;");
+
+        StringBuilder html = new StringBuilder();
+        html.append("<html><body style=\"" + style + "\">");
+        html.append(appContext.getProperty("pride.login.ask.update.header"));
+        if(updateRequiredFileds.contains("Country")){
+            html.append(appContext.getProperty("pride.login.ask.update.body.country"));
+        }
+        if(updateRequiredFileds.contains("Orcid")){
+            html.append(appContext.getProperty("pride.login.ask.update.body.orcid"));
+        }
+        if(updateRequiredFileds.contains("GDPR")){
+            html.append(appContext.getProperty("pride.login.ask.update.body.gdpr"));
+        }
+        html.append(appContext.getProperty("pride.login.ask.update.footer"));
+        html.append("</body></html>");
+
         // html content
-        JEditorPane ep = new JEditorPane("text/html", "<html><body style=\"" + style + "\">" //
-            + appContext.getProperty("pride.login.ask.update.details")
-            + "</body></html>");
+        JEditorPane ep = new JEditorPane("text/html", html.toString());
         ep.addHyperlinkListener(new HyperlinkListener() {
             @Override
             public void hyperlinkUpdate(HyperlinkEvent e) {

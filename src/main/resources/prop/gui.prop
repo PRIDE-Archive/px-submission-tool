@@ -137,7 +137,11 @@ pride.login.resubmission.error.message = Failed to login. Please ensure you have
 pride.login.button.loading.small.icon = icon/16x16/loading.gif
 pride.login.create.account.title = Register New User
 pride.login.ask.update.title = Please update your user details
-pride.login.ask.update.details = We would like gather additional information about:<ul><li>your <b><img src="http://ftp.pride.ebi.ac.uk/pride/resources/logos/orcid_16x16.png" title="Image: ORCID" border="0"> ORCID identifier</b>, to ensure that you get <a href="https://orcid.org/" title="Link: https://orcid.org/" target="_blank">credit for your work</a>.</li><li>the <b>country</b> where you currently work.</li></ul>Please could you <a href="https://www.ebi.ac.uk/pride/archive/users/profile/edit">update your details</a>?
+pride.login.ask.update.header = We would like gather additional information about:<ul>
+pride.login.ask.update.body.orcid = <li>your <b><img src="http://ftp.pride.ebi.ac.uk/pride/resources/logos/orcid_16x16.png" title="Image: ORCID" border="0"> ORCID identifier</b>, to ensure that you get <a href="https://orcid.org/" title="Link: https://orcid.org/" target="_blank">credit for your work</a>.</li>
+pride.login.ask.update.body.country = <li>the <b>country</b> where you currently work.</li>
+pride.login.ask.update.body.gdpr = <li><b>Please update <a href="https://www.ebi.ac.uk/data-protection/privacy-notice/pride-new" title="EBI-Data Protection" target="_blank">GDPR</a> consent in your profile to proceed.</b></li>
+pride.login.ask.update.footer = </ul><br/>Please could you <a href="https://www.ebi.ac.uk/pride/archive/users/profile/edit">update your details</a>?
 
 # lab head labels and icons
 lab.head.explanation.desc = NOTE: We are collecting this information for grouping submissions by lab and as a contact backup.
