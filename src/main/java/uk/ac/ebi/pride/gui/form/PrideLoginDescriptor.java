@@ -133,16 +133,16 @@ public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor 
       if (!details.getAcceptedTermsOfUse()) {
         updateRequiredFields.add(TERMS);
       }
-      if (updateRequiredFields.size() > 0) {
+      if (0 < updateRequiredFields.size()) {
         showAskUserDetailsUpdatePane(updateRequiredFields);
       }
-      if (!updateRequiredFields.contains(TERMS)) {
+      if (!updateRequiredFields.contains(TERMS)) { // continue
         updateFormContent(details); // set name and affiliation}
         saveFormContent();
         PrideLoginForm form = (PrideLoginForm) getNavigationPanel(); // hide warnings
         form.hideWarnings();
         firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, false, true); // notify success
-      }
+      } // else can't continue
     }
   }
 
