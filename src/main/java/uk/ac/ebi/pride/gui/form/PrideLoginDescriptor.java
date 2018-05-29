@@ -153,7 +153,7 @@ public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor 
     style.append("font-weight:").append(font.isBold() ? "bold" : "normal").append(";");
     style.append("font-size:").append(font.getSize()).append("pt;");
     StringBuilder html = new StringBuilder();
-    html.append("<html><body style=\"" + style + "\">");
+    html.append("<html><body style=\"").append(style).append("\">");
     boolean askCountry = updateRequiredFileds.contains(COUNTRY);
     boolean askOrcid = updateRequiredFileds.contains(ORCID);
     boolean askTerms = updateRequiredFileds.contains(TERMS);
