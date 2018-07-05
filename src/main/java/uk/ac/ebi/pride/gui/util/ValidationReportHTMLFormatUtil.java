@@ -67,14 +67,15 @@ public class ValidationReportHTMLFormatUtil {
     StringBuilder metadataSectionHTML = new StringBuilder();
 
     metadataSectionHTML.append("<h2>Project Metadata</h2><br/>");
+    metadataSectionHTML.append("<p>");
     for (Map.Entry<String, Object> entry : metadata.entrySet()) {
-      metadataSectionHTML.append("<p>");
       metadataSectionHTML.append("<b>");
       metadataSectionHTML.append(entry.getKey());
       metadataSectionHTML.append("</b>");
       metadataSectionHTML.append(entry.getValue());
-      metadataSectionHTML.append("</p>");
+      metadataSectionHTML.append("<br>");
     }
+    metadataSectionHTML.append("</p>");
     return metadataSectionHTML;
   }
 
