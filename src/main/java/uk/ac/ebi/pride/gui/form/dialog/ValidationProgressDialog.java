@@ -1,6 +1,6 @@
 package uk.ac.ebi.pride.gui.form.dialog;
 
-import java.awt.BorderLayout;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.BorderFactory;
@@ -38,7 +38,8 @@ public class ValidationProgressDialog extends JDialog implements ActionListener 
     JProgressBar progressBar = new JProgressBar();
     progressBar.setIndeterminate(true);
     progressBar.setString("");
-    progressBar.setStringPainted(false);
+    progressBar.setStringPainted(true);
+    progressBar.setBorderPainted(true);
 
     JPanel bottomPanel = new JPanel();
     bottomPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));

@@ -46,13 +46,14 @@ public class ValidationResults implements ActionListener {
     // add some styles to the html
     StyleSheet styleSheet = kit.getStyleSheet();
     styleSheet.addRule("body {color:#000; font-family:times; margin: 4px; }");
-    styleSheet.addRule(".correct {background-color: #00897b;}");
-    styleSheet.addRule(".incorrect {background-color: #e53935;}");
-    styleSheet.addRule(".warning {background-color: #ffeb3b;}");
+    styleSheet.addRule(".correct {background-color: #00897b;}"); // green
+    styleSheet.addRule(".incorrect {background-color: #e53935;}"); // red
+    styleSheet.addRule(".warning {background-color: #ffeb3b;}"); // yellow
     styleSheet.addRule("div {background-color: #00897b; text-align: center;}");
     styleSheet.addRule("h1, h3 {color: #ffffff;}");
-    styleSheet.addRule("table {border: 1px solid black; width: 100%;}");
-    styleSheet.addRule("th, td {border: 1px solid black;padding: 10px;text-align: left;}");
+    styleSheet.addRule("table {width: 100%; border-collapse: collapse;}");
+    styleSheet.addRule("th, td {border: 1px solid black; padding: 10px; text-align: left;}");
+    styleSheet.addRule("th{background-color:#00bcd4;}"); // cyan
 
     // create a document, set it on the jeditorpane, then add the html
     Document doc = kit.createDefaultDocument();
