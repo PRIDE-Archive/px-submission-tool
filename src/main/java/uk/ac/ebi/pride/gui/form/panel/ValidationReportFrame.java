@@ -1,5 +1,6 @@
 package uk.ac.ebi.pride.gui.form.panel;
 
+import uk.ac.ebi.pride.gui.form.comp.ContextAwarePanel;
 import uk.ac.ebi.pride.gui.util.Mail;
 
 import java.awt.BorderLayout;
@@ -19,14 +20,15 @@ import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 
 /** @author Suresh Hewapathirana */
-public class ValidationResults implements ActionListener {
+public class ValidationReportFrame extends ContextAwarePanel implements ActionListener {
 
   JEditorPane jEditorPane = new JEditorPane();
-  JButton emailButton = new JButton("Ask support from PRIDE Team");
+  JButton emailButton = new JButton(appContext.getProperty("validation.report.help.button"));
   JPanel buttonPanel = new JPanel();
   String htmlString;
+  JFrame frame;
 
-  protected ValidationResults(String validationReport) {
+  protected ValidationReportFrame(String validationReport) {
     this.htmlString = validationReport;
     initialize();
   }
@@ -42,32 +44,47 @@ public class ValidationResults implements ActionListener {
     jEditorPane.setEditorKit(kit);
     jEditorPane.setEditable(false);
     JScrollPane pane = new JScrollPane(jEditorPane);
+    addStyles(kit.getStyleSheet());
 
-    // add some styles to the html
-    StyleSheet styleSheet = kit.getStyleSheet();
-    styleSheet.addRule("body {color:#000; font-family:times; margin: 4px; }");
-    styleSheet.addRule(".correct {background-color: #00897b;}"); // green
-    styleSheet.addRule(".incorrect {background-color: #e53935;}"); // red
-    styleSheet.addRule(".warning {background-color: #ffeb3b;}"); // yellow
-    styleSheet.addRule("div {background-color: #00897b; text-align: center;}");
-    styleSheet.addRule("h1, h3 {color: #ffffff;}");
-    styleSheet.addRule("table {width: 100%; border-collapse: collapse;}");
-    styleSheet.addRule("th, td {border: 1px solid black; padding: 10px; text-align: left;}");
-    styleSheet.addRule("th{background-color:#00bcd4;}"); // cyan
-
-    // create a document, set it on the jeditorpane, then add the html
+    // create a document, set it on the JEditorPane, then add the html
     Document doc = kit.createDefaultDocument();
     jEditorPane.setDocument(doc);
     jEditorPane.setText(htmlString);
 
     // Set JFrame layout and other properties
-    JFrame frame = new JFrame("PX Submission Tool Validation Report");
+    frame = new JFrame(appContext.getProperty("validation.report.frame.title"));
     frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
     frame.getContentPane().setLayout(new BorderLayout());
     frame.getContentPane().add(pane, BorderLayout.CENTER);
     frame.getContentPane().add(buttonPanel, BorderLayout.SOUTH);
     frame.setSize(800, 600);
+//    frame.setVisible(true);
+  }
+
+  /**
+   * Open the validation results window
+   */
+  protected void open(){
     frame.setVisible(true);
+  }
+
+  /**
+   * Add CSS styles to the HTML
+   * @param styleSheet Original styleSheet
+   * @return StyleSheet with styles added
+   */
+  private StyleSheet addStyles(StyleSheet styleSheet){
+
+    styleSheet.addRule("body {color:#000; font-family:times; margin: 4px; }");
+    styleSheet.addRule("div {background-color: #00897b; text-align: center;}");
+    styleSheet.addRule("h1, h3 {color: #ffffff;}");
+    styleSheet.addRule("table {width: 100%; border-collapse: collapse;}");
+    styleSheet.addRule("th, td {border: 1px solid black; padding: 10px; text-align: left;}");
+    styleSheet.addRule("th{background-color:#00bcd4;}"); // cyan
+    styleSheet.addRule(".correct {background-color: #00897b;}"); // green
+    styleSheet.addRule(".incorrect {background-color: #e53935;}"); // red
+    styleSheet.addRule(".warning {background-color: #ffeb3b;}"); // yellow
+    return styleSheet;
   }
 
   @Override
@@ -77,7 +94,7 @@ public class ValidationResults implements ActionListener {
       try {
         Mail.mailto(Mail.TO, Mail.SUBJECT, Mail.CONTENT);
       } catch (IOException | URISyntaxException ex) {
-        Logger.getLogger(ValidationResults.class.getName()).log(Level.SEVERE, null, ex);
+        Logger.getLogger(ValidationReportFrame.class.getName()).log(Level.SEVERE, null, ex);
       }
     }
   }

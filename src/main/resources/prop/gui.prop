@@ -355,6 +355,9 @@ summary.submit.button.title = Submit
 summary.validate.button.title = Result File Validation
 summary.validate.button.tooltip = Validate your complete submission before submitting
 
+validation.report.frame.title = PX Submission Tool Validation Report
+validation.report.help.button = Ask support from PRIDE Team
+
 # Help
 help.main.set=help/MainHelp.hs
 

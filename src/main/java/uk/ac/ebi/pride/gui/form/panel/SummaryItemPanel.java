@@ -300,10 +300,10 @@ public class SummaryItemPanel extends ContextAwarePanel
       }
     }
     List<Report> reports = runValidationCommands(validationCommands);
-    // todo: make this static
     ValidationReportHTMLFormatUtil formatUtil = new ValidationReportHTMLFormatUtil();
     validationHTMLReport = formatUtil.getValidationReportInHTML(submission, reports).toString();
-    ValidationResults validationReport = new ValidationResults(validationHTMLReport);
+    ValidationReportFrame validationReport = new ValidationReportFrame(validationHTMLReport);
+    validationReport.open();
   }
 
   private List<DataFile> filterByFileScanDepth(List<DataFile> dataFiles) {
