@@ -1,0 +1,62 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" type="text/css" media="all" href="css/s.css">
+    <title>Result file validation</title>
+</head>
+
+<body class="template">
+<div id="container">
+
+    <!-- header -->
+    <div id="header">
+        <h1>Result file validation</h1>
+    </div>
+
+    <!-- navigation -->
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+        <tr>
+            <td align="left" class="topicpath">
+                <a href="experimental_factor.html">Previous</a> | <a href="faq.html">Next</a>
+            </td>
+            <td width="70%" class="topicpath"></td>
+        </tr>
+    </table>
+
+    <!-- table of contents -->
+    <div class="introduction">
+        <p>
+            Result file validation is a tool(optional) that validates MzIdentML file faster. This validation is currently only supported for complete
+            submissions that contains results file as MzIdentML.
+        </p>
+    </div>
+
+    <!-- content -->
+    <div id="content">
+        <div class="section">
+            <h3>Validations run by Result file validation</h3>
+            <ui>
+                <li>XML Schema validations</li>
+                <li>Spectra references</li>
+                <li>Check Metadata</li>
+                <li>Check if any missing spectra presence</li>
+                <li>Check if protein, peptides, PSMs are presence</li>
+                <li>Recalculate Delta Mass randomly</li>
+            </ui>
+        </div>
+
+        <div class="warning">
+            <p>Please note that Result file validation will check only the smalled MzIdentML file in the complete submission and it will do a basic
+                validation to help preventing from submitting inaccurate submission files to the PRIDE. A more complete validation will be done, once you submit data.</p>
+        </div>
+    </div>
+    <div id="footer">
+        <p>Comments, questions, suggestions? See the
+            <a href="feedback.html">Feedback</a> page to contact <strong>PRIDE HelpDesk</strong>
+        </p>
+    </div>
+</div>
+</body>
+</html>

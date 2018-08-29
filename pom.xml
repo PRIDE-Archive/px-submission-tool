@@ -59,7 +59,8 @@
         <uk.ac.ebi.pride.px-libpxreport.version>1.1</uk.ac.ebi.pride.px-libpxreport.version>
         <uk.ac.ebi.pride.toolsuite-ols-dialog.version>3.4.13</uk.ac.ebi.pride.toolsuite-ols-dialog.version>
         <uk.ac.ebi.jmzidml-jmzidentml.version>1.2.6</uk.ac.ebi.jmzidml-jmzidentml.version>
-        <uk.ac.ebi.pride.archive-archive-submission-model.version>1.0.3</uk.ac.ebi.pride.archive-archive-submission-model.version>
+        <uk.ac.ebi.pride.archive-archive-submission-model.version>1.0.2</uk.ac.ebi.pride.archive-archive-submission-model.version>
+        <uk.ac.ebi.pride.utilities.ms-data-core-api.version>2.0.24-SNAPSHOT</uk.ac.ebi.pride.utilities.ms-data-core-api.version>
     </properties>
 
     <dependencies>
@@ -73,7 +74,6 @@
             <artifactId>archive-submission-model</artifactId>
             <version>${uk.ac.ebi.pride.archive-archive-submission-model.version}</version>
         </dependency>
-
         <dependency>
             <groupId>uk.ac.ebi.pride.web</groupId>
             <artifactId>pride-web-utils</artifactId>
@@ -171,6 +171,11 @@
             <version>${uk.ac.ebi.pride.architectural.pride-tdd.version}</version>
             <type>pom</type>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>uk.ac.ebi.pride.utilities</groupId>
+            <artifactId>ms-data-core-api</artifactId>
+            <version>${uk.ac.ebi.pride.utilities.ms-data-core-api.version}</version>
         </dependency>
     </dependencies>
 
