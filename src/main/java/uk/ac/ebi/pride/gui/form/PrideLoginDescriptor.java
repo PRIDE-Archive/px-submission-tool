@@ -1,29 +1,30 @@
 package uk.ac.ebi.pride.gui.form;
 
 import org.apache.commons.lang3.StringUtils;
-import sun.java2d.loops.ProcessPath;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.archive.submission.model.user.ContactDetail;
 import uk.ac.ebi.pride.data.model.Contact;
 import uk.ac.ebi.pride.data.model.Submission;
-import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
-import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
-import uk.ac.ebi.pride.toolsuite.gui.blocker.GUIBlocker;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.navigation.Navigator;
 import uk.ac.ebi.pride.gui.task.GetPrideUserDetailTask;
+import uk.ac.ebi.pride.gui.util.ValidationState;
+import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
+import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
+import uk.ac.ebi.pride.toolsuite.gui.blocker.GUIBlocker;
 import uk.ac.ebi.pride.toolsuite.gui.task.Task;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskEvent;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskListener;
-import uk.ac.ebi.pride.gui.util.ValidationState;
 
 import javax.help.HelpBroker;
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import java.awt.*;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @author Rui Wang
@@ -31,6 +32,10 @@ import java.util.List;
  *          <p/>
  */
 public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor implements TaskListener<ContactDetail, String> {
+
+    private static final String COUNTRY = "Country";
+    private static final String ORCID = "Orcid";
+    private static final String TERMS = "Terms";
 
     public PrideLoginDescriptor(String id, String title, String desc) {
         super(id, title, desc, new PrideLoginForm());
@@ -114,49 +119,83 @@ public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor 
         firePropertyChange(BEFORE_HIDING_FOR_PREVIOUS_PANEL_PROPERTY, false, true);
     }
 
-    @Override
-    public void succeed(TaskEvent<ContactDetail> event) {
-        ContactDetail details = event.getValue();
-        if (details != null) {
-            if (StringUtils.isEmpty(details.getCountry()) || StringUtils.isEmpty(details.getOrcid())) {
-                showAskUserDetailsUpdatePane();
-            }
-            updateFormContent(details); // set name and affiliation
-            saveFormContent();
-            PrideLoginForm form = (PrideLoginForm) getNavigationPanel(); // hide warnings
-            form.hideWarnings();
-            firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, false, true); // notify success
-        }
+  @Override
+  public void succeed(TaskEvent<ContactDetail> event) {
+    Set<String> updateRequiredFields = new HashSet<>();
+    ContactDetail details = event.getValue();
+    if (details != null) {
+      if (StringUtils.isEmpty(details.getCountry())) {
+        updateRequiredFields.add(COUNTRY);
+      }
+      if (StringUtils.isEmpty(details.getOrcid())) {
+        updateRequiredFields.add(ORCID);
+      }
+      if (!details.getAcceptedTermsOfUse()) {
+        updateRequiredFields.add(TERMS);
+      }
+      if (0 < updateRequiredFields.size()) {
+        showAskUserDetailsUpdatePane(updateRequiredFields);
+      }
+      if (!updateRequiredFields.contains(TERMS)) { // continue
+        updateFormContent(details); // set name and affiliation}
+        saveFormContent();
+        PrideLoginForm form = (PrideLoginForm) getNavigationPanel(); // hide warnings
+        form.hideWarnings();
+        firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, false, true); // notify success
+      } // else can't continue
     }
+  }
 
-    private void showAskUserDetailsUpdatePane() {
-        JLabel label = new JLabel();
-        Font font = label.getFont();
-        StringBuilder style = new StringBuilder("font-family:" + font.getFamily() + ";");
-        style.append("font-weight:").append(font.isBold() ? "bold" : "normal").append(";");
-        style.append("font-size:").append(font.getSize()).append("pt;");
-        // html content
-        JEditorPane ep = new JEditorPane("text/html", "<html><body style=\"" + style + "\">" //
-            + appContext.getProperty("pride.login.ask.update.details")
-            + "</body></html>");
-        ep.addHyperlinkListener(new HyperlinkListener() {
-            @Override
-            public void hyperlinkUpdate(HyperlinkEvent e) {
-                try {
-                    if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED))
-                        Desktop.getDesktop().browse(e.getURL().toURI());
-                } catch (Exception ex) {
-                    //couldn't display error message
-                }
-            }
-        });
-        ep.setEditable(false);
-        ep.setBackground(label.getBackground());
-        JOptionPane.showConfirmDialog(app.getMainFrame(),
-            ep,
-            appContext.getProperty("pride.login.ask.update.title"),
-            JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
+  private void showAskUserDetailsUpdatePane(Set<String> updateRequiredFileds) {
+    JLabel label = new JLabel();
+    Font font = label.getFont();
+    StringBuilder style = new StringBuilder("font-family:" + font.getFamily() + ";");
+    style.append("font-weight:").append(font.isBold() ? "bold" : "normal").append(";");
+    style.append("font-size:").append(font.getSize()).append("pt;");
+    StringBuilder html = new StringBuilder();
+    html.append("<html><body style=\"").append(style).append("\">");
+    boolean askCountry = updateRequiredFileds.contains(COUNTRY);
+    boolean askOrcid = updateRequiredFileds.contains(ORCID);
+    boolean askTerms = updateRequiredFileds.contains(TERMS);
+    if (askCountry || askOrcid) {
+      html.append(appContext.getProperty("pride.login.ask.update.header"));
+      if (askCountry) {
+        html.append(appContext.getProperty("pride.login.ask.update.body.country"));
+      }
+      if (askOrcid) {
+        html.append(appContext.getProperty("pride.login.ask.update.body.orcid"));
+      }
+      html.append(appContext.getProperty("pride.login.ask.update.footer.start"));
     }
+    if (askTerms) {
+      html.append(appContext.getProperty("pride.login.ask.update.body.terms"));
+    }
+    html.append(appContext.getProperty("pride.login.ask.update.footer"));
+    html.append("</body></html>");
+
+    // html content
+    JEditorPane ep = new JEditorPane("text/html", html.toString());
+    ep.addHyperlinkListener(
+        new HyperlinkListener() {
+          @Override
+          public void hyperlinkUpdate(HyperlinkEvent e) {
+            try {
+              if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED))
+                Desktop.getDesktop().browse(e.getURL().toURI());
+            } catch (Exception ex) {
+              // couldn't display error message
+            }
+          }
+        });
+    ep.setEditable(false);
+    ep.setBackground(label.getBackground());
+    JOptionPane.showConfirmDialog(
+        app.getMainFrame(),
+        ep,
+        appContext.getProperty("pride.login.ask.update.title"),
+        JOptionPane.CLOSED_OPTION,
+        JOptionPane.WARNING_MESSAGE);
+  }
 
     /**
      * Save the content from the form to AppContext
