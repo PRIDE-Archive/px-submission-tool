@@ -3,7 +3,6 @@ package uk.ac.ebi.pride.gui.form;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.gui.form.action.RemoveFilesAction;
-import uk.ac.ebi.pride.gui.form.table.model.FileSelectionTableModel;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.action.AddFileSelectionAction;
 import uk.ac.ebi.pride.gui.form.dialog.FileSelectionValidationErrorDialog;
@@ -17,10 +16,7 @@ import uk.ac.ebi.pride.gui.util.ValidationState;
 
 import javax.help.CSH;
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.List;
 
 /**
@@ -64,17 +60,9 @@ public class FileSelectionForm extends Form implements TaskListener<DataFileVali
         addFileButton.setPreferredSize(new Dimension(DEFAULT_BUTTON_WIDTH, DEFAULT_BUTTON_HEIGHT));
 
         // remove files button
-        removeFileButton = new JButton("Remove Files");
+        removeFileButton = new JButton(new RemoveFilesAction());
         removeFileButton.setFont(addFileButton.getFont().deriveFont(DEFAULT_BUTTON_FONT_SIZE));
         removeFileButton.setPreferredSize(new Dimension(DEFAULT_BUTTON_WIDTH, DEFAULT_BUTTON_HEIGHT));
-        removeFileButton.setActionCommand("removeFiles");
-        removeFileButton.addActionListener(new ActionListener()
-        {
-            public void actionPerformed(ActionEvent e)
-            {
-                JOptionPane.showMessageDialog(null, "Need to implement!!!");
-            }
-        });
 
         leftButtonPane.add(addFileButton);
         leftButtonPane.add(removeFileButton);
@@ -165,7 +153,6 @@ public class FileSelectionForm extends Form implements TaskListener<DataFileVali
                 errorDialog.setVisible(true);
             }
         }
-
     }
 
     @Override
