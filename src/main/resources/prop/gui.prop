@@ -19,6 +19,9 @@ add.file.button.tooltip = Add URL represents file to be submitted
 add.url.button.title = Add URL
 add.url.dialog.message = Add URL
 add.url.button.small.icon = icon/16x16/url.png
+remove.file.button.title = Remove Files
+remove.file.button.tooltip = Remove all files
+remove.file.button.small.icon = icon/16x16/remove.png
 
 file.category.note.title = Please assign the correct file type to your files
 result.file.type.note = <html><b>RESULT</b> (required): Please, provide Experimental Results in any of the supported formats, as explained in the accompanying documentation.</html>
