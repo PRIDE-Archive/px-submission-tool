@@ -5,9 +5,9 @@
         "http://java.sun.com/products/javahelp/toc_1_0.dtd">
 
 <toc version="1.0">
-    <tocitem text="Welcome" target="help.welcome"/>
-    <tocitem text="Prerequisite" target="help.prerequisite"/>
     <tocitem text="Login" target="help.login"/>
+    <tocitem text="Submission Type" target="help.welcome"/>
+    <tocitem text="Prerequisite" target="help.prerequisite"/>
     <tocitem text="Dataset Details" target="help.meta.data"/>
     <tocitem text="File Selection" target="help.file.selection"/>
     <tocitem text="File Type" target="help.file.type"/>

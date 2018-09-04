@@ -21,13 +21,13 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 
 /**
- * This form shows welcome messages
+ * This form allows to select the submission type
  *
  * @author Rui Wang
  * @version $Id$
  */
-public class WelcomeForm extends Form {
-    private static final Logger logger = LoggerFactory.getLogger(WelcomeForm.class);
+public class SubmissionTypeForm extends Form {
+    private static final Logger logger = LoggerFactory.getLogger(SubmissionTypeForm.class);
 
     private PropertyChangeBroadcaster propertyChangeBroadcaster = null;
     private TrainingModeCheckBoxController trainingModeCheckBoxController = new TrainingModeCheckBoxController();
@@ -39,7 +39,7 @@ public class WelcomeForm extends Form {
     private ResubmissionDialog resubmissionDialog;
 
 
-    public WelcomeForm() {
+    public SubmissionTypeForm() {
         propertyChangeBroadcaster = new PropertyChangeBroadcaster();
         initComponents();
     }
@@ -83,7 +83,7 @@ public class WelcomeForm extends Form {
     private JPanel createOptionTitlePanel() {
         JPanel titlePanel = new JPanel(new BorderLayout());
 
-        JLabel titleLabel = new JLabel(appContext.getProperty("welcome.before.start.title"));
+        JLabel titleLabel = new JLabel(appContext.getProperty("submission.type.before.start.title"));
         titleLabel.setFont(titlePanel.getFont().deriveFont(16f).deriveFont(Font.BOLD));
         titlePanel.add(titleLabel, BorderLayout.WEST);
         trainingModeCheckBox = new JCheckBox();
@@ -91,7 +91,7 @@ public class WelcomeForm extends Form {
         trainingModeCheckBox.addItemListener(new TrainingModeOptionListener());
         trainingModeCheckBox.setToolTipText(appContext.getProperty("training.mode.toggle.checkbox.help.text"));
         titlePanel.add(trainingModeCheckBox, BorderLayout.EAST);
-//        JLabel descPanel = new JLabel(appContext.getProperty("welcome.before.start.desc"));
+//        JLabel descPanel = new JLabel(appContext.getProperty("submission.type.before.start.desc"));
 //        titlePanel.add(descPanel, BorderLayout.CENTER);
         titlePanel.add(Box.createRigidArea(new Dimension(10, 10)), BorderLayout.SOUTH);
 
@@ -129,8 +129,8 @@ public class WelcomeForm extends Form {
         completeSubmissionPanel.add(completeSubmissionHeaderPanel, BorderLayout.WEST);
         completeSubmissionCheckBox.doClick();
 
-        String completeSubmissionTitle = appContext.getProperty("welcome.full.submission.title");
-        String completeSubmissionContent = appContext.getProperty("welcome.full.submission.content");
+        String completeSubmissionTitle = appContext.getProperty("submission.type.full.submission.title");
+        String completeSubmissionContent = appContext.getProperty("submission.type.full.submission.content");
         JPanel completeSubmissionContentPanel = createSubmissionOptionPanel(completeSubmissionTitle, completeSubmissionContent, true);
         completeSubmissionPanel.add(completeSubmissionContentPanel);
         submissionOptionPanel.add(completeSubmissionPanel);
@@ -150,8 +150,8 @@ public class WelcomeForm extends Form {
         partialSubmissionHeaderPanel.add(Box.createHorizontalGlue());
         partialSubmissionPanel.add(partialSubmissionHeaderPanel, BorderLayout.WEST);
 
-        String partialSubmissionTitle = appContext.getProperty("welcome.partial.submission.title");
-        String partialSubmissionContent = appContext.getProperty("welcome.partial.submission.content");
+        String partialSubmissionTitle = appContext.getProperty("submission.type.partial.submission.title");
+        String partialSubmissionContent = appContext.getProperty("submission.type.partial.submission.content");
         JPanel partialSubmissionContentPanel = createSubmissionOptionPanel(partialSubmissionTitle, partialSubmissionContent, false);
         partialSubmissionPanel.add(partialSubmissionContentPanel);
 
@@ -226,8 +226,8 @@ public class WelcomeForm extends Form {
         linkPanel.add(loadSubmissionFileButton);
 
         // submission guideline
-        icon = GUIUtilities.loadIcon(appContext.getProperty("welcome.submission.tool.link.small.icon"));
-        JButton dataButton = GUIUtilities.createLabelLikeButton(icon, appContext.getProperty("welcome.submission.tool.submission.guideline"));
+        icon = GUIUtilities.loadIcon(appContext.getProperty("submission.type.submission.tool.link.small.icon"));
+        JButton dataButton = GUIUtilities.createLabelLikeButton(icon, appContext.getProperty("submission.type.submission.tool.submission.guideline"));
         dataButton.setForeground(ColourUtil.HYPERLINK_COLOUR);
         dataButton.addActionListener(new ActionListener() {
             @Override
@@ -238,7 +238,7 @@ public class WelcomeForm extends Form {
         linkPanel.add(dataButton);
 
         // more about proteomexchagne
-        JButton moreButton = GUIUtilities.createLabelLikeButton(icon, appContext.getProperty("welcome.submission.tool.more.detail"));
+        JButton moreButton = GUIUtilities.createLabelLikeButton(icon, appContext.getProperty("submission.type.submission.tool.more.detail"));
         moreButton.setForeground(ColourUtil.HYPERLINK_COLOUR);
         moreButton.addActionListener(new ActionListener() {
             @Override
@@ -264,9 +264,9 @@ public class WelcomeForm extends Form {
                 // change the colour of the option button
 //                fullSubmissionButton.setForeground(Color.BLACK);
 //                partialSubmissionButton.setForeground(Color.GRAY);
-//                fullSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("welcome.full.submission.button.title.selected.large.icon")));
-//                partialSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("welcome.partial.submission.button.title.large.icon")));
-//                minimumSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("welcome.minimum.submission.button.title.large.icon")));
+//                fullSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("submission.type.full.submission.button.title.selected.large.icon")));
+//                partialSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("submission.type.partial.submission.button.title.large.icon")));
+//                minimumSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("submission.type.minimum.submission.button.title.large.icon")));
                 // change the required information
             } else if (e.getActionCommand().equals(PARTIAL_SUBMISSION_OPTION)) {
                 // set submission option in application context
@@ -275,8 +275,8 @@ public class WelcomeForm extends Form {
                 // change the colour of the option button
 //                fullSubmissionButton.setForeground(Color.GRAY);
 //                partialSubmissionButton.setForeground(Color.BLACK);
-//                fullSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("welcome.full.submission.button.title.large.icon")));
-//                partialSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("welcome.partial.submission.button.title.selected.large.icon")));
+//                fullSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("submission.type.full.submission.button.title.large.icon")));
+//                partialSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("submission.type.partial.submission.button.title.selected.large.icon")));
             }
         }
     }

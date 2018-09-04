@@ -14,7 +14,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 /**
- * This form shows welcome messages
+ * This form shows Submission Type messages
  *
  * @author Rui Wang
  * @version $Id$
@@ -54,17 +54,6 @@ public class PrerequisiteForm extends Form {
     private JPanel createRequirementPanel() {
         JPanel reqPanel = new JPanel(new BorderLayout());
         reqPanel.setBorder(BorderUtil.createLoweredBorder());
-
-        // title panel
-//        JPanel titlePanel = new JPanel(new BorderLayout());
-//        JLabel titleLabel = new JLabel(App.getInstance().getDesktopContext().getProperty("welcome.you.need.title"));
-//        titleLabel.setFont(titlePanel.getFont().deriveFont(16f).deriveFont(Font.BOLD));
-//        titlePanel.add(titleLabel, BorderLayout.NORTH);
-////        JLabel descPanel = new JLabel(App.getInstance().getDesktopContext().getProperty("welcome.you.need.desc"));
-////        titlePanel.add(descPanel, BorderLayout.CENTER);
-//        titlePanel.add(Box.createRigidArea(new Dimension(10, 10)), BorderLayout.SOUTH);
-//        reqPanel.add(titlePanel, BorderLayout.NORTH);
-
         requirementItemContainer = new JPanel();
         GridLayout layout = new GridLayout(2, 3);
         layout.setHgap(20);

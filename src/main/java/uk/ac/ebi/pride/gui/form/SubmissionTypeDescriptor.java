@@ -24,27 +24,27 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Navigation descriptor for welcome form
+ * Navigation descriptor for SubmissionType form
  *
  * @author Rui Wang
  * @version $Id$
  */
-public class WelcomeDescriptor extends ContextAwareNavigationPanelDescriptor implements TaskListener<Boolean, Void> {
-    private static final Logger logger = LoggerFactory.getLogger(WelcomeDescriptor.class);
+public class SubmissionTypeDescriptor extends ContextAwareNavigationPanelDescriptor implements TaskListener<Boolean, Void> {
+    private static final Logger logger = LoggerFactory.getLogger(SubmissionTypeDescriptor.class);
 
     private boolean updateChecked = false;
-    private WelcomeForm welcomeForm = null;
+    private SubmissionTypeForm submissionTypeForm = null;
 
-    public WelcomeDescriptor(String id, String title, String desc) {
-        super(id, title, desc, new WelcomeForm());
-        welcomeForm = (WelcomeForm) getNavigationPanel();
-        welcomeForm.getPropertyChangeHelper().addPropertyChangeListener(new TrainingModeListener());
+    public SubmissionTypeDescriptor(String id, String title, String desc) {
+        super(id, title, desc, new SubmissionTypeForm());
+        submissionTypeForm = (SubmissionTypeForm) getNavigationPanel();
+        submissionTypeForm.getPropertyChangeHelper().addPropertyChangeListener(new TrainingModeListener());
     }
 
     @Override
     public void getHelp() {
         HelpBroker hb = appContext.getMainHelpBroker();
-        hb.showID("help.welcome", "javax.help.SecondaryWindow", "main");
+        hb.showID("help.submission.type", "javax.help.SecondaryWindow", "main");
     }
 
     @Override
@@ -174,7 +174,7 @@ public class WelcomeDescriptor extends ContextAwareNavigationPanelDescriptor imp
         public void propertyChange(PropertyChangeEvent evt) {
             String propName = evt.getPropertyName();
             logger.debug("Property change event: " + propName);
-            if (WelcomeForm.PropertyChangeBroadcaster.TRAINING_MODE_TOGGLE.equals(propName)) {
+            if (SubmissionTypeForm.PropertyChangeBroadcaster.TRAINING_MODE_TOGGLE.equals(propName)) {
                 firePropertyChange(TRAINING_MODE_TOGGLE_PROPERTY, evt.getOldValue(), evt.getNewValue());
             }
         }
