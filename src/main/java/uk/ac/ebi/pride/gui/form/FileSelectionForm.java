@@ -2,6 +2,7 @@ package uk.ac.ebi.pride.gui.form;
 
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
+import uk.ac.ebi.pride.gui.form.action.RemoveFilesAction;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.action.AddFileSelectionAction;
 import uk.ac.ebi.pride.gui.form.dialog.FileSelectionValidationErrorDialog;
@@ -33,6 +34,7 @@ public class FileSelectionForm extends Form implements TaskListener<DataFileVali
      * file selection table
      */
     private JTable fileSelectionTable;
+    private JButton removeFileButton;
 
     public FileSelectionForm() {
         initComponents();
@@ -56,7 +58,14 @@ public class FileSelectionForm extends Form implements TaskListener<DataFileVali
         JButton addFileButton = new JButton(new AddFileSelectionAction());
         addFileButton.setFont(addFileButton.getFont().deriveFont(DEFAULT_BUTTON_FONT_SIZE));
         addFileButton.setPreferredSize(new Dimension(DEFAULT_BUTTON_WIDTH, DEFAULT_BUTTON_HEIGHT));
+
+        // remove files button
+        removeFileButton = new JButton(new RemoveFilesAction());
+        removeFileButton.setFont(addFileButton.getFont().deriveFont(DEFAULT_BUTTON_FONT_SIZE));
+        removeFileButton.setPreferredSize(new Dimension(DEFAULT_BUTTON_WIDTH, DEFAULT_BUTTON_HEIGHT));
+
         leftButtonPane.add(addFileButton);
+        leftButtonPane.add(removeFileButton);
 
         buttonPane.add(leftButtonPane, BorderLayout.WEST);
 
@@ -144,7 +153,6 @@ public class FileSelectionForm extends Form implements TaskListener<DataFileVali
                 errorDialog.setVisible(true);
             }
         }
-
     }
 
     @Override

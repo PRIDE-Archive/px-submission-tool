@@ -65,6 +65,10 @@ public class FileSelectionTableModel extends PxTableModel implements PropertyCha
         return appContext.getSubmissionRecord().getSubmission().getDataFiles().size();
     }
 
+    public void removeAllRows(){
+        appContext.getSubmissionRecord().getSubmission().removeAllDataFiles();
+    }
+
     @Override
     public boolean isCellEditable(int rowIndex, int columnIndex) {
         return TableHeader.TYPE.getHeader().equals(getColumnName(columnIndex)) || super.isCellEditable(rowIndex, columnIndex);
