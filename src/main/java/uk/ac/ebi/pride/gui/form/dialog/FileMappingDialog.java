@@ -28,6 +28,8 @@ import java.util.Map;
 public class FileMappingDialog extends ContextAwareDialog implements ActionListener {
     private static final String CANCEL_ACTION_COMMAND = "cancelAction";
     private static final String ADD_ACTION_COMMAND = "addAction";
+    private static final String SELECT_ALL__ACTION_COMMAND = "selectAll";
+    private static final String REMOVE_ALL__ACTION_COMMAND = "removeAll";
 
     /**
      * File mapping table
@@ -125,16 +127,6 @@ public class FileMappingDialog extends ContextAwareDialog implements ActionListe
         JPanel controlPanel = new NavigationControlPanel();
         controlPanel.setLayout(new BorderLayout());
 
-//        // help button
-//        JPanel helpButtonPanel = new NonOpaquePanel(new FlowLayout(FlowLayout.LEFT));
-//        JButton helpButton = GUIUtilities.createLabelLikeButton(GUIUtilities.loadIcon(appContext.getProperty("help.button.small.icon")), null);
-//        helpButton.setPreferredSize(new Dimension(90, 30));
-//        helpButton.setFocusable(false);
-//        helpButton.setActionCommand(HELP_ACTION_COMMAND);
-//        helpButton.addActionListener(this);
-//        helpButtonPanel.add(helpButton);
-//        controlPanel.add(helpButtonPanel, BorderLayout.WEST);
-
         // control pane
         JPanel ctrlPane = new NonOpaquePanel(new FlowLayout(FlowLayout.RIGHT));
 
@@ -145,6 +137,20 @@ public class FileMappingDialog extends ContextAwareDialog implements ActionListe
         cancelButton.setActionCommand(CANCEL_ACTION_COMMAND);
         cancelButton.addActionListener(this);
         ctrlPane.add(cancelButton);
+
+        // select all button
+        JButton selectAllButton = new JButton(appContext.getProperty("select.all.file.mapping.button.label"));
+        selectAllButton.setPreferredSize(new Dimension(100, 33));
+        selectAllButton.setActionCommand(SELECT_ALL__ACTION_COMMAND);
+        selectAllButton.addActionListener(this);
+        ctrlPane.add(selectAllButton);
+
+        // remove all button
+        JButton removeAllButton = new JButton(appContext.getProperty("remove.all.file.mapping.button.label"));
+        removeAllButton.setPreferredSize(new Dimension(100, 33));
+        removeAllButton.setActionCommand(REMOVE_ALL__ACTION_COMMAND);
+        removeAllButton.addActionListener(this);
+        ctrlPane.add(removeAllButton);
 
         // next button
         JButton addButton = new JButton(appContext.getProperty("add.file.mapping.button.label"),
@@ -165,6 +171,10 @@ public class FileMappingDialog extends ContextAwareDialog implements ActionListe
 
         if (CANCEL_ACTION_COMMAND.equals(evtName)) {
             this.dispose();
+        } else if (SELECT_ALL__ACTION_COMMAND.equals(evtName)) {
+            fileMappingTable.setModel(selectOrRemoveAllFiles(fileMappingTableModel, true));
+        } else if (REMOVE_ALL__ACTION_COMMAND.equals(evtName)) {
+            fileMappingTable.setModel(selectOrRemoveAllFiles(fileMappingTableModel, false));
         } else if (ADD_ACTION_COMMAND.equals(evtName)) {
             AppContext appContext = ((AppContext) App.getInstance().getDesktopContext());
             Map<DataFile, Boolean> data = fileMappingTableModel.getData();
@@ -177,5 +187,12 @@ public class FileMappingDialog extends ContextAwareDialog implements ActionListe
 
             this.dispose();
         }
+    }
+
+    private FileMappingTableModel selectOrRemoveAllFiles(FileMappingTableModel fileMappingTableModel, boolean select){
+        for(int i=0;i<fileMappingTable.getRowCount();i++) {
+            fileMappingTableModel.setValueAt(select, i, 0);
+        }
+        return fileMappingTableModel;
     }
 }

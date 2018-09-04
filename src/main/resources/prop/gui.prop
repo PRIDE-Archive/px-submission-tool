@@ -249,6 +249,9 @@ file.mapping.table.title = Select related files from below
 add.file.mapping.button.label = Add
 add.file.mapping.dialog.button.small.icon = icon/16x16/add_black.png
 
+select.all.file.mapping.button.label = Select All
+remove.all.file.mapping.button.label = Deselect All
+
 # Additional dataset metadata
 pubmed.id.hint = Provide the PubMedID(s) if the dataset is associated with an existing publication (comma separated)
 pubmed.id.tooltip = Provide PubMedIDs (comma separated)
