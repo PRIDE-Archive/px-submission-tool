@@ -90,12 +90,15 @@ public abstract class AbstractMetadataComboSelectionModel extends AbstractListMo
                     ontology = "pride";
                 } else if (((String) anItem).equalsIgnoreCase(appContext.getProperty("tissue.combobox.other.tissue"))) {
                     preselectedOntologies.put("bto", null);
+                    preselectedOntologies.put("efo", null);
                     ontology = "bto";
                 } else if (((String) anItem).equalsIgnoreCase(appContext.getProperty("celltype.combobox.other.celltype"))) {
                     preselectedOntologies.put("cl", null);
+                    preselectedOntologies.put("efo", null);
                     ontology = "cl";
                 } else if (((String) anItem).equalsIgnoreCase(appContext.getProperty("disease.combobox.other.disease"))) {
                     preselectedOntologies.put("doid", null);
+                    preselectedOntologies.put("efo", null);
                     ontology = "doid";
                 }
                 Runnable run = new Runnable() {
