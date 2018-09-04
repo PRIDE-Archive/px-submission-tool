@@ -254,24 +254,25 @@ public class App extends Desktop {
         navigator = new Navigator();
 
         try {
-            // register welcome form
-            WelcomeDescriptor welcomePanel = new WelcomeDescriptor(getDesktopContext().getProperty("welcome.nav.desc.id"),
-                    getDesktopContext().getProperty("welcome.nav.desc.title"),
-                    getDesktopContext().getProperty("welcome.nav.desc.detail") +
+            // login form
+            PrideLoginDescriptor prideLoginPanel = new PrideLoginDescriptor(getDesktopContext().getProperty("pride.login.nav.desc.id"),
+                    getDesktopContext().getProperty("pride.login.nav.desc.title") ,
+                    getDesktopContext().getProperty("pride.login.nav.desc.detail") +
                             " (version " + getDesktopContext().getProperty("px.submission.tool.version") + ")");
-            navigator.registerNavigationPanel(welcomePanel);
+
+            navigator.registerNavigationPanel(prideLoginPanel);
+
+            // register submission type form
+            SubmissionTypeDescriptor submissionTypeDescriptor = new SubmissionTypeDescriptor(getDesktopContext().getProperty("submission.type.nav.desc.id"),
+                    "Step 1: " + getDesktopContext().getProperty("submission.type.nav.desc.title")+ " (1/10)",
+                    getDesktopContext().getProperty("submission.type.nav.desc.detail") );
+            navigator.registerNavigationPanel(submissionTypeDescriptor);
 
             // register prerequisite form
             PrerequisiteDescriptor prerequisiteDescriptor = new PrerequisiteDescriptor(getDesktopContext().getProperty("prerequisite.nav.desc.id"),
                     getDesktopContext().getProperty("prerequisite.nav.desc.title"),
                     getDesktopContext().getProperty("prerequisite.nav.desc.detail"));
             navigator.registerNavigationPanel(prerequisiteDescriptor);
-
-            // login form
-            PrideLoginDescriptor prideLoginPanel = new PrideLoginDescriptor(getDesktopContext().getProperty("pride.login.nav.desc.id"),
-                    "Step 1: " + getDesktopContext().getProperty("pride.login.nav.desc.title") + " (1/10)",
-                    getDesktopContext().getProperty("pride.login.nav.desc.detail"));
-            navigator.registerNavigationPanel(prideLoginPanel);
 
             // register project metadata form
             ProjectMetaDataDescriptor metaDataPanel = new ProjectMetaDataDescriptor(getDesktopContext().getProperty("project.metadata.nav.desc.id"),
@@ -331,7 +332,7 @@ public class App extends Desktop {
             navigator.registerNavigationPanel(NavigationPanelDescriptor.FINISH);
 
             // set the first form
-            navigator.setCurrentNavigationPanel(welcomePanel.getNavigationPanelId());
+            navigator.setCurrentNavigationPanel(prideLoginPanel.getNavigationPanelId());
 
         } catch (NavigationException e) {
             logger.error("Failed to register navigation panels", e);
