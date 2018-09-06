@@ -76,11 +76,11 @@ public class ValidationReportFrame extends ContextAwarePanel implements ActionLi
   private StyleSheet addStyles(StyleSheet styleSheet){
 
     styleSheet.addRule("body {color:#000; font-family:times; margin: 4px; }");
-    styleSheet.addRule("div {background-color: #00897b; text-align: center;}");
+    styleSheet.addRule("div {background-color: #00897b; text-align: center;}"); // green
     styleSheet.addRule("h1, h3 {color: #ffffff;}");
     styleSheet.addRule("table {width: 100%; border-collapse: collapse;}");
     styleSheet.addRule("th, td {border: 1px solid black; padding: 10px; text-align: left;}");
-    styleSheet.addRule("th{background-color:#00bcd4;}"); // cyan
+    styleSheet.addRule("th{background-color:#00897b;}"); // green
     styleSheet.addRule(".correct {background-color: #00897b;}"); // green
     styleSheet.addRule(".incorrect {background-color: #e53935;}"); // red
     styleSheet.addRule(".warning {background-color: #ffeb3b;}"); // yellow

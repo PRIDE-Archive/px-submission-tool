@@ -18,8 +18,8 @@ public class Mail {
 
   public static final String TO = "pride-support@ebi.ac.uk";
   public static final String SUBJECT = "PX Submission Validation Report Error";
-  public static final String CONTENT = "Hello,\n\n"
-          + "Please investigate the validation error(s) and find the log file attached herewith.\n"
+  public static final String CONTENT = "Hello PRIDE Team,\n\n"
+          + "Please investigate the validation error(s) and the log file is attached herewith.\n"
           + "===================================================================================\n"
           + "Please attach the log file log/px_submission.log to the email and delete this text\n"
           + "===================================================================================\n\n"
