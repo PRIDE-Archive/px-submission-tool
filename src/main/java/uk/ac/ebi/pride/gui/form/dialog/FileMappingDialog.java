@@ -140,14 +140,14 @@ public class FileMappingDialog extends ContextAwareDialog implements ActionListe
 
         // select all button
         JButton selectAllButton = new JButton(appContext.getProperty("select.all.file.mapping.button.label"));
-        selectAllButton.setPreferredSize(new Dimension(100, 33));
+        selectAllButton.setPreferredSize(new Dimension(100, 32));
         selectAllButton.setActionCommand(SELECT_ALL__ACTION_COMMAND);
         selectAllButton.addActionListener(this);
         ctrlPane.add(selectAllButton);
 
         // remove all button
         JButton removeAllButton = new JButton(appContext.getProperty("remove.all.file.mapping.button.label"));
-        removeAllButton.setPreferredSize(new Dimension(100, 33));
+        removeAllButton.setPreferredSize(new Dimension(100, 32));
         removeAllButton.setActionCommand(REMOVE_ALL__ACTION_COMMAND);
         removeAllButton.addActionListener(this);
         ctrlPane.add(removeAllButton);
