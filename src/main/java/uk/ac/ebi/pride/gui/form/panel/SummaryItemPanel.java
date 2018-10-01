@@ -127,7 +127,9 @@ public class SummaryItemPanel extends ContextAwarePanel
     validationButton.setActionCommand(VALIDATE_ACTION);
     validationButton.addActionListener(this);
     this.add(validationButton, BorderLayout.PAGE_END);
-    validationButton.setEnabled(submissionType.equals(SubmissionType.COMPLETE));
+//    validationButton.setEnabled(isFastValidationSupport());
+    // temporarily disabled
+    validationButton.setEnabled(false);
     buttonsPanel.add(validationButton);
 
     this.add(buttonsPanel, BorderLayout.EAST);
@@ -339,6 +341,25 @@ public class SummaryItemPanel extends ContextAwarePanel
         }
     }
     return filteredDataFiles;
+  }
+
+  /**
+   * Fast Validation supports to only submissions that are:
+   * 1) Complete Submissions
+   * 2) MzIdentML formats only
+   *
+   * @return True if both conditions get satisfied
+   */
+  private boolean isFastValidationSupport(){
+    boolean isQualified = false;
+    if(submissionType.equals(SubmissionType.COMPLETE)){
+      for (DataFile dataFile:submission.getDataFiles()){
+        if(dataFile.getFileFormat().equals(MassSpecFileFormat.MZIDENTML)){
+          isQualified =  true;
+        }
+      }
+    }
+    return isQualified;
   }
 
   /**
