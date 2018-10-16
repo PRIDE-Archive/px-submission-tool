@@ -4,7 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.gui.data.ValidationReport;
-import uk.ac.ebi.pride.utilities.data.controller.tools.utils.Report;
+import uk.ac.ebi.pride.toolsuite.pgconverter.utils.Report;
 import java.util.*;
 
 /**

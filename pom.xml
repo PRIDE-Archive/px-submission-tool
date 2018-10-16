@@ -60,7 +60,7 @@
         <uk.ac.ebi.pride.toolsuite-ols-dialog.version>3.4.14</uk.ac.ebi.pride.toolsuite-ols-dialog.version>
         <uk.ac.ebi.jmzidml-jmzidentml.version>1.2.6</uk.ac.ebi.jmzidml-jmzidentml.version>
         <uk.ac.ebi.pride.archive-archive-submission-model.version>1.0.3</uk.ac.ebi.pride.archive-archive-submission-model.version>
-        <uk.ac.ebi.pride.utilities.ms-data-core-api.version>2.0.24</uk.ac.ebi.pride.utilities.ms-data-core-api.version>
+        <pg.converter.version>1.8.4</pg.converter.version>
     </properties>
 
     <dependencies>
@@ -173,15 +173,13 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>uk.ac.ebi.pride.utilities</groupId>
-            <artifactId>ms-data-core-api</artifactId>
-            <version>${uk.ac.ebi.pride.utilities.ms-data-core-api.version}</version>
+            <groupId>uk.ac.ebi.pride.toolsuite</groupId>
+            <artifactId>pg-converter</artifactId>
+            <version>${pg.converter.version}</version>
         </dependency>
     </dependencies>
 
     <build>
-        <!-- <directory>target</directory>
-        <outputDirectory>${project.output.dir}</outputDirectory> -->
         <resources>
             <resource>
                 <directory>src/main/resources</directory>

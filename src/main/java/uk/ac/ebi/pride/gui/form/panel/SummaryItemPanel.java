@@ -5,7 +5,6 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
-import uk.ac.ebi.pride.AppBootstrap;
 import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
@@ -18,9 +17,10 @@ import uk.ac.ebi.pride.gui.util.ValidationReportHTMLFormatUtil;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwarePanel;
 import uk.ac.ebi.pride.gui.util.BalloonTipUtil;
-import uk.ac.ebi.pride.utilities.data.controller.tools.PGConverter;
-import uk.ac.ebi.pride.utilities.data.controller.tools.Validator;
-import uk.ac.ebi.pride.utilities.data.controller.tools.utils.Report;
+import uk.ac.ebi.pride.toolsuite.pgconverter.MainApp;
+import uk.ac.ebi.pride.toolsuite.pgconverter.Validator;
+import uk.ac.ebi.pride.toolsuite.pgconverter.utils.Report;
+import static uk.ac.ebi.pride.toolsuite.pgconverter.utils.Utility.*;
 
 import javax.swing.*;
 import java.awt.*;
@@ -35,8 +35,6 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
-import static uk.ac.ebi.pride.utilities.data.controller.tools.utils.Utility.*;
-import static uk.ac.ebi.pride.utilities.data.controller.tools.utils.Utility.ARG_REPORTFILE;
 
 /**
  * SummaryItemPanel displays a list of file counts for a submission
@@ -52,6 +50,7 @@ public class SummaryItemPanel extends ContextAwarePanel
   private static final String VALIDATE_ACTION = "validate";
   private static final String SINGLE_RESULT_FILE = "single";
   private static final String MULTIPLE_RESULT_FILES = "multiple";
+  private static final boolean IS_FAST_VALIDATION_ENABLED = true; // we decided to use only FAST_VALIDATION
 
   Submission submission;
   SubmissionType submissionType;
@@ -127,9 +126,7 @@ public class SummaryItemPanel extends ContextAwarePanel
     validationButton.setActionCommand(VALIDATE_ACTION);
     validationButton.addActionListener(this);
     this.add(validationButton, BorderLayout.PAGE_END);
-//    validationButton.setEnabled(isFastValidationSupport());
-    // temporarily disabled
-    validationButton.setEnabled(false);
+    validationButton.setEnabled(isFastValidationSupport());
     buttonsPanel.add(validationButton);
 
     this.add(buttonsPanel, BorderLayout.EAST);
@@ -311,7 +308,7 @@ public class SummaryItemPanel extends ContextAwarePanel
   private List<DataFile> filterByFileScanDepth(List<DataFile> dataFiles) {
     List<DataFile> filteredDataFiles = new ArrayList<>();
 
-    String scanDepth = AppBootstrap.getBootstrapSettings().getProperty("validation.file.scan.depth").toLowerCase().trim();
+    String scanDepth = SINGLE_RESULT_FILE;
     logger.info("Found validation.file.scan.depth: " + scanDepth);
     switch (scanDepth) {
       case SINGLE_RESULT_FILE:
@@ -391,8 +388,7 @@ public class SummaryItemPanel extends ContextAwarePanel
           }
         }
       }
-      if (fileFormat.equals(MassSpecFileFormat.MZIDENTML)
-          && ( AppBootstrap.getBootstrapSettings().getProperty("fast.validation").equals("true"))) {
+      if (fileFormat.equals(MassSpecFileFormat.MZIDENTML) && IS_FAST_VALIDATION_ENABLED) {
         logger.debug("Fast Validation switched on");
         command.add("-" + ARG_FAST_VALIDATION);
       }
@@ -417,7 +413,7 @@ public class SummaryItemPanel extends ContextAwarePanel
     List<Report> reports = new ArrayList<>();
     try {
       for (String[] args : validationCommands) {
-        CommandLine cmd = PGConverter.parseArgs(args);
+        CommandLine cmd = MainApp.parseArgs(args);
         logger.debug("Running command: " + args.toString());
         reports.add(Validator.startValidation(cmd));
       }
