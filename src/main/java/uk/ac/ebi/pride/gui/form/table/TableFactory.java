@@ -33,8 +33,9 @@ public class TableFactory {
     private static final int ANNOTATED_STATUS_COLUMN_WIDTH = 120;
     private static final int ANNOTATED_COLUMN_WIDTH = 120;
     private static final int FILE_TYPE_COLUMN_WIDTH = 150;
-    private static final int FILE_NAME_COLUMN_WIDTH = 200;
+    private static final int FILE_NAME_COLUMN_WIDTH = 160;
     private static final int FILE_PATH_COLUMN_WIDTH = 400;
+    private static final int FILE_SIZE_COLUMN_WIDTH = 40;
     private static final int CV_NAME_COLUMN_WIDTH = 200;
     private static final int CV_ONTOLOGY_COLUMN_WIDTH = 100;
     private static final int CV_ACCESSION_COLUMN_WIDTH = 100;
@@ -65,6 +66,11 @@ public class TableFactory {
         // set file path column width
         TableColumnExt pathColumn = (TableColumnExt) table.getColumn(FileSelectionTableModel.TableHeader.PATH.getHeader());
         pathColumn.setPreferredWidth(FILE_PATH_COLUMN_WIDTH);
+        pathColumn.setCellRenderer(new InvalidFileSelectionRenderer());
+
+        // set file size column width
+        TableColumnExt sizeColumn = (TableColumnExt) table.getColumn(FileSelectionTableModel.TableHeader.SIZE.getHeader());
+        pathColumn.setPreferredWidth(FILE_SIZE_COLUMN_WIDTH);
         pathColumn.setCellRenderer(new InvalidFileSelectionRenderer());
 
         // create combo box to select file type
