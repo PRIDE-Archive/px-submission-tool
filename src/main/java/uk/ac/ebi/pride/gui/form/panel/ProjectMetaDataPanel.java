@@ -243,6 +243,7 @@ public class ProjectMetaDataPanel extends ContextAwarePanel {
         label1 = new JLabel();
         label2 = new JLabel();
         label3 = new JLabel();
+        label4 = new JLabel();
 
         //======== this ========
 
@@ -314,6 +315,10 @@ public class ProjectMetaDataPanel extends ContextAwarePanel {
         label3.setText("(50 to 5000 characters)");
         label3.setForeground(new Color(102, 102, 102));
 
+        //---- label4 ----
+        label4.setText("(30 to 5000 characters)");
+        label4.setForeground(new Color(102, 102, 102));
+
         //---- tipLabel ----
         tipLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 
@@ -331,7 +336,10 @@ public class ProjectMetaDataPanel extends ContextAwarePanel {
                                         .addComponent(scrollPane3, GroupLayout.DEFAULT_SIZE, 0, Short.MAX_VALUE)
                                         .addGroup(layout.createSequentialGroup()
                                                 .addGroup(layout.createParallelGroup()
-                                                        .addComponent(projectTitleLabel)
+                                                        .addGroup(layout.createSequentialGroup()
+                                                                .addComponent(projectTitleLabel)
+                                                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                                                .addComponent(label4, GroupLayout.PREFERRED_SIZE, 184, GroupLayout.PREFERRED_SIZE))
                                                         .addComponent(keywordLabel)
                                                         .addComponent(keywordField, GroupLayout.PREFERRED_SIZE, 352, GroupLayout.PREFERRED_SIZE)
                                                         .addComponent(projectTitleField, GroupLayout.PREFERRED_SIZE, 483, GroupLayout.PREFERRED_SIZE)
@@ -357,10 +365,9 @@ public class ProjectMetaDataPanel extends ContextAwarePanel {
         layout.setVerticalGroup(
                 layout.createParallelGroup()
                         .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup()
-                                        .addGroup(layout.createSequentialGroup()
-                                                .addGap(16, 16, 16)
-                                                .addComponent(projectTitleLabel, GroupLayout.PREFERRED_SIZE, 15, GroupLayout.PREFERRED_SIZE))
+                                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+                                        .addComponent(projectTitleLabel)
+                                        .addComponent(label4)
                                         .addComponent(tipLabel))
                                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(projectTitleField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
@@ -419,6 +426,7 @@ public class ProjectMetaDataPanel extends ContextAwarePanel {
     private JLabel label1;
     private JLabel label2;
     private JLabel label3;
+    private JLabel label4;
     private JLabel tipLabel;
     // JFormDesigner - End of variables declaration  //GEN-END:variables
 }
