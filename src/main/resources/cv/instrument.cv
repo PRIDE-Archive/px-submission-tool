@@ -20,3 +20,5 @@ MS	MS:1000675	6220 Time-of-Flight LC/MS	Agilent 6220 Time-of-Flight LC/MS
 MS	MS:1001776	MALDI Synapt MS	Waters MALDI Synapt
 MS	MS:1001782	Synapt MS	Waters Synapt
 MS	MS:1000189	Q-Tof Ultima	Waters Q-Tof Ultima
+MS	MS:1002416	Orbitrap Fusion	Thermo Scientific Orbitrap Fusion
+MS	MS:1002732	Orbitrap Fusion Lumos	Thermo Scientific Orbitrap Fusion Lumos mass spectrometer with Tribrid architecture consisting of quadrupole mass filter, linear ion trap and Orbitrap mass analyzers
