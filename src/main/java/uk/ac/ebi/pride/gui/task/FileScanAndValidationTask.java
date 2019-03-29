@@ -277,13 +277,12 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 // If the datafile is not a file, it is a URL
                 URL dataFileToAdd = (dataFile.isFile() ? new URL("file://" + dataFile.getFilePath().toString()) : dataFile.getUrl());
                 // We only care about file names
-                dataFiles.put(FilenameUtils.getName(dataFileToAdd.toString()), dataFile);
+                dataFiles.put(FilenameUtils.getName(dataFileToAdd.toString().toLowerCase()), dataFile);
             } catch (MalformedURLException e) {
                 logger.error("PLEASE, REVIEW file reference '" + dataFile.getFilePath().toString() + "' as it could not be parsed as a URL, by adding 'file://' protocol");
             }
         }
-        for (DataFile mzTabFile :
-                mzTabDataFiles) {
+        for (DataFile mzTabFile : mzTabDataFiles) {
             for (int msRunIndex :
                     mzTabFile.getMzTabDocument().getMetaData().getAvailableMsRunIndexes()) {
                 // According to mzTab format specification, not only the presence of ms-run is mandatory, but also a
@@ -299,7 +298,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 String errorEntry = "";
                 if (mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation() != null) {
                     String referencedFile = FilenameUtils.getName(mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString());
-                    if (!dataFiles.keySet().contains(referencedFile)) {
+                    if (!dataFiles.keySet().contains(referencedFile.toLowerCase())) {
                         // Flag the error
                         errorFlagged = true;
                         // The referenced file is not part of the submission files
