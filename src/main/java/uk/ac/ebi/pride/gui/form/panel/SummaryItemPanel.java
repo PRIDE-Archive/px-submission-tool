@@ -349,12 +349,16 @@ public class SummaryItemPanel extends ContextAwarePanel
    */
   private boolean isFastValidationSupport(){
     boolean isQualified = false;
-    if(submission.getProjectMetaData().getSubmissionType().equals(SubmissionType.COMPLETE)){
-      for (DataFile dataFile:submission.getDataFiles()){
-        if(dataFile.getFileFormat().equals(MassSpecFileFormat.MZIDENTML)){
-          isQualified =  true;
+    try {
+      if(submission.getProjectMetaData().getSubmissionType().equals(SubmissionType.COMPLETE)){
+        for (DataFile dataFile:submission.getDataFiles()){
+          if(dataFile.getFileFormat() != null && dataFile.getFileFormat().equals(MassSpecFileFormat.MZIDENTML)){
+            isQualified =  true;
+          }
         }
       }
+    } catch (Exception e) {
+      e.printStackTrace();
     }
     return isQualified;
   }
