@@ -70,8 +70,8 @@ public class TableFactory {
 
         // set file size column width
         TableColumnExt sizeColumn = (TableColumnExt) table.getColumn(FileSelectionTableModel.TableHeader.SIZE.getHeader());
-        pathColumn.setPreferredWidth(FILE_SIZE_COLUMN_WIDTH);
-        pathColumn.setCellRenderer(new InvalidFileSelectionRenderer());
+        sizeColumn.setPreferredWidth(FILE_SIZE_COLUMN_WIDTH);
+        sizeColumn.setCellRenderer(new InvalidFileSelectionRenderer());
 
         // create combo box to select file type
         TableColumnExt fileTypeColumn = (TableColumnExt) table.getColumn(FileSelectionTableModel.TableHeader.TYPE.getHeader());
