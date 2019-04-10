@@ -22,7 +22,7 @@ public class FileSelectionTableModel extends PxTableModel implements PropertyCha
         FILE_ID("File ID", "File ID"),
         FILE_NAME("File Name", "File name"),
         PATH("PATH / URL", "File path or URL"),
-        SIZE("File Size", "File size"),
+        SIZE("File Size(bytes)", "File size"),
         TYPE("File Type", "File type"),
         REMOVAL("Remove", "Delete file or URL"),
         VALIDATION("Validation", "Validation");

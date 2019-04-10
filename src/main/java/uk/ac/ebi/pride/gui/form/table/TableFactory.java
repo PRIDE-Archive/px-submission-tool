@@ -17,6 +17,7 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableModel;
 
 /**
@@ -69,9 +70,12 @@ public class TableFactory {
         pathColumn.setCellRenderer(new InvalidFileSelectionRenderer());
 
         // set file size column width
-        TableColumnExt sizeColumn = (TableColumnExt) table.getColumn(FileSelectionTableModel.TableHeader.SIZE.getHeader());
-        sizeColumn.setPreferredWidth(FILE_SIZE_COLUMN_WIDTH);
-        sizeColumn.setCellRenderer(new InvalidFileSelectionRenderer());
+        TableColumnExt filesizeColumn = (TableColumnExt) table.getColumn(FileSelectionTableModel.TableHeader.SIZE.getHeader());
+        filesizeColumn.setPreferredWidth(FILE_SIZE_COLUMN_WIDTH);
+        filesizeColumn.setCellRenderer(new InvalidFileSelectionRenderer());
+        DefaultTableCellRenderer renderer = new DefaultTableCellRenderer();
+        renderer.setHorizontalAlignment(JLabel.RIGHT);
+        filesizeColumn.setCellRenderer(renderer);
 
         // create combo box to select file type
         TableColumnExt fileTypeColumn = (TableColumnExt) table.getColumn(FileSelectionTableModel.TableHeader.TYPE.getHeader());
