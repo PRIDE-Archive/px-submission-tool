@@ -143,12 +143,11 @@ public final class WarningMessageGenerator {
 
     /**
      * Show warning for the raw only submission, dta, mgf, ms2 or pkl files should be assigned to PEAK type
-     * TODO this area needs refactoring, raw file formats are never checked and this message is never used
      */
     public static String getUnsupportedRawFileWarning() {
 
         // Create the balloon tip
-        return "<html>" + "<b>Unsupported raw files found</b><br/>" + "dta, mgf, ms2 or pkl files should be assigned with the PEAK type." + "</html>";
+        return "<html>" + "<b>Unsupported raw files found</b><br/>" + "zip file cannot contain multiple .RAW files." + "</html>";
     }
 
     /**

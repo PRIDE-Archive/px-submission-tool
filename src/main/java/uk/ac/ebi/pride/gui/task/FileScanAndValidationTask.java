@@ -32,6 +32,9 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipException;
+import java.util.zip.ZipFile;
 
 /**
  * Validate all the files selected in the file selection step
@@ -495,9 +498,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 if (dataFile.isUrl()) {
                     result.setUrlBasedResultFilePresent(true);
                 }
-
-                // TODO - Refactor, comparing to not being fileType RESULT makes no sense here, as we know, without a doubt, fileType is RESULT
-                if (fileFormat == null || !ProjectFileType.RESULT.equals(fileType)) {
+                if (fileFormat == null) {
                     result.setUnsupportedResultFile(true);
                 } else {
                     result.setSupportedResultFile(true);
@@ -510,13 +511,13 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                     }
                 }
             } else if (ProjectFileType.RAW.equals(fileType)) {
-                if (fileFormat == null || ProjectFileType.RAW.equals(fileType)) {
+                if (!isValidRawCompressedFile(dataFile) || fileFormat == null) {
+                    result.setUnsupportedRawFile(true);
+                } else {
                     result.setSupportedRawFile(true);
                     if (MassSpecFileFormat.IBD.equals(fileFormat)) {
                         result.setImagingRawFile(true);
                     }
-                } else {
-                    result.setUnsupportedRawFile(true);
                 }
             } else if (ProjectFileType.SEARCH.equals(fileType)) {
                 if (PrideConverterSupport.isSupported(dataFile)) {
@@ -530,6 +531,50 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         }
 
         return result;
+    }
+
+    /**
+     * There cannot be multiple raw files in zipped into a single zip file.
+     * This method checks if the zipped file contain more than one raw files.
+     * @param dataFile Data file
+     * @return Boolean values. If multiple raw files found, returns false.
+     */
+    private boolean isValidRawCompressedFile(DataFile dataFile) {
+        boolean isValid = true;
+        int rawFileCount = 0;
+
+        String ext = FileUtil.getFileExtension(dataFile.getFile());
+
+        try {
+            if (ext != null) {
+                if ("zip".equalsIgnoreCase(ext)) {
+                    ZipFile zipFile = new ZipFile(dataFile.getFile());
+                    Enumeration<? extends ZipEntry> entries = zipFile.entries();
+                    while(entries.hasMoreElements() && rawFileCount <= 1){
+                        ZipEntry entry = entries.nextElement();
+                        String fileName = entry.getName();
+                        String fileExtension = FileUtil.getFileExtension(fileName);
+                        if (fileExtension != null) {
+                          if (fileExtension.toUpperCase().equals("RAW")) {
+                            rawFileCount++;
+                          }
+                        }else{
+                            isValid=false;
+                            break;
+                        }
+                    }
+
+                } // gzip can compress only single file, therefore, we do not need to check gzip
+            }
+        } catch (IOException e) {
+            isValid=false;
+            e.printStackTrace();
+        }
+
+        if((rawFileCount > 1)){
+            logger.error("Multiple .RAW files found in " + dataFile.getFile().getName() +". Please unzip them and upload individually");
+        }
+        return isValid;
     }
 
     /**
