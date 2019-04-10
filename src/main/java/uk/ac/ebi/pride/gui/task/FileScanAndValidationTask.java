@@ -511,7 +511,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                     }
                 }
             } else if (ProjectFileType.RAW.equals(fileType)) {
-                if (!isValidRawCompressedFile(dataFile) || fileFormat == null) {
+                if (!isValidRawCompressedFile(dataFile)) {
                     result.setUnsupportedRawFile(true);
                 } else {
                     result.setSupportedRawFile(true);
@@ -552,15 +552,17 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                     Enumeration<? extends ZipEntry> entries = zipFile.entries();
                     while(entries.hasMoreElements() && rawFileCount <= 1){
                         ZipEntry entry = entries.nextElement();
-                        String fileName = entry.getName();
-                        String fileExtension = FileUtil.getFileExtension(fileName);
-                        if (fileExtension != null) {
-                          if (fileExtension.toUpperCase().equals("RAW")) {
-                            rawFileCount++;
-                          }
-                        }else{
-                            isValid=false;
-                            break;
+                        if (!entry.isDirectory()) {
+                            String fileName = entry.getName();
+                            String fileExtension = FileUtil.getFileExtension(fileName);
+                            if (fileExtension != null) {
+                              if (fileExtension.toUpperCase().equals("RAW")) {
+                                rawFileCount++;
+                              }
+                            }else{
+                                isValid=false;
+                                break;
+                            }
                         }
                     }
 
@@ -572,6 +574,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         }
 
         if((rawFileCount > 1)){
+            isValid=false;
             logger.error("Multiple .RAW files found in " + dataFile.getFile().getName() +". Please unzip them and upload individually");
         }
         return isValid;
