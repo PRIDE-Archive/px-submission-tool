@@ -4,7 +4,7 @@
     <groupId>uk.ac.ebi.pride.px</groupId>
     <artifactId>px-submission-tool</artifactId>
     <packaging>jar</packaging>
-    <version>2.4.12-SNAPSHOT</version>
+    <version>2.4.11-SNAPSHOT</version>
     <name>px-submission-tool</name>
     <url>https://github.com/proteomexchange/px-submission-tool</url>
 
