@@ -4,6 +4,8 @@
 
 package uk.ac.ebi.pride.gui.form;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.table.TableFactory;
@@ -29,6 +31,7 @@ import java.util.Set;
  * @version $Id$
  */
 public class FileMappingForm extends Form {
+    private static final Logger logger = LoggerFactory.getLogger(FileMappingForm.class);
     private static final float DEFAULT_TITLE_FONT_SIZE = 15f;
 
     /**
@@ -136,6 +139,7 @@ public class FileMappingForm extends Form {
         for (DataFile resultOrSearchFile : resultOrSearchFiles) {
             if (resultOrSearchFile.getFileMappings().isEmpty() || !resultOrSearchFile.hasRawMappings()) {
                 resultOrSearchCount++;
+                logger.warn("No mapping file(s) found for " + resultOrSearchFile.getFileName());
             } else if (!resultOrSearchFile.getFileMappings().isEmpty() && resultOrSearchFile.hasRawMappings()) {
                 List<DataFile> fileMappings = resultOrSearchFile.getFileMappings();
                 for (DataFile dataFile : fileMappings) {
@@ -157,6 +161,14 @@ public class FileMappingForm extends Form {
                     resultOrSearchCount + " '" + fileType + "' file" + (resultOrSearchCount<2 ? " is" : "s are") +
                     " missing file mappings." + "</li>" + "</html>");
             } else { // (!allRawFiles.equals(foundMappedRawFiles))
+                Set<DataFile> allRawFilesCopy = new HashSet<>();
+                allRawFilesCopy.addAll(allRawFiles);
+                allRawFilesCopy.removeAll(foundMappedRawFiles);
+
+                for(DataFile dataFile : allRawFilesCopy){
+                    logger.warn("Raw file is not mapped! " + dataFile.getFileName());
+                }
+
                 newWarningContents = new JLabel("<html>" +
                     "<b>Please make sure all 'raw' files have been mapped by at least one '" + fileType + "' file:</b><br/>" + "<li>" +
                     (allRawFiles.size()-foundMappedRawFiles.size()) + " 'raw' file" +
