@@ -271,6 +271,9 @@ public class LoadSubmissionFileAction extends AbstractAction {
             SubmissionRecord submissionRecord = new SubmissionRecord(submission);
 
             AppContext ctx = (AppContext) App.getInstance().getDesktopContext();
+            submissionRecord.getSubmission().getProjectMetaData()
+                    .setSubmitterContact(ctx.getSubmissionRecord().getSubmission().getProjectMetaData()
+                            .getSubmitterContact());
             ctx.setSubmissionRecord(submissionRecord);
             ctx.setBulkMode(true);
 
