@@ -1,11 +1,16 @@
 package uk.ac.ebi.pride.gui.form;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.data.io.SubmissionFileWriter;
+import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.navigation.Navigator;
 
 import javax.help.HelpBroker;
 import javax.swing.*;
+import java.io.File;
 
 /**
  * SummaryDescriptor
@@ -14,6 +19,8 @@ import javax.swing.*;
  * @version $Id$
  */
 public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
+
+    private static final Logger logger = LoggerFactory.getLogger(SummaryDescriptor.class);
 
     public SummaryDescriptor(String id, String title, String desc) {
         super(id, title, desc, new SummaryForm());
@@ -36,4 +43,66 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
 
         nextButton.setText(appContext.getProperty("summary.submit.button.title"));
     }
+
+    @Override
+    public void beforeHidingForNextPanel() {
+        exportSummary();
+        firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, false, true);
+    }
+
+    /**
+     * This method exports the px summary file
+     */
+    private void exportSummary() {
+        // create file chooser
+        JFileChooser fileChooser = new JFileChooser(appContext.getOpenFilePath());
+
+        // set file chooser title
+        fileChooser.setDialogTitle(appContext.getProperty("export.summary.dialog.title"));
+
+        // set dialog type
+        fileChooser.setDialogType(JFileChooser.SAVE_DIALOG);
+
+        // set default selected file
+        fileChooser.setSelectedFile(
+                new File(
+                        appContext.getOpenFilePath()
+                                + System.getProperty("file.separator")
+                                + appContext.getProperty("export.summary.default.summary.file.name")));
+
+        // set selection mode
+        fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+        fileChooser.setMultiSelectionEnabled(false);
+
+        // show dialog
+        int result = fileChooser.showDialog(((App) App.getInstance()).getMainFrame(), null);
+
+        // check the selection results from open file dialog
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File selectedFile = fileChooser.getSelectedFile();
+            try {
+                if (!selectedFile.exists()) {
+                    boolean created = selectedFile.createNewFile();
+                    if (!created) {
+                        logger.error("Failed to create summary file: " + selectedFile.getAbsolutePath());
+                        JOptionPane.showMessageDialog(
+                                ((App) App.getInstance()).getMainFrame(),
+                                appContext.getProperty("export.summary.error.dialog.message"),
+                                appContext.getProperty("export.summary.error.dialog.title"),
+                                JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+                Submission submission = appContext.getSubmissionRecord().getSubmission();
+                SubmissionFileWriter.write(submission, selectedFile);
+            } catch (Exception ex) {
+                logger.error("Failed to export summary file: " + selectedFile.getAbsolutePath());
+                JOptionPane.showMessageDialog(
+                        ((App) App.getInstance()).getMainFrame(),
+                        appContext.getProperty("export.summary.error.dialog.message"),
+                        appContext.getProperty("export.summary.error.dialog.title"),
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
 }
