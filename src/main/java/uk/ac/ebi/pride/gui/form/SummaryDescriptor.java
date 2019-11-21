@@ -46,14 +46,20 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
 
     @Override
     public void beforeHidingForNextPanel() {
-        exportSummary();
-        firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, false, true);
+        boolean isFileExported  = exportSummary();
+        if(isFileExported) {
+            firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, false, true);
+        }else {
+            firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, true, false);
+        }
     }
 
     /**
      * This method exports the px summary file
      */
-    private void exportSummary() {
+    private boolean exportSummary() {
+
+        boolean isFileExported = false;
         // create file chooser
         JFileChooser fileChooser = new JFileChooser(appContext.getOpenFilePath());
 
@@ -94,6 +100,7 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
                 }
                 Submission submission = appContext.getSubmissionRecord().getSubmission();
                 SubmissionFileWriter.write(submission, selectedFile);
+                isFileExported = true;
             } catch (Exception ex) {
                 logger.error("Failed to export summary file: " + selectedFile.getAbsolutePath());
                 JOptionPane.showMessageDialog(
@@ -103,6 +110,7 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
                         JOptionPane.ERROR_MESSAGE);
             }
         }
+        return isFileExported;
     }
 
 }
