@@ -323,7 +323,7 @@ public class AdditionalMetaDataForm extends Form {
         }
 
         // modification
-        if (!invalid && SubmissionValidator.validateModifications(getModifications(), SubmissionType.PARTIAL).hasError()) {
+        if (!invalid && SubmissionValidator.validateModifications(getModifications()).hasError()) {
             warningBalloonTip = BalloonTipUtil.createErrorBalloonTip(modificationPanel, "Please choose modifications");
             showWarnings();
             invalid = true;
