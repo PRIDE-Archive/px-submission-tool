@@ -24,7 +24,9 @@ public final class PrideConverterSupport {
                         fileFormat.equals(MassSpecFileFormat.MSGF) ||
                         fileFormat.equals(MassSpecFileFormat.SPECTRAST) ||
                         fileFormat.equals(MassSpecFileFormat.XTANDEM) ||
-                        fileFormat.equals(MassSpecFileFormat.CRUX))) {
+                        fileFormat.equals(MassSpecFileFormat.CRUX) ||
+                        fileFormat.equals(MassSpecFileFormat.CSV) ||
+                        fileFormat.equals(MassSpecFileFormat.TSV))) {
             return true;
         } else {
             return false;
