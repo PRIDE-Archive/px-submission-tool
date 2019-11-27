@@ -101,6 +101,14 @@ public class SampleMetaDataDescriptor extends ContextAwareNavigationPanelDescrip
                     }
                 }
 
+                // modifications
+                Set<CvParam> modifications = sampleMetaData.getMetaData(SampleMetaData.Type.MODIFICATION);
+                if (modifications != null) {
+                    for (CvParam modification : modifications) {
+                        projectMetaData.addModifications(modification);
+                    }
+                }
+
                 // instruments
                 Set<CvParam> instruments = sampleMetaData.getMetaData(SampleMetaData.Type.INSTRUMENT);
                 if (instruments != null) {
