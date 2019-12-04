@@ -10,7 +10,10 @@ import uk.ac.ebi.pride.gui.navigation.Navigator;
 
 import javax.help.HelpBroker;
 import javax.swing.*;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
 /**
  * SummaryDescriptor
@@ -96,10 +99,12 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
                                 appContext.getProperty("export.summary.error.dialog.message"),
                                 appContext.getProperty("export.summary.error.dialog.title"),
                                 JOptionPane.ERROR_MESSAGE);
+                        return isFileExported;
                     }
                 }
                 Submission submission = appContext.getSubmissionRecord().getSubmission();
                 SubmissionFileWriter.write(submission, selectedFile);
+                addToolVersionToSummary(selectedFile.getAbsolutePath());
                 isFileExported = true;
             } catch (Exception ex) {
                 logger.error("Failed to export summary file: " + selectedFile.getAbsolutePath());
@@ -111,6 +116,18 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
             }
         }
         return isFileExported;
+    }
+
+    private void addToolVersionToSummary(String fileName){
+        try {
+            FileWriter fw = new FileWriter(fileName, true);
+            BufferedWriter bw = new BufferedWriter(fw);
+            bw.write("COM\tVersion:" + appContext.getProperty("px.submission.tool.version"));
+            bw.newLine();
+            bw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 }
