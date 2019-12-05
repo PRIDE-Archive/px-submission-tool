@@ -42,3 +42,4 @@ MOD	MOD:00428	dihydroxylated residue	Dioxidation
 MOD	MOD:01499	iTRAQ4plex-116 reporter+balance reagent acylated residue	iTRAQ4plex
 MOD	MOD:01549	iTRAQ8plex-116 reporter+balance reagent acylated residue	iTRAQ8plex
 MOD	MOD:01720	TMT6plex-126 reporter+balance reagent acylated residue	TMT6plex
+MOD	MOD:00752	adenosine diphosphoribosyl (ADP-ribosyl) modified residue	ADP-ribosylation

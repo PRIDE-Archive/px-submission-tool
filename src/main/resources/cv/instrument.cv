@@ -1,4 +1,5 @@
 MS	MS:1000447	LTQ	Thermo Finnigan LTQ
+MS	MS:1002523	Q Exactive HF	Q Exactive HF
 MS	MS:1000449	LTQ Orbitrap	Thermo Finnigan LTQ Orbitrap
 MS	MS:1000448	LTQ FT	Thermo Finnigan LTQ FT
 MS	MS:1001742	LTQ Orbitrap Velos	Thermo Finnigan LTQ Orbitrap Velos
@@ -22,3 +23,4 @@ MS	MS:1001782	Synapt MS	Waters Synapt
 MS	MS:1000189	Q-Tof Ultima	Waters Q-Tof Ultima
 MS	MS:1002416	Orbitrap Fusion	Thermo Scientific Orbitrap Fusion
 MS	MS:1002732	Orbitrap Fusion Lumos	Thermo Scientific Orbitrap Fusion Lumos
+
