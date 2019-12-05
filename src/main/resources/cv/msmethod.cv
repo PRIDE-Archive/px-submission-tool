@@ -9,4 +9,5 @@ PRIDE	PRIDE:0000451	MSE	MSE (Data-independent acquisition)
 PRIDE	PRIDE:0000452	HDMSE	HDMSE (Data-independent acquisition)
 PRIDE	PRIDE:0000453	PAcIFIC	PAcIFIC (Data-independent acquisition)
 PRIDE	PRIDE:0000454	All-ion fragmentation	All-ion fragmentation (Data-independent acquisition)
+PRIDE	PRIDE:0000512	RNA mass spectrometry	RNA mass spectrometry
 MS	MS:1002521	Mass spectrometry imaging	MS imaging
