@@ -1,11 +1,15 @@
 package uk.ac.ebi.pride.gui.form;
 
+import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.gui.form.panel.SummaryItemPanel;
 import uk.ac.ebi.pride.gui.form.table.TableFactory;
+import uk.ac.ebi.pride.gui.navigation.Navigator;
 import uk.ac.ebi.pride.gui.util.BorderUtil;
 
 import javax.swing.*;
+import javax.swing.event.HyperlinkEvent;
 import java.awt.*;
+import java.awt.event.ItemEvent;
 
 /**
  * SummaryForm shows a summary of the submission
@@ -13,7 +17,7 @@ import java.awt.*;
  * @author Rui Wang
  * @version $Id$
  */
-public class SummaryForm extends Form{
+public class SummaryForm extends Form {
     private JTable summaryTable;
 
     public SummaryForm() {
@@ -23,12 +27,15 @@ public class SummaryForm extends Form{
     private void initComponents() {
         // setup the main pane
         this.setLayout(new BorderLayout());
-        
+
         // setup submission summary description panel
         initSubmissionSummaryDescPanel();
-        
+
         // setup submission summary table
         initSubmissionSummaryTable();
+
+        // set up accept license checkbox
+        initDatasetLicenseAcceptCheckbox();
     }
 
     /**
@@ -43,16 +50,51 @@ public class SummaryForm extends Form{
     }
 
 
-
     /**
      * Initialize submission summary table
      */
     private void initSubmissionSummaryTable() {
         summaryTable = TableFactory.createSubmissionSummaryTable();
-        
+
         JScrollPane scrollPane = new JScrollPane(summaryTable, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        
+
         this.add(scrollPane, BorderLayout.CENTER);
+    }
+
+    private void initDatasetLicenseAcceptCheckbox() {
+
+        Navigator navigator = ((App) App.getInstance()).getNavigator();
+        JButton nextButton = navigator.getNextButton();
+
+        JCheckBox jCheckBox = new JCheckBox();
+        StringBuilder html = new StringBuilder();
+        html.append(appContext.getProperty("summary.dataset.accept.license.text"));
+        jCheckBox.addItemListener(e -> {
+            if(e.getStateChange() == ItemEvent.SELECTED){
+                nextButton.setEnabled(true);
+            }else {
+                nextButton.setEnabled(false);
+            }
+        });
+
+        // html content
+        JEditorPane editorPane = new JEditorPane("text/html", html.toString());
+        editorPane.addHyperlinkListener(
+                e -> {
+                    try {
+                        if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED))
+                            Desktop.getDesktop().browse(e.getURL().toURI());
+                    } catch (Exception ex) {
+                        // couldn't display error message
+                    }
+                });
+        editorPane.setEditable(false);
+        editorPane.setBackground(new JLabel().getBackground());
+
+        JPanel jPanel = new JPanel();
+        jPanel.add(jCheckBox);
+        jPanel.add(editorPane);
+        this.add(jPanel,BorderLayout.SOUTH);
     }
 
 }
