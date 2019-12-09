@@ -369,8 +369,13 @@ summary.validate.button.tooltip = Validate your complete submission before submi
 validation.report.frame.title = PX Submission Tool Validation Report
 validation.report.help.button = Ask support from PRIDE Team
 
+summary.dataset.accept.license.text=<html><body>Please accept <a href="http://www.ebi.ac.uk/pride/markdownpage/usagepolicy" title="PRIDE Archive dataset license" target="_blank">PRIDE Archive dataset license</a></body></html>
+
 # Help
 help.main.set=help/MainHelp.hs
+
+# Dataset License
+px.submission.dataset.version=CC0
 
 # Bulk submission
 bulk.submission.warning.title = Bulk Submission

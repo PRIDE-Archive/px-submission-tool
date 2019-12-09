@@ -3,6 +3,7 @@ package uk.ac.ebi.pride.gui.form;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.data.io.SubmissionFileWriter;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
@@ -45,14 +46,15 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
         JButton nextButton = navigator.getNextButton();
 
         nextButton.setText(appContext.getProperty("summary.submit.button.title"));
+        nextButton.setEnabled(false);
     }
 
     @Override
     public void beforeHidingForNextPanel() {
-        boolean isFileExported  = exportSummary();
-        if(isFileExported) {
+        boolean isFileExported = exportSummary(appContext);
+        if (isFileExported) {
             firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, false, true);
-        }else {
+        } else {
             firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, true, false);
         }
     }
@@ -60,7 +62,7 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
     /**
      * This method exports the px summary file
      */
-    private boolean exportSummary() {
+    public static boolean exportSummary(AppContext appContext) {
 
         boolean isFileExported = false;
         // create file chooser
@@ -104,7 +106,7 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
                 }
                 Submission submission = appContext.getSubmissionRecord().getSubmission();
                 SubmissionFileWriter.write(submission, selectedFile);
-                addToolVersionToSummary(selectedFile.getAbsolutePath());
+                addToolVersionAndLicenseToSummary(selectedFile.getAbsolutePath(), appContext);
                 isFileExported = true;
             } catch (Exception ex) {
                 logger.error("Failed to export summary file: " + selectedFile.getAbsolutePath());
@@ -118,11 +120,13 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
         return isFileExported;
     }
 
-    private void addToolVersionToSummary(String fileName){
+    private static void addToolVersionAndLicenseToSummary(String fileName, AppContext appContext) {
         try {
             FileWriter fw = new FileWriter(fileName, true);
             BufferedWriter bw = new BufferedWriter(fw);
             bw.write("COM\tVersion:" + appContext.getProperty("px.submission.tool.version"));
+            bw.newLine();
+            bw.write("COM\tDataset License:" + appContext.getProperty("px.submission.dataset.version"));
             bw.newLine();
             bw.close();
         } catch (IOException e) {
