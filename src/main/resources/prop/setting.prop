@@ -7,7 +7,8 @@ px.submission.tool.width = 800
 px.submission.tool.height = 750
 
 # url for retrieving pride user details
-pride.user.detail.url = http://www.proteomexchange.org/archive-submission-ws/submission/user
+px.user.token.url=https://www.ebi.ac.uk/pride/private/ws/archive/v2/getAAPToken
+px.user.detail.url=https://www.ebi.ac.uk/pride/private/ws/archive/v2/user/view-profile
 
 # url for retrieving px ftp upload details
 px.upload.detail.url = http://www.proteomexchange.org/archive-submission-ws/submission/upload/{method}

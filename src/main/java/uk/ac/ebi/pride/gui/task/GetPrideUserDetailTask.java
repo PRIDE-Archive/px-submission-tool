@@ -5,13 +5,17 @@ import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.archive.submission.model.user.ContactDetail;
+import uk.ac.ebi.pride.gui.data.Credentials;
 import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
-import uk.ac.ebi.pride.web.util.template.SecureRestTemplateFactory;
 
 import java.util.Properties;
 
@@ -27,6 +31,8 @@ public class GetPrideUserDetailTask extends TaskAdapter<ContactDetail, String> {
 
     private final RestTemplate restTemplate;
 
+    public final Credentials userCredentials;
+
     /**
      * Constructor
      *
@@ -34,7 +40,8 @@ public class GetPrideUserDetailTask extends TaskAdapter<ContactDetail, String> {
      * @param password pride password
      */
     public GetPrideUserDetailTask(String userName, char[] password) {
-        this.restTemplate = SecureRestTemplateFactory.getTemplate(userName, new String(password));
+        userCredentials = new Credentials(userName, new String(password));
+        this.restTemplate = new RestTemplate();
     }
 
     /**
@@ -52,7 +59,8 @@ public class GetPrideUserDetailTask extends TaskAdapter<ContactDetail, String> {
     @Override
     protected ContactDetail doInBackground() throws Exception {
         DesktopContext context = App.getInstance().getDesktopContext();
-        String baseUrl = context.getProperty("pride.user.detail.url");
+        String userTokenUrl = context.getProperty("px.user.token.url");
+        String userDetailUrl = context.getProperty("px.user.detail.url");
 
         try {
             // set proxy
@@ -68,7 +76,15 @@ public class GetPrideUserDetailTask extends TaskAdapter<ContactDetail, String> {
                 defaultHttpClient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
             }
 
-            return restTemplate.getForObject(baseUrl, ContactDetail.class);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            String requestBody = userCredentials.toString();
+            HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+            final String token = restTemplate.exchange(userTokenUrl, HttpMethod.POST, entity, String.class).getBody();
+
+            headers.set("Authorization", "Bearer " + token);
+            entity = new HttpEntity<>(headers);
+            return restTemplate.exchange(userDetailUrl, HttpMethod.GET, entity, ContactDetail.class).getBody();
         } catch (Exception ex) {
             publish("Failed to login, please check user name or password");
         }
