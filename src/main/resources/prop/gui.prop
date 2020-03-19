@@ -321,7 +321,7 @@ submission.complete.title = Your submission reference:
 submission.complete.message = <html>Please note: your submission reference is <b>not<b/> an accession number.<br/>We aim to process all submissions within five working days, however at certain times, it might take longer.</html>
 upload.method.title = Fast upload
 upload.method.message = Would you like to use our fast upload service?
-upload.checksum.error.message=<html><b>Failed to encrypt files<br/>In which case you should contact your system administrator.</html>
+upload.checksum.error.message=<html><b>Failed to calculate checksum for files<br/>In which case you should contact your system administrator.</html>
 upload.checksum.error.title=Checksum error
 
 
@@ -380,7 +380,7 @@ summary.dataset.accept.license.text=<html><body>Please accept <a href="http://ww
 
 # Checksum screen
 checksum.submit.button.title = Submit
-checksum.large.icon = icon/64x64/encrypt.png
+checksum.large.icon = icon/64x64/sha1.png
 checksum.default.message = Preparing to upload
 
 # Help
