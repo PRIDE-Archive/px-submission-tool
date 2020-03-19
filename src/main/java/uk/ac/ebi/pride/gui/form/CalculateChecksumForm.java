@@ -13,7 +13,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-public class EncryptionForm extends Form implements ActionListener {
+public class CalculateChecksumForm extends Form implements ActionListener {
     private static final Logger logger = LoggerFactory.getLogger(SubmissionForm.class);
 
     /**
@@ -29,7 +29,7 @@ public class EncryptionForm extends Form implements ActionListener {
     private JPanel progPanel;
 
 
-    public EncryptionForm() {
+    public CalculateChecksumForm() {
         initComponents();
     }
 
@@ -54,7 +54,7 @@ public class EncryptionForm extends Form implements ActionListener {
         JPanel progressPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
         // uploading icon
-        Icon icon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("encryption.large.icon"));
+        Icon icon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("checksum.large.icon"));
         JLabel iconLabel = new JLabel(icon);
         progressPanel.add(iconLabel);
 
@@ -179,11 +179,11 @@ public class EncryptionForm extends Form implements ActionListener {
         JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         titlePanel.setOpaque(false);
         JLabel titleLabel = new JLabel();
-        Icon icon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("encryption.complete.large.icon"));
+        Icon icon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("checksum.complete.large.icon"));
         titleLabel.setIcon(icon);
         titleLabel.setForeground(Color.white);
         titleLabel.setFont(titleLabel.getFont().deriveFont(18f).deriveFont(Font.BOLD));
-        titleLabel.setText(App.getInstance().getDesktopContext().getProperty("encryption.complete.title"));
+        titleLabel.setText(App.getInstance().getDesktopContext().getProperty("checksum.complete.title"));
 
         JLabel refLabel = new JLabel(submissionRef);
         refLabel.setForeground(Color.green);
@@ -199,7 +199,7 @@ public class EncryptionForm extends Form implements ActionListener {
         messageLabel.setVerticalTextPosition(SwingConstants.TOP);
         messageLabel.setForeground(Color.white);
         messageLabel.setFont(messageLabel.getFont().deriveFont(16f));
-        messageLabel.setText(App.getInstance().getDesktopContext().getProperty("encryption.complete.message"));
+        messageLabel.setText(App.getInstance().getDesktopContext().getProperty("checksum.complete.message"));
 
         contentPanel.add(titlePanel, BorderLayout.NORTH);
         contentPanel.add(messageLabel, BorderLayout.CENTER);

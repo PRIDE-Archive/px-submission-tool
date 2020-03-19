@@ -80,9 +80,9 @@ public class AppBootstrap {
         }
 
         // get number of threads encrypting
-        String numberOfThreadsEncrypting = bootstrapProps.getProperty("px.encryption.threads.size");
+        String numberOfThreadsEncrypting = bootstrapProps.getProperty("px.checksum.threads.size");
         if (numberOfThreadsEncrypting != null) {
-            cmdBuffer.append(" -Dpx.encryption.threads.size=");
+            cmdBuffer.append(" -Dpx.checksum.threads.size=");
             cmdBuffer.append(numberOfThreadsEncrypting);
         }
 

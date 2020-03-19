@@ -155,7 +155,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
 
         Task task = null;
 
-        setDataFilesToTransfer(submissionRecord.getSubmission());
+        addChecksumFile(submissionRecord.getSubmission());
 
         if (uploadMethod.equals(UploadMethod.FTP)) {
             // Get FTP directory creator from factory
@@ -174,20 +174,10 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         }
     }
 
-    private void setDataFilesToTransfer(Submission submission) {
-        List<DataFile> dataFiles = submission.getDataFiles();
-        submission.removeAllDataFiles();
-        for (DataFile dataFile : dataFiles) {
-            String filePath = dataFile.getFilePath();
-            dataFile.setFile(new File(filePath + ".gpg"));
-            submission.addDataFile(dataFile);
-            DataFile md5DataFile = new DataFile();
-            md5DataFile.setFile(new File(filePath + ".md5"));
-            submission.addDataFile(md5DataFile);
-            DataFile gpgMd5DataFile = new DataFile();
-            gpgMd5DataFile.setFile(new File(filePath + ".gpg.md5"));
-            submission.addDataFile(gpgMd5DataFile);
-        }
+    private void addChecksumFile(Submission submission) {
+        DataFile checksumFile = new DataFile();
+        checksumFile.setFile(new File("checksum.txt"));
+        submission.addDataFile(checksumFile);
     }
 
     private boolean hasURLBasedDataFiles(Submission submission) {

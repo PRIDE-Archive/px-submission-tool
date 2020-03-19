@@ -323,9 +323,9 @@ public class App extends Desktop {
             navigator.registerNavigationPanel(summaryPanel);
 
             // register encryption panel
-            EncryptionDescriptor encryptionPanel = new EncryptionDescriptor(getDesktopContext().getProperty("encryption.nav.desc.id"),
-                    "Step 10: " + getDesktopContext().getProperty("encryption.nav.desc.title") + " (9/10)",
-                    getDesktopContext().getProperty("encryption.nav.desc.detail"));
+            CalculateChecksumDescriptor encryptionPanel = new CalculateChecksumDescriptor(getDesktopContext().getProperty("checksum.nav.desc.id"),
+                    "Step 10: " + getDesktopContext().getProperty("checksum.nav.desc.title") + " (9/10)",
+                    getDesktopContext().getProperty("checksum.nav.desc.detail"));
             navigator.registerNavigationPanel(encryptionPanel);
 
             // register submission form
