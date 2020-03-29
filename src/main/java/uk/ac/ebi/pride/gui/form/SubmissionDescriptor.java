@@ -155,8 +155,6 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
 
         Task task = null;
 
-        addChecksumFile(submissionRecord.getSubmission());
-
         if (uploadMethod.equals(UploadMethod.FTP)) {
             // Get FTP directory creator from factory
             task = UploadServiceFactory.createFtpDirectoryTask(uploadDetail);
@@ -172,12 +170,6 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
             appContext.addTask(task);
         }
-    }
-
-    private void addChecksumFile(Submission submission) {
-        DataFile checksumFile = new DataFile();
-        checksumFile.setFile(new File("checksum.txt"));
-        submission.addDataFile(checksumFile);
     }
 
     private boolean hasURLBasedDataFiles(Submission submission) {

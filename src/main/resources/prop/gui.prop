@@ -369,7 +369,7 @@ search.file.title = Search files
 other.file.title = Other files
 file.non.zero.count.small.icon = icon/16x16/green_bullet.png
 file.zero.count.small.icon = icon/16x16/grey_bullet.png
-summary.next.button.title = Next
+summary.next.button.title = Submit
 summary.validate.button.title = Result File Validation
 summary.validate.button.tooltip = Validate your complete submission before submitting
 
@@ -379,9 +379,9 @@ validation.report.help.button = Ask support from PRIDE Team
 summary.dataset.accept.license.text=<html><body>Please accept <a href="http://www.ebi.ac.uk/pride/markdownpage/usagepolicy" title="PRIDE Archive dataset license" target="_blank">PRIDE Archive dataset license</a></body></html>
 
 # Checksum screen
-checksum.submit.button.title = Submit
+checksum.submit.button.title = Next
 checksum.large.icon = icon/64x64/sha1.png
-checksum.default.message = Preparing to upload
+checksum.default.message = Calculating checksum
 
 # Help
 help.main.set=help/MainHelp.hs
