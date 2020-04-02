@@ -2,6 +2,7 @@ package uk.ac.ebi.pride.gui.form.action;
 
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
+import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
@@ -9,9 +10,9 @@ import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.GUIBlocker;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
-import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.IOException;
@@ -60,6 +61,10 @@ public class AddFileSelectionAction extends AbstractAction {
 
         // create file chooser
         JFileChooser fileChooser = new JFileChooser(context.getOpenFilePath());
+
+        for( MassSpecFileFormat massSpecFileFormat : MassSpecFileFormat.values()){
+            fileChooser.addChoosableFileFilter(new FileNameExtensionFilter(massSpecFileFormat.name(),new String[]{massSpecFileFormat.getFileExtension()}));
+        }
 
         // set file chooser title
         fileChooser.setDialogTitle(context.getProperty("add.file.dialog.message"));
