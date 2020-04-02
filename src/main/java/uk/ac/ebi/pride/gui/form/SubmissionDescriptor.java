@@ -41,12 +41,6 @@ import java.util.Observer;
 public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor implements PropertyChangeListener {
     private static final Logger logger = LoggerFactory.getLogger(SubmissionDescriptor.class);
 
-
-    /**
-     * Listen to encrypt files task
-     */
-    private EncryptFilesTaskListener encryptFilesTaskListener;
-
     /**
      * Listen to get ftp detail task
      */

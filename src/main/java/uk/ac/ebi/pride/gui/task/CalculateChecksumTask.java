@@ -9,11 +9,10 @@ import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 import uk.ac.ebi.pride.utilities.util.Tuple;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.security.DigestInputStream;
-import java.security.MessageDigest;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -36,7 +35,7 @@ public class CalculateChecksumTask extends TaskAdapter<Boolean, ChecksumMessage>
         ExecutorService executor = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
         List<Future<Tuple<String, String>>> tasks = new ArrayList<>();
         for (DataFile dataFile : dataFiles) {
-            if(!dataFile.getFile().getName().equals("checksum.txt")) {
+            if (!dataFile.getFile().getName().equals("checksum.txt")) {
                 tasks.add(executor.submit(new Callable() {
                     public Tuple<String, String> call() throws Exception {
                         return calculateSha1Checksum(dataFile.getFile());
@@ -67,12 +66,7 @@ public class CalculateChecksumTask extends TaskAdapter<Boolean, ChecksumMessage>
         if (CalculateChecksumDescriptor.checksumCalculatedFiles.containsKey(filePath)) {
             return CalculateChecksumDescriptor.checksumCalculatedFiles.get(filePath);
         }
-        byte[] bytesRead = new byte[BUFFER_SIZE];
-        final MessageDigest inputStreamMessageDigest = Hash.getSha1();
-        final DigestInputStream digestInputStream = new DigestInputStream(new FileInputStream(file), inputStreamMessageDigest);
-        while (digestInputStream.read(bytesRead) != -1) ;
-        return new Tuple<>(file.getAbsolutePath(), Hash.normalize(inputStreamMessageDigest));
+        return new Tuple<>(file.getAbsolutePath(), Hash.getSha1Checksum(file));
     }
-
 
 }
