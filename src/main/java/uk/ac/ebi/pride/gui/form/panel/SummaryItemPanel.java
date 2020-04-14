@@ -5,6 +5,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
@@ -436,7 +437,7 @@ public class SummaryItemPanel extends ContextAwarePanel
                 Files.append("#Checksum File\n",checksumFile, Charset.defaultCharset());
                 checksumDataFile.setFile(checksumFile);
                 checksumDataFile.setFileType(ProjectFileType.OTHER);
-                submission.addDataFile(checksumDataFile);
+                ((AppContext) App.getInstance().getDesktopContext()).addDataFile(checksumDataFile);
             } catch (Exception ex) {
                 JOptionPane.showConfirmDialog(app.getMainFrame(),
                         appContext.getProperty("checksum.error.message"),
