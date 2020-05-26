@@ -11,14 +11,14 @@ import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
 import uk.ac.ebi.pride.data.model.Contact;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
-import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
-import uk.ac.ebi.pride.toolsuite.gui.blocker.GUIBlocker;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.task.*;
 import uk.ac.ebi.pride.gui.task.ftp.*;
 import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.gui.util.SubmissionRecordSerializer;
+import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
+import uk.ac.ebi.pride.toolsuite.gui.blocker.GUIBlocker;
 import uk.ac.ebi.pride.toolsuite.gui.task.Task;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskEvent;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskListenerAdapter;
@@ -27,6 +27,7 @@ import javax.help.HelpBroker;
 import javax.swing.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.File;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
@@ -445,12 +446,13 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         public void setFeedbackFormController(FeedbackFormController fbfController) {
             this.fbfController = fbfController;
             logger.debug("Registering for listening to window close event");
-            ((App)App.getInstance()).getCloseWindowListener().addObserver(this);
+            ((App) App.getInstance()).getCloseWindowListener().addObserver(this);
         }
 
         /**
          * The main submission descriptor will delegate on this method whether to proceed or not with the given action
          * request
+         *
          * @return true if it is OK to proceed, false if not
          */
         public boolean beforeHidingForPreviousPanel() {
@@ -460,6 +462,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         /**
          * The main submission descriptor will delegate on this method whether to proceed or not with the given action
          * request
+         *
          * @return
          */
         public boolean beforeHidingForNextPanel() {
@@ -472,7 +475,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             // notifying us
             logger.debug("The user decided to close the application, let's see if we have feedback");
             if (!submitFeedbackOnClose()) {
-                ((App)App.getInstance()).setDoNotCloseAppFlag();
+                ((App) App.getInstance()).setDoNotCloseAppFlag();
             }
         }
 

@@ -228,6 +228,10 @@ summary.nav.desc.id = Summary
 summary.nav.desc.title = Submission Summary
 summary.nav.desc.detail = Please double-check before starting your submission
 
+checksum.nav.desc.id = Checksum
+checksum.nav.desc.title = Checksuming Files
+checksum.nav.desc.detail = Checksum are calculated for the files
+
 submission.nav.desc.id = Submission
 submission.nav.desc.title = Submission
 submission.nav.desc.detail = Submission progress
@@ -317,6 +321,9 @@ submission.complete.title = Your submission reference:
 submission.complete.message = <html>Please note: your submission reference is <b>not<b/> an accession number.<br/>We aim to process all submissions within five working days, however at certain times, it might take longer.</html>
 upload.method.title = Fast upload
 upload.method.message = Would you like to use our fast upload service?
+upload.checksum.error.message=<html><b>Failed to calculate checksum for files<br/>In which case you should contact your system administrator.</html>
+upload.checksum.error.title=Checksum error
+
 
 # submission type screen
 submission.type.submission.tool.detail = <html>This tool guides you to submit dataset to members of the ProteomeXchange consortium.</html>
@@ -329,7 +336,7 @@ submission.type.before.start.desc = Please choose one submission option below (C
 submission.type.you.need.title = You need to provide
 submission.type.you.need.desc = Please ensure the following information ready
 submission.type.full.submission.title = Complete Submission
-submission.type.full.submission.content = <html><p>Use this option if you can provide your identification results in either mzIdentML or mzTab, also legacy PRIDE XML format. It will then be possible to fully integrate the results in PRIDE and visualise them (e.g. as required by MCP).</p> <br/> <p>In addition to a PXD identifier, a permanent Digital Object Identifier (DOI) will be provided to uniquely identify the dataset.</p></html>
+submission.type.full.submission.content = <html><p>Use this option if you can provide your identification results in either mzIdentML or mzTab. It will then be possible to fully integrate the results in PRIDE and visualise them (e.g. as required by MCP).</p> <br/> <p>In addition to a PXD identifier, a permanent Digital Object Identifier (DOI) will be provided to uniquely identify the dataset.</p></html>
 submission.type.partial.submission.title = Partial Submission
 submission.type.partial.submission.content = <html><p>You should only choose this option if your search results cannot be converted to mzIdentML, mzTab or legacy PRIDE XML. Identifications will not be integrated in PRIDE. However, files will be made available to download (and may be visualised with other external tools).</p> <br/> <p> A PXD identifier will be provided to uniquely identify the dataset, but not a DOI.</p></html>
 
@@ -362,7 +369,7 @@ search.file.title = Search files
 other.file.title = Other files
 file.non.zero.count.small.icon = icon/16x16/green_bullet.png
 file.zero.count.small.icon = icon/16x16/grey_bullet.png
-summary.submit.button.title = Submit
+summary.next.button.title = Submit
 summary.validate.button.title = Result File Validation
 summary.validate.button.tooltip = Validate your complete submission before submitting
 
@@ -370,6 +377,11 @@ validation.report.frame.title = PX Submission Tool Validation Report
 validation.report.help.button = Ask support from PRIDE Team
 
 summary.dataset.accept.license.text=<html><body>Please accept <a href="http://www.ebi.ac.uk/pride/markdownpage/usagepolicy" title="PRIDE Archive dataset license" target="_blank">PRIDE Archive dataset license</a></body></html>
+
+# Checksum screen
+checksum.submit.button.title = Next
+checksum.large.icon = icon/64x64/sha1.png
+checksum.default.message = Calculating checksum
 
 # Help
 help.main.set=help/MainHelp.hs
@@ -440,3 +452,7 @@ icon.warning.normal.small = icon/64x64/warning.png
 training.mode.toggle.checkbox.text = Training Mode (no actual submission at the end)
 training.mode.toggle.checkbox.help.text = Check this box to activate 'Training Mode' for this submission session
 training.mode.application.title.logo = icon/logo/logo-training_mode.png
+
+# Controlled access data
+controlled.access.mode.toggle.checkbox.text = Controlled access data
+controlled.access.mode.toggle.checkbox.help.text = Check this box to encrypt controlled access data before submission
