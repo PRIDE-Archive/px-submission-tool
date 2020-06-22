@@ -45,8 +45,11 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
         Navigator navigator = ((App) App.getInstance()).getNavigator();
         JButton nextButton = navigator.getNextButton();
 
+        SummaryForm summaryForm = (SummaryForm) getNavigationPanel();
         nextButton.setText(appContext.getProperty("summary.next.button.title"));
-        nextButton.setEnabled(false);
+        if(!summaryForm.getJCheckBox().isSelected()){
+            nextButton.setEnabled(false);
+        }
     }
 
     @Override

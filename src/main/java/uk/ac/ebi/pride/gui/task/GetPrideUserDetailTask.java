@@ -10,6 +10,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.archive.submission.model.user.ContactDetail;
@@ -85,8 +87,10 @@ public class GetPrideUserDetailTask extends TaskAdapter<ContactDetail, String> {
             headers.set("Authorization", "Bearer " + token);
             entity = new HttpEntity<>(headers);
             return restTemplate.exchange(userDetailUrl, HttpMethod.GET, entity, ContactDetail.class).getBody();
-        } catch (Exception ex) {
-            publish("Failed to login, please check user name or password");
+        } catch (ResourceAccessException resourceAccessException) {
+            publish("Proxy/Firewall issue");
+        } catch (HttpServerErrorException ex) {
+            publish("UserCredentials mismatch");
         }
 
         return null;

@@ -2,20 +2,22 @@ package uk.ac.ebi.pride.gui.form;
 
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
-import uk.ac.ebi.pride.gui.form.action.RemoveFilesAction;
-import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.action.AddFileSelectionAction;
+import uk.ac.ebi.pride.gui.form.action.RemoveFilesAction;
 import uk.ac.ebi.pride.gui.form.dialog.FileSelectionValidationErrorDialog;
 import uk.ac.ebi.pride.gui.form.table.TableFactory;
-import uk.ac.ebi.pride.toolsuite.gui.task.TaskEvent;
-import uk.ac.ebi.pride.toolsuite.gui.task.TaskListener;
 import uk.ac.ebi.pride.gui.util.BalloonTipUtil;
 import uk.ac.ebi.pride.gui.util.BorderUtil;
 import uk.ac.ebi.pride.gui.util.DataFileValidationMessage;
 import uk.ac.ebi.pride.gui.util.ValidationState;
+import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
+import uk.ac.ebi.pride.toolsuite.gui.task.TaskEvent;
+import uk.ac.ebi.pride.toolsuite.gui.task.TaskListener;
 
 import javax.help.CSH;
 import javax.swing.*;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import java.awt.*;
 import java.util.List;
 
@@ -144,6 +146,10 @@ public class FileSelectionForm extends Form implements TaskListener<DataFileVali
     public void succeed(TaskEvent<DataFileValidationMessage> event) {
         DataFileValidationMessage message = event.getValue();
 
+        if (message.getState().equals(ValidationState.WARNING)) {
+            showWiffWarningDialog(message.getMessage());
+        }
+
         if (message.getState().equals(ValidationState.ERROR)) {
             if (message.getDataFileValidationResults().isEmpty()) {
                 showWarnings(message.getMessage());
@@ -153,6 +159,41 @@ public class FileSelectionForm extends Form implements TaskListener<DataFileVali
                 errorDialog.setVisible(true);
             }
         }
+    }
+
+    private void showWiffWarningDialog(String message) {
+        JLabel label = new JLabel();
+        Font font = label.getFont();
+        StringBuilder style = new StringBuilder("font-family:" + font.getFamily() + ";");
+        style.append("font-weight:").append(font.isBold() ? "bold" : "normal").append(";");
+        style.append("font-size:").append(font.getSize()).append("pt;");
+        StringBuilder html = new StringBuilder();
+        html.append("<html><body style=\"").append(style).append("\">");
+        html.append(message);
+        html.append("</body></html>");
+
+        // html content
+        JEditorPane ep = new JEditorPane("text/html", html.toString());
+        ep.addHyperlinkListener(
+                new HyperlinkListener() {
+                    @Override
+                    public void hyperlinkUpdate(HyperlinkEvent e) {
+                        try {
+                            if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED))
+                                Desktop.getDesktop().browse(e.getURL().toURI());
+                        } catch (Exception ex) {
+                            // couldn't display error message
+                        }
+                    }
+                });
+        ep.setEditable(false);
+        ep.setBackground(label.getBackground());
+        JOptionPane.showConfirmDialog(
+                app.getMainFrame(),
+                ep,
+                appContext.getProperty("file.selection.validation.dialog.title"),
+                JOptionPane.CLOSED_OPTION,
+                JOptionPane.WARNING_MESSAGE);
     }
 
     @Override
