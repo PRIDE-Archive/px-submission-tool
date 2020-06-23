@@ -69,7 +69,6 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         QuickValidationResult quickValidationResult = runQuickValidation(submission.getDataFiles());
         setProgress(10);
 
-
         // cannot have invalidate files
         if (quickValidationResult.getNumOfInvalidFiles() > 0) {
             //return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidFileWarning(quickValidationResult.numOfInvalidFiles));
@@ -267,11 +266,14 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             scanForFileMappings();
         }
 
-        setProgress(100);
+
 
         if (!checkIfWiffFileHasScanFile(submission.getDataFiles())) {
-            return new DataFileValidationMessage(ValidationState.WARNING, WarningMessageGenerator.getWiffScanMissingWarning());
+            return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getWiffScanMissingWarning());
         }
+
+        setProgress(100);
+
         return new DataFileValidationMessage(ValidationState.SUCCESS);
     }
 
@@ -499,7 +501,6 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
      */
     private QuickValidationResult runQuickValidation(List<DataFile> dataFiles) {
         QuickValidationResult result = new QuickValidationResult();
-        checkIfWiffFileHasScanFile(dataFiles);
         for (DataFile dataFile : dataFiles) {
             String fileName = dataFile.getFileName();
             logger.debug("runQuickValidation(): SubmissionValidator.validateDataFile(" + fileName + ")");

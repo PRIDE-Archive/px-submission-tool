@@ -84,7 +84,7 @@ public class FileSelectionDescriptor extends ContextAwareNavigationPanelDescript
     @Override
     public void succeed(TaskEvent<DataFileValidationMessage> event) {
         DataFileValidationMessage message = event.getValue();
-        if (message.getState().equals(ValidationState.SUCCESS) || message.getState().equals(ValidationState.WARNING)) {
+        if (message.getState().equals(ValidationState.SUCCESS)) {
             FileSelectionForm form = (FileSelectionForm) getNavigationPanel();
             form.hideWarnings();
             firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, false, true);
