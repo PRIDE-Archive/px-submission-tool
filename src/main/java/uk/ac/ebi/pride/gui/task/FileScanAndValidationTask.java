@@ -15,8 +15,9 @@ import uk.ac.ebi.pride.data.mztab.parser.MzTabParser;
 import uk.ac.ebi.pride.data.mztab.parser.exceptions.MzTabParserException;
 import uk.ac.ebi.pride.data.util.FileUtil;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
-import uk.ac.ebi.pride.data.validation.*;
+import uk.ac.ebi.pride.data.validation.SubmissionValidator;
 import uk.ac.ebi.pride.data.validation.ValidationMessage;
+import uk.ac.ebi.pride.data.validation.ValidationReport;
 import uk.ac.ebi.pride.gui.util.*;
 import uk.ac.ebi.pride.jaxb.model.CvParam;
 import uk.ac.ebi.pride.jaxb.model.SampleDescription;
@@ -33,7 +34,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 /**
@@ -266,9 +266,35 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             scanForFileMappings();
         }
 
+
+
+        if (!checkIfWiffFileHasScanFile(submission.getDataFiles())) {
+            return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getWiffScanMissingWarning());
+        }
+
         setProgress(100);
 
         return new DataFileValidationMessage(ValidationState.SUCCESS);
+    }
+
+    private boolean checkIfWiffFileHasScanFile(List<DataFile> dataFiles) {
+        int countOfWiffFiles = 0;
+        int countOfWiffScanFiles = 0;
+        for (DataFile dataFile : dataFiles) {
+            String fileName = dataFile.getFile().getName();
+            if (fileName.endsWith(MassSpecFileFormat.ABI_WIFF.getFileExtension())) {
+                countOfWiffFiles++;
+            }
+            if (fileName.endsWith(MassSpecFileFormat.ABI_WIFF.getFileExtension() + ".scan")) {
+                countOfWiffScanFiles++;
+            }
+        }
+
+        if (countOfWiffFiles > 0 && countOfWiffFiles != countOfWiffScanFiles) {
+            return false;
+        }
+
+        return true;
     }
 
     private Map<DataFile, Set<String>> checkMzTabFileReferences(List<DataFile> mzTabDataFiles) {
@@ -475,7 +501,6 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
      */
     private QuickValidationResult runQuickValidation(List<DataFile> dataFiles) {
         QuickValidationResult result = new QuickValidationResult();
-
         for (DataFile dataFile : dataFiles) {
             String fileName = dataFile.getFileName();
             logger.debug("runQuickValidation(): SubmissionValidator.validateDataFile(" + fileName + ")");
@@ -536,6 +561,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
     /**
      * There cannot be multiple raw files in zipped into a single zip file.
      * This method checks if the zipped file contain more than one raw files.
+     *
      * @param dataFile Data file
      * @return Boolean values. If multiple raw files found, returns false.
      */
@@ -550,17 +576,17 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 if ("zip".equalsIgnoreCase(ext)) {
                     ZipFile zipFile = new ZipFile(dataFile.getFile());
                     Enumeration<? extends ZipEntry> entries = zipFile.entries();
-                    while(entries.hasMoreElements() && rawFileCount <= 1){
+                    while (entries.hasMoreElements() && rawFileCount <= 1) {
                         ZipEntry entry = entries.nextElement();
                         if (!entry.isDirectory()) {
                             String fileName = entry.getName();
                             String fileExtension = FileUtil.getFileExtension(fileName);
                             if (fileExtension != null) {
-                              if (fileExtension.toUpperCase().equals("RAW")) {
-                                rawFileCount++;
-                              }
-                            }else{
-                                isValid=false;
+                                if (fileExtension.toUpperCase().equals("RAW")) {
+                                    rawFileCount++;
+                                }
+                            } else {
+                                isValid = false;
                                 break;
                             }
                         }
@@ -569,13 +595,13 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 } // gzip can compress only single file, therefore, we do not need to check gzip
             }
         } catch (IOException e) {
-            isValid=false;
+            isValid = false;
             e.printStackTrace();
         }
 
-        if((rawFileCount > 1)){
-            isValid=false;
-            logger.error("Multiple .RAW files found in " + dataFile.getFile().getName() +". Please unzip them and upload individually");
+        if ((rawFileCount > 1)) {
+            isValid = false;
+            logger.error("Multiple .RAW files found in " + dataFile.getFile().getName() + ". Please unzip them and upload individually");
         }
         return isValid;
     }

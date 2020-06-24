@@ -20,6 +20,8 @@ import java.awt.event.ItemEvent;
 public class SummaryForm extends Form {
     private JTable summaryTable;
 
+    private JCheckBox jCheckBox;
+
     public SummaryForm() {
         initComponents();
     }
@@ -61,14 +63,12 @@ public class SummaryForm extends Form {
         this.add(scrollPane, BorderLayout.CENTER);
     }
 
-    private void initDatasetLicenseAcceptCheckbox() {
+    public void initDatasetLicenseAcceptCheckbox() {
 
         Navigator navigator = ((App) App.getInstance()).getNavigator();
         JButton nextButton = navigator.getNextButton();
 
-        JCheckBox jCheckBox = new JCheckBox();
-        StringBuilder html = new StringBuilder();
-        html.append(appContext.getProperty("summary.dataset.accept.license.text"));
+        jCheckBox = new JCheckBox(appContext.getProperty("summary.dataset.accept.license.text"),false);
         jCheckBox.addItemListener(e -> {
             if(e.getStateChange() == ItemEvent.SELECTED){
                 nextButton.setEnabled(true);
@@ -78,7 +78,7 @@ public class SummaryForm extends Form {
         });
 
         // html content
-        JEditorPane editorPane = new JEditorPane("text/html", html.toString());
+        JEditorPane editorPane = new JEditorPane();
         editorPane.addHyperlinkListener(
                 e -> {
                     try {
@@ -97,4 +97,7 @@ public class SummaryForm extends Form {
         this.add(jPanel,BorderLayout.SOUTH);
     }
 
+    public JCheckBox getJCheckBox() {
+        return jCheckBox;
+    }
 }

@@ -243,6 +243,10 @@ public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor 
 
     @Override
     public void process(TaskEvent<List<String>> event) {
+        List<String> errors = event.getValue();
+        String errorMessage = errors.contains("UserCredentials mismatch") ?
+                appContext.getProperty("pride.login.credentials.error.message") :
+                appContext.getProperty("pride.login.proxy.error.message");
         Runnable eventDispatcher = new Runnable() {
             public void run() {
                 // show warning dialog
@@ -253,8 +257,7 @@ public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor 
                 style.append("font-size:" + font.getSize() + "pt;");
                 // html content
                 JEditorPane ep = new JEditorPane("text/html", "<html><body style=\"" + style + "\">" //
-                    + appContext.getProperty("pride.login.error.message")
-                    + "</body></html>");
+                        + errorMessage + "</body></html>");
                 ep.addHyperlinkListener(new HyperlinkListener() {
                     @Override
                     public void hyperlinkUpdate(HyperlinkEvent e) {
