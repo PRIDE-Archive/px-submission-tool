@@ -46,7 +46,8 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
 
     private static final Logger logger = LoggerFactory.getLogger(FileScanAndValidationTask.class);
 
-    private static final String MZIDENTML_ACCEPTED_VERSION = "1.1.0";
+    private static final String MZIDENTML_ACCEPTED_VERSION_1_1_0 = "1.1.0";
+    private static final String MZIDENTML_ACCEPTED_VERSION_1_2_0 = "1.2.0";
     public static final Pattern MZIDENTML_PEAK_LIST_FILE_PATTERN = Pattern.compile("^[^<]*<SpectraData[^>]*location=\"([^\"]+)\"[^>]*>.*$");
     public static final String MZIDENTML_PEAK_LIST_FILE_END = "</SpectraData>";
     public static final String PRIDEXML_SAMPLE_DESCRIPTION_BEGIN = "<sampleDescription";
@@ -738,7 +739,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 boolean correctVersion = false;
                 for (int i = 0; i < 5; i++) {
                     String line = fileReader.readLine();
-                    if (line.contains("version=\"" + MZIDENTML_ACCEPTED_VERSION + "\"")) {
+                    if (line.contains("version=\"" + MZIDENTML_ACCEPTED_VERSION_1_1_0 + "\"") || line.contains("version=\"" + MZIDENTML_ACCEPTED_VERSION_1_2_0 + "\"")) {
                         correctVersion = true;
                         break;
                     }

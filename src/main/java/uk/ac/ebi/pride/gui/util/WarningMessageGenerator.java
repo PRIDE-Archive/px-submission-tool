@@ -46,7 +46,7 @@ public final class WarningMessageGenerator {
     public static String getInvalidMzIdentMLVersionWarning(List<DataFile> mzIdentMLFiles) {
         StringBuilder errMsg = new StringBuilder();
         errMsg.append("<html>");
-        errMsg.append("<b>The following mzIdentML are not version 1.1.0 </b><br/>");
+        errMsg.append("<b>The following mzIdentML are not version 1.1.0 or 1.2.0 </b><br/>");
         for (DataFile mzIdentMLFile : mzIdentMLFiles) {
             errMsg.append("<li>");
             errMsg.append(mzIdentMLFile.getFile().getName());
