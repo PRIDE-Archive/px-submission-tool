@@ -341,17 +341,17 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                         errorEntry = mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString();
                     } else {
                         // The file is in the list of files part of the current submission process
-                        // Check that the referenced file is a Peak List file
-                        if (dataFiles.get(referencedFile).getFileType() != ProjectFileType.PEAK) {
+                        // Check that the referenced file is a Raw file
+                        if (dataFiles.get(referencedFile.toLowerCase()).getFileType() != ProjectFileType.RAW) {
                             // Flag the error
                             errorFlagged = true;
                             // Log the error
                             errorLogMsg = "mzTab file '" + mzTabFile.getFilePath()
-                                    + "' references NON-Peak List file '"
+                                    + "' references NON-RAW file '"
                                     + referencedFile
                                     + "', which is NOT ALLOWED";
                             // Report the error
-                            errorEntry = "NON-Peak List referenced file '"
+                            errorEntry = "NON-RAW file '"
                                     + referencedFile
                                     + "', is NOT ALLOWED";
                         }
