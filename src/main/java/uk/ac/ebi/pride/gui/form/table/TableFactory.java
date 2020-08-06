@@ -3,14 +3,33 @@ package uk.ac.ebi.pride.gui.form.table;
 import org.jdesktop.swingx.JXTreeTable;
 import org.jdesktop.swingx.table.TableColumnExt;
 import uk.ac.ebi.pride.App;
-import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
+import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.gui.form.table.editor.ComboBoxCellEditor;
 import uk.ac.ebi.pride.gui.form.table.editor.MappingButtonCellEditor;
 import uk.ac.ebi.pride.gui.form.table.editor.SampleMetaDataButtonCellEditor;
-import uk.ac.ebi.pride.gui.form.table.listener.*;
-import uk.ac.ebi.pride.gui.form.table.model.*;
-import uk.ac.ebi.pride.gui.form.table.renderer.*;
-import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
+import uk.ac.ebi.pride.gui.form.table.listener.FileMappingSelectionListener;
+import uk.ac.ebi.pride.gui.form.table.listener.RemoveDataFileListener;
+import uk.ac.ebi.pride.gui.form.table.listener.RemoveDataFileMappingListener;
+import uk.ac.ebi.pride.gui.form.table.listener.RemoveMetadataListener;
+import uk.ac.ebi.pride.gui.form.table.listener.RemoveSampleMetaDataListener;
+import uk.ac.ebi.pride.gui.form.table.listener.TableCellMouseMotionListener;
+import uk.ac.ebi.pride.gui.form.table.model.AbstractMetaDataTableModel;
+import uk.ac.ebi.pride.gui.form.table.model.FileMappingTableModel;
+import uk.ac.ebi.pride.gui.form.table.model.FileSelectionTableModel;
+import uk.ac.ebi.pride.gui.form.table.model.ProjectTagTableModel;
+import uk.ac.ebi.pride.gui.form.table.model.ResultFileTableModel;
+import uk.ac.ebi.pride.gui.form.table.model.SampleMetaDataTableModel;
+import uk.ac.ebi.pride.gui.form.table.model.SourceFileMappngTableModel;
+import uk.ac.ebi.pride.gui.form.table.model.SummaryTableTreeModel;
+import uk.ac.ebi.pride.gui.form.table.model.TargetFileMappingTableModel;
+import uk.ac.ebi.pride.gui.form.table.renderer.BooleanCellRenderer;
+import uk.ac.ebi.pride.gui.form.table.renderer.ButtonCellRenderer;
+import uk.ac.ebi.pride.gui.form.table.renderer.CheckboxCellRenderer;
+import uk.ac.ebi.pride.gui.form.table.renderer.ComboBoxCellRenderer;
+import uk.ac.ebi.pride.gui.form.table.renderer.FileMappingCountCellRenderer;
+import uk.ac.ebi.pride.gui.form.table.renderer.InvalidFileSelectionRenderer;
+import uk.ac.ebi.pride.gui.form.table.renderer.RemovalCellRenderer;
+import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
@@ -19,6 +38,7 @@ import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableModel;
+import java.awt.*;
 
 /**
  * TableFactory is responsible for creating all the tables in this application
@@ -63,19 +83,25 @@ public class TableFactory {
         TableColumnExt nameColumn = (TableColumnExt) table.getColumn(FileSelectionTableModel.TableHeader.FILE_NAME.getHeader());
         nameColumn.setPreferredWidth(FILE_NAME_COLUMN_WIDTH);
         nameColumn.setCellRenderer(new InvalidFileSelectionRenderer());
+        DefaultTableCellRenderer nameColumnRenderer = new DefaultTableCellRenderer();
+        nameColumnRenderer.setHorizontalAlignment(JLabel.LEFT);
+        nameColumn.setCellRenderer(nameColumnRenderer);
 
         // set file path column width
         TableColumnExt pathColumn = (TableColumnExt) table.getColumn(FileSelectionTableModel.TableHeader.PATH.getHeader());
         pathColumn.setPreferredWidth(FILE_PATH_COLUMN_WIDTH);
         pathColumn.setCellRenderer(new InvalidFileSelectionRenderer());
+        DefaultTableCellRenderer pathColumnRenderer = new DefaultTableCellRenderer();
+        pathColumnRenderer.setHorizontalAlignment(JLabel.LEFT);
+        pathColumn.setCellRenderer(pathColumnRenderer);
 
         // set file size column width
         TableColumnExt filesizeColumn = (TableColumnExt) table.getColumn(FileSelectionTableModel.TableHeader.SIZE.getHeader());
         filesizeColumn.setPreferredWidth(FILE_SIZE_COLUMN_WIDTH);
         filesizeColumn.setCellRenderer(new InvalidFileSelectionRenderer());
-        DefaultTableCellRenderer renderer = new DefaultTableCellRenderer();
-        renderer.setHorizontalAlignment(JLabel.RIGHT);
-        filesizeColumn.setCellRenderer(renderer);
+        DefaultTableCellRenderer filesizeColumnRenderer = new DefaultTableCellRenderer();
+        filesizeColumnRenderer.setHorizontalAlignment(JLabel.RIGHT);
+        filesizeColumn.setCellRenderer(filesizeColumnRenderer);
 
         // create combo box to select file type
         TableColumnExt fileTypeColumn = (TableColumnExt) table.getColumn(FileSelectionTableModel.TableHeader.TYPE.getHeader());
