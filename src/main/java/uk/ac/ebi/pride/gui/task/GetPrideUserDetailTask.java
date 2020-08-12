@@ -7,7 +7,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
-import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 import uk.ac.ebi.pride.App;
@@ -87,7 +87,7 @@ public class GetPrideUserDetailTask extends TaskAdapter<ContactDetail, String> {
             return restTemplate.exchange(userDetailUrl, HttpMethod.GET, entity, ContactDetail.class).getBody();
         } catch (ResourceAccessException resourceAccessException) {
             publish("Proxy/Firewall issue");
-        } catch (HttpServerErrorException ex) {
+        } catch (HttpClientErrorException ex) {
             publish("UserCredentials mismatch");
         }
 
