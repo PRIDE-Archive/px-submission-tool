@@ -94,12 +94,13 @@ public class UpdateChecker {
      */
     public static void showUpdateDialog() {
         int option = JOptionPane.showConfirmDialog(null, "<html><b>A new version of ProteomeXchange submission tool is available</b>.<br><br> " +
-                "Would you like to update?</html>", "Update Info", JOptionPane.YES_NO_OPTION);
+                "Please download latest version by clicking yes </html>", "Update Info", JOptionPane.YES_NO_OPTION);
 
         if (option == JOptionPane.YES_OPTION) {
             DesktopContext context = Desktop.getInstance().getDesktopContext();
             String website = context.getProperty("px.submission.tool.url");
             HttpUtil.openURL(website);
         }
+        System.exit(0);
     }
 }
