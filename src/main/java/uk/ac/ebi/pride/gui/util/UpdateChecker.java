@@ -29,6 +29,10 @@ public class UpdateChecker {
 
     private final String updateUrl;
 
+    private static String toolCurrentVersion;
+    private static String latestOrHigherVersion;
+
+
     public UpdateChecker(String updateUrl) {
         this.updateUrl = updateUrl;
     }
@@ -39,6 +43,7 @@ public class UpdateChecker {
      * @return boolean return true if there is a new update.
      */
     public boolean hasUpdate(String currentVersion) {
+        toolCurrentVersion = currentVersion;
         boolean toUpdate = false;
         BufferedReader reader = null;
         try {
@@ -53,8 +58,9 @@ public class UpdateChecker {
                     if (matcher.matches()) {
                         String version = matcher.group(1);
                         if (isHigherVersion(currentVersion, version)) {
+                            latestOrHigherVersion = version;
+                            currentVersion = version;
                             toUpdate = true;
-                            break;
                         }
                     }
                 }
@@ -101,6 +107,13 @@ public class UpdateChecker {
             String website = context.getProperty("px.submission.tool.url");
             HttpUtil.openURL(website);
         }
-        System.exit(0);
+
+        String latestOrHigherVersionParts[] = latestOrHigherVersion.split("\\.");
+        String toolCurrentVersionParts[] = toolCurrentVersion.split("\\.");
+
+        if (Integer.parseInt(latestOrHigherVersionParts[0]) > Integer.parseInt(toolCurrentVersionParts[0])
+                || Integer.parseInt(latestOrHigherVersionParts[1]) > Integer.parseInt(toolCurrentVersionParts[1])) {
+            System.exit(0);
+        }
     }
 }
