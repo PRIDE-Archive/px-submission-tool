@@ -18,7 +18,11 @@ import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
 import uk.ac.ebi.pride.data.validation.SubmissionValidator;
 import uk.ac.ebi.pride.data.validation.ValidationMessage;
 import uk.ac.ebi.pride.data.validation.ValidationReport;
-import uk.ac.ebi.pride.gui.util.*;
+import uk.ac.ebi.pride.gui.util.Constant;
+import uk.ac.ebi.pride.gui.util.DataFileValidationMessage;
+import uk.ac.ebi.pride.gui.util.PrideConverterSupport;
+import uk.ac.ebi.pride.gui.util.ValidationState;
+import uk.ac.ebi.pride.gui.util.WarningMessageGenerator;
 import uk.ac.ebi.pride.jaxb.model.CvParam;
 import uk.ac.ebi.pride.jaxb.model.SampleDescription;
 import uk.ac.ebi.pride.jaxb.xml.unmarshaller.PrideXmlUnmarshaller;
@@ -26,10 +30,20 @@ import uk.ac.ebi.pride.jaxb.xml.unmarshaller.PrideXmlUnmarshallerFactory;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 
 import javax.xml.bind.JAXBException;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -341,17 +355,18 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                         errorEntry = mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString();
                     } else {
                         // The file is in the list of files part of the current submission process
-                        // Check that the referenced file is a Raw file
-                        if (dataFiles.get(referencedFile.toLowerCase()).getFileType() != ProjectFileType.RAW) {
+                        // Check that the referenced file is a Peak List / RAW file
+                        ProjectFileType referencedDataFileType = dataFiles.get(referencedFile.toLowerCase()).getFileType();
+                        if (referencedDataFileType != ProjectFileType.PEAK && referencedDataFileType != ProjectFileType.RAW) {
                             // Flag the error
                             errorFlagged = true;
                             // Log the error
                             errorLogMsg = "mzTab file '" + mzTabFile.getFilePath()
-                                    + "' references NON-RAW file '"
+                                    + "' references NON-Peak List/RAW file '"
                                     + referencedFile
                                     + "', which is NOT ALLOWED";
                             // Report the error
-                            errorEntry = "NON-RAW file '"
+                            errorEntry = "NON-Peak List/RAW referenced file '"
                                     + referencedFile
                                     + "', is NOT ALLOWED";
                         }
