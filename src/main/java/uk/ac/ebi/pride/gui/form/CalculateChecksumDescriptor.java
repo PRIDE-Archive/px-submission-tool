@@ -64,7 +64,39 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
 
     @Override
     public void beforeHidingForNextPanel() {
-        firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, false, true);
+        try {
+            if (checkAndWriteChecksum(appContext.getSubmissionRecord().getSubmission().getDataFiles())) {
+                firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, false, true);
+            }
+        } catch (Exception ex) {
+            logger.error("Error in writing checksum file");
+        }
+    }
+
+    private boolean checkAndWriteChecksum(List<DataFile> dataFiles) throws Exception {
+        logger.info("Writing calculated checksum to checksum.txt");
+        Files.write("#Checksum File\n".getBytes(), SummaryItemPanel.checksumFile);
+        int countOfChecksumCalculatedFiles = 0;
+        for (DataFile dataFile : dataFiles) {
+            try {
+                if (checksumCalculatedFiles.containsKey(dataFile.getFilePath()) &&
+                        !dataFile.getFile().getName().equals("checksum.txt")) {
+                    Files.append(dataFile.getFilePath() + "\t" +
+                                    checksumCalculatedFiles.get(dataFile.getFilePath()).getValue() + "\n",
+                            SummaryItemPanel.checksumFile, Charset.defaultCharset());
+                    countOfChecksumCalculatedFiles++;
+                } else if (!dataFile.getFile().getName().equals("checksum.txt")) {
+                    return false;
+                }
+            } catch (Exception ex) {
+                logger.error("Error in adding file " + dataFile.getFile().getName() + " to checksum.txt");
+                logger.error(ex.getMessage());
+                return false;
+            }
+        }
+        logger.info("Checksum calculated and written to checksum.txt for all files");
+        logger.info("Files count " + countOfChecksumCalculatedFiles);
+        return true;
     }
 
 
@@ -83,8 +115,7 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
                 Tuple<String, String> fileChecksum = checksumMessage.getFileChecksum();
                 String filePath = fileChecksum.getKey();
                 if(!checksumCalculatedFiles.containsKey(filePath)) {
-                    checksumCalculatedFiles.put(filePath,fileChecksum);
-                    Files.append(fileChecksum.getKey() + "\t" + fileChecksum.getValue() + "\n", SummaryItemPanel.checksumFile, Charset.defaultCharset());
+                    checksumCalculatedFiles.put(filePath, fileChecksum);
                 }
             } catch (Exception exception) {
                 JOptionPane.showConfirmDialog(app.getMainFrame(),
