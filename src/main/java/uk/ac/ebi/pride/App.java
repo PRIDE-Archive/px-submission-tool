@@ -2,13 +2,25 @@ package uk.ac.ebi.pride;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.ebi.pride.toolsuite.gui.desktop.Desktop;
-import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
-import uk.ac.ebi.pride.gui.form.*;
+import uk.ac.ebi.pride.gui.form.AdditionalDatasetDetailsDescriptor;
+import uk.ac.ebi.pride.gui.form.AdditionalMetaDataDescriptor;
+import uk.ac.ebi.pride.gui.form.CalculateChecksumDescriptor;
+import uk.ac.ebi.pride.gui.form.FileMappingDescriptor;
+import uk.ac.ebi.pride.gui.form.FileSelectionDescriptor;
+import uk.ac.ebi.pride.gui.form.LabHeadDescriptor;
+import uk.ac.ebi.pride.gui.form.PrerequisiteDescriptor;
+import uk.ac.ebi.pride.gui.form.PrideLoginDescriptor;
+import uk.ac.ebi.pride.gui.form.ProjectMetaDataDescriptor;
+import uk.ac.ebi.pride.gui.form.SampleMetaDataDescriptor;
+import uk.ac.ebi.pride.gui.form.SubmissionDescriptor;
+import uk.ac.ebi.pride.gui.form.SubmissionTypeDescriptor;
+import uk.ac.ebi.pride.gui.form.SummaryDescriptor;
 import uk.ac.ebi.pride.gui.navigation.NavigationException;
 import uk.ac.ebi.pride.gui.navigation.NavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.navigation.Navigator;
 import uk.ac.ebi.pride.gui.util.Constant;
+import uk.ac.ebi.pride.toolsuite.gui.desktop.Desktop;
+import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
 
 import javax.swing.*;
 import javax.swing.text.DefaultEditorKit;
@@ -205,6 +217,7 @@ public class App extends Desktop {
         mainFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         //mainFrame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         mainFrame.addWindowListener(appCloseWindowListener);
+        mainFrame.setTitle("PRIDE submission Tool Version - " + getDesktopContext().getProperty("px.submission.tool.version"));
 
         // set look and feel
         String lookAndFeel = "Nimbus"; // Default
