@@ -1,5 +1,7 @@
 package uk.ac.ebi.pride.gui.task;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.gui.form.CalculateChecksumDescriptor;
@@ -20,7 +22,7 @@ import java.util.concurrent.Future;
 
 public class CalculateChecksumTask extends TaskAdapter<Boolean, ChecksumMessage> {
 
-    private static final Integer BUFFER_SIZE = 2048;
+    private static final Logger logger = LoggerFactory.getLogger(CalculateChecksumTask.class);
 
     private Submission submission;
 
@@ -38,7 +40,12 @@ public class CalculateChecksumTask extends TaskAdapter<Boolean, ChecksumMessage>
             if (!dataFile.getFile().getName().equals("checksum.txt")) {
                 tasks.add(executor.submit(new Callable() {
                     public Tuple<String, String> call() throws Exception {
-                        return calculateSha1Checksum(dataFile.getFile());
+                        try {
+                            return calculateSha1Checksum(dataFile.getFile());
+                        } catch (Exception exception) {
+                            logger.error("Error in calculating checksum for file " + dataFile.getFile().getName());
+                            return null;
+                        }
                     }
                 }));
             }
