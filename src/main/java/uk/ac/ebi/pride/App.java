@@ -217,7 +217,7 @@ public class App extends Desktop {
         mainFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         //mainFrame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         mainFrame.addWindowListener(appCloseWindowListener);
-        mainFrame.setTitle("PRIDE submission Tool Version - " + getDesktopContext().getProperty("px.submission.tool.version"));
+        mainFrame.setTitle("PRIDE Submission Tool Version - " + getDesktopContext().getProperty("px.submission.tool.version"));
 
         // set look and feel
         String lookAndFeel = "Nimbus"; // Default
