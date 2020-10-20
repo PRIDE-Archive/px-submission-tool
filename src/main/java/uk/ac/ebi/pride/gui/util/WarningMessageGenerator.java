@@ -34,6 +34,10 @@ public final class WarningMessageGenerator {
         return "<html>" + "<b>Invalid result file detected, please submit results in any of the supported file formats (see accompanying documentation)</b><br/>" + "</html>";
     }
 
+    public static String getInvalidSDRFFileWarning() {
+        return "<html>" + "<b>Invalid SDRF file detected, please check log file for detailed error report</b><br/>" + "</html>";
+    }
+
     public static String getWiffScanMissingWarning() {
         return "<html>" + "<b>It is recommended to submit wiff scan files associated with wiff files</b><br/>" + "</html>";
     }

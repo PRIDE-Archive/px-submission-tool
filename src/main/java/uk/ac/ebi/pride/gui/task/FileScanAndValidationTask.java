@@ -27,6 +27,9 @@ import uk.ac.ebi.pride.jaxb.model.CvParam;
 import uk.ac.ebi.pride.jaxb.model.SampleDescription;
 import uk.ac.ebi.pride.jaxb.xml.unmarshaller.PrideXmlUnmarshaller;
 import uk.ac.ebi.pride.jaxb.xml.unmarshaller.PrideXmlUnmarshallerFactory;
+import uk.ac.ebi.pride.sdrf.validate.Main;
+import uk.ac.ebi.pride.sdrf.validate.model.ValidationError;
+import uk.ac.ebi.pride.sdrf.validate.util.Constants;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 
 import javax.xml.bind.JAXBException;
@@ -281,7 +284,14 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             scanForFileMappings();
         }
 
-
+        for(DataFile dataFile : submission.getDataFiles()){
+            if(dataFile.getFileType().equals(ProjectFileType.EXPERIMENTAL_DESIGN)){
+                List<ValidationError> errors = Main.validate(dataFile.getFilePath(), Constants.Templates.DEFAULT, true);
+                if(errors.size() !=0){
+                    return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSDRFFileWarning());
+                }
+            }
+        }
 
         if (!checkIfWiffFileHasScanFile(submission.getDataFiles())) {
             return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getWiffScanMissingWarning());
