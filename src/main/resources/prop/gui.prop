@@ -93,6 +93,7 @@ add.file.mapping.button.small.icon = icon/16x16/add_mapping.png
 # dialog for unsupported result files
 unsupported.result.file.dialog.message = <html><b>Partial submission option selected</b><br/><br/> Please be aware that your dataset will not be issued with a DOI number <br/>and can only be accessed via the PRIDE FTP. <br/><br/> <b>Do you want to continue?</b></html>
 unsupported.result.file.dialog.title = Submission Option
+missing.experimental.design.file.dialog.title = Missing SDRF File
 
 # load submission file button
 load.submission.file.button.title = Bulk submission
