@@ -60,6 +60,7 @@
         <uk.ac.ebi.pride.toolsuite-ols-dialog.version>3.4.16</uk.ac.ebi.pride.toolsuite-ols-dialog.version>
         <uk.ac.ebi.jmzidml-jmzidentml.version>1.2.6</uk.ac.ebi.jmzidml-jmzidentml.version>
         <uk.ac.ebi.pride.archive-archive-submission-model.version>1.0.3</uk.ac.ebi.pride.archive-archive-submission-model.version>
+        <uk.ac.ebi.pride.sdrf.jsdrf.version>1.0-SNAPSHOT</uk.ac.ebi.pride.sdrf.jsdrf.version>
         <pg.converter.version>1.8.5</pg.converter.version>
     </properties>
 
@@ -101,6 +102,16 @@
                     <artifactId>logback-core</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>uk.ac.ebi.pride.sdrf</groupId>
+            <artifactId>jsdrf</artifactId>
+            <version>${uk.ac.ebi.pride.sdrf.jsdrf.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.10.1</version>
         </dependency>
         <!-- swing related libraries-->
         <dependency>

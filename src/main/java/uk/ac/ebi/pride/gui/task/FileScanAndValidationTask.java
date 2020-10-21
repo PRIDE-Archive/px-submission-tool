@@ -18,32 +18,26 @@ import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
 import uk.ac.ebi.pride.data.validation.SubmissionValidator;
 import uk.ac.ebi.pride.data.validation.ValidationMessage;
 import uk.ac.ebi.pride.data.validation.ValidationReport;
-import uk.ac.ebi.pride.gui.util.Constant;
-import uk.ac.ebi.pride.gui.util.DataFileValidationMessage;
-import uk.ac.ebi.pride.gui.util.PrideConverterSupport;
-import uk.ac.ebi.pride.gui.util.ValidationState;
-import uk.ac.ebi.pride.gui.util.WarningMessageGenerator;
+import uk.ac.ebi.pride.gui.util.*;
 import uk.ac.ebi.pride.jaxb.model.CvParam;
 import uk.ac.ebi.pride.jaxb.model.SampleDescription;
 import uk.ac.ebi.pride.jaxb.xml.unmarshaller.PrideXmlUnmarshaller;
 import uk.ac.ebi.pride.jaxb.xml.unmarshaller.PrideXmlUnmarshallerFactory;
+import uk.ac.ebi.pride.sdrf.validate.Main;
+import uk.ac.ebi.pride.sdrf.validate.model.ValidationError;
+import uk.ac.ebi.pride.sdrf.validate.util.Constants;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 
+import javax.swing.*;
+import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import javax.xml.bind.JAXBException;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.awt.*;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -281,8 +275,45 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             scanForFileMappings();
         }
 
-
-
+        boolean isSdrfFound = false;
+        for(DataFile dataFile : submission.getDataFiles()){
+            if(dataFile.getFileType().equals(ProjectFileType.EXPERIMENTAL_DESIGN)){
+                isSdrfFound = true;
+                List<ValidationError> errors = Main.validate(dataFile.getFilePath(), Constants.Templates.DEFAULT, true);
+                if(errors.size() !=0){
+                    return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSDRFFileWarning());
+                }
+            }
+        }
+        if (!isSdrfFound) {
+            App app = (App) App.getInstance();
+            JLabel label = new JLabel();
+            Font font = label.getFont();
+            StringBuilder style = new StringBuilder("font-family:" + font.getFamily() + ";");
+            style.append("font-weight:" + (font.isBold() ? "bold" : "normal") + ";");
+            style.append("font-size:" + font.getSize() + "pt;");
+            // html content
+            JEditorPane jEditorPane = new JEditorPane("text/html", "<html><body style=\"" + style + "\">" //
+                    + WarningMessageGenerator.getExperimentalDesignFileMissingWarning() + "</body></html>");
+            jEditorPane.addHyperlinkListener(new HyperlinkListener() {
+                @Override
+                public void hyperlinkUpdate(HyperlinkEvent e) {
+                    try {
+                        if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED))
+                            Desktop.getDesktop().browse(e.getURL().toURI());
+                    } catch (Exception ex) {
+                        logger.error(ex.getMessage());
+                    }
+                }
+            });
+            jEditorPane.setEditable(false);
+            jEditorPane.setBackground(label.getBackground());
+            JOptionPane.showConfirmDialog(app.getMainFrame(),
+                    jEditorPane,
+                    appContext.getProperty("missing.experimental.design.file.dialog.title"),
+                    JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
+            return new DataFileValidationMessage(ValidationState.SUCCESS, WarningMessageGenerator.getExperimentalDesignFileMissingWarning());
+        }
         if (!checkIfWiffFileHasScanFile(submission.getDataFiles())) {
             return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getWiffScanMissingWarning());
         }
