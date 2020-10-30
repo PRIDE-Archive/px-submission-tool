@@ -279,7 +279,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         for(DataFile dataFile : submission.getDataFiles()){
             if(dataFile.getFileType().equals(ProjectFileType.EXPERIMENTAL_DESIGN)){
                 isSdrfFound = true;
-                List<ValidationError> errors = Main.validate(dataFile.getFilePath(), Constants.Templates.DEFAULT, true);
+                Set<ValidationError> errors = Main.validate(dataFile.getFilePath(),true);
                 if(errors.size() !=0){
                     return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSDRFFileWarning());
                 }
