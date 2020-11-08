@@ -2,18 +2,23 @@ package uk.ac.ebi.pride.gui.task;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.archive.submission.model.project.ProjectDetail;
 import uk.ac.ebi.pride.archive.submission.model.project.ProjectDetailList;
+import uk.ac.ebi.pride.gui.data.Credentials;
 import uk.ac.ebi.pride.gui.util.Constant;
-import uk.ac.ebi.pride.web.util.template.SecureRestTemplateFactory;
 
 import javax.swing.*;
 import java.awt.*;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.util.Base64;
 import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -30,8 +35,11 @@ public class GetPXSubmissionDetailTask extends AbstractWebServiceTask<Set<String
 
     private final RestTemplate restTemplate;
 
+    private Credentials credentials;
+
     public GetPXSubmissionDetailTask(String userName, String password) {
-        this.restTemplate = SecureRestTemplateFactory.getTemplate(userName, password);
+        this.restTemplate = new RestTemplate();
+        this.credentials = new Credentials(userName, new String(password));
     }
 
     @Override
@@ -51,7 +59,16 @@ public class GetPXSubmissionDetailTask extends AbstractWebServiceTask<Set<String
                 SimpleClientHttpRequestFactory requestFactory = (SimpleClientHttpRequestFactory) restTemplate.getRequestFactory();
                 requestFactory.setProxy(proxy);
             }
-            ProjectDetailList projectDetailList = restTemplate.getForObject(baseUrl, ProjectDetailList.class);
+
+            String credentials = this.credentials.getUsername() + ":" + this.credentials.getPassword();
+            String base64Creds = Base64.getEncoder().encodeToString(credentials.getBytes());
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.add("Authorization", "Basic " + base64Creds);
+
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            ProjectDetailList projectDetailList = restTemplate.exchange(baseUrl, HttpMethod.GET, entity, ProjectDetailList.class).getBody();
 
             for (ProjectDetail projectDetail : projectDetailList.getProjectDetails()) {
                 String accession = projectDetail.getAccession();
