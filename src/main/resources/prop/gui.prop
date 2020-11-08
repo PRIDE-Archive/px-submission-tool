@@ -323,8 +323,10 @@ submission.complete.title = Your submission reference:
 submission.complete.message = <html>Please note: your submission reference is <b>not<b/> an accession number.<br/>We aim to process all submissions within five working days, however at certain times, it might take longer.</html>
 upload.method.title = Fast upload
 upload.method.message = Would you like to use our fast upload service?
-upload.checksum.error.message=<html><b>Failed to calculate checksum for files<br/>In which case you should contact your system administrator.</html>
-upload.checksum.error.title=Checksum error
+checksum.error.message=<html><b>Failed to calculate checksum for files<br/>In which case you should contact your system administrator.</html>
+checksum.error.title=Checksum error
+checksum.file.error.title=Checksum file error
+checksum.file.error.message=<html><b>Failed to create checksum file<br/>Please check whether your current folder has write permissions</html>
 
 
 # submission type screen
