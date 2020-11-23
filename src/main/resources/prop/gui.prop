@@ -342,7 +342,7 @@ submission.type.you.need.desc = Please ensure the following information ready
 submission.type.full.submission.title = Complete Submission
 submission.type.full.submission.content = <html><p>Use this option if you can provide your identification results in either mzIdentML or mzTab. It will then be possible to fully integrate the results in PRIDE and visualise them (e.g. as required by MCP).</p> <br/> <p>In addition to a PXD identifier, a permanent Digital Object Identifier (DOI) will be provided to uniquely identify the dataset.</p></html>
 submission.type.partial.submission.title = Partial Submission
-submission.type.partial.submission.content = <html><p>You should only choose this option if your search results cannot be converted to mzIdentML, mzTab. Identifications will not be integrated in PRIDE. However, files will be made available to download (and may be visualised with other external tools).</p> <br/> <p> A PXD identifier will be provided to uniquely identify the dataset, but not a DOI.</p></html>
+submission.type.partial.submission.content = <html><p>You should only choose this option if your search results cannot be converted to mzIdentML or mzTab. Identifications will not be integrated in PRIDE. However, files will be made available to download (and may be visualised with other external tools).</p> <br/> <p> A PXD identifier will be provided to uniquely identify the dataset, but not a DOI.</p></html>
 
 prerequisite.result.file.title = Result Files
 prerequisite.result.file.desc = In any supported format (+ spectra)
