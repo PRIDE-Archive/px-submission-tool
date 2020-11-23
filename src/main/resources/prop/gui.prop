@@ -305,7 +305,7 @@ resubmission.select.px.dataset.label = Choose your dataset
 upload.detail.error.message = <html><b>Failed to get upload credentials.</b><br/>Please ensure that you have an Internet connection.<br/>Requires outbound traffic enabled on your firewall and network for port TCP 22.<br/>In which case you should contact your system administrator.</html>
 upload.detail.error.title = Upload Error
 upload.error.message = <html><b>There appears to be a problem with using FTP to upload your files.</b> <br/>Requires outbound traffic enabled on your firewall and network for port TCP 21.<br/>In which case you should contact your system administrator.</html>
-upload.aspera.error.message = <html><b>There appears to be a problem with using Aspera to upload your files.</b> <br/>Requires outbound traffic enabled on your firewall and network for port TCP 22 & UDP 33001.<br/>In which case you should contact your system administrator.<br/>Retrying your submission with FTP now...</html>
+upload.aspera.error.message = <html><b>There appears to be a problem with using Aspera to upload your files.</b> <br/>Requires outbound traffic enabled on your firewall and network for port TCP 22 & UDP 33001.<br/>In which case you should contact your system administrator.Or you can try with uploading with FTP by changing <b>px.upload.protocol=ftp</b> in config/config.properties file in px-submission-tool folder</html>
 upload.error.title = Upload Error
 upload.default.message = Submission in progress . . .
 upload.stop.message = Submission has been paused
@@ -323,7 +323,7 @@ submission.complete.title = Your submission reference:
 submission.complete.message = <html>Please note: your submission reference is <b>not<b/> an accession number.<br/>We aim to process all submissions within five working days, however at certain times, it might take longer.</html>
 upload.method.title = Fast upload
 upload.method.message = Would you like to use our fast upload service?
-checksum.error.message=<html><b>Failed to calculate checksum for files<br/>In which case you should contact your system administrator.</html>
+checksum.error.message=<html><b>Failed to calculate checksum for files<br/>Please check file paths are fine</html>
 checksum.error.title=Checksum error
 checksum.file.error.title=Checksum file error
 checksum.file.error.message=<html><b>Failed to create checksum file<br/>Please check whether your current folder has write permissions</html>
@@ -342,7 +342,7 @@ submission.type.you.need.desc = Please ensure the following information ready
 submission.type.full.submission.title = Complete Submission
 submission.type.full.submission.content = <html><p>Use this option if you can provide your identification results in either mzIdentML or mzTab. It will then be possible to fully integrate the results in PRIDE and visualise them (e.g. as required by MCP).</p> <br/> <p>In addition to a PXD identifier, a permanent Digital Object Identifier (DOI) will be provided to uniquely identify the dataset.</p></html>
 submission.type.partial.submission.title = Partial Submission
-submission.type.partial.submission.content = <html><p>You should only choose this option if your search results cannot be converted to mzIdentML, mzTab or legacy PRIDE XML. Identifications will not be integrated in PRIDE. However, files will be made available to download (and may be visualised with other external tools).</p> <br/> <p> A PXD identifier will be provided to uniquely identify the dataset, but not a DOI.</p></html>
+submission.type.partial.submission.content = <html><p>You should only choose this option if your search results cannot be converted to mzIdentML, mzTab. Identifications will not be integrated in PRIDE. However, files will be made available to download (and may be visualised with other external tools).</p> <br/> <p> A PXD identifier will be provided to uniquely identify the dataset, but not a DOI.</p></html>
 
 prerequisite.result.file.title = Result Files
 prerequisite.result.file.desc = In any supported format (+ spectra)
@@ -403,9 +403,9 @@ bulk.submission.load.summary.file.button.small.icon = icon/16x16/add_black.png
 bulk.submission.loading.summary.file.small.icon = icon/16x16/loading.gif
 
 # export summary file
-export.summary.button.label = Export summary file
+export.summary.button.label = Export submission.px
 export.summary.button.tooltip = Export a summary of your submission into a file
-export.summary.dialog.title = Export summary file
+export.summary.dialog.title = Export submission.px
 export.summary.default.summary.file.name = submission.px
 export.summary.error.dialog.title = Warning
 export.summary.error.dialog.message = Failed to export summary file, please make sure you have the access permission.
