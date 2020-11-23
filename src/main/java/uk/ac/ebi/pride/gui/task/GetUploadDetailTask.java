@@ -1,16 +1,21 @@
 package uk.ac.ebi.pride.gui.task;
 
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
+import uk.ac.ebi.pride.gui.data.Credentials;
 import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
-import uk.ac.ebi.pride.web.util.template.SecureRestTemplateFactory;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.util.Base64;
 import java.util.Properties;
 
 /**
@@ -23,6 +28,7 @@ public class GetUploadDetailTask extends TaskAdapter<UploadDetail, String> {
 
     private final RestTemplate restTemplate;
     private final UploadMethod method;
+    private Credentials credentials;
 
     /**
      * Constructor
@@ -31,7 +37,8 @@ public class GetUploadDetailTask extends TaskAdapter<UploadDetail, String> {
      * @param password password
      */
     public GetUploadDetailTask(UploadMethod method, String userName, char[] password) {
-        this.restTemplate = SecureRestTemplateFactory.getTemplate(userName, new String(password));
+        this.restTemplate = new RestTemplate();
+        this.credentials = new Credentials(userName, new String(password));
         this.method = method;
     }
 
@@ -52,9 +59,19 @@ public class GetUploadDetailTask extends TaskAdapter<UploadDetail, String> {
                 SimpleClientHttpRequestFactory requestFactory = (SimpleClientHttpRequestFactory) restTemplate.getRequestFactory();
                 requestFactory.setProxy(proxy);
             }
-            uploadDetail = restTemplate.getForObject(baseUrl, UploadDetail.class, method.getMethod());
+
+            String credentials = this.credentials.getUsername() + ":" + this.credentials.getPassword();
+            String base64Creds = Base64.getEncoder().encodeToString(credentials.getBytes());
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.add("Authorization", "Basic " + base64Creds);
+
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+            uploadDetail = restTemplate.exchange(baseUrl, HttpMethod.GET, entity, UploadDetail.class, method.getMethod()).getBody();
+
         } catch(Exception ex){
-            // port blocked, dealt with later
+            publish("Error in getting upload details");
         }
         return uploadDetail;
     }

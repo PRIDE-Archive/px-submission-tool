@@ -323,9 +323,8 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
                         appContext.getProperty("upload.aspera.error.message"),
                         appContext.getProperty("upload.detail.error.title"),
                         JOptionPane.CLOSED_OPTION, JOptionPane.ERROR_MESSAGE);
-                form.setUploadMessage("Aspera upload failed. Retrying with FTP...");
-                System.setProperty("px.upload.protocol", Constant.FTP);
-                getUploadDetail(appContext.getSubmissionRecord().getSubmission());
+                form.setUploadMessage("Aspera upload failed. Retry with FTP...");
+                System.exit(-1);
             } else {
                 form.setUploadMessage(message.getMessage());
             }

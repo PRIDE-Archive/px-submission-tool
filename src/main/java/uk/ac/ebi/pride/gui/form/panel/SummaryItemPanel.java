@@ -440,8 +440,8 @@ public class SummaryItemPanel extends ContextAwarePanel
                 ((AppContext) App.getInstance().getDesktopContext()).addDataFile(checksumDataFile);
             } catch (Exception ex) {
                 JOptionPane.showConfirmDialog(app.getMainFrame(),
-                        appContext.getProperty("checksum.error.message"),
-                        appContext.getProperty("checksum.error.title"),
+                        appContext.getProperty("checksum.file.error.message"),
+                        appContext.getProperty("checksum.file.error.title"),
                         JOptionPane.CLOSED_OPTION, JOptionPane.ERROR_MESSAGE);
             }
         }
