@@ -111,7 +111,7 @@ copy.paste.tip.for.mac = Tip: Use Ctrl+C to copy, Ctrl+V to paste
 copy.paste.tip.for.mac.icon = icon/16x16/tip.png
 project.desc.label.title = Project Details
 project.title.error.message = Project title can neither be less than 30 characters nor more than 5000 characters
-keyword.error.message = Keyword should be separated by comma and white space
+keyword.error.message = Keyword should be separated by comma and white space and not greater than 500 characters
 project.desc.error.message = Project description can neither be less than 50 characters nor more than 5000 characters
 sample.processing.error.message = Sample processing protocol can neither be less than 50 characters nor more than 5000 characters
 data.processing.error.message = Data processing protocol can neither be less than 50 characters nor more than 5000 characters
@@ -327,7 +327,9 @@ checksum.error.message=<html><b>Failed to calculate checksum for files<br/>Pleas
 checksum.error.title=Checksum error
 checksum.file.error.title=Checksum file error
 checksum.file.error.message=<html><b>Failed to create checksum file<br/>Please check whether your current folder has write permissions</html>
-
+checksum.file.selection.error.message=<html>Please select checksum.txt from px-submission-tool folder in the previous step.<br/>If the file is not found in px-submission-tool folder,<br/>Check if you have appropriate permissions to write in the folder<br/></html>"
+checksum.confirm.message=<html>Do you wanna calculate checksum?<br/>Although you can skip for very large or remote files as it get stuck for long time,<br>It is highly recommended to calculate for others</html>
+checksum.confirm.title=Confirm calculate checksum for files
 
 # submission type screen
 submission.type.submission.tool.detail = <html>This tool guides you to submit dataset to members of the ProteomeXchange consortium.</html>

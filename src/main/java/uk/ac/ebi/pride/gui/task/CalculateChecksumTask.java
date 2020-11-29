@@ -51,13 +51,16 @@ public class CalculateChecksumTask extends TaskAdapter<Boolean, ChecksumMessage>
             }
         }
         int i = 0;
-        int totalNoOfFiles = dataFiles.size();
+        int totalNoOfFiles = dataFiles.size() - 1;
+        if (!dataFiles.stream().anyMatch(file -> file.getFileName().equals("checksum.txt"))) {
+          throw new RuntimeException("No checksum.txt present");
+        }
         Iterator<Future<Tuple<String, String>>> it = tasks.iterator();
         while (it.hasNext()) {
             Future future = it.next();
             if (future.isDone()) {
                 Tuple<String, String> fileChecksum = (Tuple<String, String>) future.get();
-                publish(new ChecksumMessage(this, fileChecksum, ++i, totalNoOfFiles - 1));
+                publish(new ChecksumMessage(this, fileChecksum, ++i, totalNoOfFiles));
                 it.remove();
             }
             if (!it.hasNext()) {

@@ -275,6 +275,10 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             scanForFileMappings();
         }
 
+        if (!checkIfWiffFileHasScanFile(submission.getDataFiles())) {
+            return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getWiffScanMissingWarning());
+        }
+
         boolean isSdrfFound = false;
         for(DataFile dataFile : submission.getDataFiles()){
             if(dataFile.getFileType().equals(ProjectFileType.EXPERIMENTAL_DESIGN)){
@@ -285,6 +289,9 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 }
             }
         }
+
+        setProgress(100);
+
         if (!isSdrfFound) {
             App app = (App) App.getInstance();
             JLabel label = new JLabel();
@@ -314,11 +321,6 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                     JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
             return new DataFileValidationMessage(ValidationState.SUCCESS, WarningMessageGenerator.getExperimentalDesignFileMissingWarning());
         }
-        if (!checkIfWiffFileHasScanFile(submission.getDataFiles())) {
-            return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getWiffScanMissingWarning());
-        }
-
-        setProgress(100);
 
         return new DataFileValidationMessage(ValidationState.SUCCESS);
     }
