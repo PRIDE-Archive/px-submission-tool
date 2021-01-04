@@ -128,6 +128,9 @@ public class TaskDialog<K, V> extends JDialog implements TaskListener<K, V>, Act
         if (!indeterminateMode) {
             progressBar.setValue(progress.getValue());
         }
+        if(progress.getValue()==100){
+            this.setVisible(false);
+        }
     }
 
     @Override

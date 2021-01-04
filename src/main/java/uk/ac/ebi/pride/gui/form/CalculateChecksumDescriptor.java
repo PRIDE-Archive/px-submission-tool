@@ -4,6 +4,7 @@ import com.google.common.io.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.form.panel.SummaryItemPanel;
@@ -29,6 +30,8 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
 
     public static Map<String, Tuple<String, String>> checksumCalculatedFiles = new HashMap<>();
 
+    public boolean dontCalculateChecksum = true;
+
     public CalculateChecksumDescriptor(String id, String title, String desc) {
         super(id, title, desc, new CalculateChecksumForm());
     }
@@ -47,25 +50,44 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
         nextButton.setText(appContext.getProperty("checksum.submit.button.title"));
         nextButton.setEnabled(false);
 
-        // enable cancel button
-        CalculateChecksumForm calculateChecksumForm = (CalculateChecksumForm) CalculateChecksumDescriptor.this.getNavigationPanel();
-        calculateChecksumForm.enableCancelButton(true);
-        // set the default upload message
-        calculateChecksumForm.setProgressMessage(appContext.getProperty("checksum.default.message"));
-        Task newTask = new CalculateChecksumTask(appContext.getSubmissionRecord().getSubmission());
-        newTask.addTaskListener(this);
-        // set task's gui blocker
-        newTask.setGUIBlocker(new DefaultGUIBlocker(newTask, GUIBlocker.Scope.NONE, null));
-        // add task listeners
-        appContext.addTask(newTask);
+        int option = JOptionPane.showConfirmDialog(app.getMainFrame(),
+                appContext.getProperty("checksum.confirm.message"),
+                appContext.getProperty("checksum.confirm.title"),
+                JOptionPane.YES_NO_OPTION, JOptionPane.YES_NO_OPTION);
 
-        firePropertyChange(DISPLAYING_PANEL_PROPERTY, false, true);
+        if (option != JOptionPane.YES_OPTION) {
+            dontCalculateChecksum = true;
+            removeChecksumFile();
+            nextButton.setEnabled(true);
+        } else {
+            dontCalculateChecksum = false;
+            // enable cancel button
+            CalculateChecksumForm calculateChecksumForm = (CalculateChecksumForm) CalculateChecksumDescriptor.this.getNavigationPanel();
+            calculateChecksumForm.enableCancelButton(true);
+            // set the default upload message
+            calculateChecksumForm.setProgressMessage(appContext.getProperty("checksum.default.message"));
+            Task newTask = new CalculateChecksumTask(appContext.getSubmissionRecord().getSubmission());
+            newTask.addTaskListener(this);
+            // set task's gui blocker
+            newTask.setGUIBlocker(new DefaultGUIBlocker(newTask, GUIBlocker.Scope.NONE, null));
+            // add task listeners
+            appContext.addTask(newTask);
+            firePropertyChange(DISPLAYING_PANEL_PROPERTY, false, true);
+        }
+    }
+
+    private void removeChecksumFile() {
+        List<DataFile> files = ((AppContext) App.getInstance().getDesktopContext()).getSubmissionRecord().getSubmission().getDataFiles();
+        for (DataFile file : files) {
+            if (file.getFileName().equals("checksum.txt"))
+                ((AppContext) App.getInstance().getDesktopContext()).removeDatafile(file);
+        }
     }
 
     @Override
     public void beforeHidingForNextPanel() {
         try {
-            if (checkAndWriteChecksum(appContext.getSubmissionRecord().getSubmission().getDataFiles())) {
+            if (dontCalculateChecksum || checkAndWriteChecksum(appContext.getSubmissionRecord().getSubmission().getDataFiles())) {
                 firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, false, true);
             }
         } catch (Exception ex) {
@@ -137,6 +159,10 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
 
     @Override
     public void failed(TaskEvent<Throwable> event) {
+        JOptionPane.showConfirmDialog(app.getMainFrame(),
+                appContext.getProperty("checksum.file.selection.error.message"),
+                appContext.getProperty("checksum.file.error.title"),
+                JOptionPane.CLOSED_OPTION, JOptionPane.ERROR_MESSAGE);
     }
 
     @Override

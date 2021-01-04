@@ -5,7 +5,7 @@ PX Submission Tool is a desktop application to submit the data to proteomeXchang
 
 # Quick Download 
 
-[<img src="https://raw.githubusercontent.com/PRIDE-Toolsuite/pride-inspector/master/wiki/download.png">](https://github.com/PRIDE-Archive/px-submission-tool/releases/download/2.5.1/px-submission-tool-2.5.1.zip)
+[<img src="https://raw.githubusercontent.com/PRIDE-Toolsuite/pride-inspector/master/wiki/download.png">](https://github.com/PRIDE-Archive/px-submission-tool/releases/download/2.5.3/px-submission-tool-2.5.3.zip)
 
 Please unzip and run `px-submission-tool-<version number>.jar` file!
 
