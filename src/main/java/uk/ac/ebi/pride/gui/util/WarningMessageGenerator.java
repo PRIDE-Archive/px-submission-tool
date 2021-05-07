@@ -42,6 +42,10 @@ public final class WarningMessageGenerator {
         return "<html>" + "<b>It is recommended to submit wiff scan files associated with wiff files</b><br/>" + "</html>";
     }
 
+    public static String getBafFileWarning() {
+        return "<html>" + "<b>It is recommended to submit whole .d directory as zipped instead of individual BAF files</b><br/>" + "</html>";
+    }
+
     public static String getExperimentalDesignFileMissingWarning() {
         return "It is recommended to submit a <a href=\"https://github.com/bigbio/proteomics-metadata-standard\">Sample to Data file format (SDRF)</a> File<br/>";
     }
