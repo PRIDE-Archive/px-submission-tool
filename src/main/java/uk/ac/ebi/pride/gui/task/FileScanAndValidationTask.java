@@ -44,7 +44,6 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -53,8 +52,6 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /**
  * Validate all the files selected in the file selection step
@@ -113,6 +110,18 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         boolean mzTabFilesHaveBeenProvided = !mzTabDataFiles.isEmpty();
 
         boolean noRawFile = submission.getDataFileByType(ProjectFileType.RAW).isEmpty();
+
+        List<DataFile> mzMlFiles = submission.getDataFilesByFormat(MassSpecFileFormat.INDEXED_MZML);
+
+        if (noRawFile && !mzMlFiles.isEmpty()) {
+            mzMlFiles.stream().forEach(mzMlFile -> {
+                mzMlFile.setFileType(ProjectFileType.RAW);
+                submission.removeDataFile(mzMlFile);
+            });
+            submission.addDataFiles(mzMlFiles);
+            noRawFile = false;
+        }
+
         boolean noSearchFile = submission.getDataFileByType(ProjectFileType.SEARCH).isEmpty();
 
         List<DataFile> resultDataFiles = submission.getDataFileByType(ProjectFileType.RESULT);
@@ -296,11 +305,12 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         }
 
         boolean isSdrfFound = false;
-        for (DataFile dataFile : submission.getDataFiles()) {
-            if (dataFile.getFileType().equals(ProjectFileType.EXPERIMENTAL_DESIGN)) {
+        for(DataFile dataFile : submission.getDataFiles()){
+            if(dataFile.getFileType().equals(ProjectFileType.EXPERIMENTAL_DESIGN)){
                 isSdrfFound = true;
-                Set<ValidationError> errors = Main.validate(dataFile.getFilePath(), true);
-                if (errors.size() != 0) {
+                Set<ValidationError> errors = Main.validate(dataFile.getFilePath(),true);
+                if(errors.size() !=0){
+                    logger.error("Error in file " + dataFile.getFileName());
                     return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSDRFFileWarning());
                 }
             }
@@ -403,7 +413,8 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 String errorEntry = "";
                 if (mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation() != null) {
                     String referencedFile = FilenameUtils.getName(mzTabFile.getMzTabDocument().getMetaData().getMsRunEntry(msRunIndex).getLocation().toString());
-                    if (!dataFiles.keySet().contains(referencedFile.toLowerCase())) {
+
+                    if (!dataFiles.keySet().stream().anyMatch(dataFile -> dataFile.contains(referencedFile.toLowerCase()))) {
                         // Flag the error
                         errorFlagged = true;
                         // The referenced file is not part of the submission files
@@ -417,7 +428,11 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                     } else {
                         // The file is in the list of files part of the current submission process
                         // Check that the referenced file is a Peak List / RAW file
-                        ProjectFileType referencedDataFileType = dataFiles.get(referencedFile.toLowerCase()).getFileType();
+                        DataFile referencedDataFile = dataFiles.get(referencedFile.toLowerCase());
+                        if (referencedDataFile == null) {
+                            referencedDataFile = dataFiles.get(referencedFile.toLowerCase() + ".gz");
+                        }
+                        ProjectFileType referencedDataFileType = referencedDataFile.getFileType();
                         if (referencedDataFileType != ProjectFileType.PEAK && referencedDataFileType != ProjectFileType.RAW) {
                             // Flag the error
                             errorFlagged = true;
@@ -430,6 +445,8 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                             errorEntry = "NON-Peak List/RAW referenced file '"
                                     + referencedFile
                                     + "', is NOT ALLOWED";
+                        } else {
+                            mzTabFile.addFileMapping(referencedDataFile);
                         }
                     }
                 } else {
@@ -521,7 +538,6 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         if (peakFiles.size() == 1) {
             addFileMapping(resultOrSearchFiles, peakFiles.iterator().next());
         }
-
     }
 
     private void addFileMapping(List<DataFile> resultOrSearchFiles, DataFile dataFile) {
@@ -645,42 +661,42 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
      */
     private boolean isValidRawCompressedFile(DataFile dataFile) {
         boolean isValid = true;
-        int rawFileCount = 0;
-
-        String ext = FileUtil.getFileExtension(dataFile.getFile());
-
-        try {
-            if (ext != null) {
-                if ("zip".equalsIgnoreCase(ext)) {
-                    ZipFile zipFile = new ZipFile(dataFile.getFile());
-                    Enumeration<? extends ZipEntry> entries = zipFile.entries();
-                    while (entries.hasMoreElements() && rawFileCount <= 1) {
-                        ZipEntry entry = entries.nextElement();
-                        if (!entry.isDirectory()) {
-                            String fileName = entry.getName();
-                            String fileExtension = FileUtil.getFileExtension(fileName);
-                            if (fileExtension != null) {
-                                if (fileExtension.toUpperCase().equals("RAW")) {
-                                    rawFileCount++;
-                                }
-                            } else {
-                                isValid = false;
-                                break;
-                            }
-                        }
-                    }
-
-                } // gzip can compress only single file, therefore, we do not need to check gzip
-            }
-        } catch (IOException e) {
-            isValid = false;
-            e.printStackTrace();
-        }
-
-        if ((rawFileCount > 1)) {
-            isValid = false;
-            logger.error("Multiple .RAW files found in " + dataFile.getFile().getName() + ". Please unzip them and upload individually");
-        }
+//        int rawFileCount = 0;
+//
+//        String ext = FileUtil.getFileExtension(dataFile.getFile());
+//
+//        try {
+//            if (ext != null) {
+//                if ("zip".equalsIgnoreCase(ext)) {
+//                    ZipFile zipFile = new ZipFile(dataFile.getFile());
+//                    Enumeration<? extends ZipEntry> entries = zipFile.entries();
+//                    while (entries.hasMoreElements() && rawFileCount <= 1) {
+//                        ZipEntry entry = entries.nextElement();
+//                        if (!entry.isDirectory()) {
+//                            String fileName = entry.getName();
+//                            String fileExtension = FileUtil.getFileExtension(fileName);
+//                            if (fileExtension != null) {
+//                                if (fileExtension.toUpperCase().equals("RAW")) {
+//                                    rawFileCount++;
+//                                }
+//                            } else {
+//                                isValid = false;
+//                                break;
+//                            }
+//                        }
+//                    }
+//
+//                } // gzip can compress only single file, therefore, we do not need to check gzip
+//            }
+//        } catch (IOException e) {
+//            isValid = false;
+//            e.printStackTrace();
+//        }
+//
+//       if ((rawFileCount > 1)) {
+//          isValid = false;
+//           logger.error("Multiple .RAW files found in " + dataFile.getFile().getName() + ". Please unzip them and upload individually");
+//        }
         return isValid;
     }
 
