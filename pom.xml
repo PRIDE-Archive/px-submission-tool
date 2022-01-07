@@ -85,6 +85,12 @@
             <groupId>uk.ac.ebi.pride.jaxb</groupId>
             <artifactId>pride-jaxb</artifactId>
             <version>${uk.ac.ebi.pride.jaxb-pride-jaxb.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- pride utility classes-->
         <dependency>
