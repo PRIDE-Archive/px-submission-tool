@@ -4,7 +4,7 @@
     <groupId>uk.ac.ebi.pride.px</groupId>
     <artifactId>px-submission-tool</artifactId>
     <packaging>jar</packaging>
-    <version>2.5.5</version>
+    <version>2.5.6</version>
     <name>px-submission-tool</name>
     <url>https://github.com/proteomexchange/px-submission-tool</url>
 
@@ -55,7 +55,7 @@
         <uk.ac.ebi.pride.jaxb-pride-jaxb.version>1.0.18</uk.ac.ebi.pride.jaxb-pride-jaxb.version>
         <uk.ac.ebi.pride.utilities-pride-utilities.version>2.0.16</uk.ac.ebi.pride.utilities-pride-utilities.version>
         <uk.ac.ebi.pride.toolsuite-inspector-swing-utils.version>2.0.3</uk.ac.ebi.pride.toolsuite-inspector-swing-utils.version>
-        <uk.ac.ebi.pride-px-submission-core.version>2.0.32</uk.ac.ebi.pride-px-submission-core.version>
+        <uk.ac.ebi.pride-px-submission-core.version>2.0.34</uk.ac.ebi.pride-px-submission-core.version>
         <uk.ac.ebi.pride.px-libpxreport.version>1.1</uk.ac.ebi.pride.px-libpxreport.version>
         <uk.ac.ebi.pride.toolsuite-ols-dialog.version>3.4.17-SNAPSHOT</uk.ac.ebi.pride.toolsuite-ols-dialog.version>
         <uk.ac.ebi.jmzidml-jmzidentml.version>1.2.6</uk.ac.ebi.jmzidml-jmzidentml.version>
