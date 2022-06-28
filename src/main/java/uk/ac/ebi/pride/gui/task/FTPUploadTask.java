@@ -3,9 +3,11 @@ package uk.ac.ebi.pride.gui.task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.data.exception.SubmissionFileException;
 import uk.ac.ebi.pride.data.io.SubmissionFileWriter;
 import uk.ac.ebi.pride.data.model.DataFile;
+import uk.ac.ebi.pride.gui.form.SummaryDescriptor;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.GUIBlocker;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
@@ -152,6 +154,7 @@ public class FTPUploadTask extends TaskAdapter<Void, UploadMessage> implements T
 
             // write out submission details
             SubmissionFileWriter.write(submissionRecord.getSubmission(), submissionFile);
+            SummaryDescriptor.addToolVersionAndLicenseToSummary(submissionFile.getAbsolutePath(),(AppContext) App.getInstance().getDesktopContext());
 
             return submissionFile;
 

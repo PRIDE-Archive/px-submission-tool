@@ -6,10 +6,12 @@ import com.asperasoft.faspmanager.InitializationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.data.exception.SubmissionFileException;
 import uk.ac.ebi.pride.data.io.SubmissionFileWriter;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
+import uk.ac.ebi.pride.gui.form.SummaryDescriptor;
 import uk.ac.ebi.pride.gui.task.ftp.UploadErrorMessage;
 import uk.ac.ebi.pride.gui.task.ftp.UploadMessage;
 import uk.ac.ebi.pride.gui.task.ftp.UploadStoppedMessage;
@@ -171,6 +173,7 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
               tempDir.getAbsolutePath() + File.separator + Constant.PX_SUBMISSION_SUMMARY_FILE);
       logger.info("Create temporary submission summary file : " + submissionFile.getAbsolutePath());
       SubmissionFileWriter.write(submissionRecord.getSubmission(), submissionFile);
+      SummaryDescriptor.addToolVersionAndLicenseToSummary(submissionFile.getAbsolutePath(), (AppContext) App.getInstance().getDesktopContext());
       return submissionFile;
     } catch (SubmissionFileException ex) {
       String msg = "Failed to create submission file";

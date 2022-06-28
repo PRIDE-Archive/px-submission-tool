@@ -123,7 +123,7 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
         return isFileExported;
     }
 
-    private static void addToolVersionAndLicenseToSummary(String fileName, AppContext appContext) {
+    public static void addToolVersionAndLicenseToSummary(String fileName, AppContext appContext) {
         try {
             FileWriter fw = new FileWriter(fileName, true);
             BufferedWriter bw = new BufferedWriter(fw);
