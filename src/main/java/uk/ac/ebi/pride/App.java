@@ -278,7 +278,7 @@ public class App extends Desktop {
 
             navigator.registerNavigationPanel(prideLoginPanel);
 
-             // register submission type form
+            // register submission type form
             SubmissionTypeDescriptor submissionTypeDescriptor = new SubmissionTypeDescriptor(getDesktopContext().getProperty("submission.type.nav.desc.id"),
                     "Step 1: " + getDesktopContext().getProperty("submission.type.nav.desc.title")+ " (1/10)",
                     getDesktopContext().getProperty("submission.type.nav.desc.detail") );
