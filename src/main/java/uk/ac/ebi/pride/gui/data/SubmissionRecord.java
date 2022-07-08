@@ -2,7 +2,6 @@ package uk.ac.ebi.pride.gui.data;
 
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.data.model.DataFile;
-import uk.ac.ebi.pride.data.model.ResubmissionFileChangeState;
 import uk.ac.ebi.pride.data.model.Submission;
 
 import java.io.Serializable;
@@ -21,13 +20,11 @@ public class SubmissionRecord implements Serializable {
     private UploadDetail uploadDetail;
     private boolean summaryFileUploaded = false;
     private Set<DataFile> uploadedFiles;
-//    private Map<DataFile, ResubmissionFileChangeState> resubmission;
 
     public SubmissionRecord() {
         this.submission = new Submission();
         this.uploadDetail = null;
         this.uploadedFiles = Collections.synchronizedSet(new HashSet<>());
-//        this.resubmission = Collections.synchronizedMap(new HashMap<>());
     }
 
     public SubmissionRecord(Submission submission) {
@@ -82,22 +79,6 @@ public class SubmissionRecord implements Serializable {
             this.uploadedFiles = uploadedFiles;
         }
     }
-
-//    public Map<DataFile, ResubmissionFileChangeState> getResubmission() {
-//        return resubmission;
-//    }
-//
-//    public void setResubmission(Map<DataFile, ResubmissionFileChangeState> resubmission) {
-//        this.resubmission = resubmission;
-//    }
-//
-//    public void addResubmissionFile(DataFile dataFile, ResubmissionFileChangeState state){
-//        resubmission.put(dataFile, state);
-//    }
-//
-//    public void modifyResubmissionFile(DataFile dataFile, ResubmissionFileChangeState state){
-//        resubmission.put(dataFile, state);
-//    }
 
     public void addUploadedFiles(DataFile dataFile) {
         uploadedFiles.add(dataFile);

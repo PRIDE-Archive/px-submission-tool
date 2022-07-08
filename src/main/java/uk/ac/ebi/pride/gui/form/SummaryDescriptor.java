@@ -148,13 +148,13 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
      * @param fileName Submission.px full path
      * @param appContext AppContext
      */
-    private static void addResubmissionSummary(String fileName, AppContext appContext) {
+    public static void addResubmissionSummary(String fileName, AppContext appContext) {
         try {
             FileWriter fw = new FileWriter(fileName, true);
             BufferedWriter bw = new BufferedWriter(fw);
             Map<DataFile, ResubmissionFileChangeState> resubmissionFiles  = appContext.getResubmissionRecord().getResubmission().getResubmission();
             for (Map.Entry<DataFile, ResubmissionFileChangeState> resubmissionFile : resubmissionFiles.entrySet()) {
-                bw.write("COM\tResubmission\t" +  resubmissionFile.getKey().getFileName() + "\t" + resubmissionFile.getValue());
+                bw.write("COM\tResubmission\t" +  resubmissionFile.getKey().getFileName() + "\t" + resubmissionFile.getKey().getFileType().getName() + "\t" + resubmissionFile.getKey().getFileSize() + "\t" +  resubmissionFile.getValue());
                 bw.newLine();
             }
             bw.newLine();

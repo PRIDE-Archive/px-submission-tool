@@ -64,10 +64,13 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
     private Resubmission resubmission;
     private AppContext appContext;
 
+    private App app;
+
     public ResubmissionFileScanAndValidationTask(Submission submission, Resubmission resubmission) {
         this.submission = submission;
         this.resubmission = resubmission;
-        this.appContext = (AppContext) App.getInstance().getDesktopContext();
+        this.app = (App) App.getInstance();
+        this.appContext = (AppContext) app.getDesktopContext();
     }
 
     @Override
