@@ -3,7 +3,6 @@ package uk.ac.ebi.pride;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.gui.form.*;
-//import uk.ac.ebi.pride.gui.form.FileMappingDescriptor;
 import uk.ac.ebi.pride.gui.navigation.NavigationException;
 import uk.ac.ebi.pride.gui.navigation.NavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.navigation.Navigator;

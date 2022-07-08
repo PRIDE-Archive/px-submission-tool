@@ -9,7 +9,6 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 import uk.ac.ebi.pride.gui.data.Credentials;
-import uk.ac.ebi.pride.gui.task.GetPrideProjectFilesTask;
 
 import java.net.URI;
 import java.nio.charset.Charset;
@@ -24,76 +23,18 @@ public class PrideRepoRestClient {
 
     private final RestTemplate restTemplate;
     private final String baseUrl;
-//    private final String apiKeyName;
-//    private final String apiKeyValue;
-//    private final String appName;
+
 
     /**
      * Constructor
      * @param baseUrl     PRIDE Repo REST API base URL
      */
-//    public PrideRepoRestClient(String baseUrl, String apiKeyName,String apiKeyValue, String appName ) {
     public PrideRepoRestClient(String baseUrl) {
         this.restTemplate = new RestTemplate();
         this.baseUrl = baseUrl;
-//        this.apiKeyName = apiKeyName;
-//        this.apiKeyValue = apiKeyValue;
         this.restTemplate.getMessageConverters().add(0, new StringHttpMessageConverter(Charset.forName("UTF-8")));
-//        this.appName = appName;
-
     }
 
-    public String sendPostRequest(String url, String payload) {
-        url = baseUrl + url;
-        ResponseEntity<String> response;
-        try {
-            //  create headers
-            HttpHeaders headers = createHeaders();
-
-            // build the request
-            HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity(payload, headers);
-            logger.info("POST Request : " + url);
-            response = restTemplate.exchange(url, HttpMethod.POST, requestEntity, String.class);
-
-            HttpStatus statusCode = response.getStatusCode();
-            if (statusCode != HttpStatus.OK && statusCode != HttpStatus.CREATED && statusCode != HttpStatus.ACCEPTED) {
-                String errorMessage = "[POST] Received invalid response for : " + url + " : " + response;
-                logger.error(errorMessage);
-                throw new IllegalStateException(errorMessage);
-            }
-        } catch (RestClientException e) {
-            logger.info("POST Request payload : " + payload);
-            logger.error(e.getMessage(), e);
-            throw e;
-        }
-        return response.getBody();
-    }
-
-    public String sendDeleteRequest(String url, String payload) {
-        url = baseUrl + url;
-        ResponseEntity<String> response;
-        try {
-            //  create headers
-            HttpHeaders headers = createHeaders();
-
-            // build the request
-            HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity(payload, headers);
-
-            logger.info("DELETE Request : " + url);
-            response = restTemplate.exchange(url, HttpMethod.DELETE, requestEntity, String.class);
-
-            HttpStatus statusCode = response.getStatusCode();
-            if (statusCode != HttpStatus.OK && statusCode != HttpStatus.CREATED && statusCode != HttpStatus.ACCEPTED) {
-                String errorMessage = "[DELETE] Received invalid response for : " + url + " : " + response;
-                logger.error(errorMessage);
-                throw new IllegalStateException(errorMessage);
-            }
-        } catch (RestClientException e) {
-            logger.error(e.getMessage(), e);
-            throw e;
-        }
-        return response.getBody();
-    }
 
     /**
      * This method construct the URL with URI parameters and Query parameters and

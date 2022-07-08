@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.data.model.*;
 import uk.ac.ebi.pride.gui.data.ResubmissionRecord;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
-import uk.ac.ebi.pride.gui.form.table.model.ExistingFilesResubmissionTableModel;
 import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
