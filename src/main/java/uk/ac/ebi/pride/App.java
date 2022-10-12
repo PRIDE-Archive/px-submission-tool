@@ -2,19 +2,8 @@ package uk.ac.ebi.pride;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.ebi.pride.gui.form.AdditionalDatasetDetailsDescriptor;
-import uk.ac.ebi.pride.gui.form.AdditionalMetaDataDescriptor;
-import uk.ac.ebi.pride.gui.form.CalculateChecksumDescriptor;
+import uk.ac.ebi.pride.gui.form.*;
 //import uk.ac.ebi.pride.gui.form.FileMappingDescriptor;
-import uk.ac.ebi.pride.gui.form.FileSelectionDescriptor;
-import uk.ac.ebi.pride.gui.form.LabHeadDescriptor;
-import uk.ac.ebi.pride.gui.form.PrerequisiteDescriptor;
-import uk.ac.ebi.pride.gui.form.PrideLoginDescriptor;
-import uk.ac.ebi.pride.gui.form.ProjectMetaDataDescriptor;
-import uk.ac.ebi.pride.gui.form.SampleMetaDataDescriptor;
-import uk.ac.ebi.pride.gui.form.SubmissionDescriptor;
-import uk.ac.ebi.pride.gui.form.SubmissionTypeDescriptor;
-import uk.ac.ebi.pride.gui.form.SummaryDescriptor;
 import uk.ac.ebi.pride.gui.navigation.NavigationException;
 import uk.ac.ebi.pride.gui.navigation.NavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.navigation.Navigator;
@@ -275,26 +264,27 @@ public class App extends Desktop {
 
             navigator.registerNavigationPanel(prideLoginPanel);
 
-            // register submission type form
-            SubmissionTypeDescriptor submissionTypeDescriptor = new SubmissionTypeDescriptor(getDesktopContext().getProperty("submission.type.nav.desc.id"),
-                    "Step 1: " + getDesktopContext().getProperty("submission.type.nav.desc.title")+ " (1/10)",
-                    getDesktopContext().getProperty("submission.type.nav.desc.detail") );
-            navigator.registerNavigationPanel(submissionTypeDescriptor);
-
-            // register prerequisite form
-            PrerequisiteDescriptor prerequisiteDescriptor = new PrerequisiteDescriptor(getDesktopContext().getProperty("prerequisite.nav.desc.id"),
-                    getDesktopContext().getProperty("prerequisite.nav.desc.title"),
-                    getDesktopContext().getProperty("prerequisite.nav.desc.detail"));
-            navigator.registerNavigationPanel(prerequisiteDescriptor);
-
-            // register project metadata form
-            ProjectMetaDataDescriptor metaDataPanel = new ProjectMetaDataDescriptor(getDesktopContext().getProperty("project.metadata.nav.desc.id"),
-                    "Step 2: " + getDesktopContext().getProperty("project.metadata.nav.desc.title") + " (2/10)",
-                    getDesktopContext().getProperty("project.metadata.nav.desc.detail"));
-            navigator.registerNavigationPanel(metaDataPanel);
+//             register submission type form
+//            SubmissionTypeDescriptor submissionTypeDescriptor = new SubmissionTypeDescriptor(getDesktopContext().getProperty("submission.type.nav.desc.id"),
+//                    "Step 1: " + getDesktopContext().getProperty("submission.type.nav.desc.title")+ " (1/10)",
+//                    getDesktopContext().getProperty("submission.type.nav.desc.detail") );
+//            navigator.registerNavigationPanel(submissionTypeDescriptor);
+//
+//            // register prerequisite form
+//            PrerequisiteDescriptor prerequisiteDescriptor = new PrerequisiteDescriptor(getDesktopContext().getProperty("prerequisite.nav.desc.id"),
+//                    getDesktopContext().getProperty("prerequisite.nav.desc.title"),
+//                    getDesktopContext().getProperty("prerequisite.nav.desc.detail"));
+//            navigator.registerNavigationPanel(prerequisiteDescriptor);
+//
+//            // register project metadata form
+//            ProjectMetaDataDescriptor metaDataPanel = new ProjectMetaDataDescriptor(getDesktopContext().getProperty("project.metadata.nav.desc.id"),
+//                    "Step 2: " + getDesktopContext().getProperty("project.metadata.nav.desc.title") + " (2/10)",
+//                    getDesktopContext().getProperty("project.metadata.nav.desc.detail"));
+//            navigator.registerNavigationPanel(metaDataPanel);
 
             // register file selection form
-            FileSelectionDescriptor fileSelectionPanel = new FileSelectionDescriptor(getDesktopContext().getProperty("file.selection.nav.desc.id"),
+             FileResubmissionDescriptor fileSelectionPanel = new FileResubmissionDescriptor(getDesktopContext().getProperty("file.selection.nav.desc.id"),
+//            FileSelectionDescriptor fileSelectionPanel = new FileSelectionDescriptor(getDesktopContext().getProperty("file.selection.nav.desc.id"),
                     "Step 3: " + getDesktopContext().getProperty("file.selection.nav.desc.title") + " (3/10)",
                     getDesktopContext().getProperty("file.selection.nav.desc.detail"));
             navigator.registerNavigationPanel(fileSelectionPanel);
@@ -305,7 +295,7 @@ public class App extends Desktop {
                     getDesktopContext().getProperty("checksum.nav.desc.detail"));
             navigator.registerNavigationPanel(calculateChecksumDescriptor);
 
-            // register file mapping form
+//             register file mapping form
 //            FileMappingDescriptor fileMappingPanel = new FileMappingDescriptor(getDesktopContext().getProperty("file.mapping.nav.desc.id"),
 //                    "Step 5: " + getDesktopContext().getProperty("file.mapping.nav.desc.title") + " (5/11)",
 //                    getDesktopContext().getProperty("file.mapping.nav.desc.detail"));
