@@ -2,7 +2,7 @@ package uk.ac.ebi.pride.gui.data;
 
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.data.model.DataFile;
-import uk.ac.ebi.pride.data.model.ResubmissionFileChangeState;
+import uk.ac.ebi.pride.data.model.Resubmission;
 import uk.ac.ebi.pride.data.model.Submission;
 
 import java.io.Serializable;
@@ -14,38 +14,37 @@ import java.util.*;
  * @author Rui Wang
  * @version $Id$
  */
-public class SubmissionRecord implements Serializable {
-    private Submission submission;
+public class ResubmissionRecord implements Serializable {
+    private Resubmission resubmission;
     private String userName;
     private String password;
     private UploadDetail uploadDetail;
     private boolean summaryFileUploaded = false;
     private Set<DataFile> uploadedFiles;
-//    private Map<DataFile, ResubmissionFileChangeState> resubmission;
 
-    public SubmissionRecord() {
-        this.submission = new Submission();
+
+    public ResubmissionRecord() {
+        this.resubmission = new Resubmission();
         this.uploadDetail = null;
         this.uploadedFiles = Collections.synchronizedSet(new HashSet<>());
-//        this.resubmission = Collections.synchronizedMap(new HashMap<>());
     }
 
-    public SubmissionRecord(Submission submission) {
-        this(submission, null);
+    public ResubmissionRecord(Resubmission resubmission) {
+        this(resubmission, null);
     }
 
-    public SubmissionRecord(Submission submission, UploadDetail uploadDetail) {
-        this.submission = submission;
+    public ResubmissionRecord(Resubmission resubmission, UploadDetail uploadDetail) {
+        this.resubmission = resubmission;
         this.uploadDetail = uploadDetail;
         this.uploadedFiles = Collections.synchronizedSet(new HashSet<DataFile>());
     }
 
-    public Submission getSubmission() {
-        return submission;
+    public Resubmission getResubmission() {
+        return resubmission;
     }
 
-    public void setSubmission(Submission submission) {
-        this.submission = submission;
+    public void setResubmission(Resubmission resubmission) {
+        this.resubmission = resubmission;
     }
 
     public String getUserName() {
@@ -82,22 +81,6 @@ public class SubmissionRecord implements Serializable {
             this.uploadedFiles = uploadedFiles;
         }
     }
-
-//    public Map<DataFile, ResubmissionFileChangeState> getResubmission() {
-//        return resubmission;
-//    }
-//
-//    public void setResubmission(Map<DataFile, ResubmissionFileChangeState> resubmission) {
-//        this.resubmission = resubmission;
-//    }
-//
-//    public void addResubmissionFile(DataFile dataFile, ResubmissionFileChangeState state){
-//        resubmission.put(dataFile, state);
-//    }
-//
-//    public void modifyResubmissionFile(DataFile dataFile, ResubmissionFileChangeState state){
-//        resubmission.put(dataFile, state);
-//    }
 
     public void addUploadedFiles(DataFile dataFile) {
         uploadedFiles.add(dataFile);
