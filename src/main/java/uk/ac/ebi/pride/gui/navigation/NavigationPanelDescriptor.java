@@ -97,6 +97,10 @@ public class NavigationPanelDescriptor extends PropertyChangeHelper {
         return title;
     }
 
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
     /**
      * Get the description of this panel
      *
