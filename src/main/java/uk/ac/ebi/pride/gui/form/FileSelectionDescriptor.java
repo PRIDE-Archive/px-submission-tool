@@ -35,6 +35,12 @@ public class FileSelectionDescriptor extends ContextAwareNavigationPanelDescript
     }
 
     @Override
+    public boolean toSkipPanel() {
+        final String resubmissionPxAccession = appContext.getSubmissionRecord().getSubmission().getProjectMetaData().getResubmissionPxAccession();
+        return resubmissionPxAccession != null && resubmissionPxAccession.length()>0;
+    }
+
+    @Override
     public void beforeHidingForNextPanel() {
         // validate the content in the table
         FileSelectionForm form = (FileSelectionForm) getNavigationPanel();

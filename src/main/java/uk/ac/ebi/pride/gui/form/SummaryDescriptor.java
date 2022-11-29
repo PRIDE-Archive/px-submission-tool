@@ -10,9 +10,11 @@ import uk.ac.ebi.pride.data.model.ResubmissionFileChangeState;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.navigation.Navigator;
+import uk.ac.ebi.pride.toolsuite.gui.prop.PropertyChangeHandler;
 
 import javax.help.HelpBroker;
 import javax.swing.*;
+import java.awt.*;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -41,6 +43,12 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
     public void getHelp() {
         HelpBroker hb = appContext.getMainHelpBroker();
         hb.showID("help.submission.summary", "javax.help.SecondaryWindow", "main");
+    }
+
+    @Override
+    public boolean toSkipPanel() {
+        final String resubmissionPxAccession = appContext.getSubmissionRecord().getSubmission().getProjectMetaData().getResubmissionPxAccession();
+        return resubmissionPxAccession != null && resubmissionPxAccession.length()>0;
     }
 
     @Override
@@ -144,7 +152,7 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
     }
 
     /**
-     * All all the resubmission files to the submission.px as a comment
+     * All the resubmission files to the submission.px as a comment
      * @param fileName Submission.px full path
      * @param appContext AppContext
      */

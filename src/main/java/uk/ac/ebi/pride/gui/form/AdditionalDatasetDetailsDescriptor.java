@@ -39,7 +39,7 @@ public class AdditionalDatasetDetailsDescriptor extends ContextAwareNavigationPa
 
     @Override
     public boolean toSkipPanel() {
-        final String resubmissionPxAccession = appContext.getSubmissionRecord().getSubmission().getProjectMetaData().getResubmissionPxAccession();
+        final String resubmissionPxAccession = appContext.getSubmissionRecord().getSubmission().getProjectMetaData().getResubmissionPxAccession();  
         return resubmissionPxAccession != null;
     }
 

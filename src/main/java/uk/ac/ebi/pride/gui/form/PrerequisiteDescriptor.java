@@ -28,6 +28,12 @@ public class PrerequisiteDescriptor extends ContextAwareNavigationPanelDescripto
     }
 
     @Override
+    public boolean toSkipPanel() {
+        final String resubmissionPxAccession = appContext.getSubmissionRecord().getSubmission().getProjectMetaData().getResubmissionPxAccession();
+        return resubmissionPxAccession != null;
+    }
+
+    @Override
     public void beforeDisplayingPanel() {
         Submission submission = appContext.getSubmissionRecord().getSubmission();
         SubmissionType submissionType = submission.getProjectMetaData().getSubmissionType();
