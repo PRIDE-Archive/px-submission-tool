@@ -211,6 +211,12 @@ file.selection.nav.desc.detail = Add the files you want to submit
 file.selection.validation.dialog.title = File validation
 file.selection.validation.dialog.message = Checking your files, please wait...
 
+resubmission.file.selection.nav.desc.id = ResubmissionFileSelection
+resubmission.file.selection.nav.desc.title = Resubmission Add Files
+resubmission.file.selection.nav.desc.detail = Add the files you want to resubmit
+resubmission.file.selection.validation.dialog.title = Resubmission File validation
+resubmission.file.selection.validation.dialog.message = Checking your files, please wait...
+
 additional.metadata.nav.desc.id = AdditionalMetaData
 additional.metadata.nav.desc.title = Additional Details
 additional.metadata.nav.desc.detail = Please give additional details about your submission
@@ -230,6 +236,10 @@ additional.project.metadata.nav.desc.detail = Please provide additional details 
 summary.nav.desc.id = Summary
 summary.nav.desc.title = Submission Summary
 summary.nav.desc.detail = Please double-check before starting your submission
+
+resubmission.summary.nav.desc.id = ResubmissionSummary
+resubmission.summary.nav.desc.title = Resubmission Summary
+resubmission.summary.nav.desc.detail = Please double-check before starting your resubmission
 
 checksum.nav.desc.id = Checksum
 checksum.nav.desc.title = Checksuming Files
