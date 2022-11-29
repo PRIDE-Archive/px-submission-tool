@@ -14,8 +14,6 @@ import uk.ac.ebi.pride.data.model.ResubmissionFileChangeState;
 import uk.ac.ebi.pride.gui.form.action.AddFileSelectionAction;
 import uk.ac.ebi.pride.gui.form.table.model.*;
 import uk.ac.ebi.pride.gui.form.table.TableFactory;
-//import uk.ac.ebi.pride.gui.form.table.model.TargetFileNewResubmissionTableModel;
-import uk.ac.ebi.pride.gui.util.ValidationState;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskEvent;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskListener;
@@ -27,9 +25,6 @@ import java.util.List;
 
 /**
  * This form is responsible for adding resubmission files
- *
- * @author Rui Wang
- * @version $Id$
  */
 public class FileResubmissionForm extends Form implements TaskListener<ProjectFileList, Void> {
     private static final Logger logger = LoggerFactory.getLogger(FileResubmissionForm.class);
@@ -204,12 +199,10 @@ public class FileResubmissionForm extends Form implements TaskListener<ProjectFi
             super(App.getInstance().getDesktopContext().getProperty("resubmission.reset.button.title"),
                     GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("add.file.button.small.icon")));
             this.putValue(SHORT_DESCRIPTION, App.getInstance().getDesktopContext().getProperty("add.file.button.tooltip"));
-
         }
 
         @Override
         public void actionPerformed(ActionEvent e) {
-
             AppContext appContext= (AppContext) App.getInstance().getDesktopContext();
             List<DataFile> previouslySubmittedFiles = appContext.getResubmissionRecord().getResubmission().getDataFiles();
             appContext.getResubmissionRecord().getResubmission().getResubmission().clear();
