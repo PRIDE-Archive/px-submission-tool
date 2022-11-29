@@ -33,19 +33,22 @@ public class GetPrideProjectFilesTask extends TaskAdapter<ProjectFileList , Stri
     public final Credentials userCredentials;
     public PrideRepoRestClient prideRepoRestClient;
 
+    private final String accession;
+
     /**
      * Constructor
      *
      * @param userName pride user name
      * @param password pride password
      */
-    public GetPrideProjectFilesTask(String userName, char[] password) {
+    public GetPrideProjectFilesTask(String userName, char[] password , String accession) {
         DesktopContext context = App.getInstance().getDesktopContext();
         String submissionWSBaseUrl = context.getProperty("px.submission.ws.base.url");
 
         userCredentials = new Credentials(userName, new String(password));
         this.objectMapper = Utils.getJacksonObjectMapper();
         prideRepoRestClient = new PrideRepoRestClient(submissionWSBaseUrl);
+        this.accession = accession;
     }
 
     /**
@@ -64,13 +67,13 @@ public class GetPrideProjectFilesTask extends TaskAdapter<ProjectFileList , Stri
     protected ProjectFileList doInBackground() throws Exception {
         ProjectFileList projectFileList = new ProjectFileList();
         DesktopContext context = App.getInstance().getDesktopContext();
-        String prideProjectFilesUrl = context.getProperty("px.project.files.url");
+        final String prideProjectFilesUrl = context.getProperty("px.project.files.url");
 
         try {
 
             // set uri parameters
             Map<String, String> uriParams = new HashMap<>();
-            uriParams.put("accession", "PXD035185");
+            uriParams.put("accession", this.accession);
 
            String response = prideRepoRestClient.sendGetRequestWithRetry(prideProjectFilesUrl, uriParams, null, userCredentials);
             ProjectFile[] projectFiles = objectMapper.readValue(response, ProjectFile[].class);
@@ -88,8 +91,6 @@ public class GetPrideProjectFilesTask extends TaskAdapter<ProjectFileList , Stri
         }
         return null;
     }
-
-
 
     HttpHeaders createHeaders(String username, String password){
         return new HttpHeaders() {{

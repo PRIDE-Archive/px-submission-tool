@@ -55,6 +55,11 @@ public class FileResubmissionDescriptor extends ContextAwareNavigationPanelDescr
         hb.showID("help.file.mapping", "javax.help.SecondaryWindow", "main");
     }
 
+    @Override
+    public boolean toSkipPanel() {
+        final String resubmissionPxAccession = appContext.getSubmissionRecord().getSubmission().getProjectMetaData().getResubmissionPxAccession();
+        return resubmissionPxAccession == null;
+    }
 
     @Override
     public void beforeHidingForNextPanel() {
@@ -103,12 +108,12 @@ public class FileResubmissionDescriptor extends ContextAwareNavigationPanelDescr
         String username = submissionRecord.getUserName().trim();
         String password = submissionRecord.getPassword().trim();
         // TODO Temporary assigned to test
-        submissionRecord.getSubmission().getProjectMetaData().setResubmissionPxAccession("PDX0031231");
+//        submissionRecord.getSubmission().getProjectMetaData().setResubmissionPxAccession("PDX0031231");
         appContext.setSubmissionsType(SubmissionType.COMPLETE);
         appContext.setResubmission(true);
 
         // launch a new task to retrieve Existing project files from API call
-        Task task = new GetPrideProjectFilesTask(username, password.toCharArray());
+        Task task = new GetPrideProjectFilesTask(username, password.toCharArray(), submissionRecord.getSubmission().getProjectMetaData().getResubmissionPxAccession());
         task.addTaskListener(projectFilesTaskListener);
 
         // set gui blocker
