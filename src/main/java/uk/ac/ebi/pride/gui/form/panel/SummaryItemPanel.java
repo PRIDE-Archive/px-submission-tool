@@ -18,6 +18,7 @@ import uk.ac.ebi.pride.gui.form.dialog.ValidationProgressDialog;
 import uk.ac.ebi.pride.gui.util.BalloonTipUtil;
 import uk.ac.ebi.pride.gui.util.ValidationReportHTMLFormatUtil;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
+import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
 import uk.ac.ebi.pride.toolsuite.pgconverter.MainApp;
 import uk.ac.ebi.pride.toolsuite.pgconverter.Validator;
 import uk.ac.ebi.pride.toolsuite.pgconverter.utils.Report;
@@ -64,9 +65,9 @@ public class SummaryItemPanel extends ContextAwarePanel
         // get submission details
         submission = appContext.getSubmissionRecord().getSubmission();
         submissionType = submission.getProjectMetaData().getSubmissionType();
-        checksumFile = new File("checksum.txt");
+        checksumFile = new File(appContext.getProperty("checksum.filename"));
         checksumFile.delete();
-        addChecksumFile(submission);
+        addChecksumFile();
         appContext.addPropertyChangeListener(this);
         populateSummaryItemPanel();
     }
@@ -429,15 +430,18 @@ public class SummaryItemPanel extends ContextAwarePanel
         return 0;
     }
 
-    private void addChecksumFile(Submission submission) {
+    private void addChecksumFile() {
         DataFile checksumDataFile = new DataFile();
+        DesktopContext context = App.getInstance().getDesktopContext();
         if (!checksumDataFile.isFile()) {
             try {
                 checksumFile.createNewFile();
                 Files.append("#Checksum File\n",checksumFile, Charset.defaultCharset());
                 checksumDataFile.setFile(checksumFile);
                 checksumDataFile.setFileType(ProjectFileType.OTHER);
-                ((AppContext) App.getInstance().getDesktopContext()).addDataFile(checksumDataFile);
+                if (((AppContext)context).getSubmissionRecord().getSubmission().getDataFiles().stream().noneMatch(dataFile -> dataFile.getFileName().equals(context.getProperty("checksum.filename")))) {
+                    ((AppContext) context).addDataFile(checksumDataFile);
+                }
             } catch (Exception ex) {
                 JOptionPane.showConfirmDialog(app.getMainFrame(),
                         appContext.getProperty("checksum.file.error.message"),
