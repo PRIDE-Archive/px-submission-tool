@@ -101,6 +101,11 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
     public void beforeDisplayingPanel() {
         logger.debug("Before displaying the submission panel");
 
+        final String resubmissionPxAccession = appContext.getSubmissionRecord().getSubmission().getProjectMetaData().getResubmissionPxAccession();
+        if(resubmissionPxAccession != null){
+            final String newTitle = "Step 5: " + appContext.getProperty("submission.nav.desc.title") + " (5/5)";
+            super.setTitle(newTitle);
+        }
         // re-enable cancel button
         SubmissionForm form = (SubmissionForm) SubmissionDescriptor.this.getNavigationPanel();
         form.enableCancelButton(true);
