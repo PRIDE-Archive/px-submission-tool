@@ -22,12 +22,5 @@ public class ResubmissionSummaryDescriptor extends SummaryDescriptor {
         final String resubmissionPxAccession = appContext.getSubmissionRecord().getSubmission().getProjectMetaData().getResubmissionPxAccession();
         return resubmissionPxAccession == null;
     }
-
-    @Override
-    public void beforeDisplayingPanel() {
-        final String newTitle = "Step 4: " + appContext.getProperty("resubmission.summary.nav.desc.title") + " (4/5)";
-        super.setTitle(newTitle);
-        super.beforeDisplayingPanel();
-    }
 }
 

@@ -27,8 +27,6 @@ import javax.swing.table.TableModel;
 public class TableFactory {
     private static final int CHECKBOX_COLUMN_WIDTH = 20;
     private static final int REMOVAL_COLUMN_WIDTH = 60;
-    private static final int MAPPING_COLUMN_WIDTH = 110;
-    private static final int MAPPING_COUNT_COLUMN_WIDTH = 120;
     private static final int ANNOTATED_STATUS_COLUMN_WIDTH = 120;
     private static final int ANNOTATED_COLUMN_WIDTH = 120;
     private static final int FILE_TYPE_COLUMN_WIDTH = 150;
@@ -39,7 +37,6 @@ public class TableFactory {
     private static final int CV_ONTOLOGY_COLUMN_WIDTH = 100;
     private static final int CV_ACCESSION_COLUMN_WIDTH = 100;
     private static final int METADATA_TYPE_COLUMN_WIDTH = 50;
-
 
     private TableFactory() {
     }
@@ -226,7 +223,7 @@ public class TableFactory {
         // create combo box to select actions
         TableColumnExt actionColumn = (TableColumnExt) table.getColumn(ExistingFilesResubmissionTableModel.TableHeader.ACTION.getHeader());
         actionColumn.setCellRenderer(new ComboBoxCellRenderer(ResubmissionFileChangeState.values()));
-        actionColumn.setCellEditor(new ComboBoxCellEditor(new ResubmissionFileChangeState[]{ResubmissionFileChangeState.NONE, ResubmissionFileChangeState.MODIFY, ResubmissionFileChangeState.DELETE}));
+        actionColumn.setCellEditor(new ComboBoxCellEditor(new ResubmissionFileChangeState[]{ResubmissionFileChangeState.NONE, ResubmissionFileChangeState.MODIFIED, ResubmissionFileChangeState.DELETED}));
         actionColumn.setMinWidth(FILE_TYPE_COLUMN_WIDTH);
         actionColumn.setMaxWidth(FILE_TYPE_COLUMN_WIDTH);
 
@@ -281,7 +278,7 @@ public class TableFactory {
         // create combo box to select actions
         TableColumnExt actionColumn = (TableColumnExt) table.getColumn(ExistingFilesResubmissionTableModel.TableHeader.ACTION.getHeader());
         actionColumn.setCellRenderer(new ComboBoxCellRenderer(ResubmissionFileChangeState.values()));
-        actionColumn.setCellEditor(new ComboBoxCellEditor(new ResubmissionFileChangeState[]{ResubmissionFileChangeState.NONE,ResubmissionFileChangeState.ADD, ResubmissionFileChangeState.MODIFY, ResubmissionFileChangeState.DELETE}));
+        actionColumn.setCellEditor(new ComboBoxCellEditor(new ResubmissionFileChangeState[]{ResubmissionFileChangeState.NONE,ResubmissionFileChangeState.ADDED, ResubmissionFileChangeState.MODIFIED, ResubmissionFileChangeState.DELETED}));
         actionColumn.setMinWidth(FILE_TYPE_COLUMN_WIDTH);
         actionColumn.setMaxWidth(FILE_TYPE_COLUMN_WIDTH);
         actionColumn.setEditable(false);
@@ -400,29 +397,29 @@ public class TableFactory {
         ontologyAccessionColumn.setVisible(false);
 
         // removal column
-//        String removalColHeader = TargetFileMappingTableModel.TableHeader.REMOVAL.getHeader();
-//        final TableColumnExt removalColumn = (TableColumnExt) table.getColumn(removalColHeader);
-//        removalColumn.setCellRenderer(new RemovalCellRenderer());
-//        removalColumn.setVisible(false);
-//        removalColumn.setMaxWidth(REMOVAL_COLUMN_WIDTH);
-//        removalColumn.setMinWidth(REMOVAL_COLUMN_WIDTH);
+        String removalColHeader = TargetFileMappingTableModel.TableHeader.REMOVAL.getHeader();
+        final TableColumnExt removalColumn = (TableColumnExt) table.getColumn(removalColHeader);
+        removalColumn.setCellRenderer(new RemovalCellRenderer());
+        removalColumn.setVisible(false);
+        removalColumn.setMaxWidth(REMOVAL_COLUMN_WIDTH);
+        removalColumn.setMinWidth(REMOVAL_COLUMN_WIDTH);
 
         // add a listener to show/hide removal column
-//        tableModel.addTableModelListener(new TableModelListener() {
-//            @Override
-//            public void tableChanged(TableModelEvent e) {
-//                int rowCnt = ((TableModel) e.getSource()).getRowCount();
-//                if (rowCnt > 0) {
-//                    removalColumn.setVisible(true);
-//                } else {
-//                    removalColumn.setVisible(false);
-//                }
-//            }
-//        });
-//
-//        // add listener for removal
-//        table.addMouseMotionListener(new TableCellMouseMotionListener(table, removalColHeader));
-//        table.addMouseListener(new RemoveSampleMetaDataListener(table, removalColHeader));
+        tableModel.addTableModelListener(new TableModelListener() {
+            @Override
+            public void tableChanged(TableModelEvent e) {
+                int rowCnt = ((TableModel) e.getSource()).getRowCount();
+                if (rowCnt > 0) {
+                    removalColumn.setVisible(true);
+                } else {
+                    removalColumn.setVisible(false);
+                }
+            }
+        });
+
+        // add listener for removal
+        table.addMouseMotionListener(new TableCellMouseMotionListener(table, removalColHeader));
+        table.addMouseListener(new RemoveSampleMetaDataListener(table, removalColHeader));
 
 
         return table;
