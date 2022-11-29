@@ -25,6 +25,10 @@ px.submission.guideline.web.url = http://www.proteomexchange.org/submission/inde
 # url for pride new account
 pride.new.account.url = https://www.ebi.ac.uk/pride/register
 
+# Checksum
+checksum.filename = checksum.txt
+px.submission.complete.url = http://www.proteomexchange.org/archive-submission-ws/submission/submit
+
 # urls for px submission tool
 px.submission.tool.update.url = http://ftp.pride.ebi.ac.uk/pub/databases/pride/resources/tools/submission-tool/
 px.submission.tool.url = http://www.proteomexchange.org/submission/index.html

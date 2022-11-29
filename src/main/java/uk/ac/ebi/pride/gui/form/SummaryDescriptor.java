@@ -31,8 +31,8 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
 
     private static final Logger logger = LoggerFactory.getLogger(SummaryDescriptor.class);
 
-    public SummaryDescriptor(String id, String title, String desc) {
-        super(id, title, desc, new SummaryForm());
+    public SummaryDescriptor(String id, String title, String desc, Component form) {
+        super(id, title, desc, form);
     }
 
     /**
