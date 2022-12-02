@@ -8,12 +8,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
-import uk.ac.ebi.pride.archive.submission.model.File.ProjectFileList;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.ResubmissionFileChangeState;
 import uk.ac.ebi.pride.gui.form.action.AddFileSelectionAction;
-import uk.ac.ebi.pride.gui.form.table.model.*;
+import uk.ac.ebi.pride.gui.form.dialog.FileSelectionValidationErrorDialog;
 import uk.ac.ebi.pride.gui.form.table.TableFactory;
+import uk.ac.ebi.pride.gui.form.table.model.ExistingFilesResubmissionTableModel;
+import uk.ac.ebi.pride.gui.form.table.model.ResubmissionFileSelectionTableModel;
+import uk.ac.ebi.pride.gui.util.BalloonTipUtil;
+import uk.ac.ebi.pride.gui.util.DataFileValidationMessage;
+import uk.ac.ebi.pride.gui.util.ValidationState;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskEvent;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskListener;
@@ -26,7 +30,7 @@ import java.util.List;
 /**
  * This form is responsible for adding resubmission files
  */
-public class FileResubmissionForm extends Form implements TaskListener<ProjectFileList, Void> {
+public class FileResubmissionForm extends Form implements TaskListener<DataFileValidationMessage, Void> {
     private static final Logger logger = LoggerFactory.getLogger(FileResubmissionForm.class);
     private static final float DEFAULT_TITLE_FONT_SIZE = 15f;
     private static final float DEFAULT_BUTTON_FONT_SIZE = 14f;
@@ -138,6 +142,31 @@ public class FileResubmissionForm extends Form implements TaskListener<ProjectFi
         this.add(existingFilePanel);
     }
 
+    @Override
+    public ValidationState doValidation() {
+        // external validation, see ResubmissionFileScanAndValidationTask
+        return null;
+    }
+
+    /**
+     * Show the warning balloon tip
+     *
+     * @param errMsg error message
+     */
+    private void showWarnings(String errMsg) {
+        hideWarnings();
+
+        // Create the balloon tip
+        JLabel newWarningContents = new JLabel(errMsg);
+        newWarningContents.setIcon(GUIUtilities.loadIcon(appContext.getProperty("warning.message.icon")));
+
+        warningBalloonTip = BalloonTipUtil.createErrorBalloonTip(newResubmissionFileTable, newWarningContents);
+        warningBalloonTip.setVisible(true);
+
+        this.revalidate();
+        this.repaint();
+    }
+
     /**
      * Get the warning balloon tip
      */
@@ -147,15 +176,27 @@ public class FileResubmissionForm extends Form implements TaskListener<ProjectFi
         }
     }
 
-    private void showWarnings() {
-        warningBalloonTip.setVisible(true);
-        this.revalidate();
-        this.repaint();
+    @Override
+    public void started(TaskEvent<Void> taskEvent) {
+        // clear previous warning
+        if (warningBalloonTip != null) {
+            warningBalloonTip.closeBalloon();
+        }
     }
 
     @Override
-    public void started(TaskEvent<Void> taskEvent) {
+    public void succeed(TaskEvent<DataFileValidationMessage> taskEvent) {
+        DataFileValidationMessage message = taskEvent.getValue();
 
+        if (message.getState().equals(ValidationState.ERROR)) {
+            if (message.getDataFileValidationResults().isEmpty()) {
+                showWarnings(message.getMessage());
+            } else if (!message.getDataFileValidationResults().isEmpty()) {
+                FileSelectionValidationErrorDialog errorDialog = new FileSelectionValidationErrorDialog(((App) App.getInstance()).getMainFrame(), message);
+                errorDialog.setLocationRelativeTo(app.getMainFrame());
+                errorDialog.setVisible(true);
+            }
+        }
     }
 
     @Override
@@ -165,16 +206,13 @@ public class FileResubmissionForm extends Form implements TaskListener<ProjectFi
 
     @Override
     public void finished(TaskEvent<Void> taskEvent) {
-
+        // update table as the file type might change as the result of the validation
+        newResubmissionFileTable.revalidate();
+        newResubmissionFileTable.repaint();
     }
 
     @Override
     public void failed(TaskEvent<Throwable> taskEvent) {
-
-    }
-
-    @Override
-    public void succeed(TaskEvent<ProjectFileList> taskEvent) {
 
     }
 
@@ -223,5 +261,4 @@ public class FileResubmissionForm extends Form implements TaskListener<ProjectFi
             newResubmissionFileTable.repaint();
         }
     }
-
 }

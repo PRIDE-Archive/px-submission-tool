@@ -339,6 +339,12 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
         return new DataFileValidationMessage(ValidationState.SUCCESS);
     }
 
+    /**
+     * If any existing file(s) denoted as "Modify", the modified new file should be uploaded
+     * to keep that promise. This method catches any missing files that are not uploaded, but
+     * labelled as "Modify" file(s)
+     * @return List of missing Data Files
+     */
     private List<DataFile> findMissingModifiedFiles(){
         List<DataFile> missingModifiedFile = new ArrayList<>();
         for(Map.Entry<DataFile, ResubmissionFileChangeState> resubmissionFile: resubmission.getResubmission().entrySet()){

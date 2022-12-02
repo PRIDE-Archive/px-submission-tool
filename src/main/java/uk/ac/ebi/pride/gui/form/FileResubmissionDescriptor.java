@@ -13,10 +13,8 @@ import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.form.dialog.TaskDialog;
-import uk.ac.ebi.pride.gui.task.FileScanAndValidationTask;
 import uk.ac.ebi.pride.gui.task.GetPrideProjectFilesTask;
 import uk.ac.ebi.pride.gui.task.ResubmissionFileScanAndValidationTask;
-import uk.ac.ebi.pride.gui.task.ftp.UploadMessage;
 import uk.ac.ebi.pride.gui.util.DataFileValidationMessage;
 import uk.ac.ebi.pride.gui.util.ValidationState;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
@@ -24,17 +22,13 @@ import uk.ac.ebi.pride.toolsuite.gui.blocker.GUIBlocker;
 import uk.ac.ebi.pride.toolsuite.gui.task.Task;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskEvent;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskListener;
-import uk.ac.ebi.pride.toolsuite.gui.task.TaskListenerAdapter;
 
 import javax.help.HelpBroker;
 import java.io.File;
 import java.util.List;
 
 /**
- * Navigation descriptor for file mapping form
- *
- * @author Rui Wang
- * @version $Id$
+ * Navigation descriptor for adding/modifying or deleting files for a resubmission
  */
 public class FileResubmissionDescriptor extends ContextAwareNavigationPanelDescriptor implements TaskListener<DataFileValidationMessage, Void> {
 
@@ -82,15 +76,6 @@ public class FileResubmissionDescriptor extends ContextAwareNavigationPanelDescr
         fileSelectionValidationTask.setGUIBlocker(new DefaultGUIBlocker(fileSelectionValidationTask, GUIBlocker.Scope.NONE, null));
 
         appContext.addTask(fileSelectionValidationTask);
-        ValidationState state = form.doValidation();
-        if (!ValidationState.ERROR.equals(state)) {
-            // notify
-            form.hideWarnings();
-            firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, false, true);
-        } else {
-            // notify validation error
-            firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, true, false);
-        }
     }
 
 
@@ -107,8 +92,6 @@ public class FileResubmissionDescriptor extends ContextAwareNavigationPanelDescr
         SubmissionRecord submissionRecord = appContext.getSubmissionRecord();
         String username = submissionRecord.getUserName().trim();
         String password = submissionRecord.getPassword().trim();
-        // TODO Temporary assigned to test
-//        submissionRecord.getSubmission().getProjectMetaData().setResubmissionPxAccession("PDX0031231");
         appContext.setSubmissionsType(SubmissionType.COMPLETE);
         appContext.setResubmission(true);
 
@@ -142,7 +125,7 @@ public class FileResubmissionDescriptor extends ContextAwareNavigationPanelDescr
 
     @Override
     public void failed(TaskEvent<Throwable> taskEvent) {
-
+        firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, true, false);
     }
 
     @Override
@@ -159,12 +142,12 @@ public class FileResubmissionDescriptor extends ContextAwareNavigationPanelDescr
 
     @Override
     public void cancelled(TaskEvent<Void> taskEvent) {
-
+        firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, true, false);
     }
 
     @Override
     public void interrupted(TaskEvent<InterruptedException> taskEvent) {
-
+        firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, true, false);
     }
 
     @Override
