@@ -100,27 +100,30 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
         SubmissionType submissionType = submission.getProjectMetaData().getSubmissionType();
 
         List<DataFile> prideXmlDataFiles = submission.getDataFilesByFormat(MassSpecFileFormat.PRIDE);
-        List<DataFile> prideXmlDataFilesResub = resubmission.getDataFilesByFormat(MassSpecFileFormat.PRIDE);
+        List<DataFile> prideXmlDataFilesResub = resubmission.getFilteredDataFilesByFormat(MassSpecFileFormat.PRIDE, ResubmissionFileChangeState.DELETE);
         boolean noPrideXml = prideXmlDataFiles.isEmpty() && prideXmlDataFilesResub.isEmpty();
 
         List<DataFile> mzIdentMLDataFiles = submission.getDataFilesByFormat(MassSpecFileFormat.MZIDENTML);
-        List<DataFile> mzIdentMLDataFilesResub = resubmission.getDataFilesByFormat(MassSpecFileFormat.MZIDENTML);
+        List<DataFile> mzIdentMLDataFilesResub = resubmission.getFilteredDataFilesByFormat(MassSpecFileFormat.MZIDENTML, ResubmissionFileChangeState.DELETE);
         boolean noMzIdentML = mzIdentMLDataFiles.isEmpty() && mzIdentMLDataFilesResub.isEmpty();
 
         // Get provided mzTab files
         List<DataFile> mzTabDataFiles = submission.getDataFilesByFormat(MassSpecFileFormat.MZTAB);
-        List<DataFile> mzTabDataFilesResub = resubmission.getDataFilesByFormat(MassSpecFileFormat.MZTAB);
+        List<DataFile> mzTabDataFilesResub = resubmission.getFilteredDataFilesByFormat(MassSpecFileFormat.MZTAB, ResubmissionFileChangeState.DELETE);
         boolean mzTabFilesHaveBeenProvided = !(mzTabDataFiles.isEmpty() && mzTabDataFilesResub.isEmpty());
 
-        boolean noRawFile = submission.getDataFileByType(ProjectFileType.RAW).isEmpty() && resubmission.getDataFileByType(ProjectFileType.RAW).isEmpty();
+        boolean noRawFile = submission.getDataFileByType(ProjectFileType.RAW).isEmpty()
+                && resubmission.getDataFileByType(ProjectFileType.RAW, ResubmissionFileChangeState.DELETE).isEmpty();
 
         List<DataFile> mzMlFiles = submission.getDataFilesByFormat(MassSpecFileFormat.INDEXED_MZML);
-        List<DataFile> mzMlFilesResub = resubmission.getDataFilesByFormat(MassSpecFileFormat.INDEXED_MZML);
+        List<DataFile> mzMlFilesResub = resubmission.getFilteredDataFilesByFormat(MassSpecFileFormat.INDEXED_MZML, ResubmissionFileChangeState.DELETE);
 
-        boolean noSearchFile = submission.getDataFileByType(ProjectFileType.SEARCH).isEmpty() && resubmission.getDataFileByType(ProjectFileType.SEARCH).isEmpty();
+        boolean noSearchFile = submission.getDataFileByType(ProjectFileType.SEARCH).isEmpty()
+                && resubmission.getDataFileByType(ProjectFileType.SEARCH, ResubmissionFileChangeState.DELETE).isEmpty();
 
         List<DataFile> resultDataFiles = submission.getDataFileByType(ProjectFileType.RESULT);
-        List<DataFile> resultDataFilesResub = resubmission.getDataFileByType(ProjectFileType.RESULT);
+        List<DataFile> resultDataFilesResub = resubmission.getDataFileByType(ProjectFileType.RESULT, ResubmissionFileChangeState.DELETE);
+
         boolean noResultFile = resultDataFiles.isEmpty() && resultDataFilesResub.isEmpty();
 
         if (submissionType.equals(SubmissionType.COMPLETE)) {
@@ -131,16 +134,16 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
             }
             setProgress(30);
 
-//            // cannot have unsupported result files
-//            if (quickValidationResult.hasUnsupportedResultFile() && !quickValidationResult.isUrlBasedResultFilePresent()) {
-//                // construct error message
-//                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getUnsupportedResultFileWarning());
-//            }
-//            setProgress(40);
-//
-//            if (noPrideXml && noMzIdentML && !mzTabFilesHaveBeenProvided && !quickValidationResult.isUrlBasedResultFilePresent()) {
-//                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidResultFileWarning());
-//            }
+            // cannot have unsupported result files
+            if (quickValidationResult.hasUnsupportedResultFile() && !quickValidationResult.isUrlBasedResultFilePresent()) {
+                // construct error message
+                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getUnsupportedResultFileWarning());
+            }
+            setProgress(40);
+
+            if (noPrideXml && noMzIdentML && !mzTabFilesHaveBeenProvided && !quickValidationResult.isUrlBasedResultFilePresent()) {
+                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidResultFileWarning());
+            }
 
             // cannot have both PRIDE xml and mzIdentML at the same time
             if (!noPrideXml && !noMzIdentML) {
@@ -304,6 +307,14 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
             }
         }
 
+        // check in resubmission
+        for(DataFile dataFile : resubmission.getDataFiles()){
+            if(dataFile.getFileType().equals(ProjectFileType.EXPERIMENTAL_DESIGN)){
+                isSdrfFound = true;
+               // Do not validate previously submitted SDRF
+            }
+        }
+
         setProgress(100);
 
         if (!isSdrfFound) {
@@ -348,7 +359,7 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
     private List<DataFile> findMissingModifiedFiles(){
         List<DataFile> missingModifiedFile = new ArrayList<>();
         for(Map.Entry<DataFile, ResubmissionFileChangeState> resubmissionFile: resubmission.getResubmission().entrySet()){
-            if(resubmissionFile.getValue().equals(ResubmissionFileChangeState.MODIFIED)){
+            if(resubmissionFile.getValue().equals(ResubmissionFileChangeState.MODIFY)){
                 boolean isFound=false;
                 for(DataFile newlyUploadedFile : submission.getDataFiles()){
                     if(newlyUploadedFile.getFileName().equals(resubmissionFile.getKey().getFileName())){
