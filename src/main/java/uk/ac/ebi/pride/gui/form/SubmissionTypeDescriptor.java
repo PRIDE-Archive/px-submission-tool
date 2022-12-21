@@ -67,8 +67,14 @@ public class SubmissionTypeDescriptor extends ContextAwareNavigationPanelDescrip
         // detect previous submission record
         boolean loadPreviousSubmission = detectPreviousSubmission();
 
-        // detect submission type, show warning if it is not a full submission
-        if (loadPreviousSubmission || confirmSubmissionOption()) {
+        if(appContext.isResubmission() && submissionTypeForm.getResubmissionChangeTypeError().length()>1){
+            JOptionPane.showMessageDialog(app.getMainFrame(),
+                    submissionTypeForm.getResubmissionChangeTypeError(),
+                    appContext.getProperty("resubmission.submission.type.change.prohibit"),
+                    JOptionPane.WARNING_MESSAGE,
+                    GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("icon.warning.normal.small")));
+            firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, true, false);
+        }else if (loadPreviousSubmission || confirmSubmissionOption()) { // detect submission type, show warning if it is not a full submission
             firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, false, true);
         } else {
             firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, true, false);

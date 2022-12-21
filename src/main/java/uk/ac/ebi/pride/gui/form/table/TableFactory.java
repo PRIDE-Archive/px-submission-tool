@@ -223,7 +223,7 @@ public class TableFactory {
         // create combo box to select actions
         TableColumnExt actionColumn = (TableColumnExt) table.getColumn(ExistingFilesResubmissionTableModel.TableHeader.ACTION.getHeader());
         actionColumn.setCellRenderer(new ComboBoxCellRenderer(ResubmissionFileChangeState.values()));
-        actionColumn.setCellEditor(new ComboBoxCellEditor(new ResubmissionFileChangeState[]{ResubmissionFileChangeState.NONE, ResubmissionFileChangeState.MODIFIED, ResubmissionFileChangeState.DELETED}));
+        actionColumn.setCellEditor(new ComboBoxCellEditor(new ResubmissionFileChangeState[]{ResubmissionFileChangeState.NONE, ResubmissionFileChangeState.MODIFY, ResubmissionFileChangeState.DELETE}));
         actionColumn.setMinWidth(FILE_TYPE_COLUMN_WIDTH);
         actionColumn.setMaxWidth(FILE_TYPE_COLUMN_WIDTH);
 
@@ -278,7 +278,7 @@ public class TableFactory {
         // create combo box to select actions
         TableColumnExt actionColumn = (TableColumnExt) table.getColumn(ExistingFilesResubmissionTableModel.TableHeader.ACTION.getHeader());
         actionColumn.setCellRenderer(new ComboBoxCellRenderer(ResubmissionFileChangeState.values()));
-        actionColumn.setCellEditor(new ComboBoxCellEditor(new ResubmissionFileChangeState[]{ResubmissionFileChangeState.NONE,ResubmissionFileChangeState.ADDED, ResubmissionFileChangeState.MODIFIED, ResubmissionFileChangeState.DELETED}));
+        actionColumn.setCellEditor(new ComboBoxCellEditor(new ResubmissionFileChangeState[]{ResubmissionFileChangeState.NONE,ResubmissionFileChangeState.ADD, ResubmissionFileChangeState.MODIFY, ResubmissionFileChangeState.DELETE}));
         actionColumn.setMinWidth(FILE_TYPE_COLUMN_WIDTH);
         actionColumn.setMaxWidth(FILE_TYPE_COLUMN_WIDTH);
         actionColumn.setEditable(false);

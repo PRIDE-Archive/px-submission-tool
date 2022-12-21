@@ -23,6 +23,9 @@ import java.awt.event.ItemListener;
 /**
  * This form allows to select the submission type
  *
+ * NOTE: If user select a resubmission, it will prevent to change the submission after selecting resubmission.
+ * They need to disable the resubmission in order to make a normal submission
+ *
  * @author Rui Wang
  * @version $Id$
  */
@@ -35,6 +38,8 @@ public class SubmissionTypeForm extends Form {
 
     private static final String FULL_SUBMISSION_OPTION = "FULL_SUBMISSION";
     private static final String PARTIAL_SUBMISSION_OPTION = "PARTIAL_SUBMISSION";
+
+    private String resubmissionChangeTypeError = null;
 
     private ResubmissionDialog resubmissionDialog;
 
@@ -263,25 +268,28 @@ public class SubmissionTypeForm extends Form {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            if (e.getActionCommand().equals(FULL_SUBMISSION_OPTION)) {
-                // set submission option in application context
-                appContext.setSubmissionsType(SubmissionType.COMPLETE);
-                // change the colour of the option button
-//                fullSubmissionButton.setForeground(Color.BLACK);
-//                partialSubmissionButton.setForeground(Color.GRAY);
-//                fullSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("submission.type.full.submission.button.title.selected.large.icon")));
-//                partialSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("submission.type.partial.submission.button.title.large.icon")));
-//                minimumSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("submission.type.minimum.submission.button.title.large.icon")));
-                // change the required information
-            } else if (e.getActionCommand().equals(PARTIAL_SUBMISSION_OPTION)) {
-                // set submission option in application context
-                appContext.setSubmissionsType(SubmissionType.PARTIAL);
-
-                // change the colour of the option button
-//                fullSubmissionButton.setForeground(Color.GRAY);
-//                partialSubmissionButton.setForeground(Color.BLACK);
-//                fullSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("submission.type.full.submission.button.title.large.icon")));
-//                partialSubmissionButton.setIcon(GUIUtilities.loadIcon(appContext.getProperty("submission.type.partial.submission.button.title.selected.large.icon")));
+            if(!appContext.isResubmission()){
+                if (e.getActionCommand().equals(FULL_SUBMISSION_OPTION)) {
+                    appContext.setSubmissionsType(SubmissionType.COMPLETE);
+                } else if (e.getActionCommand().equals(PARTIAL_SUBMISSION_OPTION)) {
+                    appContext.setSubmissionsType(SubmissionType.PARTIAL);
+                }
+            }else{ // If it is a resubmission
+                if (e.getActionCommand().equals(FULL_SUBMISSION_OPTION)) {
+                    if(!appContext.getSubmissionType().equals(SubmissionType.COMPLETE)){
+                        resubmissionChangeTypeError = "You have selected a RESUBMISSION COMPLETE project and " +
+                                "you cannot change it a PARTIAL submission now unless you deselect RESUBMISSION";
+                    }else{
+                        resubmissionChangeTypeError = "";
+                    }
+                } else if (e.getActionCommand().equals(PARTIAL_SUBMISSION_OPTION)) {
+                    if(!appContext.getSubmissionType().equals(SubmissionType.PARTIAL)){
+                        resubmissionChangeTypeError = "You have selected a RESUBMISSION PARTIAL project and " +
+                                "you cannot change it to a COMPLETE submission now unless you deselect RESUBMISSION";
+                    }else{
+                        resubmissionChangeTypeError= "";
+                    }
+                }
             }
         }
     }
@@ -344,7 +352,7 @@ public class SubmissionTypeForm extends Form {
     }
 
     /**
-     * This listener updates "training mode" status
+     * This listener updates Controlled Access Data Mode selection
      */
     private class ControlledAccessDataModeOptionListener implements ItemListener {
 
@@ -360,4 +368,11 @@ public class SubmissionTypeForm extends Form {
         }
     }
 
+    /**
+     * This method returns the error occured while changeing the Submission type when user trying to a resubmission
+     * @return error message
+     */
+    public String getResubmissionChangeTypeError() {
+        return resubmissionChangeTypeError;
+    }
 }
