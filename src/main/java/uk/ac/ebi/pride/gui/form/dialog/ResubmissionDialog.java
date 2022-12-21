@@ -154,18 +154,19 @@ public class ResubmissionDialog extends ContextAwareDialog implements ActionList
                 ValidationState validateState = resubmissionPanel.doValidation();
                 if (validateState.equals(ValidationState.SUCCESS)) {
                     // update app context with the login details and resubmission accession
+                    appContext.setResubmission(true);
                     projectMetaData.setResubmissionPxAccession(resubmissionPanel.getPxAccession());
-                    projectMetaData.getSubmitterContact().setUserName(resubmissionPanel.getUserName());
-                    projectMetaData.getSubmitterContact().setEmail(resubmissionPanel.getUserName());
-                    projectMetaData.getSubmitterContact().setPassword(resubmissionPanel.getPassword());
+                    projectMetaData.setSubmissionType(resubmissionPanel.getSubmissionType(resubmissionPanel.getPxAccession()));
                     this.setVisible(false);
                 }
             } else {
                 // remove resubmission related details
+                appContext.setResubmission(false);
                 projectMetaData.setResubmissionPxAccession(null);
                 projectMetaData.getSubmitterContact().setUserName(null);
                 projectMetaData.getSubmitterContact().setEmail(null);
                 projectMetaData.getSubmitterContact().setPassword(null);
+                projectMetaData.setSubmissionType(null);
                 this.setVisible(false);
             }
 
@@ -183,14 +184,10 @@ public class ResubmissionDialog extends ContextAwareDialog implements ActionList
         if (submission.getProjectMetaData().getResubmissionPxAccession() == null) {
             resubmissionCheckBox.setSelected(false);
             resubmissionPanel.setEnabled(false);
-            resubmissionPanel.setUserName(null);
-            resubmissionPanel.setPassword(null);
             resubmissionPanel.setPxAccession(null);
         } else {
             resubmissionCheckBox.setSelected(true);
             resubmissionPanel.setEnabled(true);
-            resubmissionPanel.setUserName(submission.getProjectMetaData().getSubmitterContact().getEmail());
-            resubmissionPanel.setPassword(submission.getProjectMetaData().getSubmitterContact().getPassword());
             resubmissionPanel.setPxAccession(submission.getProjectMetaData().getResubmissionPxAccession());
         }
     }

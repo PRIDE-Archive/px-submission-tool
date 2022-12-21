@@ -8,7 +8,6 @@ import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.navigation.Navigator;
-import uk.ac.ebi.pride.gui.task.GetPrideProjectFilesTask;
 import uk.ac.ebi.pride.gui.task.GetPrideUserDetailTask;
 import uk.ac.ebi.pride.gui.util.ValidationState;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
@@ -126,6 +125,7 @@ public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor 
     Set<String> updateRequiredFields = new HashSet<>();
     ContactDetail details = event.getValue();
     if (details != null) {
+        appContext.setLoggedIn(true);
       if (StringUtils.isEmpty(details.getCountry())) {
         updateRequiredFields.add(COUNTRY);
       }

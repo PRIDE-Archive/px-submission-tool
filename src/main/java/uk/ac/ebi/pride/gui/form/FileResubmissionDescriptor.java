@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 import uk.ac.ebi.pride.archive.submission.model.File.ProjectFile;
 import uk.ac.ebi.pride.archive.submission.model.File.ProjectFileList;
 import uk.ac.ebi.pride.data.model.DataFile;
@@ -92,8 +91,6 @@ public class FileResubmissionDescriptor extends ContextAwareNavigationPanelDescr
         SubmissionRecord submissionRecord = appContext.getSubmissionRecord();
         String username = submissionRecord.getUserName().trim();
         String password = submissionRecord.getPassword().trim();
-        appContext.setSubmissionsType(SubmissionType.COMPLETE);
-        appContext.setResubmission(true);
 
         // launch a new task to retrieve Existing project files from API call
         Task task = new GetPrideProjectFilesTask(username, password.toCharArray(), submissionRecord.getSubmission().getProjectMetaData().getResubmissionPxAccession());

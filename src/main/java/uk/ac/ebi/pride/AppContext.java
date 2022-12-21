@@ -106,6 +106,8 @@ public class AppContext extends DesktopContext {
 
     private boolean isResubmission = false;
 
+    private boolean isLoggedIn = false;
+
     public AppContext() {
         this.submissionRecord = new SubmissionRecord();
         this.submissionRecord.setSubmission(new Submission());
@@ -159,6 +161,11 @@ public class AppContext extends DesktopContext {
 
     public synchronized void setResubmission(boolean resubmission) {
         isResubmission = resubmission;
+    }
+
+
+    public void setLoggedIn(boolean loggedIn) {
+        isLoggedIn = loggedIn;
     }
 
     /**
@@ -253,7 +260,7 @@ public class AppContext extends DesktopContext {
             firePropertyChange(ADD_NEW_DATA_FILE, null, dataFile);
         }
         if(isResubmission){
-            getResubmissionRecord().getResubmission().getResubmission().put(dataFile, ResubmissionFileChangeState.ADDED);
+            getResubmissionRecord().getResubmission().getResubmission().put(dataFile, ResubmissionFileChangeState.ADD);
         }
     }
 
@@ -297,7 +304,7 @@ public class AppContext extends DesktopContext {
             // add file to
             //      1. List<DataFile> which contains files already submitted with previous submission
             //      2. Map<DataFile, ResubmissionFileChangeState> which contains files already submitted
-            //      with previous submission + newly added or modified files with the status(NONE/ADDED/MODIFIED/DETELED)
+            //      with previous submission + newly added or modified files with the status(NONE/ADD/MODIFY/DELETE)
             resubmission.addDataFile(dataFile);
             resubDataFileEntryCount++;
 
@@ -428,7 +435,6 @@ public class AppContext extends DesktopContext {
 
     public synchronized void setResubmissionAction(DataFile dataFile, ResubmissionFileChangeState action) {
         if (dataFile != null && action != null) {
-//            dataFile.setFileType(type);
             resubmissionRecord.getResubmission().getResubmission().put(dataFile, action);
             firePropertyChange(CHANGE_RESUBMISSION_DATA_FILE_ACTION, null, action);
         }
