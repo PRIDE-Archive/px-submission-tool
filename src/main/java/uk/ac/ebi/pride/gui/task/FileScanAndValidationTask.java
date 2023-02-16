@@ -252,10 +252,11 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getUnsupportedSearchFileWarning());
             }
 
-            // cannot have result files
-            if (!noResultFile) {
-                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getResultFileWarning());
-            }
+//            // cannot have result files
+//            if (!noResultFile) {
+//                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getResultFileWarning());
+//            }
+
             setProgress(80);
 
             // ms image data
@@ -308,9 +309,11 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         for(DataFile dataFile : submission.getDataFiles()){
             if(dataFile.getFileType().equals(ProjectFileType.EXPERIMENTAL_DESIGN)){
                 isSdrfFound = true;
-                Set<ValidationError> errors = Main.validate(dataFile.getFilePath(),true);
-                if(errors.size() !=0){
+                try {
+                    Main.validate(dataFile.getFilePath(), true);
+                } catch (Exception e) {
                     logger.error("Error in file " + dataFile.getFileName());
+                    logger.error(e.getMessage());
                     return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSDRFFileWarning());
                 }
             }
