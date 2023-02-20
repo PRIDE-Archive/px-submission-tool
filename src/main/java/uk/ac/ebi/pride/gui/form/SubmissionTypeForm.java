@@ -32,7 +32,6 @@ public class SubmissionTypeForm extends Form {
     private PropertyChangeBroadcaster propertyChangeBroadcaster = null;
     private TrainingModeCheckBoxController trainingModeCheckBoxController = new TrainingModeCheckBoxController();
     private JCheckBox trainingModeCheckBox = null;
-    private JCheckBox secureCheckBox = null;
 
     private static final String FULL_SUBMISSION_OPTION = "FULL_SUBMISSION";
     private static final String PARTIAL_SUBMISSION_OPTION = "PARTIAL_SUBMISSION";
@@ -92,11 +91,11 @@ public class SubmissionTypeForm extends Form {
         trainingModeCheckBox.addItemListener(new TrainingModeOptionListener());
         trainingModeCheckBox.setToolTipText(appContext.getProperty("training.mode.toggle.checkbox.help.text"));
         titlePanel.add(trainingModeCheckBox, BorderLayout.EAST);
-        secureCheckBox = new JCheckBox();
-        secureCheckBox.setText(appContext.getProperty("controlled.access.mode.toggle.checkbox.text"));
-        secureCheckBox.addItemListener(new ControlledAccessDataModeOptionListener());
-        secureCheckBox.setToolTipText(appContext.getProperty("controlled.access.toggle.checkbox.help.text"));
-        titlePanel.add(secureCheckBox, BorderLayout.EAST);
+//        secureCheckBox = new JCheckBox();
+//        secureCheckBox.setText(appContext.getProperty("controlled.access.mode.toggle.checkbox.text"));
+//        secureCheckBox.addItemListener(new ControlledAccessDataModeOptionListener());
+//        secureCheckBox.setToolTipText(appContext.getProperty("controlled.access.toggle.checkbox.help.text"));
+//        titlePanel.add(secureCheckBox, BorderLayout.EAST);
 //        JLabel descPanel = new JLabel(appContext.getProperty("submission.type.before.start.desc"));
 //        titlePanel.add(descPanel, BorderLayout.CENTER);
         titlePanel.add(Box.createRigidArea(new Dimension(10, 10)), BorderLayout.SOUTH);
