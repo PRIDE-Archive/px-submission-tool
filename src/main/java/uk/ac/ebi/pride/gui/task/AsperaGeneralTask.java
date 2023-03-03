@@ -27,14 +27,18 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.security.SecureRandom;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /** Parent class, handles most Aspera transfer general functionality. */
 public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage> {
 
   public static final Logger logger = LoggerFactory.getLogger(AsperaGeneralTask.class);
+
+  Map<String,Integer> fileRetryCounts = new HashMap<>();
 
   /** The submission record. */
   SubmissionRecord submissionRecord;
@@ -75,6 +79,7 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
       totalFileSize += dataFile.getFile().length();
       if (dataFile.isFile()) {
         files.add(dataFile.getFile());
+        fileRetryCounts.put(dataFile.getFileName(),0);
       }
     }
     filesToSubmit = files;

@@ -17,6 +17,9 @@ import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 
 import java.io.*;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.Duration;
 
 /**
  * Task for uploading all the files
@@ -44,7 +47,7 @@ public class FileFTPUploadTask extends TaskAdapter<Void, UploadMessage> implemen
     @Override
     protected Void doInBackground() throws Exception {
         ftp = new FTPClient();
-        ftp.setControlKeepAliveTimeout(300);
+        ftp.setControlKeepAliveTimeout(Duration.ofSeconds(300));
 
         inputStream = null;
         outputStream = null;
@@ -115,7 +118,21 @@ public class FileFTPUploadTask extends TaskAdapter<Void, UploadMessage> implemen
             }
 
             Util.copyStream(inputStream, outputStream, BUFFER_SIZE, CopyStreamEvent.UNKNOWN_STREAM_SIZE, this, true);
-            publish(new UploadFileSuccessMessage(this, dataFile));
+
+            int retryCount = 1;
+            while(!FTPReply.isPositiveCompletion(ftp.sendCommand("size", dataFile.getFile().getName()))
+            || Integer.parseInt(ftp.getReplyString().split(" ")[1].trim()) != Files.size(Paths.get(dataFile.getFilePath())) )
+            {
+                if(retryCount>=3){
+                    logger.info("Failed uploading 3 times for file: " + dataFile.getFilePath() + " Please try another time");
+                    throw new IOException("FTP transfer failure for the file");
+                }
+                logger.info("Retrying to upload file: " + dataFile.getFilePath() + " Count "+ retryCount);
+                Util.copyStream(inputStream, outputStream, BUFFER_SIZE, CopyStreamEvent.UNKNOWN_STREAM_SIZE, this, true);
+                retryCount++;
+            }
+                publish(new UploadFileSuccessMessage(this, dataFile));
+
         } catch (IOException e) {
             if (!this.isCancelled()) {
                 logger.error("IOException while uploading file: " + fileName, e);

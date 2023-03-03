@@ -4,7 +4,7 @@
     <groupId>uk.ac.ebi.pride.px</groupId>
     <artifactId>px-submission-tool</artifactId>
     <packaging>jar</packaging>
-    <version>2.6.0</version>
+    <version>2.6.1</version>
     <name>px-submission-tool</name>
     <url>https://github.com/proteomexchange/px-submission-tool</url>
 
@@ -130,10 +130,17 @@
             <artifactId>balloontip</artifactId>
             <version>1.2</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/commons-net/commons-net -->
         <dependency>
             <groupId>commons-net</groupId>
             <artifactId>commons-net</artifactId>
-            <version>3.4</version>
+            <version>3.9.0</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.google.code.gson/gson -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.10.1</version>
         </dependency>
         <dependency>
             <groupId>javax.mail</groupId>
@@ -160,9 +167,9 @@
         </dependency>
         <!--Aspera manager-->
         <dependency>
-            <groupId>com.asperasoft</groupId>
-            <artifactId>aspera-faspmanager</artifactId>
-            <version>2.7.0.42750</version>
+            <groupId>com.asperasoft.faspmanager</groupId>
+            <artifactId>faspmanager</artifactId>
+            <version>3.7.2.0</version>
         </dependency>
         <!-- We need commons-codec >= 1.4 to use Base64 method -->
         <dependency>
@@ -198,6 +205,21 @@
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
             <version>1.9</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>2.0.6</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-exec</artifactId>
+            <version>1.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.12.0</version>
         </dependency>
     </dependencies>
 

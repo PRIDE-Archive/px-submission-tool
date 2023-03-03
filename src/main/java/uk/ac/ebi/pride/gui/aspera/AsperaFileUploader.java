@@ -145,25 +145,11 @@ public class AsperaFileUploader {
       localFiles.addPath(file.getAbsolutePath());
     }
     // define the destination on the server
-    remoteLocation
-        .clearPaths(); // clear all path, we only want to allow the one specified for this method!
+    remoteLocation.clear(); // clear all path, we only want to allow the one specified for this method!
     remoteLocation.addPath(destinationDirectory);
     // compile the transfer order
     TransferOrder order = new TransferOrder(localFiles, remoteLocation, transferParameters);
     // Submit the job for transfer
-    return FaspManager.getSingleton().startTransfer(order);
-  }
-
-  private String downloadFiles(String[] remoteSourcePaths, String localDestinationDirPath)
-      throws FaspManagerException {
-    pridePublicLocation.clearPaths();
-    for (String path : remoteSourcePaths) {
-      pridePublicLocation.addPath(path);
-    }
-    LocalLocation localDestination = new LocalLocation();
-    localDestination.addPath(localDestinationDirPath);
-    TransferOrder order =
-        new TransferOrder(pridePublicLocation, localDestination, transferParameters);
     return FaspManager.getSingleton().startTransfer(order);
   }
 }
