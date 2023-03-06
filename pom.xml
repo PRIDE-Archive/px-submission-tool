@@ -167,7 +167,7 @@
         </dependency>
         <!--Aspera manager-->
         <dependency>
-            <groupId>com.asperasoft</groupId>
+            <groupId>com.asperasoft.faspmanager</groupId>
             <artifactId>faspmanager</artifactId>
             <version>3.7.2.0</version>
         </dependency>
