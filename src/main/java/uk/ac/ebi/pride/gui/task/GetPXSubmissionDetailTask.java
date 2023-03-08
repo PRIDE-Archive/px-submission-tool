@@ -18,7 +18,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.util.Base64;
 import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -46,8 +45,6 @@ public class GetPXSubmissionDetailTask extends AbstractWebServiceTask<Set<String
     protected Set<String> doInBackground() throws Exception {
         Set<String> pxAccessions = new LinkedHashSet<String>();
 
-        String baseUrl = App.getInstance().getDesktopContext().getProperty("px.submission.detail.url");
-
         try {
             Properties props = System.getProperties();
             String proxyHost = props.getProperty("http.proxyHost");
@@ -60,15 +57,12 @@ public class GetPXSubmissionDetailTask extends AbstractWebServiceTask<Set<String
                 requestFactory.setProxy(proxy);
             }
 
-            String credentials = this.credentials.getUsername() + ":" + this.credentials.getPassword();
-            String base64Creds = Base64.getEncoder().encodeToString(credentials.getBytes());
-
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.add("Authorization", "Basic " + base64Creds);
-
-            HttpEntity<String> entity = new HttpEntity<>(headers);
-            ProjectDetailList projectDetailList = restTemplate.exchange(baseUrl, HttpMethod.GET, entity, ProjectDetailList.class).getBody();
+            String requestBody = credentials.toString();
+            HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+            ProjectDetailList projectDetailList = restTemplate.exchange(App.getInstance().getDesktopContext().getProperty("px.submission.detail.url"),
+                    HttpMethod.GET, entity, ProjectDetailList.class).getBody();
 
             for (ProjectDetail projectDetail : projectDetailList.getProjectDetails()) {
                 String accession = projectDetail.getAccession();

@@ -60,8 +60,8 @@ public class GetPrideUserDetailTask extends TaskAdapter<ContactDetail, String> {
     @Override
     protected ContactDetail doInBackground() throws Exception {
         DesktopContext context = App.getInstance().getDesktopContext();
-        String userTokenUrl = context.getProperty("px.user.token.url");
-        String userDetailUrl = context.getProperty("px.user.detail.url");
+        String userLogin = context.getProperty("px.user.login.url");
+        String toolVersion = context.getProperty("px.submission.tool.version");
 
         try {
             // set proxy
@@ -78,13 +78,9 @@ public class GetPrideUserDetailTask extends TaskAdapter<ContactDetail, String> {
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            String requestBody = userCredentials.toString();
-            HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
-            final String token = restTemplate.exchange(userTokenUrl, HttpMethod.POST, entity, String.class).getBody();
-
-            headers.set("Authorization", "Bearer " + token);
-            entity = new HttpEntity<>(headers);
-            return restTemplate.exchange(userDetailUrl, HttpMethod.GET, entity, ContactDetail.class).getBody();
+            headers.add("version",toolVersion);
+            HttpEntity<Credentials> entity = new HttpEntity<>(userCredentials, headers);
+            return restTemplate.exchange(userLogin, HttpMethod.POST, entity, ContactDetail.class).getBody();
         } catch (ResourceAccessException resourceAccessException) {
             publish("Proxy/Firewall issue");
         } catch (HttpClientErrorException ex) {
