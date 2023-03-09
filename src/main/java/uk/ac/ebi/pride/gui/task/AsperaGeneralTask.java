@@ -151,8 +151,11 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
       case LINUX_64:
         ascpLocation = appContext.getProperty("aspera.client.linux64.binary");
         break;
-      case WINDOWS:
-        ascpLocation = appContext.getProperty("aspera.client.windows.binary");
+      case WINDOWS_32:
+        ascpLocation = appContext.getProperty("aspera.client.windows32.binary");
+        break;
+      case WINDOWS_64:
+        ascpLocation = appContext.getProperty("aspera.client.windows64.binary");
         break;
       default:
         String msg = "Unsupported platform detected:" + OSDetector.os + " arch: " + OSDetector.arch;

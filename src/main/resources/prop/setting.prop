@@ -36,7 +36,9 @@ px.submission.detail.url = http://www.proteomexchange.org/archive-submission-ws/
 aspera.client.mac.binary = aspera/bin/mac-intel/ascp
 aspera.client.linux32.binary = aspera/bin/linux-32/ascp
 aspera.client.linux64.binary = aspera/bin/linux-64/ascp
-aspera.client.windows.binary = aspera/bin/windows-32/ascp.exe
+aspera.client.windows32.binary = aspera/bin/windows-32/ascp.exe
+aspera.client.windows64.binary = aspera/bin/windows-64/ascp.exe
+
 
 # EBI aspera server details, not necessary for upload functionality
 aspera.EBI.host = fasp.ebi.ac.uk

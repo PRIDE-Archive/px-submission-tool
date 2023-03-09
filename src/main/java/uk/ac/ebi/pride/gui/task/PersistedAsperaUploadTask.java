@@ -144,8 +144,7 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                 publish(new UploadProgressMessage(this, null, totalFileSize, sessionStats.getTotalTransferredBytes(), totalNumOfFiles, uploadedNumOfFiles));
                 break;
             case FILE_ERROR:
-                File failedFile = filesToSubmit.stream().filter(file ->
-                        file.getName().equals(fileInfo.getName())).findFirst().get();
+                File failedFile = filesToSubmit.stream().filter(file -> file.getName().equals(fileInfo.getName())).findFirst().get();
                 logger.info("File " + failedFile.getName() + "Failed to submit");
 
                 int retryCount = fileRetryCounts.get(failedFile.getName());
@@ -153,8 +152,7 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                     try {
                         fileRetryCounts.put(failedFile.getName(), retryCount + 1);
                         logger.info("Retry File " + failedFile.getName() + " Count: " + retryCount);
-                        faspManager.addSource(sessionStats.getId(), failedFile.getAbsolutePath(),
-                                folder + failedFile.getName());
+                        faspManager.addSource(sessionStats.getId(), failedFile.getAbsolutePath(), folder + failedFile.getName());
                     } catch (FaspManagerException e) {
                         FaspManager.destroy();
                         publish(new UploadErrorMessage(this, null, "Failed to upload file via Aspera: " + failedFile.getName()));
@@ -179,19 +177,19 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                             FaspManager.destroy();
                             publish(new UploadProgressMessage(this, null, totalFileSize, totalFileSize, totalNumOfFiles, totalNumOfFiles));
                             publish(new UploadSuccessMessage(this));
-                            logger.debug("Aspera Session Stop");
+                            logger.info("Aspera Files Stop");
                         }
                     }
                 }
                 break;
             case SESSION_STOP:
-                FaspManager.destroy();
                 publish(new UploadProgressMessage(this, null, totalFileSize, totalFileSize, totalNumOfFiles, totalNumOfFiles));
                 publish(new UploadSuccessMessage(this));
-                logger.debug("Aspera Session Stop");
+                FaspManager.destroy();
+                logger.info("Aspera Session Stop");
                 break;
             case SESSION_ERROR:
-                logger.debug("Aspera session Error: " + transferEvent.getDescription());
+                logger.error("Aspera session Error: " + transferEvent.getDescription());
                 FaspManager.destroy();
                 publish(new UploadErrorMessage(this, null, "Failed to upload via Aspera: " + transferEvent.getDescription()));
                 break;
