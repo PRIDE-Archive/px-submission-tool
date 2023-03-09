@@ -47,6 +47,7 @@ public class GetUploadDetailTask extends TaskAdapter<UploadDetail, String> {
 
         DesktopContext context = App.getInstance().getDesktopContext();
         String baseUrl = context.getProperty("px.upload.detail.url");
+        String toolVersion = context.getProperty("px.submission.tool.version");
 
         UploadDetail uploadDetail = null;
         try {
@@ -66,6 +67,7 @@ public class GetUploadDetailTask extends TaskAdapter<UploadDetail, String> {
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.add("Authorization", "Basic " + base64Creds);
+            headers.add("version",toolVersion);
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
             uploadDetail = restTemplate.exchange(baseUrl, HttpMethod.GET, entity, UploadDetail.class, method.getMethod()).getBody();
