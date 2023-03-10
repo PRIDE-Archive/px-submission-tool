@@ -35,7 +35,7 @@ public final class WarningMessageGenerator {
     }
 
     public static String getInvalidSDRFFileWarning() {
-        return "<html>" + "<b>Invalid SDRF file detected, please check log file for detailed error report</b><br/>" + "</html>";
+        return "<html>" + "<b>Invalid EXPERIMENTAL_DESIGN/SDRF file detected, please check log file for detailed error report</b><br/>" + "</html>";
     }
 
     public static String getWiffScanMissingWarning() {

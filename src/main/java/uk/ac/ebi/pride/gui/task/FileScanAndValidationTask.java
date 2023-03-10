@@ -310,9 +310,17 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             if(dataFile.getFileType().equals(ProjectFileType.EXPERIMENTAL_DESIGN)){
                 isSdrfFound = true;
                 try {
-                    Main.validate(dataFile.getFilePath(), true);
+                    Set<ValidationError> validationErrors = Main.validate(dataFile.getFilePath(), true);
+                    if(validationErrors!=null && validationErrors.size()>0 ){
+                        logger.error("Error in file " + dataFile.getFileName() + "Please make sure you upload proper EXPERIMENTAL_DESIGN file sdrf.tsv");
+                        validationErrors.stream().forEach(
+                                error -> logger.error(error.getMessage())
+                        );
+                        return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSDRFFileWarning());
+                    }
+
                 } catch (Exception e) {
-                    logger.error("Error in file " + dataFile.getFileName());
+                    logger.error("Error in file " + dataFile.getFileName() + "Please make sure you upload proper Experimental design file sdrf.tsv");
                     logger.error(e.getMessage());
                     return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSDRFFileWarning());
                 }
