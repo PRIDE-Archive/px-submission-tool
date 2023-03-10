@@ -59,10 +59,9 @@ public class GetPXSubmissionDetailTask extends AbstractWebServiceTask<Set<String
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            String requestBody = credentials.toString();
-            HttpEntity<String> entity = new HttpEntity<>(requestBody, headers);
+            HttpEntity<Credentials> entity = new HttpEntity<>(credentials, headers);
             ProjectDetailList projectDetailList = restTemplate.exchange(App.getInstance().getDesktopContext().getProperty("px.submission.detail.url"),
-                    HttpMethod.GET, entity, ProjectDetailList.class).getBody();
+                    HttpMethod.POST, entity, ProjectDetailList.class).getBody();
 
             for (ProjectDetail projectDetail : projectDetailList.getProjectDetails()) {
                 String accession = projectDetail.getAccession();

@@ -252,10 +252,10 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getUnsupportedSearchFileWarning());
             }
 
-//            // cannot have result files
-//            if (!noResultFile) {
-//                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getResultFileWarning());
-//            }
+            // cannot have result files
+            if (!noResultFile) {
+                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getResultFileWarning());
+            }
 
             setProgress(80);
 
