@@ -20,6 +20,7 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Properties;
 
+import static uk.ac.ebi.pride.gui.util.Constant.ASPERA;
 import static uk.ac.ebi.pride.gui.util.Constant.FTP;
 
 /**
@@ -114,6 +115,8 @@ public class AppBootstrap {
                             "px.aspera.server.port = 33001");
 
                 }
+            } else {
+                uploadProtocol = ASPERA;
             }
         }
 
