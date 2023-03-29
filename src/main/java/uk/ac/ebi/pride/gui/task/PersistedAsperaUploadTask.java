@@ -143,23 +143,6 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                 logger.debug("Uploaded file size " + sessionStats.getTotalTransferredBytes());
                 publish(new UploadProgressMessage(this, null, totalFileSize, sessionStats.getTotalTransferredBytes(), totalNumOfFiles, uploadedNumOfFiles));
                 break;
-            case FILE_ERROR:
-                File failedFile = filesToSubmit.stream().filter(file -> file.getName().equals(fileInfo.getName())).findFirst().get();
-                logger.info("File " + failedFile.getName() + "Failed to submit");
-
-                int retryCount = fileRetryCounts.get(failedFile.getName());
-                if (retryCount <= 2) {
-                    try {
-                        fileRetryCounts.put(failedFile.getName(), retryCount + 1);
-                        logger.info("Retry File " + failedFile.getName() + " Count: " + retryCount);
-                        faspManager.addSource(sessionStats.getId(), failedFile.getAbsolutePath(), folder + failedFile.getName());
-                    } catch (FaspManagerException e) {
-                        FaspManager.destroy();
-                        publish(new UploadErrorMessage(this, null, "Failed to upload file via Aspera: " + failedFile.getName()));
-                    }
-                } else {
-                    publish(new UploadErrorMessage(this, null, "Max retry done - Failed to upload file via Aspera: " + failedFile.getName()));
-                }
             case FILE_STOP:
                 if (fileInfo.getState().equals(FileState.FINISHED)) {
                     finishedFileCount++;

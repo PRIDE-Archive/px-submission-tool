@@ -96,7 +96,7 @@ unsupported.result.file.dialog.title = Submission Option
 missing.experimental.design.file.dialog.title = Missing SDRF File
 
 # load submission file button
-load.submission.file.button.title = Bulk submission
+load.submission.file.button.title = Revalidate
 load.submission.file.button.tooltip = Load an existing submission file with predefined submission details
 load.submission.file.button.small.icon = icon/16x16/submission.png
 
@@ -302,10 +302,10 @@ resubmission.no.private.px.label = No dataset available
 resubmission.select.px.dataset.label = Choose your dataset
 
 # upload
-upload.detail.error.message = <html><b>Failed to get upload credentials.</b><br/>Please ensure that you have an Internet connection.<br/>Requires outbound traffic enabled on your firewall and network for port TCP 22.<br/>In which case you should contact your system administrator.</html>
+upload.detail.error.message = <html><b>Failed to get upload credentials.</b><br/>Please ensure that you have an Internet connection.<br/>Requires outbound traffic enabled on your firewall and network for port TCP 21.<br/>In which case you should contact your system administrator.</html>
 upload.detail.error.title = Upload Error
 upload.error.message = <html><b>There appears to be a problem with using FTP to upload your files.</b> <br/>Requires outbound traffic enabled on your firewall and network for port TCP 21.<br/>In which case you should contact your system administrator.</html>
-upload.aspera.error.message = <html><b>There appears to be a problem with using Aspera to upload your files.</b> <br/>Requires outbound traffic enabled on your firewall and network for port TCP 22 & UDP 33001.<br/>In which case you should contact your system administrator.Or you can try with uploading with FTP by changing <b>px.upload.protocol=ftp</b> in config/config.properties file in px-submission-tool folder</html>
+upload.aspera.error.message = <html><b>There appears to be a problem with using Aspera to upload your files.</b> <br/>Requires outbound traffic enabled on your firewall and network for port TCP & UDP 33001.<br/>In which case you should contact your system administrator.Or you can try with uploading with FTP by changing <b>px.upload.protocol=ftp</b> in config/config.properties file in px-submission-tool folder</html>
 upload.error.title = Upload Error
 upload.default.message = Submission in progress . . .
 upload.stop.message = Submission has been paused
@@ -396,8 +396,10 @@ help.main.set=help/MainHelp.hs
 px.submission.dataset.version=CC0
 
 # Bulk submission
-bulk.submission.warning.title = Bulk Submission
-bulk.submission.warning.message = <html><p>Use this option only when you have a large number of files to submit (>100), and it is impractical to assign the file relations manually.</p> <br/> <p>In which case, you need to programatically generate a submission summary file according to the format definition below, then load the file from here.</p></html>
+bulk.submission.warning.title = Revalidate
+#bulk.submission.warning.message = <html><p>Use this option only when you have a large number of files to submit (>100), and it is impractical to assign the file relations manually.</p> <br/> <p>In which case, you need to programatically generate a submission summary file according to the format definition below, then load the file from here.</p></html>
+bulk.submission.warning.message = <html><p>Use this option to re-upload failed file transfers, please enter the submission-ref and load the corresponding submission.px saved in previous failed transfer, If you dont provide submission-ref the submission will be considered new.</p></html>
+
 bulk.submission.summary.file.format = Submission summary file format
 bulk.submission.summary.file.format.small.icon = icon/16x16/link.png
 bulk.submission.load.summary.file.button.label = Load

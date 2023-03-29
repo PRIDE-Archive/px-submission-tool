@@ -272,7 +272,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
                 appContext.getSubmissionRecord().setUploadDetail(uploadDetail);
                 firePropertyChange(BEFORE_DISPLAY_PANEL_PROPERTY, false, true);
             } else {
-                logger.error("Cannot connect to Protomexchange web service for login credentials, likely outbound traffic for port TCP 22 is blocked. Please contact your system administrators to fix this problem.");
+                logger.error("Cannot connect to Protomexchange web service for login credentials, likely outbound traffic for port TCP 21 is blocked. Please contact your system administrators to fix this problem.");
                 // show error message dialog
                 JOptionPane.showConfirmDialog(app.getMainFrame(),
                         appContext.getProperty("upload.detail.error.message"),

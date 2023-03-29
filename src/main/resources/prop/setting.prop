@@ -11,6 +11,7 @@ px.user.login.url=http://www.proteomexchange.org/archive-submission-ws/user/logi
 
 # url for retrieving px ftp upload details
 px.upload.detail.url = http://www.proteomexchange.org/archive-submission-ws/submission/upload/{method}
+px.reupload.detail.url = http://www.proteomexchange.org/archive-submission-ws/submission/reupload/{method}/{ticketId}
 
 # url for completing px submission
 px.submission.complete.url = http://www.proteomexchange.org/archive-submission-ws/submission/submit

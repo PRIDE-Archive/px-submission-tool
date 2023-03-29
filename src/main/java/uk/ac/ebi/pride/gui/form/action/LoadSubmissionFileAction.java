@@ -8,19 +8,19 @@ import uk.ac.ebi.pride.data.io.SubmissionFileParser;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
+import uk.ac.ebi.pride.gui.data.SubmissionRecord;
+import uk.ac.ebi.pride.gui.form.comp.NonOpaquePanel;
+import uk.ac.ebi.pride.gui.navigation.NavigationControlPanel;
+import uk.ac.ebi.pride.gui.util.ColourUtil;
+import uk.ac.ebi.pride.gui.util.HttpUtil;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.GUIBlocker;
-import uk.ac.ebi.pride.gui.data.SubmissionRecord;
 import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
-import uk.ac.ebi.pride.gui.form.comp.NonOpaquePanel;
-import uk.ac.ebi.pride.gui.navigation.NavigationControlPanel;
 import uk.ac.ebi.pride.toolsuite.gui.task.Task;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskEvent;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskListener;
-import uk.ac.ebi.pride.gui.util.ColourUtil;
-import uk.ac.ebi.pride.gui.util.HttpUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -28,6 +28,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.util.List;
+
+import static uk.ac.ebi.pride.gui.util.Constant.TICKET_ID;
 
 /**
  * Action triggered when loading a submission file
@@ -58,6 +60,8 @@ public class LoadSubmissionFileAction extends AbstractAction {
         private static final String CANCEL_ACTION_COMMAND = "Cancel";
         private static final String Load_ACTION_COMMAND = "Load";
 
+        private JTextField jTextField;
+
         private JButton loadButton;
 
 
@@ -86,16 +90,18 @@ public class LoadSubmissionFileAction extends AbstractAction {
 
         private void initWarningPanel() {
             JPanel warningPanel = new JPanel(new BorderLayout());
-            warningPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+            //warningPanel.setLayout(new BoxLayout(warningPanel,BoxLayout.PAGE_AXIS));
 
-            // create table title label
-            JLabel label = new JLabel(App.getInstance().getDesktopContext().getProperty("bulk.submission.warning.title"));
-            label.setFont(label.getFont().deriveFont(Font.BOLD).deriveFont(16f));
-            warningPanel.add(label, BorderLayout.NORTH);
+
+//            // create table title label
+//            JLabel label = new JLabel(App.getInstance().getDesktopContext().getProperty("bulk.submission.warning.title"));
+//            label.setFont(label.getFont().deriveFont(Font.BOLD).deriveFont(16f));
+//            warningPanel.add(label, BorderLayout.NORTH);
 
             // create warning message
             JLabel message = new JLabel(App.getInstance().getDesktopContext().getProperty("bulk.submission.warning.message"));
-            warningPanel.add(message, BorderLayout.CENTER);
+            message.setAlignmentY(0);
+
 
             // create summary file format
             Icon icon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("bulk.submission.summary.file.format.small.icon"));
@@ -107,7 +113,18 @@ public class LoadSubmissionFileAction extends AbstractAction {
                     HttpUtil.openURL(App.getInstance().getDesktopContext().getProperty("px.submission.summary.file.format.url"));
                 }
             });
-            warningPanel.add(fileFormat, BorderLayout.SOUTH);
+
+
+            JPanel innerPanel  = new JPanel();
+            JLabel jLabel = new JLabel("Enter submission reference");
+            jTextField = new JTextField(18);
+            innerPanel.add(jLabel);
+            innerPanel.add(jTextField);
+
+
+            warningPanel.add(message,BorderLayout.PAGE_START);
+            warningPanel.add(fileFormat,BorderLayout.CENTER);
+            warningPanel.add(innerPanel,BorderLayout.PAGE_END);
 
             this.getContentPane().add(warningPanel, BorderLayout.CENTER);
         }
@@ -192,6 +209,11 @@ public class LoadSubmissionFileAction extends AbstractAction {
                 this.dispose();
             } else if (Load_ACTION_COMMAND.equals(evtName)) {
                 File submissionFile = selectFile();
+                String ticketId = jTextField.getText();
+
+                if(jTextField.getText()!=null){
+                    App.getInstance().getDesktopContext().setProperty(TICKET_ID,ticketId);
+                }
 
                 if (submissionFile != null) {
                     Task task = new LoadSubmissionFileTask(submissionFile);

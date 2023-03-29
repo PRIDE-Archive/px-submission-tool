@@ -46,17 +46,7 @@ public class GetPXSubmissionDetailTask extends AbstractWebServiceTask<Set<String
         Set<String> pxAccessions = new LinkedHashSet<String>();
 
         try {
-            Properties props = System.getProperties();
-            String proxyHost = props.getProperty("http.proxyHost");
-            String proxyPort = props.getProperty("http.proxyPort");
-
-            if (proxyHost != null && proxyPort != null) {
-                logger.info("Using proxy server {} and port {}", proxyHost, proxyPort);
-                Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, Integer.parseInt(proxyPort)));
-                SimpleClientHttpRequestFactory requestFactory = (SimpleClientHttpRequestFactory) restTemplate.getRequestFactory();
-                requestFactory.setProxy(proxy);
-            }
-
+            setProxyIfProvided(restTemplate);
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Credentials> entity = new HttpEntity<>(credentials, headers);
@@ -86,5 +76,18 @@ public class GetPXSubmissionDetailTask extends AbstractWebServiceTask<Set<String
         }
 
         return pxAccessions;
+    }
+
+    public static void setProxyIfProvided(RestTemplate restTemplate) {
+        Properties props = System.getProperties();
+        String proxyHost = props.getProperty("http.proxyHost");
+        String proxyPort = props.getProperty("http.proxyPort");
+
+        if (proxyHost != null && proxyPort != null) {
+            logger.info("Using proxy server {} and port {}", proxyHost, proxyPort);
+            Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, Integer.parseInt(proxyPort)));
+            SimpleClientHttpRequestFactory requestFactory = (SimpleClientHttpRequestFactory) restTemplate.getRequestFactory();
+            requestFactory.setProxy(proxy);
+        }
     }
 }

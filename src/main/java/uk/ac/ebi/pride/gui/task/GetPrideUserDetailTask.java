@@ -6,7 +6,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
@@ -16,9 +15,7 @@ import uk.ac.ebi.pride.gui.data.Credentials;
 import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.util.Properties;
+import static uk.ac.ebi.pride.gui.task.GetPXSubmissionDetailTask.setProxyIfProvided;
 
 /**
  * GetPrideUserDetailTask retrieves pride user details using pride web service
@@ -65,16 +62,7 @@ public class GetPrideUserDetailTask extends TaskAdapter<ContactDetail, String> {
 
         try {
             // set proxy
-            Properties props = System.getProperties();
-            String proxyHost = props.getProperty("http.proxyHost");
-            String proxyPort = props.getProperty("http.proxyPort");
-
-            if (proxyHost != null && proxyPort != null) {
-                logger.info("Using proxy server {} and port {}", proxyHost, proxyPort);
-                Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, Integer.parseInt(proxyPort)));
-                SimpleClientHttpRequestFactory requestFactory = (SimpleClientHttpRequestFactory) restTemplate.getRequestFactory();
-                requestFactory.setProxy(proxy);
-            }
+            setProxyIfProvided(restTemplate);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
