@@ -143,9 +143,15 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                 logger.debug("Uploaded file size " + sessionStats.getTotalTransferredBytes());
                 publish(new UploadProgressMessage(this, null, totalFileSize, sessionStats.getTotalTransferredBytes(), totalNumOfFiles, uploadedNumOfFiles));
                 break;
+            case FILE_ERROR:
+                logger.info("File " + fileInfo.getName() + "Failed to submit" + fileInfo.getErrDescription());
+                publish(new UploadErrorMessage(this, null, "Failed to upload file via Aspera: " + fileInfo.getName()));
             case FILE_STOP:
                 if (fileInfo.getState().equals(FileState.FINISHED)) {
+                    publish(new UploadProgressMessage(this, null, totalFileSize, totalFileSize, totalNumOfFiles, totalNumOfFiles));
                     finishedFileCount++;
+                    String[] fileNameArray = fileInfo.getName().split("/");
+                    logger.info("File {} uploaded successfully" , fileNameArray[fileNameArray.length-1]);
                     // last file has finished uploading, add a new one
                     if (filesToSubmitIter.hasNext()) {
                         File file = filesToSubmitIter.next();
@@ -158,9 +164,8 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                     } else {
                         if (sessionStats.getFilesComplete() == totalNumOfFiles + 1) {
                             FaspManager.destroy();
-                            publish(new UploadProgressMessage(this, null, totalFileSize, totalFileSize, totalNumOfFiles, totalNumOfFiles));
                             publish(new UploadSuccessMessage(this));
-                            logger.info("Aspera Files Stop");
+                            logger.info("Aspera all files transferred");
                         }
                     }
                 }

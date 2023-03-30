@@ -38,8 +38,6 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
 
   public static final Logger logger = LoggerFactory.getLogger(AsperaGeneralTask.class);
 
-  Map<String,Integer> fileRetryCounts = new HashMap<>();
-
   /** The submission record. */
   SubmissionRecord submissionRecord;
 
@@ -79,7 +77,6 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
       totalFileSize += dataFile.getFile().length();
       if (dataFile.isFile()) {
         files.add(dataFile.getFile());
-        fileRetryCounts.put(dataFile.getFileName(),0);
       }
     }
     filesToSubmit = files;
