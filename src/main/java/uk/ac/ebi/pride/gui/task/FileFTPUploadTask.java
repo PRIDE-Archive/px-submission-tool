@@ -123,7 +123,7 @@ public class FileFTPUploadTask extends TaskAdapter<Void, UploadMessage> implemen
             int retryCount = 1;
             logger.info("Checking file size in the server and validating: " + dataFile.getFileName());
             while(!FTPReply.isPositiveCompletion(ftp.sendCommand("size", dataFile.getFile().getName()))
-            || Integer.parseInt(ftp.getReplyString().split(" ")[1].trim()) != Files.size(Paths.get(dataFile.getFilePath())) )
+            || Long.parseLong(ftp.getReplyString().split(" ")[1].trim()) != Files.size(Paths.get(dataFile.getFilePath())) )
             {
                 if(retryCount>=3){
                     logger.info("Failed uploading 3 times for file: " + dataFile.getFilePath() + " Please try another time");
