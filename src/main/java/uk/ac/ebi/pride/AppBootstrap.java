@@ -20,9 +20,6 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.Properties;
 
-import static uk.ac.ebi.pride.gui.util.Constant.ASPERA;
-import static uk.ac.ebi.pride.gui.util.Constant.FTP;
-
 /**
  * @author Rui Wang
  * @version $Id$
@@ -101,22 +98,17 @@ public class AppBootstrap {
             String ftpServer = bootstrapProps.getProperty("px.ftp.server.address");
             int ftpServerPort = Integer.parseInt(bootstrapProps.getProperty("px.ftp.server.port"));
 
-            int exitStatus = checkAsperaConnectivity(asperaServer, asperaServerPort);
-            if (exitStatus == 1) {
-                uploadProtocol = FTP;
-                exitStatus = checkFtpConnectivity(ftpServer, ftpServerPort);
-                if (exitStatus != 0) {
-                    logger.error("Both ftp and aspera not reachable");
-                    throw new RuntimeException("Both ftp and aspera not reachable please check network connection or with your system admin" +
-                            "for opening firewall for below servers and port \n" +
-                            "px.ftp.server.address = ftp-pride-private.ebi.ac.uk\n" +
-                            "px.ftp.server.port = 21\n" +
-                            "px.aspera.server.address = hx-fasp-1.ebi.ac.uk\n" +
-                            "px.aspera.server.port = 33001");
+            int ftpCheckExitStatus = checkFtpConnectivity(ftpServer, ftpServerPort);
+            int asperaCheckExitStatus = checkAsperaConnectivity(asperaServer, asperaServerPort);
 
-                }
-            } else {
-                uploadProtocol = ASPERA;
+            if (ftpCheckExitStatus != 0 && asperaCheckExitStatus != 0) {
+                logger.error("Both ftp and aspera not reachable");
+                throw new RuntimeException("Both ftp and aspera not reachable please check network connection or with your system admin" +
+                        "for opening firewall for below servers and port \n" +
+                        "px.ftp.server.address = ftp-pride-private.ebi.ac.uk\n" +
+                        "px.ftp.server.port = 21\n" +
+                        "px.aspera.server.address = hx-fasp-1.ebi.ac.uk\n" +
+                        "px.aspera.server.port = 33001");
             }
         }
 
