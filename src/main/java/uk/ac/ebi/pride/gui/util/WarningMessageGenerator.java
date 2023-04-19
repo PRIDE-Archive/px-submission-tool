@@ -34,6 +34,10 @@ public final class WarningMessageGenerator {
         return "<html>" + "<b>Invalid result file detected, please submit results in any of the supported file formats (see accompanying documentation)</b><br/>" + "</html>";
     }
 
+    public static String getCancelPartialSubmission() {
+        return "<html>" + "<b>If you do not want to continue please close the submisison tool</b><br/>" + "</html>";
+    }
+
     public static String getInvalidSDRFFileWarning() {
         return "<html>" + "<b>Invalid EXPERIMENTAL_DESIGN/SDRF file detected, please check log file for detailed error report</b><br/>" + "</html>";
     }

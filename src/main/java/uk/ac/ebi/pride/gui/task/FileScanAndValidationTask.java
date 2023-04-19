@@ -244,7 +244,9 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             if (quickValidationResult.hasSupportedSearchFile()) {
                 boolean result = WarningMessageGenerator.showSupportedSearchFileWarning();
                 scanForFileMappings();
-                return new DataFileValidationMessage(result ? ValidationState.SUCCESS : ValidationState.ERROR);
+                if(!result){
+                    return new DataFileValidationMessage(ValidationState.ERROR,WarningMessageGenerator.getCancelPartialSubmission());
+                }
             }
             setProgress(60);
 
