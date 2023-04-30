@@ -17,6 +17,9 @@ import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 
 import java.io.*;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.time.Duration;
 
 /**
  * Task for uploading all the files
@@ -44,7 +47,7 @@ public class FileFTPUploadTask extends TaskAdapter<Void, UploadMessage> implemen
     @Override
     protected Void doInBackground() throws Exception {
         ftp = new FTPClient();
-        ftp.setControlKeepAliveTimeout(300);
+        ftp.setControlKeepAliveTimeout(Duration.ofSeconds(300));
 
         inputStream = null;
         outputStream = null;
@@ -75,7 +78,7 @@ public class FileFTPUploadTask extends TaskAdapter<Void, UploadMessage> implemen
             // change working directory
             File folder = new File(ftpDetail.getFolder());
             ftp.changeWorkingDirectory(folder.getName());
-            logger.debug("Changed to the correct FTP directory for upload: " + ftpDetail.getFolder());
+            logger.info("Changed to the correct FTP directory for upload: " + ftpDetail.getFolder());
 
             if (dataFile.isFile()) {
                 // check whether the file is binary file
@@ -96,12 +99,12 @@ public class FileFTPUploadTask extends TaskAdapter<Void, UploadMessage> implemen
 
                 // transfer files
                 inputStream = new FileInputStream(fileToUpload);
-                outputStream = ftp.storeFileStream(fileToUpload.getName());
 
-                logger.debug("Starting to upload file: " + fileToUpload.getAbsolutePath());
+                logger.info("Starting to upload file: " + fileToUpload.getAbsolutePath());
+                ftp.storeFile(fileToUpload.getName(),inputStream);
             } else if (dataFile.isUrl()) {
                 URL urlToUpload = dataFile.getUrl();
-                logger.debug("About to upload file: " + urlToUpload);
+                logger.info("About to upload file: " + urlToUpload);
                 // Treat all URL data as binary
 
                 ftp.setFileType(FTP.BINARY_FILE_TYPE);
@@ -109,13 +112,30 @@ public class FileFTPUploadTask extends TaskAdapter<Void, UploadMessage> implemen
 
                 // transfer files
                 inputStream = urlToUpload.openStream();
-                outputStream = ftp.storeFileStream(fileName);
+                ftp.storeFile(fileName,inputStream);
 
-                logger.debug("Starting to upload file: " + urlToUpload);
+                logger.info("Starting to upload file: " + urlToUpload);
+                ftp.storeFile(urlToUpload.getFile(),inputStream);
             }
 
-            Util.copyStream(inputStream, outputStream, BUFFER_SIZE, CopyStreamEvent.UNKNOWN_STREAM_SIZE, this, true);
+           // Util.copyStream(inputStream, outputStream, BUFFER_SIZE, CopyStreamEvent.UNKNOWN_STREAM_SIZE, this, true);
+
+            int retryCount = 1;
+            logger.info("Checking file size in the server and validating: " + dataFile.getFileName());
+            while(!FTPReply.isPositiveCompletion(ftp.sendCommand("size", dataFile.getFile().getName()))
+            || Long.parseLong(ftp.getReplyString().split(" ")[1].trim()) != Files.size(Paths.get(dataFile.getFilePath())) )
+            {
+                if(retryCount>=3){
+                    logger.info("Failed uploading 3 times for file: " + dataFile.getFilePath() + " Please try another time");
+                    throw new IOException("FTP transfer failure for the file");
+                }
+                logger.info("Retrying to upload file: " + dataFile.getFilePath() + " Count "+ retryCount);
+                Util.copyStream(inputStream, outputStream, BUFFER_SIZE, CopyStreamEvent.UNKNOWN_STREAM_SIZE, this, true);
+                retryCount++;
+            }
+            logger.info("File check done: " + dataFile.getFileName());
             publish(new UploadFileSuccessMessage(this, dataFile));
+
         } catch (IOException e) {
             if (!this.isCancelled()) {
                 logger.error("IOException while uploading file: " + fileName, e);

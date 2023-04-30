@@ -27,8 +27,10 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.security.SecureRandom;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 /** Parent class, handles most Aspera transfer general functionality. */
@@ -146,8 +148,11 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
       case LINUX_64:
         ascpLocation = appContext.getProperty("aspera.client.linux64.binary");
         break;
-      case WINDOWS:
-        ascpLocation = appContext.getProperty("aspera.client.windows.binary");
+      case WINDOWS_32:
+        ascpLocation = appContext.getProperty("aspera.client.windows32.binary");
+        break;
+      case WINDOWS_64:
+        ascpLocation = appContext.getProperty("aspera.client.windows64.binary");
         break;
       default:
         String msg = "Unsupported platform detected:" + OSDetector.os + " arch: " + OSDetector.arch;

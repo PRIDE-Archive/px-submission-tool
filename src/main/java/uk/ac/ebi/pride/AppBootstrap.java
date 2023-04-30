@@ -1,11 +1,23 @@
 package uk.ac.ebi.pride;
 
+import org.apache.commons.net.ftp.FTPClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.utilities.util.IOUtilities;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintStream;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketAddress;
+import java.net.SocketTimeoutException;
 import java.net.URL;
+import java.net.UnknownHostException;
 import java.util.Properties;
 
 /**
@@ -74,6 +86,32 @@ public class AppBootstrap {
 
         // get upload protocol
         String uploadProtocol = bootstrapProps.getProperty("px.upload.protocol");
+
+        String checkConnectivityToAsperaAndFtp = bootstrapProps.getProperty("px.upload.check.connection");
+
+        logger.info("Testing connection " + checkConnectivityToAsperaAndFtp);
+
+        if (checkConnectivityToAsperaAndFtp.equals("true")) {
+            String asperaServer = bootstrapProps.getProperty("px.aspera.server.address");
+            int asperaServerPort = Integer.parseInt(bootstrapProps.getProperty("px.aspera.server.port"));
+
+            String ftpServer = bootstrapProps.getProperty("px.ftp.server.address");
+            int ftpServerPort = Integer.parseInt(bootstrapProps.getProperty("px.ftp.server.port"));
+
+            int ftpCheckExitStatus = checkFtpConnectivity(ftpServer, ftpServerPort);
+            int asperaCheckExitStatus = checkAsperaConnectivity(asperaServer, asperaServerPort);
+
+            if (ftpCheckExitStatus != 0 && asperaCheckExitStatus != 0) {
+                logger.error("Both ftp and aspera not reachable");
+                throw new RuntimeException("Both ftp and aspera not reachable please check network connection or with your system admin" +
+                        "for opening firewall for below servers and port \n" +
+                        "px.ftp.server.address = ftp-pride-private.ebi.ac.uk\n" +
+                        "px.ftp.server.port = 21\n" +
+                        "px.aspera.server.address = hx-fasp-1.ebi.ac.uk\n" +
+                        "px.aspera.server.port = 33001");
+            }
+        }
+
         if (uploadProtocol != null) {
             cmdBuffer.append(" -Dpx.upload.protocol=");
             cmdBuffer.append(uploadProtocol);
@@ -98,6 +136,73 @@ public class AppBootstrap {
         cmdBuffer.append(" ");
         cmdBuffer.append(App.class.getName());
         return cmdBuffer;
+    }
+
+    private int checkAsperaConnectivity(String server, int port) {
+        int exitStatus = 1;
+        int timeout = 10000;
+        Socket s = null;
+        String reason = null;
+        try {
+            s = new Socket();
+            s.setReuseAddress(true);
+            SocketAddress sa = new InetSocketAddress(server, port);
+            s.connect(sa, timeout);
+        } catch (Exception e) {
+            reason = getReason(server, port, null, e);
+        } finally {
+            if (s != null) {
+                if (s.isConnected()) {
+                    logger.info("Port " + port + " on " + server + " is reachable!");
+                    exitStatus = 0;
+                } else {
+                    logger.error("Port " + port + " on " + server + " is not reachable; reason: " + reason);
+                }
+                try {
+                    s.close();
+                } catch (IOException e) {
+                }
+            }
+        }
+        return exitStatus;
+    }
+
+    private int checkFtpConnectivity(String server, int port) {
+        int exitStatus = 1;
+        int timeout = 10000;
+        FTPClient ftpClient = new FTPClient();
+        String reason = null;
+        try {
+            ftpClient.setConnectTimeout(timeout);
+            ftpClient.connect(server, port);
+        } catch (Exception e) {
+            reason = getReason(server, port, null, e);
+        } finally {
+            if (ftpClient != null) {
+                if (ftpClient.getReplyCode() == 220) {
+                    logger.info("Port " + port + " on " + server + " is reachable!");
+                    exitStatus = 0;
+                } else {
+                    logger.error("Port " + port + " on " + server + " is not reachable; reason: " + reason);
+                }
+                try {
+                    ftpClient.disconnect();
+                } catch (IOException e) {
+                }
+            }
+        }
+        return exitStatus;
+    }
+
+    private String getReason(String server, int port, String reason, Exception e) {
+        if (e.getMessage().contains("Connection refused") || e.getMessage().contains("Connection reset")) {
+            reason = "port " + port + " on " + server + " is not reachable/blocked.";
+        } else if (e instanceof UnknownHostException) {
+            reason = "node " + server + " is unresolved.";
+        } else if (e instanceof SocketTimeoutException) {
+            reason = "timeout while attempting to reach node " + server + " on port " + port;
+        }
+        return reason;
     }
 
     /**

@@ -1,6 +1,20 @@
 package uk.ac.ebi.pride.gui.task;
 
-import com.asperasoft.faspmanager.*;
+import com.asperasoft.faspmanager.Encryption;
+import com.asperasoft.faspmanager.FaspManager;
+import com.asperasoft.faspmanager.FaspManagerException;
+import com.asperasoft.faspmanager.FileInfo;
+import com.asperasoft.faspmanager.FileState;
+import com.asperasoft.faspmanager.InitializationException;
+import com.asperasoft.faspmanager.Manifest;
+import com.asperasoft.faspmanager.Overwrite;
+import com.asperasoft.faspmanager.Policy;
+import com.asperasoft.faspmanager.RemoteLocation;
+import com.asperasoft.faspmanager.Resume;
+import com.asperasoft.faspmanager.SessionStats;
+import com.asperasoft.faspmanager.TransferEvent;
+import com.asperasoft.faspmanager.TransferListener;
+import com.asperasoft.faspmanager.XferParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
@@ -8,8 +22,10 @@ import uk.ac.ebi.pride.archive.submission.model.submission.DropBoxDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.gui.aspera.PersistedAsperaFileUploader;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
+import uk.ac.ebi.pride.gui.task.ftp.UploadErrorMessage;
+import uk.ac.ebi.pride.gui.task.ftp.UploadProgressMessage;
+import uk.ac.ebi.pride.gui.task.ftp.UploadSuccessMessage;
 import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
-import uk.ac.ebi.pride.gui.task.ftp.*;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -38,7 +54,8 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
 
     /**
      * Handles uploading of files using Asopera
-     * @throws FaspManagerException problems using the Aspera API to perform the upload
+     *
+     * @throws FaspManagerException         problems using the Aspera API to perform the upload
      * @throws UnsupportedEncodingException problems creating a temporary file
      */
     void asperaUpload() throws FaspManagerException, UnsupportedEncodingException {
@@ -61,6 +78,7 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
      * For additional descriptions see the Aspera documentation
      * of the command line tool. For example at
      * http://download.asperasoft.com/download/docs/ascp/2.7/html/index.html
+     *
      * @return the default transfer parameters.
      */
     private static XferParams getDefaultTransferParams() {
@@ -74,17 +92,19 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
         xferParams.overwrite = Overwrite.DIFFERENT;
         xferParams.generateManifest = Manifest.NONE;
         xferParams.policy = Policy.FAIR;
-        xferParams.resumeCheck = Resume.SPARSE_CHECKSUM;
+        xferParams.resumeCheck = Resume.FILE_ATTRIBUTES;
         xferParams.preCalculateJobSize = Boolean.parseBoolean(appContext.getProperty("aspera.xfer.preCalculateJobSize"));
         xferParams.createPath = Boolean.parseBoolean(appContext.getProperty("aspera.xfer.createPath"));
         xferParams.persist = true;
         return xferParams;
     }
+
     /**
      * Processes a file session event.
+     *
      * @param transferEvent the transfer event
-     * @param sessionStats the session status
-     * @param fileInfo the file information
+     * @param sessionStats  the session status
+     * @param fileInfo      the file information
      */
     @Override
     public void fileSessionEvent(TransferEvent transferEvent, SessionStats sessionStats, FileInfo fileInfo) {
@@ -123,9 +143,15 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                 logger.debug("Uploaded file size " + sessionStats.getTotalTransferredBytes());
                 publish(new UploadProgressMessage(this, null, totalFileSize, sessionStats.getTotalTransferredBytes(), totalNumOfFiles, uploadedNumOfFiles));
                 break;
+            case FILE_ERROR:
+                logger.info("File " + fileInfo.getName() + "Failed to submit" + fileInfo.getErrDescription());
+                publish(new UploadErrorMessage(this, null, "Failed to upload file via Aspera: " + fileInfo.getName()));
             case FILE_STOP:
                 if (fileInfo.getState().equals(FileState.FINISHED)) {
+                    publish(new UploadProgressMessage(this, null, totalFileSize, totalFileSize, totalNumOfFiles, totalNumOfFiles));
                     finishedFileCount++;
+                    String[] fileNameArray = fileInfo.getName().split("/");
+                    logger.info("File {} uploaded successfully" , fileNameArray[fileNameArray.length-1]);
                     // last file has finished uploading, add a new one
                     if (filesToSubmitIter.hasNext()) {
                         File file = filesToSubmitIter.next();
@@ -136,23 +162,22 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                             publish(new UploadErrorMessage(this, null, "Failed to upload next file via Aspera: " + file.getName()));
                         }
                     } else {
-                        if (finishedFileCount == totalNumOfFiles + 1) {
+                        if (sessionStats.getFilesComplete() == totalNumOfFiles + 1) {
                             FaspManager.destroy();
-                            publish(new UploadProgressMessage(this, null, totalFileSize, totalFileSize, totalNumOfFiles, totalNumOfFiles));
                             publish(new UploadSuccessMessage(this));
-                            logger.debug("Aspera Session Stop");
+                            logger.info("Aspera all files transferred");
                         }
                     }
                 }
                 break;
             case SESSION_STOP:
-                FaspManager.destroy();
                 publish(new UploadProgressMessage(this, null, totalFileSize, totalFileSize, totalNumOfFiles, totalNumOfFiles));
                 publish(new UploadSuccessMessage(this));
-                logger.debug("Aspera Session Stop");
+                FaspManager.destroy();
+                logger.info("Aspera Session Stop");
                 break;
             case SESSION_ERROR:
-                logger.debug("Aspera session Error: " + transferEvent.getDescription());
+                logger.error("Aspera session Error: " + transferEvent.getDescription());
                 FaspManager.destroy();
                 publish(new UploadErrorMessage(this, null, "Failed to upload via Aspera: " + transferEvent.getDescription()));
                 break;

@@ -25,7 +25,7 @@ public class UpdateChecker {
 
     public static final Logger logger = LoggerFactory.getLogger(UpdateChecker.class);
 
-    private static final Pattern VERSION_PATTERN = Pattern.compile("^<a href=\"([\\d\\.]+)/\".*");
+    private static final Pattern VERSION_PATTERN = Pattern.compile(".*href=\"([\\d\\.]+)\\/.*");
 
     private final String updateUrl;
 

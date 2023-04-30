@@ -13,6 +13,8 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.util.Properties;
 
+import static uk.ac.ebi.pride.gui.util.Constant.TICKET_ID;
+
 /**
  * Task to complete a submission after files have been uploaded
  *
@@ -20,7 +22,6 @@ import java.util.Properties;
  * @version $Id$
  */
 public class CompleteSubmissionTask extends TaskAdapter<SubmissionReferenceDetail, String> {
-
     private final SubmissionRecord submissionRecord;
     private final RestTemplate restTemplate;
 
@@ -44,6 +45,12 @@ public class CompleteSubmissionTask extends TaskAdapter<SubmissionReferenceDetai
                 Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, Integer.parseInt(proxyPort)));
                 SimpleClientHttpRequestFactory requestFactory = (SimpleClientHttpRequestFactory) restTemplate.getRequestFactory();
                 requestFactory.setProxy(proxy);
+            }
+
+            String ticket = context.getProperty(TICKET_ID);
+
+            if(context.getProperty(TICKET_ID)!=null){
+                return new SubmissionReferenceDetail(ticket);
             }
             result = restTemplate.postForObject(baseUrl, submissionRecord.getUploadDetail(), SubmissionReferenceDetail.class);
         } catch(Exception ex){
