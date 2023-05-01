@@ -55,7 +55,7 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
     /**
      * Handles uploading of files using Asopera
      *
-     * @throws FaspManagerException         problems using the Aspera API to perform the upload
+     * @throws FaspManagerException problems using the Aspera API to perform the upload
      * @throws UnsupportedEncodingException problems creating a temporary file
      */
     void asperaUpload() throws FaspManagerException, UnsupportedEncodingException {
@@ -98,13 +98,12 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
         xferParams.persist = true;
         return xferParams;
     }
-
     /**
      * Processes a file session event.
      *
      * @param transferEvent the transfer event
-     * @param sessionStats  the session status
-     * @param fileInfo      the file information
+     * @param sessionStats the session status
+     * @param fileInfo the file information
      */
     @Override
     public void fileSessionEvent(TransferEvent transferEvent, SessionStats sessionStats, FileInfo fileInfo) {

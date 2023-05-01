@@ -5,7 +5,9 @@ import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * SubmissionRecord is used to store the details and the progress of a submission
@@ -24,7 +26,7 @@ public class SubmissionRecord implements Serializable {
     public SubmissionRecord() {
         this.submission = new Submission();
         this.uploadDetail = null;
-        this.uploadedFiles = Collections.synchronizedSet(new HashSet<>());
+        this.uploadedFiles = Collections.synchronizedSet(new HashSet<DataFile>());
     }
 
     public SubmissionRecord(Submission submission) {

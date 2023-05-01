@@ -24,6 +24,7 @@ import static uk.ac.ebi.pride.gui.util.Constant.TICKET_ID;
  * @version $Id$
  */
 public class GetUploadDetailTask extends TaskAdapter<UploadDetail, String> {
+
     private final RestTemplate restTemplate;
     private final UploadMethod method;
     private Credentials credentials;
@@ -62,8 +63,8 @@ public class GetUploadDetailTask extends TaskAdapter<UploadDetail, String> {
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
             String ticketId = context.getProperty(TICKET_ID);
-            if(ticketId==null || ticketId.equals("") ) {
-                uploadDetail = restTemplate.exchange(baseUrl, HttpMethod.GET, entity, UploadDetail.class, method.getMethod()).getBody();
+            if(ticketId==null) {
+            uploadDetail = restTemplate.exchange(baseUrl, HttpMethod.GET, entity, UploadDetail.class, method.getMethod()).getBody();
             } else {
                 uploadDetail = restTemplate.exchange(reUploadUrl,HttpMethod.GET,entity,UploadDetail.class,method.getMethod(),ticketId).getBody();
                 if(uploadDetail==null){

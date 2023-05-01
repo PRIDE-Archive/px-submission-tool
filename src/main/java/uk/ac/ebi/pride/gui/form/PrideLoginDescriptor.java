@@ -103,7 +103,6 @@ public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor 
         submissionRecord.setUserName(username);
         submissionRecord.setPassword(password);
         // launch a new task for login
-//        Task task = new GetPrideProjectFilesTask(username, password.toCharArray());
         Task task = new GetPrideUserDetailTask(username, password.toCharArray());
         task.addTaskListener(this);
         task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));

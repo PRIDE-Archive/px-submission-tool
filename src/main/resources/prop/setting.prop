@@ -11,7 +11,6 @@ px.user.login.url=http://www.proteomexchange.org/archive-submission-ws/user/logi
 
 # url for retrieving pride Project Files details
 px.submission.ws.base.url=http://www.proteomexchange.org/archive-submission-ws/
-# px.submission.ws.base.url=http://localhost:8010/
 px.project.files.url=resubmission/files/{accession}
 
 # url for retrieving px ftp upload details
