@@ -39,7 +39,7 @@ public class SubmissionTypeForm extends Form {
     private static final String FULL_SUBMISSION_OPTION = "FULL_SUBMISSION";
     private static final String PARTIAL_SUBMISSION_OPTION = "PARTIAL_SUBMISSION";
 
-    private String resubmissionChangeTypeError = null;
+    private String resubmissionChangeTypeError = "";
 
     private ResubmissionDialog resubmissionDialog;
 
