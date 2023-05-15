@@ -101,6 +101,21 @@ public final class WarningMessageGenerator {
         return errMsg.toString();
     }
 
+
+    public static String getDuplicateFilesWarning(List<String> missingModifiedFile) {
+        StringBuilder errMsg = new StringBuilder();
+        errMsg.append("<html>");
+        errMsg.append("<b>The following filenames are already present, please select modify in the below panel to update it</b><br/>");
+        for (String dataFile :
+                missingModifiedFile) {
+            errMsg.append("<li>");
+            errMsg.append(dataFile);
+            errMsg.append("</li>");
+        }
+        errMsg.append("</html>");
+        return errMsg.toString();
+    }
+
     public static String getMissingReferencedFilesWarning(Map<DataFile, Set<String>> invalidFiles) {
         StringBuilder errMsg = new StringBuilder();
         errMsg.append("<html>");

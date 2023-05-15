@@ -337,15 +337,15 @@ public class AppContext extends DesktopContext {
      * @param dataFile given data file
      * @param mapping new file mapping
      */
-    public synchronized void addFileMapping(DataFile dataFile, DataFile mapping) {
-        if (dataFile != null) {
-            // add mapping
-            if (!dataFile.containsFileMapping(mapping)) {
-                dataFile.addFileMapping(mapping);
-                firePropertyChange(ADD_NEW_DATA_FILE_MAPPING, null, dataFile);
-            }
-        }
-    }
+//    public synchronized void addFileMapping(DataFile dataFile, DataFile mapping) {
+//        if (dataFile != null) {
+//            // add mapping
+//            if (!dataFile.containsFileMapping(mapping)) {
+//                dataFile.addFileMapping(mapping);
+//                firePropertyChange(ADD_NEW_DATA_FILE_MAPPING, null, dataFile);
+//            }
+//        }
+//    }
 
     /**
      * Remove a file mapping from a given data file
@@ -353,27 +353,27 @@ public class AppContext extends DesktopContext {
      * @param dataFile given data file
      * @param mapping file mapping to remove
      */
-    public synchronized void removeFileMapping(DataFile dataFile, DataFile mapping) {
-        if (dataFile != null && mapping != null) {
-            // add mapping
-            if (dataFile.containsFileMapping(mapping)) {
-                dataFile.removeFileMapping(mapping);
-                firePropertyChange(REMOVE_DATA_FILE_MAPPING, null, dataFile);
-            }
-        }
-    }
+//    public synchronized void removeFileMapping(DataFile dataFile, DataFile mapping) {
+//        if (dataFile != null && mapping != null) {
+//            // add mapping
+//            if (dataFile.containsFileMapping(mapping)) {
+//                dataFile.removeFileMapping(mapping);
+//                firePropertyChange(REMOVE_DATA_FILE_MAPPING, null, dataFile);
+//            }
+//        }
+//    }
 
     /**
      * Remove all file mappings from a given data file
      *
      * @param dataFile data file
      */
-    public synchronized void removeAllFileMappings(DataFile dataFile) {
-        if (dataFile != null) {
-            dataFile.removeAllFileMappings();
-            firePropertyChange(REMOVE_DATA_FILE_MAPPING, null, dataFile);
-        }
-    }
+//    public synchronized void removeAllFileMappings(DataFile dataFile) {
+//        if (dataFile != null) {
+//            dataFile.removeAllFileMappings();
+//            firePropertyChange(REMOVE_DATA_FILE_MAPPING, null, dataFile);
+//        }
+//    }
 
     /**
      * Add a set of metadata entries

@@ -115,7 +115,11 @@ public class CalculateChecksumForm extends Form implements ActionListener {
 
 
     public void setProgress(int encryptedFiles, int totalNumOfFiles) {
-        int percentage = Math.round((encryptedFiles * 1.0f / totalNumOfFiles) * 100);
+        int percentage = 0;
+        if(totalNumOfFiles!=0)
+         percentage = Math.round((encryptedFiles * 1.0f / totalNumOfFiles) * 100);
+        else
+          percentage = 100;
         // set progress bar
         progressBar.setValue(percentage);
 

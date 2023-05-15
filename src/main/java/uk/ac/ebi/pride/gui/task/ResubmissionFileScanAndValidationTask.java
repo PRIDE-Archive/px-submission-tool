@@ -7,7 +7,11 @@ import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
-import uk.ac.ebi.pride.data.model.*;
+import uk.ac.ebi.pride.data.model.DataFile;
+import uk.ac.ebi.pride.data.model.Resubmission;
+import uk.ac.ebi.pride.data.model.ResubmissionFileChangeState;
+import uk.ac.ebi.pride.data.model.SampleMetaData;
+import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.data.mztab.parser.MzTabFullDocumentQuickParser;
 import uk.ac.ebi.pride.data.mztab.parser.MzTabParser;
 import uk.ac.ebi.pride.data.mztab.parser.exceptions.MzTabParserException;
@@ -16,7 +20,11 @@ import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
 import uk.ac.ebi.pride.data.validation.SubmissionValidator;
 import uk.ac.ebi.pride.data.validation.ValidationMessage;
 import uk.ac.ebi.pride.data.validation.ValidationReport;
-import uk.ac.ebi.pride.gui.util.*;
+import uk.ac.ebi.pride.gui.util.Constant;
+import uk.ac.ebi.pride.gui.util.DataFileValidationMessage;
+import uk.ac.ebi.pride.gui.util.PrideConverterSupport;
+import uk.ac.ebi.pride.gui.util.ValidationState;
+import uk.ac.ebi.pride.gui.util.WarningMessageGenerator;
 import uk.ac.ebi.pride.jaxb.model.CvParam;
 import uk.ac.ebi.pride.jaxb.model.SampleDescription;
 import uk.ac.ebi.pride.jaxb.xml.unmarshaller.PrideXmlUnmarshaller;
@@ -30,11 +38,20 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.xml.bind.JAXBException;
 import java.awt.*;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.*;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -76,6 +93,11 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
     @Override
     protected DataFileValidationMessage doInBackground() throws Exception {
 
+
+        List<String> duplicateFileNames = findDuplicateFileNames();
+        if (duplicateFileNames.size() > 0) {
+            return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getDuplicateFilesWarning(duplicateFileNames));
+        }
 
         //2. If file is modified, check if the new file has been uploaded
         List<DataFile> missingModifiedFile = findMissingModifiedFiles();
@@ -221,7 +243,7 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
                     return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMissingReferencedFilesWarning(mzTabFilesMissingReferencedFiles));
                 }
                 setProgress(80);
-                }
+            }
 
         } else if (submissionType.equals(SubmissionType.PARTIAL)) {
             // should have both search engine output and raw files
@@ -296,11 +318,11 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
         }
 
         boolean isSdrfFound = false;
-        for(DataFile dataFile : submission.getDataFiles()){
-            if(dataFile.getFileType().equals(ProjectFileType.EXPERIMENTAL_DESIGN)){
+        for (DataFile dataFile : submission.getDataFiles()) {
+            if (dataFile.getFileType().equals(ProjectFileType.EXPERIMENTAL_DESIGN)) {
                 isSdrfFound = true;
-                Set<ValidationError> errors = Main.validate(dataFile.getFilePath(),true);
-                if(errors.size() !=0){
+                Set<ValidationError> errors = Main.validate(dataFile.getFilePath(), true);
+                if (errors.size() != 0) {
                     logger.error("Error in file " + dataFile.getFileName());
                     return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSDRFFileWarning());
                 }
@@ -308,10 +330,10 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
         }
 
         // check in resubmission
-        for(DataFile dataFile : resubmission.getDataFiles()){
-            if(dataFile.getFileType().equals(ProjectFileType.EXPERIMENTAL_DESIGN)){
+        for (DataFile dataFile : resubmission.getDataFiles()) {
+            if (dataFile.getFileType().equals(ProjectFileType.EXPERIMENTAL_DESIGN)) {
                 isSdrfFound = true;
-               // Do not validate previously submitted SDRF
+                // Do not validate previously submitted SDRF
             }
         }
 
@@ -354,19 +376,20 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
      * If any existing file(s) denoted as "Modify", the modified new file should be uploaded
      * to keep that promise. This method catches any missing files that are not uploaded, but
      * labelled as "Modify" file(s)
+     *
      * @return List of missing Data Files
      */
-    private List<DataFile> findMissingModifiedFiles(){
+    private List<DataFile> findMissingModifiedFiles() {
         List<DataFile> missingModifiedFile = new ArrayList<>();
-        for(Map.Entry<DataFile, ResubmissionFileChangeState> resubmissionFile: resubmission.getResubmission().entrySet()){
-            if(resubmissionFile.getValue().equals(ResubmissionFileChangeState.MODIFY)){
-                boolean isFound=false;
-                for(DataFile newlyUploadedFile : submission.getDataFiles()){
-                    if(newlyUploadedFile.getFileName().equals(resubmissionFile.getKey().getFileName())){
-                        isFound=true;
+        for (Map.Entry<DataFile, ResubmissionFileChangeState> resubmissionFile : resubmission.getResubmission().entrySet()) {
+            if (resubmissionFile.getValue().equals(ResubmissionFileChangeState.MODIFY)) {
+                boolean isFound = false;
+                for (DataFile newlyUploadedFile : submission.getDataFiles()) {
+                    if (newlyUploadedFile.getFileName().equals(resubmissionFile.getKey().getFileName())) {
+                        isFound = true;
                     }
                 }
-                if(!isFound){
+                if (!isFound) {
                     missingModifiedFile.add(resubmissionFile.getKey());
                 }
             }
@@ -374,6 +397,20 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
         return missingModifiedFile;
     }
 
+    /**
+     *      *
+     * @return List of duplicate Data Files
+     */
+    private List<String> findDuplicateFileNames() {
+        List<String> alreadyPresentFiles = resubmission.getResubmission().entrySet().stream()
+                .filter(f -> f.getValue().equals(ResubmissionFileChangeState.NONE))
+                .map(f -> f.getKey().getFileName()).collect(Collectors.toList());
+        List<String> duplicateFileNames = submission.getDataFiles().stream().map(dataFile -> dataFile.getFileName())
+                .filter(f -> alreadyPresentFiles.contains(f))
+                .collect(Collectors.toList());
+
+        return duplicateFileNames;
+    }
 
 
     private boolean checkBafFiles(List<DataFile> dataFiles) {
@@ -471,9 +508,10 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
                             errorEntry = "NON-Peak List/RAW referenced file '"
                                     + referencedFile
                                     + "', is NOT ALLOWED";
-                        } else {
-                            mzTabFile.addFileMapping(referencedDataFile);
-                        }
+                       }
+//                        else {
+//                            mzTabFile.addFileMapping(referencedDataFile);
+//                        }
                     }
                 } else {
                     // ms-run location can't be null for submission purposes
@@ -525,7 +563,8 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
     private void scanForFileMappings() {
         List<DataFile> dataFiles = Stream.of(submission.getDataFiles(), resubmission.getResubmission().keySet())
                 .flatMap(Collection::stream)
-                .collect(Collectors.toList()); ;
+                .collect(Collectors.toList());
+        ;
         List<DataFile> resultOrSearchFiles = getResultOrSearchFile(dataFiles, submission.getProjectMetaData().getSubmissionType());
         dataFiles.removeAll(resultOrSearchFiles);
 
@@ -533,21 +572,21 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
         Set<DataFile> peakFiles = new HashSet<>();
 
         // single result file, map the rest to the result file
-        if (resultOrSearchFiles.size() == 1) {
-            DataFile resultOrSearchFile = resultOrSearchFiles.get(0);
-            for (DataFile dataFile : dataFiles) {
-                if (!resultOrSearchFile.containsFileMapping(dataFile)) {
-                    appContext.addFileMapping(resultOrSearchFile, dataFile);
-                }
-            }
-        }
+//        if (resultOrSearchFiles.size() == 1) {
+//            DataFile resultOrSearchFile = resultOrSearchFiles.get(0);
+//            for (DataFile dataFile : dataFiles) {
+//                if (!resultOrSearchFile.containsFileMapping(dataFile)) {
+//                    appContext.addFileMapping(resultOrSearchFile, dataFile);
+//                }
+//            }
+//        }
 
         // scan for every file
         for (DataFile resultOrSearchFile : resultOrSearchFiles) {
             for (DataFile dataFile : dataFiles) {
-                if (isDataFileRelated(resultOrSearchFile, dataFile) && !resultOrSearchFile.containsFileMapping(dataFile)) {
-                    appContext.addFileMapping(resultOrSearchFile, dataFile);
-                }
+//                if (isDataFileRelated(resultOrSearchFile, dataFile) && !resultOrSearchFile.containsFileMapping(dataFile)) {
+//                    appContext.addFileMapping(resultOrSearchFile, dataFile);
+//                }
 
                 if (dataFile.getFileType().equals(ProjectFileType.RAW)) {
                     rawFiles.add(dataFile);
@@ -559,22 +598,22 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
 
         // single raw file
         if (rawFiles.size() == 1) {
-            addFileMapping(resultOrSearchFiles, rawFiles.iterator().next());
+            //addFileMapping(resultOrSearchFiles, rawFiles.iterator().next());
         }
 
         // single peak file
         if (peakFiles.size() == 1) {
-            addFileMapping(resultOrSearchFiles, peakFiles.iterator().next());
+            //addFileMapping(resultOrSearchFiles, peakFiles.iterator().next());
         }
     }
 
-    private void addFileMapping(List<DataFile> resultOrSearchFiles, DataFile dataFile) {
-        for (DataFile resultOrSearchFile : resultOrSearchFiles) {
-            if (!resultOrSearchFile.containsFileMapping(dataFile)) {
-                appContext.addFileMapping(resultOrSearchFile, dataFile);
-            }
-        }
-    }
+//    private void addFileMapping(List<DataFile> resultOrSearchFiles, DataFile dataFile) {
+//        for (DataFile resultOrSearchFile : resultOrSearchFiles) {
+//            if (!resultOrSearchFile.containsFileMapping(dataFile)) {
+//                appContext.addFileMapping(resultOrSearchFile, dataFile);
+//            }
+//        }
+//    }
 
     private List<DataFile> getResultOrSearchFile(List<DataFile> dataFiles, SubmissionType type) {
         List<DataFile> holder = new ArrayList<DataFile>();

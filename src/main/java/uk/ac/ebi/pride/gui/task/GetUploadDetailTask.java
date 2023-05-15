@@ -1,5 +1,7 @@
 package uk.ac.ebi.pride.gui.task;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -24,6 +26,8 @@ import static uk.ac.ebi.pride.gui.util.Constant.TICKET_ID;
  * @version $Id$
  */
 public class GetUploadDetailTask extends TaskAdapter<UploadDetail, String> {
+
+    private static final Logger logger = LoggerFactory.getLogger(GetUploadDetailTask.class);
 
     private final RestTemplate restTemplate;
     private final UploadMethod method;
@@ -63,16 +67,17 @@ public class GetUploadDetailTask extends TaskAdapter<UploadDetail, String> {
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
             String ticketId = context.getProperty(TICKET_ID);
-            if(ticketId==null) {
-            uploadDetail = restTemplate.exchange(baseUrl, HttpMethod.GET, entity, UploadDetail.class, method.getMethod()).getBody();
-            } else {
+            if(ticketId!=null && !ticketId.equals("")) {
                 uploadDetail = restTemplate.exchange(reUploadUrl,HttpMethod.GET,entity,UploadDetail.class,method.getMethod(),ticketId).getBody();
                 if(uploadDetail==null){
                     publish("Error in getting re-upload details either ticketId is not valid or state is not valid");
                 }
+            } else {
+                uploadDetail = restTemplate.exchange(baseUrl, HttpMethod.GET, entity, UploadDetail.class, method.getMethod()).getBody();
             }
 
         } catch(Exception ex){
+            logger.error(ex.getMessage());
             publish("Error in getting upload details");
         }
         return uploadDetail;

@@ -176,12 +176,14 @@ public class FileResubmissionDescriptor extends ContextAwareNavigationPanelDescr
 
         @Override
         public void succeed(TaskEvent<ProjectFileList> taskEvent) {
-            projectFileList =  taskEvent.getValue();
-            logger.info("Number of files found: " + projectFileList.getProjectFiles().size());
-            int count = 0;
-            for (ProjectFile projectFile : projectFileList.getProjectFiles()) {
-                DataFile dataFile = new DataFile(count++, new File(projectFile.getFileName()), null, projectFile.getFileType(), projectFile.getFileSize() ,null, Integer.toString(count));
-                ((AppContext) App.getInstance().getDesktopContext()).addResubmissionDataFile(dataFile);
+            projectFileList = taskEvent.getValue();
+            if (projectFileList != null) {
+                logger.info("Number of files found: " + projectFileList.getProjectFiles().size());
+                int count = 0;
+                for (ProjectFile projectFile : projectFileList.getProjectFiles()) {
+                    DataFile dataFile = new DataFile(count++, new File(projectFile.getFileName()), null, projectFile.getFileType(), projectFile.getFileSize(), null, Integer.toString(count));
+                    ((AppContext) App.getInstance().getDesktopContext()).addResubmissionDataFile(dataFile);
+                }
             }
         }
 

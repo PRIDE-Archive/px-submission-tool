@@ -458,9 +458,10 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                             errorEntry = "NON-Peak List/RAW referenced file '"
                                     + referencedFile
                                     + "', is NOT ALLOWED";
-                        } else {
-                            mzTabFile.addFileMapping(referencedDataFile);
                         }
+//                        else {
+//                            mzTabFile.addFileMapping(referencedDataFile);
+//                        }
                     }
                 } else {
                     // ms-run location can't be null for submission purposes
@@ -521,18 +522,18 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         if (resultOrSearchFiles.size() == 1) {
             DataFile resultOrSearchFile = resultOrSearchFiles.get(0);
             for (DataFile dataFile : dataFiles) {
-                if (!resultOrSearchFile.containsFileMapping(dataFile)) {
-                    appContext.addFileMapping(resultOrSearchFile, dataFile);
-                }
+//                if (!resultOrSearchFile.containsFileMapping(dataFile)) {
+//                    appContext.addFileMapping(resultOrSearchFile, dataFile);
+//                }
             }
         }
 
         // scan for every file
         for (DataFile resultOrSearchFile : resultOrSearchFiles) {
             for (DataFile dataFile : dataFiles) {
-                if (isDataFileRelated(resultOrSearchFile, dataFile) && !resultOrSearchFile.containsFileMapping(dataFile)) {
-                    appContext.addFileMapping(resultOrSearchFile, dataFile);
-                }
+//                if (isDataFileRelated(resultOrSearchFile, dataFile) && !resultOrSearchFile.containsFileMapping(dataFile)) {
+//                    appContext.addFileMapping(resultOrSearchFile, dataFile);
+//                }
 
                 if (dataFile.getFileType().equals(ProjectFileType.RAW)) {
                     rawFiles.add(dataFile);
@@ -555,9 +556,9 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
 
     private void addFileMapping(List<DataFile> resultOrSearchFiles, DataFile dataFile) {
         for (DataFile resultOrSearchFile : resultOrSearchFiles) {
-            if (!resultOrSearchFile.containsFileMapping(dataFile)) {
-                appContext.addFileMapping(resultOrSearchFile, dataFile);
-            }
+//            if (!resultOrSearchFile.containsFileMapping(dataFile)) {
+//                appContext.addFileMapping(resultOrSearchFile, dataFile);
+//            }
         }
     }
 
@@ -940,9 +941,9 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                         String spectraFileName = FileUtil.getDecompressedFileName(spectraFile.getFile());
                         if (peakListFileName.equalsIgnoreCase(spectraFileName)) {
                             present = true;
-                            if (!dataFile.getFileMappings().contains(spectraFile)) {
-                                dataFile.addFileMapping(spectraFile);
-                            }
+//                            if (!dataFile.getFileMappings().contains(spectraFile)) {
+//                                dataFile.addFileMapping(spectraFile);
+//                            }
                             break;
                         }
                     }
