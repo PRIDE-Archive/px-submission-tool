@@ -304,13 +304,13 @@ public class App extends Desktop {
 
             // register file selection form
             FileResubmissionDescriptor resubmissionPanel = new FileResubmissionDescriptor(getDesktopContext().getProperty("resubmission.file.selection.nav.desc.id"),
-                    "Step 3: " + getDesktopContext().getProperty("resubmission.file.selection.nav.desc.title") + " (3/5)",
+                    "Step 3: " + getDesktopContext().getProperty("resubmission.file.selection.nav.desc.title") + " (3/6)",
                     getDesktopContext().getProperty("resubmission.file.selection.nav.desc.detail"));
             navigator.registerNavigationPanel(resubmissionPanel);
 
-            // register encryption panel
+            // register checksum panel
             CalculateChecksumDescriptor calculateChecksumDescriptor = new CalculateChecksumDescriptor(getDesktopContext().getProperty("checksum.nav.desc.id"),
-                    "Step 4: " + getDesktopContext().getProperty("checksum.nav.desc.title") + " (4/10)",
+                    "Step 4: " + getDesktopContext().getProperty("checksum.nav.desc.title"),
                     getDesktopContext().getProperty("checksum.nav.desc.detail"));
             navigator.registerNavigationPanel(calculateChecksumDescriptor);
 
@@ -346,7 +346,7 @@ public class App extends Desktop {
 
             // register Resubmission summary
             ResubmissionSummaryDescriptor resubmissionSummaryPanel = new ResubmissionSummaryDescriptor(getDesktopContext().getProperty("resubmission.summary.nav.desc.id"),
-                    "Step 4: " + getDesktopContext().getProperty("resubmission.summary.nav.desc.title") + " (4/5)",
+                    "Step 5: " + getDesktopContext().getProperty("resubmission.summary.nav.desc.title") + " (5/6)",
                     getDesktopContext().getProperty("resubmission.summary.nav.desc.detail"), new ResubmissionSummaryForm());
             navigator.registerNavigationPanel(resubmissionSummaryPanel);
 

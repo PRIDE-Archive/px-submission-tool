@@ -400,29 +400,29 @@ public class TableFactory {
         ontologyAccessionColumn.setVisible(false);
 
         // removal column
-        String removalColHeader = TargetFileMappingTableModel.TableHeader.REMOVAL.getHeader();
-        final TableColumnExt removalColumn = (TableColumnExt) table.getColumn(removalColHeader);
-        removalColumn.setCellRenderer(new RemovalCellRenderer());
-        removalColumn.setVisible(false);
-        removalColumn.setMaxWidth(REMOVAL_COLUMN_WIDTH);
-        removalColumn.setMinWidth(REMOVAL_COLUMN_WIDTH);
+//        String removalColHeader = TargetFileMappingTableModel.TableHeader.REMOVAL.getHeader();
+//        final TableColumnExt removalColumn = (TableColumnExt) table.getColumn(removalColHeader);
+//        removalColumn.setCellRenderer(new RemovalCellRenderer());
+//        removalColumn.setVisible(false);
+//        removalColumn.setMaxWidth(REMOVAL_COLUMN_WIDTH);
+//        removalColumn.setMinWidth(REMOVAL_COLUMN_WIDTH);
 
         // add a listener to show/hide removal column
-        tableModel.addTableModelListener(new TableModelListener() {
-            @Override
-            public void tableChanged(TableModelEvent e) {
-                int rowCnt = ((TableModel) e.getSource()).getRowCount();
-                if (rowCnt > 0) {
-                    removalColumn.setVisible(true);
-                } else {
-                    removalColumn.setVisible(false);
-                }
-            }
-        });
-
-        // add listener for removal
-        table.addMouseMotionListener(new TableCellMouseMotionListener(table, removalColHeader));
-        table.addMouseListener(new RemoveSampleMetaDataListener(table, removalColHeader));
+//        tableModel.addTableModelListener(new TableModelListener() {
+//            @Override
+//            public void tableChanged(TableModelEvent e) {
+//                int rowCnt = ((TableModel) e.getSource()).getRowCount();
+//                if (rowCnt > 0) {
+//                    removalColumn.setVisible(true);
+//                } else {
+//                    removalColumn.setVisible(false);
+//                }
+//            }
+//        });
+//
+//        // add listener for removal
+//        table.addMouseMotionListener(new TableCellMouseMotionListener(table, removalColHeader));
+//        table.addMouseListener(new RemoveSampleMetaDataListener(table, removalColHeader));
 
 
         return table;

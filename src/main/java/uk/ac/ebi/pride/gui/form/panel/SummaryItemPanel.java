@@ -131,14 +131,14 @@ public class SummaryItemPanel extends ContextAwarePanel
         buttonsPanel.add(exportSummaryButton);
 
         // add validation button
-        JButton validationButton = new JButton(appContext.getProperty("summary.validate.button.title"));
-        BalloonTipUtil.createBalloonTooltip(
-                validationButton, appContext.getProperty("summary.validate.button.tooltip"));
-        validationButton.setActionCommand(VALIDATE_ACTION);
-        validationButton.addActionListener(this);
-        this.add(validationButton, BorderLayout.PAGE_END);
-        validationButton.setEnabled(isFastValidationSupport());
-        buttonsPanel.add(validationButton);
+//        JButton validationButton = new JButton(appContext.getProperty("summary.validate.button.title"));
+//        BalloonTipUtil.createBalloonTooltip(
+//                validationButton, appContext.getProperty("summary.validate.button.tooltip"));
+//        validationButton.setActionCommand(VALIDATE_ACTION);
+//        validationButton.addActionListener(this);
+//        this.add(validationButton, BorderLayout.PAGE_END);
+//        validationButton.setEnabled(isFastValidationSupport());
+//        buttonsPanel.add(validationButton);
 
         this.add(buttonsPanel, BorderLayout.EAST);
         // repaint
@@ -342,13 +342,13 @@ public class SummaryItemPanel extends ContextAwarePanel
             command.add("-" + arg_format);
             command.add(dataFile.getFilePath());
             if (!fileFormat.equals(MassSpecFileFormat.PRIDE)) {
-                for (DataFile mappingFile : dataFile.getFileMappings()) {
-                    if (mappingFile.getFileType().equals(ProjectFileType.PEAK)) {
-                        command.add(isFirstPeakFile ? "-" + ARG_PEAK : "##");
-                        command.add(mappingFile.getFilePath());
-                        isFirstPeakFile = false;
-                    }
-                }
+//                for (DataFile mappingFile : dataFile.getFileMappings()) {
+//                    if (mappingFile.getFileType().equals(ProjectFileType.PEAK)) {
+//                        command.add(isFirstPeakFile ? "-" + ARG_PEAK : "##");
+//                        command.add(mappingFile.getFilePath());
+//                        isFirstPeakFile = false;
+//                    }
+//                }
             }
             if (fileFormat.equals(MassSpecFileFormat.MZIDENTML) && IS_FAST_VALIDATION_ENABLED) {
                 logger.debug("Fast Validation switched on");

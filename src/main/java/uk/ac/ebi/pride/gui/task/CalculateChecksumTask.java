@@ -53,7 +53,11 @@ public class CalculateChecksumTask extends TaskAdapter<Boolean, ChecksumMessage>
         int i = 0;
         int totalNoOfFiles = dataFiles.size() - 1;
         if (!dataFiles.stream().anyMatch(file -> file.getFileName().equals("checksum.txt"))) {
-          throw new RuntimeException("No checksum.txt present");
+            throw new RuntimeException("No checksum.txt present");
+        }
+        if (totalNoOfFiles == 0) {
+            publish(new ChecksumMessage(this, null, 0, totalNoOfFiles));
+            return null;
         }
         Iterator<Future<Tuple<String, String>>> it = tasks.iterator();
         while (it.hasNext()) {

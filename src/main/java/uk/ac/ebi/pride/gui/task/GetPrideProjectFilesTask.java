@@ -7,8 +7,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.archive.submission.model.File.ProjectFile;
 import uk.ac.ebi.pride.archive.submission.model.File.ProjectFileList;
+import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.gui.data.Credentials;
 import uk.ac.ebi.pride.gui.util.PrideRepoRestClient;
 import uk.ac.ebi.pride.gui.util.Utils;
@@ -16,7 +18,10 @@ import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 
 import java.nio.charset.Charset;
-import java.util.*;
+import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * GetPrideProjectFilesTask retrieves pride Project files of a given Project(by project accession) using pride web service
@@ -24,7 +29,7 @@ import java.util.*;
  * @author Suresh
  * @version $Id$
  */
-public class GetPrideProjectFilesTask extends TaskAdapter<ProjectFileList , String> {
+public class GetPrideProjectFilesTask extends TaskAdapter<ProjectFileList, String> {
 
     private static final Logger logger = LoggerFactory.getLogger(GetPrideProjectFilesTask.class);
 
@@ -41,7 +46,7 @@ public class GetPrideProjectFilesTask extends TaskAdapter<ProjectFileList , Stri
      * @param userName pride user name
      * @param password pride password
      */
-    public GetPrideProjectFilesTask(String userName, char[] password , String accession) {
+    public GetPrideProjectFilesTask(String userName, char[] password, String accession) {
         DesktopContext context = App.getInstance().getDesktopContext();
         String submissionWSBaseUrl = context.getProperty("px.submission.ws.base.url");
 
@@ -75,9 +80,14 @@ public class GetPrideProjectFilesTask extends TaskAdapter<ProjectFileList , Stri
             Map<String, String> uriParams = new HashMap<>();
             uriParams.put("accession", this.accession);
 
-           String response = prideRepoRestClient.sendGetRequestWithRetry(prideProjectFilesUrl, uriParams, null, userCredentials);
+            List<DataFile> files = ((AppContext) context).getResubmissionRecord().getResubmission().getDataFiles();
+            if (files != null && files.size() > 0) {
+                return null;
+            }
+
+            String response = prideRepoRestClient.sendGetRequestWithRetry(prideProjectFilesUrl, uriParams, null, userCredentials);
             ProjectFile[] projectFiles = objectMapper.readValue(response, ProjectFile[].class);
-            for ( ProjectFile projectFile:projectFiles) {
+            for (ProjectFile projectFile : projectFiles) {
                 projectFileList.addProjectFile(projectFile);
             }
             logger.info("projectFileList file count:" + projectFileList.getProjectFiles().size());
@@ -92,13 +102,13 @@ public class GetPrideProjectFilesTask extends TaskAdapter<ProjectFileList , Stri
         return null;
     }
 
-    HttpHeaders createHeaders(String username, String password){
+    HttpHeaders createHeaders(String username, String password) {
         return new HttpHeaders() {{
             String auth = username + ":" + password;
             byte[] encodedAuth = Base64.getEncoder().encode(
-                    auth.getBytes(Charset.forName("US-ASCII")) );
-            String authHeader = "Basic " + new String( encodedAuth );
-            set( "Authorization", authHeader );
+                    auth.getBytes(Charset.forName("US-ASCII")));
+            String authHeader = "Basic " + new String(encodedAuth);
+            set("Authorization", authHeader);
         }};
     }
 }

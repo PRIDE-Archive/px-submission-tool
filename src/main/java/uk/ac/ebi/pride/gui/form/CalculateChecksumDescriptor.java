@@ -95,12 +95,6 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
         }
     }
 
-    @Override
-    public boolean toSkipPanel() {
-        final String resubmissionPxAccession = appContext.getSubmissionRecord().getSubmission().getProjectMetaData().getResubmissionPxAccession();
-        return resubmissionPxAccession != null && resubmissionPxAccession.length()>0;
-    }
-
     private boolean checkAndWriteChecksum(List<DataFile> dataFiles) throws Exception {
         logger.info("Writing calculated checksum to checksum.txt");
         Files.write("#Checksum File\n".getBytes(), SummaryItemPanel.checksumFile);
@@ -141,9 +135,11 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
                 CalculateChecksumForm calculateChecksumForm = (CalculateChecksumForm) CalculateChecksumDescriptor.this.getNavigationPanel();
                 calculateChecksumForm.setProgress(checksumMessage.getNoOfFilesProcessed(), checksumMessage.getTotalNoOfFiles());
                 Tuple<String, String> fileChecksum = checksumMessage.getFileChecksum();
-                String filePath = fileChecksum.getKey();
-                if(!checksumCalculatedFiles.containsKey(filePath)) {
-                    checksumCalculatedFiles.put(filePath, fileChecksum);
+                if(fileChecksum!=null) {
+                    String filePath = fileChecksum.getKey();
+                    if (!checksumCalculatedFiles.containsKey(filePath)) {
+                        checksumCalculatedFiles.put(filePath, fileChecksum);
+                    }
                 }
             } catch (Exception exception) {
                 JOptionPane.showConfirmDialog(app.getMainFrame(),
