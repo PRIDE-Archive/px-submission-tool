@@ -62,7 +62,7 @@ public class GetUploadDetailTask extends TaskAdapter<UploadDetail, String> {
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
             String ticketId = context.getProperty(TICKET_ID);
-            if(ticketId==null) {
+            if(ticketId==null || ticketId.equals("") ) {
                 uploadDetail = restTemplate.exchange(baseUrl, HttpMethod.GET, entity, UploadDetail.class, method.getMethod()).getBody();
             } else {
                 uploadDetail = restTemplate.exchange(reUploadUrl,HttpMethod.GET,entity,UploadDetail.class,method.getMethod(),ticketId).getBody();
