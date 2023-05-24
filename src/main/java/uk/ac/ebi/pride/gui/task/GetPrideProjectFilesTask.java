@@ -80,19 +80,19 @@ public class GetPrideProjectFilesTask extends TaskAdapter<ProjectFileList, Strin
             Map<String, String> uriParams = new HashMap<>();
             uriParams.put("accession", this.accession);
 
-            List<DataFile> files = ((AppContext) context).getResubmissionRecord().getResubmission().getDataFiles();
-            if (files != null && files.size() > 0) {
-                return null;
-            }
-
             String response = prideRepoRestClient.sendGetRequestWithRetry(prideProjectFilesUrl, uriParams, null, userCredentials);
             ProjectFile[] projectFiles = objectMapper.readValue(response, ProjectFile[].class);
             for (ProjectFile projectFile : projectFiles) {
                 projectFileList.addProjectFile(projectFile);
             }
             logger.info("projectFileList file count:" + projectFileList.getProjectFiles().size());
+
+            List<DataFile> files = ((AppContext) context).getResubmissionRecord().getResubmission().getDataFiles();
+            if (files != null && files.size() > 0 && projectFileList.getProjectFiles().size()==files.size()) {
+                return null;
+            }
+
             return projectFileList;
-//            return response;
 
         } catch (ResourceAccessException resourceAccessException) {
             publish("Proxy/Firewall issue");
