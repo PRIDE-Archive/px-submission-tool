@@ -70,15 +70,16 @@ public class GetUploadDetailTask extends TaskAdapter<UploadDetail, String> {
             if(ticketId!=null && !ticketId.equals("")) {
                 uploadDetail = restTemplate.exchange(reUploadUrl,HttpMethod.GET,entity,UploadDetail.class,method.getMethod(),ticketId).getBody();
                 if(uploadDetail==null){
-                    publish("Error in getting re-upload details either ticketId is not valid or state is not valid");
+                    logger.error("Error in getting re-upload details either ticketId is not valid or state is not valid");
                 }
             } else {
                 uploadDetail = restTemplate.exchange(baseUrl, HttpMethod.GET, entity, UploadDetail.class, method.getMethod()).getBody();
+                if (uploadDetail == null) {
+                    logger.error("Error in getting upload details from baseUrl" + baseUrl);
+                }
             }
-
         } catch(Exception ex){
-            logger.error(ex.getMessage());
-            publish("Error in getting upload details");
+            logger.error("Error in getting upload details" + ex.getMessage());
         }
         return uploadDetail;
     }
