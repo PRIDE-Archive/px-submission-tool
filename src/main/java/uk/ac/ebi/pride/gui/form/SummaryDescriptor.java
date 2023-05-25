@@ -19,7 +19,10 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Map;
+
+import static uk.ac.ebi.pride.gui.util.Constant.TICKET_ID;
 
 /**
  * SummaryDescriptor
@@ -119,8 +122,11 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
                     }
                 }
                 Submission submission = appContext.getSubmissionRecord().getSubmission();
+                if(appContext.isResubmission() || (appContext.getProperty(TICKET_ID)!=null && appContext.getProperty(TICKET_ID).startsWith("2-"))  ){
+                    submission.setComments(new ArrayList<>());
+                }
                 SubmissionFileWriter.write(submission, selectedFile);
-                if(appContext.isResubmission()){
+                if(appContext.isResubmission() || (appContext.getProperty(TICKET_ID)!=null && appContext.getProperty(TICKET_ID).startsWith("2-"))  ){
                     addResubmissionSummary(selectedFile.getAbsolutePath(), appContext);
                 }
                 addToolVersionAndLicenseToSummary(selectedFile.getAbsolutePath(), appContext);
