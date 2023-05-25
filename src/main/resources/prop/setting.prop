@@ -27,7 +27,7 @@ px.web.url = http://www.proteomexchange.org/
 px.submission.guideline.web.url = http://www.proteomexchange.org/submission/index.html
 
 # url for pride new account
-pride.new.account.url = https://www.ebi.ac.uk/pride/archive/register
+pride.new.account.url = https://www.ebi.ac.uk/pride/register
 
 # Checksum
 checksum.filename = checksum.txt

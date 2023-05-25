@@ -1,7 +1,9 @@
 package uk.ac.ebi.pride.gui.util;
 
 import javax.swing.*;
+import java.awt.*;
 import java.lang.reflect.Method;
+import java.net.URI;
 
 /**
  * Http utility class
@@ -16,9 +18,7 @@ public class HttpUtil {
         String osName = System.getProperty("os.name");
         try {
             if (osName.startsWith("Mac OS")) {
-                Class fileMgr = Class.forName("com.apple.eio.FileManager");
-                Method openURL = fileMgr.getDeclaredMethod("openURL", new Class[]{String.class});
-                openURL.invoke(null, url);
+                Desktop.getDesktop().browse(URI.create(url));
             } else if (osName.startsWith("Windows")) {
                 Runtime.getRuntime().exec("rundll32 url.dll,FileProtocolHandler " + url);
             } else { //assume Unix or Linux
