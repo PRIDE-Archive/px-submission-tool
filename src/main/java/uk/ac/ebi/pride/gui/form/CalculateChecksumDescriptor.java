@@ -135,9 +135,11 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
                 CalculateChecksumForm calculateChecksumForm = (CalculateChecksumForm) CalculateChecksumDescriptor.this.getNavigationPanel();
                 calculateChecksumForm.setProgress(checksumMessage.getNoOfFilesProcessed(), checksumMessage.getTotalNoOfFiles());
                 Tuple<String, String> fileChecksum = checksumMessage.getFileChecksum();
-                String filePath = fileChecksum.getKey();
-                if(!checksumCalculatedFiles.containsKey(filePath)) {
-                    checksumCalculatedFiles.put(filePath, fileChecksum);
+                if(fileChecksum!=null) {
+                    String filePath = fileChecksum.getKey();
+                    if (!checksumCalculatedFiles.containsKey(filePath)) {
+                        checksumCalculatedFiles.put(filePath, fileChecksum);
+                    }
                 }
             } catch (Exception exception) {
                 JOptionPane.showConfirmDialog(app.getMainFrame(),

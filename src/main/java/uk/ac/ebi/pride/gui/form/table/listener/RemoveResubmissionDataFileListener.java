@@ -9,16 +9,16 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 /**
- * Mouse click listener for remove data file mapping
+ * Listener to trigger a removal of a data file
  *
  * @author Rui Wang
  * @version $Id$
  */
-public class RemoveDataFileMappingListener extends MouseAdapter {
+public class RemoveResubmissionDataFileListener extends MouseAdapter {
     private JTable table;
     private String colHeader;
 
-    public RemoveDataFileMappingListener(JTable table, String colHeader) {
+    public RemoveResubmissionDataFileListener(JTable table, String colHeader) {
         this.table = table;
         this.colHeader = colHeader;
     }
@@ -30,10 +30,8 @@ public class RemoveDataFileMappingListener extends MouseAdapter {
         if (header.equals(colHeader)) {
             int row = table.rowAtPoint(e.getPoint());
             if (row >= 0 && row < table.getRowCount()) {
-                DataFile mapping = (DataFile) table.getValueAt(row, col);
-//                TargetFileMappingTableModel tableModel = (TargetFileMappingTableModel) table.getModel();
-//                DataFile dataFile = tableModel.getDataFile();
-//                ((AppContext) App.getInstance().getDesktopContext()).removeFileMapping(dataFile, mapping);
+                Object value = table.getValueAt(row, col);
+                ((AppContext) App.getInstance().getDesktopContext()).removeResubmissionDatafile((DataFile) value);
             }
         }
     }

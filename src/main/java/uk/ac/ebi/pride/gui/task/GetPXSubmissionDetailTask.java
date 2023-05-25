@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.archive.submission.model.project.ProjectDetail;
 import uk.ac.ebi.pride.archive.submission.model.project.ProjectDetailList;
 import uk.ac.ebi.pride.gui.data.Credentials;
@@ -18,6 +19,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -29,7 +32,7 @@ import java.util.regex.Matcher;
  * @author Rui Wang
  * @version $Id$
  */
-public class GetPXSubmissionDetailTask extends AbstractWebServiceTask<Set<String>> {
+public class GetPXSubmissionDetailTask extends AbstractWebServiceTask<HashMap<String, SubmissionTypeConstants>> {
     private static final Logger logger = LoggerFactory.getLogger(GetPXSubmissionDetailTask.class);
 
     private final RestTemplate restTemplate;
@@ -42,8 +45,8 @@ public class GetPXSubmissionDetailTask extends AbstractWebServiceTask<Set<String
     }
 
     @Override
-    protected Set<String> doInBackground() throws Exception {
-        Set<String> pxAccessions = new LinkedHashSet<String>();
+    protected HashMap<String,SubmissionTypeConstants> doInBackground() throws Exception {
+        HashMap<String,SubmissionTypeConstants> pxAccessions = new LinkedHashMap<>();
 
         try {
             setProxyIfProvided(restTemplate);
@@ -57,7 +60,7 @@ public class GetPXSubmissionDetailTask extends AbstractWebServiceTask<Set<String
                 String accession = projectDetail.getAccession();
                 Matcher matcher = Constant.PX_ACC_PATTERN.matcher(accession);
                 if (matcher.matches()) {
-                    pxAccessions.add(accession);
+                    pxAccessions.put(accession,projectDetail.getSubmissionType());
                 }
             }
         } catch (Exception ex) {

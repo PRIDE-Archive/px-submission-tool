@@ -76,7 +76,7 @@ public class AsperaUploadTask extends AsperaGeneralTask implements TransferListe
                 FaspManager.destroy();
                 publish(new UploadProgressMessage(this, null, totalFileSize, totalFileSize, totalNumOfFiles, totalNumOfFiles));
                 if((int)sessionStats.getFilesComplete()==totalNumOfFiles+1) {
-                    publish(new UploadSuccessMessage(this));
+                publish(new UploadSuccessMessage(this));
                 }
                 logger.debug("Aspera Session Stop");
                 break;

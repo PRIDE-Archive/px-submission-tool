@@ -5,16 +5,24 @@ import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.data.io.SubmissionFileWriter;
+import uk.ac.ebi.pride.data.model.DataFile;
+import uk.ac.ebi.pride.data.model.ResubmissionFileChangeState;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.navigation.Navigator;
+import uk.ac.ebi.pride.toolsuite.gui.prop.PropertyChangeHandler;
 
 import javax.help.HelpBroker;
 import javax.swing.*;
+import java.awt.*;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Map;
+
+import static uk.ac.ebi.pride.gui.util.Constant.TICKET_ID;
 
 /**
  * SummaryDescriptor
@@ -26,8 +34,8 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
 
     private static final Logger logger = LoggerFactory.getLogger(SummaryDescriptor.class);
 
-    public SummaryDescriptor(String id, String title, String desc) {
-        super(id, title, desc, new SummaryForm());
+    public SummaryDescriptor(String id, String title, String desc, Component form) {
+        super(id, title, desc, form);
     }
 
     /**
@@ -38,6 +46,12 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
     public void getHelp() {
         HelpBroker hb = appContext.getMainHelpBroker();
         hb.showID("help.submission.summary", "javax.help.SecondaryWindow", "main");
+    }
+
+    @Override
+    public boolean toSkipPanel() {
+        final String resubmissionPxAccession = appContext.getSubmissionRecord().getSubmission().getProjectMetaData().getResubmissionPxAccession();
+        return resubmissionPxAccession != null && resubmissionPxAccession.length()>0;
     }
 
     @Override
@@ -108,7 +122,13 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
                     }
                 }
                 Submission submission = appContext.getSubmissionRecord().getSubmission();
+                if(appContext.isResubmission() || (appContext.getProperty(TICKET_ID)!=null && appContext.getProperty(TICKET_ID).startsWith("2-"))  ){
+                    submission.setComments(new ArrayList<>());
+                }
                 SubmissionFileWriter.write(submission, selectedFile);
+                if(appContext.isResubmission() || (appContext.getProperty(TICKET_ID)!=null && appContext.getProperty(TICKET_ID).startsWith("2-"))  ){
+                    addResubmissionSummary(selectedFile.getAbsolutePath(), appContext);
+                }
                 addToolVersionAndLicenseToSummary(selectedFile.getAbsolutePath(), appContext);
                 isFileExported = true;
             } catch (Exception ex) {
@@ -130,6 +150,27 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
             bw.write("COM\tVersion:" + appContext.getProperty("px.submission.tool.version"));
             bw.newLine();
             bw.write("COM\tDataset License:" + appContext.getProperty("px.submission.dataset.version"));
+            bw.newLine();
+            bw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * All the resubmission files to the submission.px as a comment
+     * @param fileName Submission.px full path
+     * @param appContext AppContext
+     */
+    public static void addResubmissionSummary(String fileName, AppContext appContext) {
+        try {
+            FileWriter fw = new FileWriter(fileName, true);
+            BufferedWriter bw = new BufferedWriter(fw);
+            Map<DataFile, ResubmissionFileChangeState> resubmissionFiles  = appContext.getResubmissionRecord().getResubmission().getResubmission();
+            for (Map.Entry<DataFile, ResubmissionFileChangeState> resubmissionFile : resubmissionFiles.entrySet()) {
+                bw.write("COM\tResubmission\t" +  resubmissionFile.getKey().getFileName() + "\t" + resubmissionFile.getKey().getFileType().getName() + "\t" + resubmissionFile.getKey().getFileSize() + "\t" +  resubmissionFile.getValue());
+                bw.newLine();
+            }
             bw.newLine();
             bw.close();
         } catch (IOException e) {

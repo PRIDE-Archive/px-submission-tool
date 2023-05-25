@@ -130,12 +130,11 @@ public class FileFTPUploadTask extends TaskAdapter<Void, UploadMessage> implemen
                     throw new IOException("FTP transfer failure for the file");
                 }
                 logger.info("Retrying to upload file: " + dataFile.getFilePath() + " Count "+ retryCount);
-                Util.copyStream(inputStream, outputStream, BUFFER_SIZE, CopyStreamEvent.UNKNOWN_STREAM_SIZE, this, true);
+            Util.copyStream(inputStream, outputStream, BUFFER_SIZE, CopyStreamEvent.UNKNOWN_STREAM_SIZE, this, true);
                 retryCount++;
             }
             logger.info("File check done: " + dataFile.getFileName());
             publish(new UploadFileSuccessMessage(this, dataFile));
-
         } catch (IOException e) {
             if (!this.isCancelled()) {
                 logger.error("IOException while uploading file: " + fileName, e);
