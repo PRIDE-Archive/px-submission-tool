@@ -12,6 +12,7 @@ import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.Duration;
 
 /**
  * Create ftp directory for uploading
@@ -41,7 +42,7 @@ public class CreateFTPDirectoryTask extends TaskAdapter<Void, UploadMessage> {
     @Override
     protected Void doInBackground() throws Exception {
         ftp = new FTPClient();
-        ftp.setControlKeepAliveTimeout(300);
+        ftp.setControlKeepAliveTimeout(Duration.ofSeconds(300));
 
         try {
             int reply;

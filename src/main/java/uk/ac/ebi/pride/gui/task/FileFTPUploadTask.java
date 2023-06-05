@@ -47,7 +47,7 @@ public class FileFTPUploadTask extends TaskAdapter<Void, UploadMessage> implemen
     @Override
     protected Void doInBackground() throws Exception {
         ftp = new FTPClient();
-        ftp.setControlKeepAliveTimeout(Duration.ofSeconds(300));
+        ftp.setControlKeepAliveTimeout(Duration.ofSeconds(200));
 
         inputStream = null;
         outputStream = null;
@@ -101,6 +101,8 @@ public class FileFTPUploadTask extends TaskAdapter<Void, UploadMessage> implemen
                 inputStream = new FileInputStream(fileToUpload);
 
                 logger.info("Starting to upload file: " + fileToUpload.getAbsolutePath());
+
+                ftp.setBufferSize(BUFFER_SIZE);
                 ftp.storeFile(fileToUpload.getName(),inputStream);
             } else if (dataFile.isUrl()) {
                 URL urlToUpload = dataFile.getUrl();
