@@ -35,7 +35,7 @@ import java.time.Duration;
  * @version $Id$
  */
 public class FileFTPUploadTask extends TaskAdapter<Void, UploadMessage> implements CopyStreamListener {
-    public static final Logger logger = LoggerFactory.getLogger(FileFTPUploadTaskNew.class);
+    public static final Logger logger = LoggerFactory.getLogger(FileFTPUploadTask.class);
 
     public static final int BUFFER_SIZE = 2048;
     private DataFile dataFile;
