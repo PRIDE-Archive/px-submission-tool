@@ -56,10 +56,10 @@ public class CompleteSubmissionTask extends TaskAdapter<SubmissionReferenceDetai
                 requestFactory.setProxy(proxy);
             }
 
-            String ticket = context.getProperty(TICKET_ID);
+            String ticketId = context.getProperty(TICKET_ID);
 
-            if(context.getProperty(TICKET_ID)!=null){
-                return new SubmissionReferenceDetail(ticket);
+            if(ticketId!=null && !ticketId.equals("")){
+                return new SubmissionReferenceDetail(ticketId);
             }
             result = restTemplate.postForObject(baseUrl, uploadDetail, SubmissionReferenceDetail.class);
         } catch(Exception ex){
