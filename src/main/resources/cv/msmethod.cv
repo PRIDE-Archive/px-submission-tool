@@ -10,4 +10,7 @@ PRIDE	PRIDE:0000452	HDMSE	HDMSE (Data-independent acquisition)
 PRIDE	PRIDE:0000453	PAcIFIC	PAcIFIC (Data-independent acquisition)
 PRIDE	PRIDE:0000454	All-ion fragmentation	All-ion fragmentation (Data-independent acquisition)
 PRIDE	PRIDE:0000512	RNA mass spectrometry	RNA mass spectrometry
+PRIDE   PRIDE:0000635   Affinity proteomics Affinity proteomics
+PRIDE   PRIDE:0000636   SomaScan affinity proteomics    SomaScan affinity proteomics
+PRIDE   PRIDE:0000637   Olink affinity proteomics   Olink affinity proteomics
 MS	MS:1002521	Mass spectrometry imaging	MS imaging
