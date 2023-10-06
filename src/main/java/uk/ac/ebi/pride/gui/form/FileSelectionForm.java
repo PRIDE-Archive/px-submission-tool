@@ -36,6 +36,8 @@ public class FileSelectionForm extends Form implements TaskListener<DataFileVali
     private JTable fileSelectionTable;
     private JButton removeFileButton;
 
+    private JScrollPane scrollPane;
+
     public FileSelectionForm() {
         initComponents();
     }
@@ -88,15 +90,26 @@ public class FileSelectionForm extends Form implements TaskListener<DataFileVali
         this.add(buttonPane, BorderLayout.NORTH);
 
         // file selection table
-        fileSelectionTable = TableFactory.createFileSelectionTable();
+        fileSelectionTable = TableFactory.createFileSelectionTable(appContext.getSubmissionType());
 
         // scroll pane
-        JScrollPane scrollPane = new JScrollPane(fileSelectionTable,
+        scrollPane = new JScrollPane(fileSelectionTable,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
         this.add(scrollPane, BorderLayout.CENTER);
     }
 
+    public void setFileSelectionTable(JTable fileSelectionTable) {
+        this.fileSelectionTable = fileSelectionTable;
+    }
+
+    public JScrollPane getScrollPane() {
+        return scrollPane;
+    }
+
+    public void setScrollPane(JScrollPane scrollPane) {
+        this.scrollPane = scrollPane;
+    }
 
     @Override
     public ValidationState doValidation() {

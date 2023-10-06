@@ -31,6 +31,8 @@ public final class Constant {
     public static final String PRIDE_USER_EMAIL = "Email";
     public static final String PRIDE_USER_AFFILIATION = "Affiliation";
 
+    public static final String ADAT = "adat";
+
 
     public static final String EMAIL = "email";
     public static final String FTP = "ftp";

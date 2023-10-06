@@ -90,7 +90,7 @@ public class SubmissionTypeDescriptor extends ContextAwareNavigationPanelDescrip
         boolean confirmSubmissionOption = true;
         SubmissionType submissionType = appContext.getSubmissionType();
 
-        if (!submissionType.equals(SubmissionType.COMPLETE)) {
+        if (submissionType.equals(SubmissionType.PARTIAL)) {
             int n = JOptionPane.showConfirmDialog(app.getMainFrame(),
                     appContext.getProperty("unsupported.result.file.dialog.message"),
                     appContext.getProperty("unsupported.result.file.dialog.title"),
@@ -114,7 +114,6 @@ public class SubmissionTypeDescriptor extends ContextAwareNavigationPanelDescrip
         boolean loadPreviousSubmission = false;
 
         if (SubmissionRecordSerializer.hasSubmissionRecord()) {
-
             int n = JOptionPane.showConfirmDialog(app.getMainFrame(),
                     appContext.getProperty("incomplete.submission.record.dialog.message"),
                     appContext.getProperty("incomplete.submission.record.dialog.title"),

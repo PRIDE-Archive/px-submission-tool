@@ -13,6 +13,7 @@ import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.data.mztab.parser.MzTabFullDocumentQuickParser;
 import uk.ac.ebi.pride.data.mztab.parser.MzTabParser;
 import uk.ac.ebi.pride.data.mztab.parser.exceptions.MzTabParserException;
+import uk.ac.ebi.pride.data.util.AffinityFileFormat;
 import uk.ac.ebi.pride.data.util.FileUtil;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
 import uk.ac.ebi.pride.data.validation.SubmissionValidator;
@@ -127,6 +128,15 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         List<DataFile> resultDataFiles = submission.getDataFileByType(ProjectFileType.RESULT);
         boolean noResultFile = resultDataFiles.isEmpty();
 
+        boolean hasAdatFile = submission.getDataFiles().stream().anyMatch(dataFile ->
+            FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.ADAT.getFileExtension()) ||
+                    FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.BCL.getFileExtension()));
+
+        if((hasAdatFile && !submissionType.equals(SubmissionType.AFFINITY))
+        || (!hasAdatFile && submissionType.equals(SubmissionType.AFFINITY))){
+                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSubmissionType(hasAdatFile));
+        }
+
         if (submissionType.equals(SubmissionType.COMPLETE)) {
 
             // should have both result files and raw files
@@ -232,7 +242,8 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 }
                 setProgress(80);
             }
-        } else if (submissionType.equals(SubmissionType.PARTIAL)) {
+        }
+        else if (submissionType.equals(SubmissionType.PARTIAL) || submissionType.equals(SubmissionType.AFFINITY)) {
             // should have both search engine output and raw files
             if (noSearchFile || noRawFile) {
                 return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMissedFileWarning(submissionType, !noResultFile, !noSearchFile, !noRawFile));
@@ -267,7 +278,8 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             }
             setProgress(85);
 
-        } else {
+        }
+        else {
             // must have raw files
             if (noRawFile) {
                 return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMissedFileWarning(submissionType, !noResultFile, !noSearchFile, !noRawFile));
@@ -643,7 +655,8 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                         result.setMztab(true);
                     }
                 }
-            } else if (ProjectFileType.RAW.equals(fileType)) {
+            }
+            else if (ProjectFileType.RAW.equals(fileType)) {
                 if (!isValidRawCompressedFile(dataFile)) {
                     result.setUnsupportedRawFile(true);
                 } else {

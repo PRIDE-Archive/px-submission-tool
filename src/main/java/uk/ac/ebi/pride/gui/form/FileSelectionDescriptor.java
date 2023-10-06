@@ -2,6 +2,7 @@ package uk.ac.ebi.pride.gui.form;
 
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.data.model.Submission;
+import uk.ac.ebi.pride.gui.form.table.TableFactory;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.GUIBlocker;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
@@ -14,6 +15,8 @@ import uk.ac.ebi.pride.gui.util.DataFileValidationMessage;
 import uk.ac.ebi.pride.gui.util.ValidationState;
 
 import javax.help.HelpBroker;
+import javax.swing.*;
+import java.awt.*;
 import java.util.List;
 
 /**
@@ -68,6 +71,19 @@ public class FileSelectionDescriptor extends ContextAwareNavigationPanelDescript
         FileSelectionForm form = (FileSelectionForm) getNavigationPanel();
         form.hideWarnings();
         firePropertyChange(BEFORE_HIDING_FOR_PREVIOUS_PANEL_PROPERTY, false, true);
+    }
+
+    @Override
+    public void beforeDisplayingPanel() {
+        FileSelectionForm form = (FileSelectionForm) getNavigationPanel();
+        JTable fileSelectionTable = TableFactory.createFileSelectionTable(appContext.getSubmissionType());
+        form.remove(form.getScrollPane());
+        form.setFileSelectionTable(fileSelectionTable);
+        JScrollPane newScrollPane = new JScrollPane(fileSelectionTable,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        form.setScrollPane(newScrollPane);
+        form.add(newScrollPane,BorderLayout.CENTER);
+        firePropertyChange(BEFORE_DISPLAY_PANEL_PROPERTY, false, true);
     }
 
     @Override

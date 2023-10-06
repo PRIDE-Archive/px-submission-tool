@@ -25,7 +25,6 @@ public class PrerequisiteForm extends Form {
     private JPanel resultFileRequirementItemPanel;
     private JPanel identificationFileRequirementItemPanel;
     private JPanel rawFileRequirementItemPanel;
-    private JPanel prideLoginRequirementItemPanel;
     private JPanel experimentMetadataItemPanel;
     private JPanel labHeadItemPanel;
 
@@ -46,7 +45,6 @@ public class PrerequisiteForm extends Form {
         resultFileRequirementItemPanel = createResultFilePanel();
         identificationFileRequirementItemPanel = createIdentificationFilePanel();
         rawFileRequirementItemPanel = createRawFilePanel();
-        prideLoginRequirementItemPanel = createPrideLoginPanel();
         experimentMetadataItemPanel = createExperimentMetadataPanel();
         labHeadItemPanel = createLabHeadPanel();
     }
@@ -95,6 +93,12 @@ public class PrerequisiteForm extends Form {
         return createRequiredItemPanel(header, subHeader, icon);
     }
 
+    private JPanel createAdatRawFilePanel() {
+        String header = appContext.getProperty("prerequisite.raw.file.title");
+        String subHeader = appContext.getProperty("prerequisite.raw.adat.file.desc");
+        Icon icon = GUIUtilities.loadIcon(appContext.getProperty("prerequisite.raw.file.small.icon"));
+        return createRequiredItemPanel(header, subHeader, icon);
+    }
     /**
      * Requirement panel for pride login
      */
@@ -248,17 +252,22 @@ public class PrerequisiteForm extends Form {
             requirementItemContainer.removeAll();
             requirementItemContainer.add(resultFileRequirementItemPanel);
             requirementItemContainer.add(rawFileRequirementItemPanel);
-            requirementItemContainer.add(prideLoginRequirementItemPanel);
             requirementItemContainer.add(experimentMetadataItemPanel);
             requirementItemContainer.add(labHeadItemPanel);
         } else if (SubmissionType.PARTIAL.equals(submissionType)){
             requirementItemContainer.removeAll();
             requirementItemContainer.add(identificationFileRequirementItemPanel);
             requirementItemContainer.add(rawFileRequirementItemPanel);
-            requirementItemContainer.add(prideLoginRequirementItemPanel);
             requirementItemContainer.add(experimentMetadataItemPanel);
             requirementItemContainer.add(labHeadItemPanel);
+        } else {
+                requirementItemContainer.removeAll();
+                requirementItemContainer.add(identificationFileRequirementItemPanel);
+                requirementItemContainer.add(createAdatRawFilePanel());
+                requirementItemContainer.add(experimentMetadataItemPanel);
+                requirementItemContainer.add(labHeadItemPanel);
         }
+
 
         requirementItemContainer.revalidate();
         requirementItemContainer.repaint();

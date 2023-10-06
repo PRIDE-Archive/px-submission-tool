@@ -5,7 +5,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
+import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 import uk.ac.ebi.pride.data.model.CvParam;
+import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.toolsuite.gui.EDTUtils;
 import uk.ac.ebi.pride.gui.util.CvFileUtil;
 import uk.ac.ebi.pride.toolsuite.ols.dialog.OLSDialog;
@@ -17,9 +19,14 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import static uk.ac.ebi.pride.data.util.Constant.MS;
+import static uk.ac.ebi.pride.data.util.Constant.PRIDE;
 
 /**
  * Abstract combo selection model for metadata selection
@@ -51,7 +58,14 @@ public abstract class AbstractMetadataComboSelectionModel extends AbstractListMo
 
         // add all the element from a template file
         try {
-            elements.addAll(CvFileUtil.parseByTabDelimitedLine(defaultValueFile));
+            Collection<CvParam> cvParams  = CvFileUtil.parseByTabDelimitedLine(defaultValueFile);
+            if(appContext.getSubmissionType().equals(SubmissionType.AFFINITY) && defaultValueFile.contains("instrument")){
+                elements.addAll(cvParams.stream().filter(cvParam -> cvParam.getCvLabel().equals(PRIDE)).collect(Collectors.toList()));
+            } else if (defaultValueFile.contains("instrument")) {
+                elements.addAll(cvParams.stream().filter(cvParam -> !cvParam.getCvLabel().equals(PRIDE)).collect(Collectors.toList()));
+            } else {
+                elements.addAll(cvParams);
+            }
         } catch (IOException ioe) {
             logger.error("Failed to load default values from the template file", ioe);
         }

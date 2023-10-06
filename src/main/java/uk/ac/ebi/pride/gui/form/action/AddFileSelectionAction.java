@@ -5,6 +5,7 @@ import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
+import uk.ac.ebi.pride.data.util.AffinityFileFormat;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
@@ -62,8 +63,8 @@ public class AddFileSelectionAction extends AbstractAction {
         // create file chooser
         JFileChooser fileChooser = new JFileChooser(context.getOpenFilePath());
 
-        for( MassSpecFileFormat massSpecFileFormat : MassSpecFileFormat.values()){
-            fileChooser.addChoosableFileFilter(new FileNameExtensionFilter(massSpecFileFormat.name(),new String[]{massSpecFileFormat.getFileExtension()}));
+        for (MassSpecFileFormat massSpecFileFormat : MassSpecFileFormat.values()) {
+            fileChooser.addChoosableFileFilter(new FileNameExtensionFilter(massSpecFileFormat.name(), new String[]{massSpecFileFormat.getFileExtension()}));
         }
 
         // set file chooser title
@@ -97,7 +98,6 @@ public class AddFileSelectionAction extends AbstractAction {
      * Task to process files or folders selected
      */
     private static class FileSelectionTask extends TaskAdapter<Void, DataFile> {
-
         private List<File> files;
 
         public FileSelectionTask(List<File> files) {
@@ -152,10 +152,19 @@ public class AddFileSelectionAction extends AbstractAction {
          * @param file given file
          */
         private void createDataFile(File file) throws IOException {
-            // by default it is other type
-            MassSpecFileFormat format = MassSpecFileFormat.checkFormat(file);
 
-            DataFile newDataFile = format == null ? new DataFile(file, ProjectFileType.OTHER) : new DataFile(file, format);
+            DataFile newDataFile;
+
+            AffinityFileFormat affinityFileFormat = AffinityFileFormat.checkFormat(file);
+
+            if (affinityFileFormat != null) {
+                newDataFile = new DataFile(file, affinityFileFormat.getFileType());
+            } else {
+                // by default it is other type
+                MassSpecFileFormat format = MassSpecFileFormat.checkFormat(file);
+                newDataFile = format == null ? new DataFile(file, ProjectFileType.OTHER) : new DataFile(file, format);
+            }
+
             if (!hasSameFileName(newDataFile)) {
                 ((AppContext) App.getInstance().getDesktopContext()).addDataFile(newDataFile);
             }
