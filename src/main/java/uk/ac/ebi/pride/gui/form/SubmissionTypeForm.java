@@ -39,6 +39,8 @@ public class SubmissionTypeForm extends Form {
     private static final String FULL_SUBMISSION_OPTION = "FULL_SUBMISSION";
     private static final String PARTIAL_SUBMISSION_OPTION = "PARTIAL_SUBMISSION";
 
+    private static final String AFFINITY_SUBMISSION_OPTION = "AFFINITY_SUBMISSION";
+
     private String resubmissionChangeTypeError = "";
 
     private ResubmissionDialog resubmissionDialog;
@@ -114,8 +116,8 @@ public class SubmissionTypeForm extends Form {
     private JPanel createOptionButtonPanel() {
         JPanel submissionOptionPanel = new JPanel();
         submissionOptionPanel.setBorder(BorderUtil.createLoweredBorder());
-        GridLayout gridLayout = new GridLayout(2, 1);
-        gridLayout.setVgap(20);
+        GridLayout gridLayout = new GridLayout(3, 1);
+        gridLayout.setVgap(10);
         submissionOptionPanel.setLayout(gridLayout);
 
         ButtonGroup buttonGroup = new ButtonGroup();
@@ -127,7 +129,7 @@ public class SubmissionTypeForm extends Form {
         JPanel completeSubmissionPanel = new JPanel(new BorderLayout());
         HeaderPanel completeSubmissionHeaderPanel = new HeaderPanel();
         completeSubmissionHeaderPanel.setLayout(new BoxLayout(completeSubmissionHeaderPanel, BoxLayout.X_AXIS));
-        completeSubmissionHeaderPanel.setPreferredSize(new Dimension(60, 20));
+        completeSubmissionHeaderPanel.setPreferredSize(new Dimension(50, 20));
 
         completeSubmissionHeaderPanel.add(Box.createHorizontalGlue());
         JCheckBox completeSubmissionCheckBox = new JCheckBox();
@@ -149,7 +151,7 @@ public class SubmissionTypeForm extends Form {
         JPanel partialSubmissionPanel = new JPanel(new BorderLayout());
         HeaderPanel partialSubmissionHeaderPanel = new HeaderPanel(new BorderLayout());
         partialSubmissionHeaderPanel.setLayout(new BoxLayout(partialSubmissionHeaderPanel, BoxLayout.X_AXIS));
-        partialSubmissionHeaderPanel.setPreferredSize(new Dimension(60, 20));
+        partialSubmissionHeaderPanel.setPreferredSize(new Dimension(50, 20));
 
         partialSubmissionHeaderPanel.add(Box.createHorizontalGlue());
         JCheckBox partialSubmissionCheckBox = new JCheckBox();
@@ -166,6 +168,28 @@ public class SubmissionTypeForm extends Form {
         partialSubmissionPanel.add(partialSubmissionContentPanel);
 
         submissionOptionPanel.add(partialSubmissionPanel);
+
+        // partial submission panel
+        JPanel affinitySubmissionPanel = new JPanel(new BorderLayout());
+        HeaderPanel affinityHeaderPanel = new HeaderPanel(new BorderLayout());
+        affinityHeaderPanel.setLayout(new BoxLayout(affinityHeaderPanel, BoxLayout.X_AXIS));
+        affinityHeaderPanel.setPreferredSize(new Dimension(50, 20));
+
+        affinityHeaderPanel.add(Box.createHorizontalGlue());
+        JCheckBox affinitySubmissionCheckBox = new JCheckBox();
+        buttonGroup.add(affinitySubmissionCheckBox);
+        affinitySubmissionCheckBox.setActionCommand(AFFINITY_SUBMISSION_OPTION);
+        affinitySubmissionCheckBox.addActionListener(submissionOptionListener);
+        affinityHeaderPanel.add(affinitySubmissionCheckBox);
+        affinityHeaderPanel.add(Box.createHorizontalGlue());
+        affinitySubmissionPanel.add(affinityHeaderPanel, BorderLayout.WEST);
+
+        String affinitySubmissionTitle = appContext.getProperty("submission.type.affinity.submission.title");
+        String affinitySubmissionContent = appContext.getProperty("submission.type.affinity.submission.content");
+        JPanel affinitySubmissionContentPanel = createSubmissionOptionPanel(affinitySubmissionTitle, affinitySubmissionContent, false);
+        affinitySubmissionPanel.add(affinitySubmissionContentPanel);
+
+        submissionOptionPanel.add(affinitySubmissionPanel);
 
         return submissionOptionPanel;
     }
@@ -260,6 +284,8 @@ public class SubmissionTypeForm extends Form {
                     appContext.setSubmissionsType(SubmissionType.COMPLETE);
                 } else if (e.getActionCommand().equals(PARTIAL_SUBMISSION_OPTION)) {
                     appContext.setSubmissionsType(SubmissionType.PARTIAL);
+                } else if (e.getActionCommand().equals(AFFINITY_SUBMISSION_OPTION)) {
+                    appContext.setSubmissionsType(SubmissionType.AFFINITY);
                 }
             }else{ // If it is a resubmission
                 if (e.getActionCommand().equals(FULL_SUBMISSION_OPTION)) {

@@ -139,10 +139,23 @@ public class AdditionalMetaDataForm extends Form {
 //        initCommentPanel();
     }
 
+
+    public JPanel getInstrumentPanel() {
+        return instrumentPanel;
+    }
+
+    public void setInstrumentPanel(JPanel instrumentPanel) {
+        this.instrumentPanel = instrumentPanel;
+    }
+
+    public void setInstrumentTableModel(MetaDataTableModel instrumentTableModel) {
+        this.instrumentTableModel = instrumentTableModel;
+    }
+
     /**
      * Initialize metadata details panel
      */
-    private JPanel initMetadataPanel(String panelTitle,
+    public static JPanel initMetadataPanel(String panelTitle,
                                      boolean required,
                                      String defaultSelectionLabel,
                                      String otherSelectionLabel,

@@ -2,7 +2,9 @@ package uk.ac.ebi.pride.gui.form.table;
 
 import org.jdesktop.swingx.table.TableColumnExt;
 import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
+import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 import uk.ac.ebi.pride.data.model.ResubmissionFileChangeState;
 import uk.ac.ebi.pride.gui.form.table.editor.ComboBoxCellEditor;
 import uk.ac.ebi.pride.gui.form.table.editor.SampleMetaDataButtonCellEditor;
@@ -16,6 +18,10 @@ import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableModel;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * TableFactory is responsible for creating all the tables in this application
@@ -43,7 +49,7 @@ public class TableFactory {
      *
      * @return JTable  file selection table
      */
-    public static JTable createFileSelectionTable() {
+    public static JTable createFileSelectionTable(SubmissionType submissionType) {
         FileSelectionTableModel tableModel = new FileSelectionTableModel();
         JTable table = new PxTable(tableModel);
 
@@ -77,8 +83,14 @@ public class TableFactory {
 
         // create combo box to select file type
         TableColumnExt fileTypeColumn = (TableColumnExt) table.getColumn(FileSelectionTableModel.TableHeader.TYPE.getHeader());
-        fileTypeColumn.setCellRenderer(new ComboBoxCellRenderer(ProjectFileType.values()));
-        fileTypeColumn.setCellEditor(new ComboBoxCellEditor(ProjectFileType.values()));
+
+        if(submissionType.equals(SubmissionType.AFFINITY)){
+            fileTypeColumn.setCellRenderer(new ComboBoxCellRenderer(Arrays.asList(ProjectFileType.RAW,ProjectFileType.SEARCH,ProjectFileType.EXPERIMENTAL_DESIGN,ProjectFileType.OTHER).toArray()));
+            fileTypeColumn.setCellEditor(new ComboBoxCellEditor(Arrays.asList(ProjectFileType.RAW,ProjectFileType.SEARCH,ProjectFileType.EXPERIMENTAL_DESIGN,ProjectFileType.OTHER).toArray()));
+        } else {
+            fileTypeColumn.setCellRenderer(new ComboBoxCellRenderer(ProjectFileType.values()));
+            fileTypeColumn.setCellEditor(new ComboBoxCellEditor(ProjectFileType.values()));
+        }
         fileTypeColumn.setMinWidth(FILE_TYPE_COLUMN_WIDTH);
         fileTypeColumn.setMaxWidth(FILE_TYPE_COLUMN_WIDTH);
 

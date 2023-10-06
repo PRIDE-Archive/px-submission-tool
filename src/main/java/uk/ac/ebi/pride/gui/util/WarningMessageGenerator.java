@@ -274,9 +274,7 @@ public final class WarningMessageGenerator {
             errMsg.append("<li>");
             errMsg.append("mzIdentML or mzTab Result files (plus spectrum files)");
             errMsg.append("</li>");
-        }
-
-        if (submissionType.equals(SubmissionType.PARTIAL) && !hasSearchFile) {
+        } else if (!hasSearchFile) {
             errMsg.append("<li>");
             errMsg.append("Search engine output, such as: identification results produced by the analysis tool of your choice");
             errMsg.append("</li>");
@@ -308,5 +306,13 @@ public final class WarningMessageGenerator {
 
     public static String getMissingImageDataFileWarning() {
         return "<html>" + "<b>Missing mass spec imaging data</b><br/>" + "Please include .imzML files which contains mass spectrometry imaging data" + "</html>";
+    }
+
+    public static String getInvalidSubmissionType(boolean hasAdatFile) {
+        if(hasAdatFile) {
+            return "<html>" + "<b>Your submission contains .adat/.bml raw files</b><br/>" + "Please please go back and select Affinity Proteomics as Submission Type" + "</html>";
+        }
+        return "<html>" + "<b>Your Submission type is Affinity Proteomics</b><br/>" + "Please upload .adat/.bml files as RAW files or go back to change the SubmissionType" + "</html>";
+
     }
 }
