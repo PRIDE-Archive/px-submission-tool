@@ -18,6 +18,7 @@ import uk.ac.ebi.pride.gui.form.dialog.ValidationProgressDialog;
 import uk.ac.ebi.pride.gui.util.BalloonTipUtil;
 import uk.ac.ebi.pride.gui.util.ValidationReportHTMLFormatUtil;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
+import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
 import uk.ac.ebi.pride.toolsuite.pgconverter.MainApp;
 import uk.ac.ebi.pride.toolsuite.pgconverter.Validator;
 import uk.ac.ebi.pride.toolsuite.pgconverter.utils.Report;
@@ -64,9 +65,9 @@ public class SummaryItemPanel extends ContextAwarePanel
         // get submission details
         submission = appContext.getSubmissionRecord().getSubmission();
         submissionType = submission.getProjectMetaData().getSubmissionType();
-        checksumFile = new File("checksum.txt");
+        checksumFile = new File(appContext.getProperty("checksum.filename"));
         checksumFile.delete();
-        addChecksumFile(submission);
+        addChecksumFile();
         appContext.addPropertyChangeListener(this);
         populateSummaryItemPanel();
     }
@@ -130,14 +131,14 @@ public class SummaryItemPanel extends ContextAwarePanel
         buttonsPanel.add(exportSummaryButton);
 
         // add validation button
-        JButton validationButton = new JButton(appContext.getProperty("summary.validate.button.title"));
-        BalloonTipUtil.createBalloonTooltip(
-                validationButton, appContext.getProperty("summary.validate.button.tooltip"));
-        validationButton.setActionCommand(VALIDATE_ACTION);
-        validationButton.addActionListener(this);
-        this.add(validationButton, BorderLayout.PAGE_END);
-        validationButton.setEnabled(isFastValidationSupport());
-        buttonsPanel.add(validationButton);
+//        JButton validationButton = new JButton(appContext.getProperty("summary.validate.button.title"));
+//        BalloonTipUtil.createBalloonTooltip(
+//                validationButton, appContext.getProperty("summary.validate.button.tooltip"));
+//        validationButton.setActionCommand(VALIDATE_ACTION);
+//        validationButton.addActionListener(this);
+//        this.add(validationButton, BorderLayout.PAGE_END);
+//        validationButton.setEnabled(isFastValidationSupport());
+//        buttonsPanel.add(validationButton);
 
         this.add(buttonsPanel, BorderLayout.EAST);
         // repaint
@@ -218,8 +219,8 @@ public class SummaryItemPanel extends ContextAwarePanel
         if (AppContext.ADD_NEW_DATA_FILE.equals(propName)
                 || AppContext.REMOVE_DATA_FILE.equals(propName)
                 || AppContext.CHANGE_DATA_FILE_TYPE.equals(propName)
-                || AppContext.ADD_NEW_DATA_FILE_MAPPING.equals(propName)
-                || AppContext.REMOVE_DATA_FILE_MAPPING.equals(propName)
+//                || AppContext.ADD_NEW_DATA_FILE_MAPPING.equals(propName)
+//                || AppContext.REMOVE_DATA_FILE_MAPPING.equals(propName)
                 || AppContext.NEW_SUBMISSION_FILE.equals(propName)) {
             populateSummaryItemPanel();
         }
@@ -341,13 +342,13 @@ public class SummaryItemPanel extends ContextAwarePanel
             command.add("-" + arg_format);
             command.add(dataFile.getFilePath());
             if (!fileFormat.equals(MassSpecFileFormat.PRIDE)) {
-                for (DataFile mappingFile : dataFile.getFileMappings()) {
-                    if (mappingFile.getFileType().equals(ProjectFileType.PEAK)) {
-                        command.add(isFirstPeakFile ? "-" + ARG_PEAK : "##");
-                        command.add(mappingFile.getFilePath());
-                        isFirstPeakFile = false;
-                    }
-                }
+//                for (DataFile mappingFile : dataFile.getFileMappings()) {
+//                    if (mappingFile.getFileType().equals(ProjectFileType.PEAK)) {
+//                        command.add(isFirstPeakFile ? "-" + ARG_PEAK : "##");
+//                        command.add(mappingFile.getFilePath());
+//                        isFirstPeakFile = false;
+//                    }
+//                }
             }
             if (fileFormat.equals(MassSpecFileFormat.MZIDENTML) && IS_FAST_VALIDATION_ENABLED) {
                 logger.debug("Fast Validation switched on");
@@ -429,15 +430,18 @@ public class SummaryItemPanel extends ContextAwarePanel
         return 0;
     }
 
-    private void addChecksumFile(Submission submission) {
+    private void addChecksumFile() {
         DataFile checksumDataFile = new DataFile();
+        DesktopContext context = App.getInstance().getDesktopContext();
         if (!checksumDataFile.isFile()) {
             try {
                 checksumFile.createNewFile();
                 Files.append("#Checksum File\n",checksumFile, Charset.defaultCharset());
                 checksumDataFile.setFile(checksumFile);
                 checksumDataFile.setFileType(ProjectFileType.OTHER);
-                ((AppContext) App.getInstance().getDesktopContext()).addDataFile(checksumDataFile);
+                if (((AppContext)context).getSubmissionRecord().getSubmission().getDataFiles().stream().noneMatch(dataFile -> dataFile.getFileName().equals(context.getProperty("checksum.filename")))) {
+                    ((AppContext) context).addDataFile(checksumDataFile);
+                }
             } catch (Exception ex) {
                 JOptionPane.showConfirmDialog(app.getMainFrame(),
                         appContext.getProperty("checksum.file.error.message"),

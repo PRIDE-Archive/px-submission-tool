@@ -7,11 +7,15 @@ px.submission.tool.width = 800
 px.submission.tool.height = 750
 
 # url for retrieving pride user details
-px.user.token.url=https://www.ebi.ac.uk/pride/private/ws/archive/v2/getAAPToken
-px.user.detail.url=https://www.ebi.ac.uk/pride/private/ws/archive/v2/user/view-profile
+px.user.login.url=http://www.proteomexchange.org/archive-submission-ws/user/login
+
+# url for retrieving pride Project Files details
+px.submission.ws.base.url=http://www.proteomexchange.org/archive-submission-ws/
+px.project.files.url=resubmission/files/{accession}
 
 # url for retrieving px ftp upload details
 px.upload.detail.url = http://www.proteomexchange.org/archive-submission-ws/submission/upload/{method}
+px.reupload.detail.url = http://www.proteomexchange.org/archive-submission-ws/submission/reupload/{method}/{ticketId}
 
 # url for completing px submission
 px.submission.complete.url = http://www.proteomexchange.org/archive-submission-ws/submission/submit
@@ -23,10 +27,15 @@ px.web.url = http://www.proteomexchange.org/
 px.submission.guideline.web.url = http://www.proteomexchange.org/submission/index.html
 
 # url for pride new account
-pride.new.account.url = https://www.ebi.ac.uk/pride/archive/register
+pride.new.account.url = https://www.ebi.ac.uk/pride/register
+
+# Checksum
+checksum.filename = checksum.txt
+px.submission.complete.url = http://www.proteomexchange.org/archive-submission-ws/submission/submit
+px.resubmission.complete.url = http://www.proteomexchange.org/archive-submission-ws/resubmission/resubmit
 
 # urls for px submission tool
-px.submission.tool.update.url = http://ftp.pride.ebi.ac.uk/pride/resources/tools/submission-tool
+px.submission.tool.update.url = https://ftp.pride.ebi.ac.uk/pub/databases/pride/resources/tools/submission-tool/
 px.submission.tool.url = http://www.proteomexchange.org/submission/index.html
 px.submission.summary.file.format.url = http://www.proteomexchange.org/docs/Submission_Summary_File_Format.pdf
 
@@ -37,7 +46,9 @@ px.submission.detail.url = http://www.proteomexchange.org/archive-submission-ws/
 aspera.client.mac.binary = aspera/bin/mac-intel/ascp
 aspera.client.linux32.binary = aspera/bin/linux-32/ascp
 aspera.client.linux64.binary = aspera/bin/linux-64/ascp
-aspera.client.windows.binary = aspera/bin/windows-32/ascp.exe
+aspera.client.windows32.binary = aspera/bin/windows-32/ascp.exe
+aspera.client.windows64.binary = aspera/bin/windows-64/ascp.exe
+
 
 # EBI aspera server details, not necessary for upload functionality
 aspera.EBI.host = fasp.ebi.ac.uk

@@ -45,6 +45,8 @@ public final class Constant {
     public static final String PROTEOMEXCHANGE = "1";
     public static final String SUBMISSION_TYPE = "type";
 
+    public static final String TICKET_ID = "ticketId";
+
     public static final String PX_TOOL_USER_DIRECTORY = ".px-tool";
 
     public static final String PX_SUBMISSION_PROGRESS_RECORD = "sub_record.px";

@@ -27,13 +27,12 @@ public class PersistedAsperaFileUploader {
         return FaspManager.getSingleton().startTransfer(order);
     }
 
-    private String getAscpPath(File excutable) {
-        if (excutable == null || !excutable.exists()) {
+    private String getAscpPath(File executable) {
+        logger.info("Aspera executable location: " + executable);
+        if (executable == null || !executable.exists()) {
             throw new IllegalArgumentException("Specified ascp executable does not exist.");
         }
-
-        logger.info("Aspera executable location: " + excutable);
-        return excutable.getAbsolutePath();
+        return executable.getAbsolutePath();
     }
 
     public void addTransferListener(TransferListener transferListener) throws InitializationException {

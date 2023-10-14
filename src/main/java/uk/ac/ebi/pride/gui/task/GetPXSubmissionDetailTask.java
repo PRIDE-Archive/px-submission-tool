@@ -9,6 +9,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.archive.submission.model.project.ProjectDetail;
 import uk.ac.ebi.pride.archive.submission.model.project.ProjectDetailList;
 import uk.ac.ebi.pride.gui.data.Credentials;
@@ -18,7 +19,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.util.Base64;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -30,7 +32,7 @@ import java.util.regex.Matcher;
  * @author Rui Wang
  * @version $Id$
  */
-public class GetPXSubmissionDetailTask extends AbstractWebServiceTask<Set<String>> {
+public class GetPXSubmissionDetailTask extends AbstractWebServiceTask<HashMap<String, SubmissionTypeConstants>> {
     private static final Logger logger = LoggerFactory.getLogger(GetPXSubmissionDetailTask.class);
 
     private final RestTemplate restTemplate;
@@ -43,38 +45,22 @@ public class GetPXSubmissionDetailTask extends AbstractWebServiceTask<Set<String
     }
 
     @Override
-    protected Set<String> doInBackground() throws Exception {
-        Set<String> pxAccessions = new LinkedHashSet<String>();
-
-        String baseUrl = App.getInstance().getDesktopContext().getProperty("px.submission.detail.url");
+    protected HashMap<String,SubmissionTypeConstants> doInBackground() throws Exception {
+        HashMap<String,SubmissionTypeConstants> pxAccessions = new LinkedHashMap<>();
 
         try {
-            Properties props = System.getProperties();
-            String proxyHost = props.getProperty("http.proxyHost");
-            String proxyPort = props.getProperty("http.proxyPort");
-
-            if (proxyHost != null && proxyPort != null) {
-                logger.info("Using proxy server {} and port {}", proxyHost, proxyPort);
-                Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, Integer.parseInt(proxyPort)));
-                SimpleClientHttpRequestFactory requestFactory = (SimpleClientHttpRequestFactory) restTemplate.getRequestFactory();
-                requestFactory.setProxy(proxy);
-            }
-
-            String credentials = this.credentials.getUsername() + ":" + this.credentials.getPassword();
-            String base64Creds = Base64.getEncoder().encodeToString(credentials.getBytes());
-
+            setProxyIfProvided(restTemplate);
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.add("Authorization", "Basic " + base64Creds);
-
-            HttpEntity<String> entity = new HttpEntity<>(headers);
-            ProjectDetailList projectDetailList = restTemplate.exchange(baseUrl, HttpMethod.GET, entity, ProjectDetailList.class).getBody();
+            HttpEntity<Credentials> entity = new HttpEntity<>(credentials, headers);
+            ProjectDetailList projectDetailList = restTemplate.exchange(App.getInstance().getDesktopContext().getProperty("px.submission.detail.url"),
+                    HttpMethod.POST, entity, ProjectDetailList.class).getBody();
 
             for (ProjectDetail projectDetail : projectDetailList.getProjectDetails()) {
                 String accession = projectDetail.getAccession();
                 Matcher matcher = Constant.PX_ACC_PATTERN.matcher(accession);
                 if (matcher.matches()) {
-                    pxAccessions.add(accession);
+                    pxAccessions.put(accession,projectDetail.getSubmissionType());
                 }
             }
         } catch (Exception ex) {
@@ -93,5 +79,18 @@ public class GetPXSubmissionDetailTask extends AbstractWebServiceTask<Set<String
         }
 
         return pxAccessions;
+    }
+
+    public static void setProxyIfProvided(RestTemplate restTemplate) {
+        Properties props = System.getProperties();
+        String proxyHost = props.getProperty("http.proxyHost");
+        String proxyPort = props.getProperty("http.proxyPort");
+
+        if (proxyHost != null && proxyPort != null) {
+            logger.info("Using proxy server {} and port {}", proxyHost, proxyPort);
+            Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, Integer.parseInt(proxyPort)));
+            SimpleClientHttpRequestFactory requestFactory = (SimpleClientHttpRequestFactory) restTemplate.getRequestFactory();
+            requestFactory.setProxy(proxy);
+        }
     }
 }

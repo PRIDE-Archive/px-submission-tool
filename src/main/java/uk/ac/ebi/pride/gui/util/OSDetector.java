@@ -11,7 +11,8 @@ public final class OSDetector {
         LINUX_64,
         LINUX_32,
         MAC,
-        WINDOWS,
+        WINDOWS_64,
+        WINDOWS_32,
         UNSUPPORTED
     }
 
@@ -25,7 +26,11 @@ public final class OSDetector {
         } else if (os.contains("mac")) {
             return OS.MAC;
         } else if (os.contains("win")) {
-            return OS.WINDOWS;
+            if (arch.contains("64")) {
+                return OS.WINDOWS_64;
+            } else {
+                return OS.WINDOWS_32;
+            }
         } else {
             return OS.UNSUPPORTED;
         }

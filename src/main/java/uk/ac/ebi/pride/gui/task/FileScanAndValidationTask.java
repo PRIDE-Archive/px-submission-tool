@@ -244,7 +244,9 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             if (quickValidationResult.hasSupportedSearchFile()) {
                 boolean result = WarningMessageGenerator.showSupportedSearchFileWarning();
                 scanForFileMappings();
-                return new DataFileValidationMessage(result ? ValidationState.SUCCESS : ValidationState.ERROR);
+                if(!result){
+                    return new DataFileValidationMessage(ValidationState.ERROR,WarningMessageGenerator.getCancelPartialSubmission());
+                }
             }
             setProgress(60);
 
@@ -256,6 +258,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             if (!noResultFile) {
                 return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getResultFileWarning());
             }
+
             setProgress(80);
 
             // ms image data
@@ -308,9 +311,19 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         for(DataFile dataFile : submission.getDataFiles()){
             if(dataFile.getFileType().equals(ProjectFileType.EXPERIMENTAL_DESIGN)){
                 isSdrfFound = true;
-                Set<ValidationError> errors = Main.validate(dataFile.getFilePath(),true);
-                if(errors.size() !=0){
-                    logger.error("Error in file " + dataFile.getFileName());
+                try {
+                    Set<ValidationError> validationErrors = Main.validate(dataFile.getFilePath(), true);
+                    if(validationErrors!=null && validationErrors.size()>0 ){
+                        logger.error("Error in file " + dataFile.getFileName() + "Please make sure you upload proper EXPERIMENTAL_DESIGN file sdrf.tsv");
+                        validationErrors.stream().forEach(
+                                error -> logger.error(error.getMessage())
+                        );
+                        return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSDRFFileWarning());
+                    }
+
+                } catch (Exception e) {
+                    logger.error("Error in file " + dataFile.getFileName() + "Please make sure you upload proper Experimental design file sdrf.tsv");
+                    logger.error(e.getMessage());
                     return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSDRFFileWarning());
                 }
             }
@@ -445,9 +458,10 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                             errorEntry = "NON-Peak List/RAW referenced file '"
                                     + referencedFile
                                     + "', is NOT ALLOWED";
-                        } else {
-                            mzTabFile.addFileMapping(referencedDataFile);
                         }
+//                        else {
+//                            mzTabFile.addFileMapping(referencedDataFile);
+//                        }
                     }
                 } else {
                     // ms-run location can't be null for submission purposes
@@ -508,18 +522,18 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         if (resultOrSearchFiles.size() == 1) {
             DataFile resultOrSearchFile = resultOrSearchFiles.get(0);
             for (DataFile dataFile : dataFiles) {
-                if (!resultOrSearchFile.containsFileMapping(dataFile)) {
-                    appContext.addFileMapping(resultOrSearchFile, dataFile);
-                }
+//                if (!resultOrSearchFile.containsFileMapping(dataFile)) {
+//                    appContext.addFileMapping(resultOrSearchFile, dataFile);
+//                }
             }
         }
 
         // scan for every file
         for (DataFile resultOrSearchFile : resultOrSearchFiles) {
             for (DataFile dataFile : dataFiles) {
-                if (isDataFileRelated(resultOrSearchFile, dataFile) && !resultOrSearchFile.containsFileMapping(dataFile)) {
-                    appContext.addFileMapping(resultOrSearchFile, dataFile);
-                }
+//                if (isDataFileRelated(resultOrSearchFile, dataFile) && !resultOrSearchFile.containsFileMapping(dataFile)) {
+//                    appContext.addFileMapping(resultOrSearchFile, dataFile);
+//                }
 
                 if (dataFile.getFileType().equals(ProjectFileType.RAW)) {
                     rawFiles.add(dataFile);
@@ -542,9 +556,9 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
 
     private void addFileMapping(List<DataFile> resultOrSearchFiles, DataFile dataFile) {
         for (DataFile resultOrSearchFile : resultOrSearchFiles) {
-            if (!resultOrSearchFile.containsFileMapping(dataFile)) {
-                appContext.addFileMapping(resultOrSearchFile, dataFile);
-            }
+//            if (!resultOrSearchFile.containsFileMapping(dataFile)) {
+//                appContext.addFileMapping(resultOrSearchFile, dataFile);
+//            }
         }
     }
 
@@ -927,9 +941,9 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                         String spectraFileName = FileUtil.getDecompressedFileName(spectraFile.getFile());
                         if (peakListFileName.equalsIgnoreCase(spectraFileName)) {
                             present = true;
-                            if (!dataFile.getFileMappings().contains(spectraFile)) {
-                                dataFile.addFileMapping(spectraFile);
-                            }
+//                            if (!dataFile.getFileMappings().contains(spectraFile)) {
+//                                dataFile.addFileMapping(spectraFile);
+//                            }
                             break;
                         }
                     }
@@ -985,7 +999,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         return FileUtil.isZipped(file) || FileUtil.isGzipped(file);
     }
 
-    private static class QuickValidationResult {
+    protected static class QuickValidationResult {
 
         // WARNING - Why nothing has been initialized?
         boolean supportedResultFile;

@@ -124,6 +124,7 @@ public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor 
     Set<String> updateRequiredFields = new HashSet<>();
     ContactDetail details = event.getValue();
     if (details != null) {
+        appContext.setLoggedIn(true);
       if (StringUtils.isEmpty(details.getCountry())) {
         updateRequiredFields.add(COUNTRY);
       }

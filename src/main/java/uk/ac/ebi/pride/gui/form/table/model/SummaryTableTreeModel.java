@@ -10,6 +10,7 @@ import javax.swing.tree.TreePath;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -26,8 +27,8 @@ public class SummaryTableTreeModel extends AbstractTreeTableModel implements Pro
         FILE_NAME("File Name", "File name"),
         PATH("PATH / URL", "File path or URL"),
         TYPE("Type", "File type"),
-        SIZE("Size (Mb)", "File size"),
-        NUMBER_OF_MAPPINGS("#Mapped files", "Number of mapped source files");
+        SIZE("Size (Mb)", "File size");
+        //NUMBER_OF_MAPPINGS("#Mapped files", "Number of mapped source files");
 
         private final String header;
 
@@ -81,9 +82,11 @@ public class SummaryTableTreeModel extends AbstractTreeTableModel implements Pro
             return dataFile.getFilePath();
         } else if (TableHeader.TYPE.getHeader().equals(header)) {
             return dataFile.getFileType().toString();
-        } else if (TableHeader.NUMBER_OF_MAPPINGS.getHeader().equals(header)) {
-            return dataFile.getFileMappings().size();
-        } else if (TableHeader.SIZE.getHeader().equals(header)) {
+        }
+//        else if (TableHeader.NUMBER_OF_MAPPINGS.getHeader().equals(header)) {
+//            return dataFile.getFileMappings().size();
+//        }
+        else if (TableHeader.SIZE.getHeader().equals(header)) {
             long fileSizeInBytes = dataFile.getFileSize();
 
             if (fileSizeInBytes >= 0) {
@@ -111,10 +114,10 @@ public class SummaryTableTreeModel extends AbstractTreeTableModel implements Pro
 
         DataFile parentDataFile = (DataFile) parent;
         // get all the children
-        List<DataFile> childDataFiles = parentDataFile.getFileMappings();
-        if (!childDataFiles.isEmpty()) {
-            return childDataFiles.get(index);
-        }
+//        List<DataFile> childDataFiles = parentDataFile.getFileMappings();
+//        if (!childDataFiles.isEmpty()) {
+//            return childDataFiles.get(index);
+//        }
 
         return null;
     }
@@ -126,7 +129,7 @@ public class SummaryTableTreeModel extends AbstractTreeTableModel implements Pro
         Set<DataFile> referencedDataFiles = getReferencedDataFiles(dataFiles);
 
         for (DataFile dataFile : dataFiles) {
-            if (dataFile.hasMappings() || !referencedDataFiles.contains(dataFile)) {
+            if (!referencedDataFiles.contains(dataFile)) {
                 if (cnt == index) {
                     result = dataFile;
                     break;
@@ -141,9 +144,9 @@ public class SummaryTableTreeModel extends AbstractTreeTableModel implements Pro
     private Set<DataFile> getReferencedDataFiles(List<DataFile> dataFiles) {
         Set<DataFile> referencedDataFiles = new HashSet<DataFile>();
         for (DataFile dataFile : dataFiles) {
-            if (dataFile.hasMappings()) {
-                referencedDataFiles.addAll(dataFile.getFileMappings());
-            }
+//            if (dataFile.hasMappings()) {
+//                referencedDataFiles.addAll(dataFile.getFileMappings());
+//            }
         }
         return referencedDataFiles;
     }
@@ -157,7 +160,7 @@ public class SummaryTableTreeModel extends AbstractTreeTableModel implements Pro
 
         DataFile parentDataFile = (DataFile) parent;
         // get all the children
-        List<DataFile> childDataFiles = parentDataFile.getFileMappings();
+        List<DataFile> childDataFiles = new ArrayList<>() ; //parentDataFile.getFileMappings();
 
         return childDataFiles.size();
     }
@@ -176,7 +179,7 @@ public class SummaryTableTreeModel extends AbstractTreeTableModel implements Pro
 
         DataFile parentDataFile = (DataFile) parent;
         // get all the children
-        List<DataFile> childDataFiles = parentDataFile.getFileMappings();
+        List<DataFile> childDataFiles = new ArrayList<>() ; //parentDataFile.getFileMappings();
 
         return childDataFiles.indexOf(child);
     }
@@ -187,7 +190,7 @@ public class SummaryTableTreeModel extends AbstractTreeTableModel implements Pro
         Set<DataFile> referencedDataFiles = getReferencedDataFiles(dataFiles);
 
         for (DataFile dataFile : dataFiles) {
-            if (dataFile.hasMappings() || !referencedDataFiles.contains(dataFile)) {
+            if (!referencedDataFiles.contains(dataFile)) {
                 if (dataFile.equals(file)) {
                     break;
                 }

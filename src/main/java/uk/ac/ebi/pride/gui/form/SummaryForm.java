@@ -18,9 +18,13 @@ import java.awt.event.ItemEvent;
  * @version $Id$
  */
 public class SummaryForm extends Form {
-    private JTable summaryTable;
+    protected final float DEFAULT_TITLE_FONT_SIZE = 15f;
 
-    private JCheckBox jCheckBox = new JCheckBox();
+    protected JCheckBox jCheckBox = new JCheckBox();
+
+    // use GridLayout with 2 rows and 1 column
+    JPanel centerPanel = new JPanel(new GridLayout(2,1));
+
 
     public SummaryForm() {
         initComponents();
@@ -36,6 +40,8 @@ public class SummaryForm extends Form {
         // setup submission summary table
         initSubmissionSummaryTable();
 
+        this.add(centerPanel, BorderLayout.CENTER);
+
         // set up accept license checkbox
         initDatasetLicenseAcceptCheckbox();
     }
@@ -43,7 +49,7 @@ public class SummaryForm extends Form {
     /**
      * Initialize experiment details panel
      */
-    private void initSubmissionSummaryDescPanel() {
+    protected void initSubmissionSummaryDescPanel() {
         // summary description item panel
         JPanel summaryItemPanel = new SummaryItemPanel();
         summaryItemPanel.setBorder(BorderUtil.createLoweredBorder());
@@ -55,12 +61,23 @@ public class SummaryForm extends Form {
     /**
      * Initialize submission summary table
      */
-    private void initSubmissionSummaryTable() {
+    protected void initSubmissionSummaryTable() {
+
+        // new file top panel
+        JPanel newFileTopPanel = new JPanel(new BorderLayout());
+        JTable summaryTable;
+
+        // New file label
+        JLabel newFileLabel = new JLabel(appContext.getProperty("resubmission.new.files.label.title"));
+        newFileTopPanel.setFont(newFileTopPanel.getFont().deriveFont(DEFAULT_TITLE_FONT_SIZE));
+        newFileTopPanel.add(newFileLabel, BorderLayout.NORTH);
+
         summaryTable = TableFactory.createSubmissionSummaryTable();
 
         JScrollPane scrollPane = new JScrollPane(summaryTable, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-        this.add(scrollPane, BorderLayout.CENTER);
+        newFileTopPanel.add(scrollPane,  BorderLayout.CENTER);
+        centerPanel.add(newFileTopPanel);
     }
 
     public void initDatasetLicenseAcceptCheckbox() {

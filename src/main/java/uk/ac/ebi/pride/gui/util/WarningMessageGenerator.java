@@ -34,8 +34,12 @@ public final class WarningMessageGenerator {
         return "<html>" + "<b>Invalid result file detected, please submit results in any of the supported file formats (see accompanying documentation)</b><br/>" + "</html>";
     }
 
+    public static String getCancelPartialSubmission() {
+        return "<html>" + "<b>If you do not want to continue please close the submisison tool</b><br/>" + "</html>";
+    }
+
     public static String getInvalidSDRFFileWarning() {
-        return "<html>" + "<b>Invalid SDRF file detected, please check log file for detailed error report</b><br/>" + "</html>";
+        return "<html>" + "<b>Invalid EXPERIMENTAL_DESIGN/SDRF file detected, please check log file for detailed error report</b><br/>" + "</html>";
     }
 
     public static String getWiffScanMissingWarning() {
@@ -77,6 +81,35 @@ public final class WarningMessageGenerator {
                 invalidDataFiles) {
             errMsg.append("<li>");
             errMsg.append(dataFile.getFile().getName());
+            errMsg.append("</li>");
+        }
+        errMsg.append("</html>");
+        return errMsg.toString();
+    }
+
+    public static String getModifiedFilesWarning(List<DataFile> missingModifiedFile) {
+        StringBuilder errMsg = new StringBuilder();
+        errMsg.append("<html>");
+        errMsg.append("<b>The following files modified, but new files are not uploaded</b><br/>");
+        for (DataFile dataFile :
+                missingModifiedFile) {
+            errMsg.append("<li>");
+            errMsg.append(dataFile.getFile().getName());
+            errMsg.append("</li>");
+        }
+        errMsg.append("</html>");
+        return errMsg.toString();
+    }
+
+
+    public static String getDuplicateFilesWarning(List<String> missingModifiedFile) {
+        StringBuilder errMsg = new StringBuilder();
+        errMsg.append("<html>");
+        errMsg.append("<b>The following filenames are already present, please select modify in the below panel to update it</b><br/>");
+        for (String dataFile :
+                missingModifiedFile) {
+            errMsg.append("<li>");
+            errMsg.append(dataFile);
             errMsg.append("</li>");
         }
         errMsg.append("</html>");

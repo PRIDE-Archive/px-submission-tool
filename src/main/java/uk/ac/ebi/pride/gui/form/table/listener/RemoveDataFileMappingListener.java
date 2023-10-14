@@ -3,7 +3,6 @@ package uk.ac.ebi.pride.gui.form.table.listener;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.data.model.DataFile;
-import uk.ac.ebi.pride.gui.form.table.model.TargetFileMappingTableModel;
 
 import javax.swing.*;
 import java.awt.event.MouseAdapter;
@@ -32,9 +31,9 @@ public class RemoveDataFileMappingListener extends MouseAdapter {
             int row = table.rowAtPoint(e.getPoint());
             if (row >= 0 && row < table.getRowCount()) {
                 DataFile mapping = (DataFile) table.getValueAt(row, col);
-                TargetFileMappingTableModel tableModel = (TargetFileMappingTableModel) table.getModel();
-                DataFile dataFile = tableModel.getDataFile();
-                ((AppContext) App.getInstance().getDesktopContext()).removeFileMapping(dataFile, mapping);
+//                TargetFileMappingTableModel tableModel = (TargetFileMappingTableModel) table.getModel();
+//                DataFile dataFile = tableModel.getDataFile();
+//                ((AppContext) App.getInstance().getDesktopContext()).removeFileMapping(dataFile, mapping);
             }
         }
     }
