@@ -131,7 +131,7 @@ public class SampleMetaDataDescriptor extends ContextAwareNavigationPanelDescrip
                 // In the submission tool, the experimental factor is not mandatory
                 Set<CvParam> experimentalFactors = sampleMetaData.getMetaData(SampleMetaData.Type.EXPERIMENTAL_FACTOR);
                 if (experimentalFactors == null || experimentalFactors.isEmpty()) {
-                    experimentalFactors = new HashSet<CvParam>();
+                    experimentalFactors = new HashSet<>();
                     experimentalFactors.add(ExperimentalFactorUtil.getExperimentalFactorCvParam(appContext.getProperty("experimental.factor.default.value")));
                     sampleMetaData.setMetaData(SampleMetaData.Type.EXPERIMENTAL_FACTOR, experimentalFactors);
                 }

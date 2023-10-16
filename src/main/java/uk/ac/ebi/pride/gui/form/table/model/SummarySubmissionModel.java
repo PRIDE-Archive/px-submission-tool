@@ -3,7 +3,6 @@ package uk.ac.ebi.pride.gui.form.table.model;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.data.model.DataFile;
-import uk.ac.ebi.pride.data.model.ResubmissionFileChangeState;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;

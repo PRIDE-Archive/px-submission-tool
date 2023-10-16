@@ -86,11 +86,7 @@ public class SummaryForm extends Form {
         JButton nextButton = navigator.getNextButton();
 
         jCheckBox.addItemListener(e -> {
-            if(e.getStateChange() == ItemEvent.SELECTED){
-                nextButton.setEnabled(true);
-            }else {
-                nextButton.setEnabled(false);
-            }
+            nextButton.setEnabled(e.getStateChange() == ItemEvent.SELECTED);
         });
 
         // html content

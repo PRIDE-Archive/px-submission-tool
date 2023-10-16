@@ -107,12 +107,7 @@ public class LoadSubmissionFileAction extends AbstractAction {
             Icon icon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("bulk.submission.summary.file.format.small.icon"));
             JButton fileFormat = GUIUtilities.createLabelLikeButton(icon, App.getInstance().getDesktopContext().getProperty("bulk.submission.summary.file.format"));
             fileFormat.setForeground(ColourUtil.HYPERLINK_COLOUR);
-            fileFormat.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent actionEvent) {
-                    HttpUtil.openURL(App.getInstance().getDesktopContext().getProperty("px.submission.summary.file.format.url"));
-                }
-            });
+            fileFormat.addActionListener(actionEvent -> HttpUtil.openURL(App.getInstance().getDesktopContext().getProperty("px.submission.summary.file.format.url")));
 
 
             JPanel innerPanel  = new JPanel();

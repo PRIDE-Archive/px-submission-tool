@@ -42,26 +42,24 @@ public class ApplicationInstanceManager {
       final ServerSocket socket = new ServerSocket(SINGLE_INSTANCE_NETWORK_SOCKET, 10, InetAddress
           .getLocalHost());
       logger.debug("Listening for application instances on socket " + SINGLE_INSTANCE_NETWORK_SOCKET);
-      Thread instanceListenerThread = new Thread(new Runnable() {
-        public void run() {
-          boolean socketClosed = false;
-          while (!socketClosed) {
-            if (socket.isClosed()) {
-              socketClosed = true;
-            } else {
-              try {
-                Socket client = socket.accept();
-                BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
-                String message = in.readLine();
-                if (SINGLE_INSTANCE_SHARED_KEY.trim().equals(message.trim())) {
-                  logger.debug("Shared key matched - new application instance found");
-                  fireNewInstance();
-                }
-                in.close();
-                client.close();
-              } catch (IOException e) {
-                socketClosed = true;
+      Thread instanceListenerThread = new Thread(() -> {
+        boolean socketClosed = false;
+        while (!socketClosed) {
+          if (socket.isClosed()) {
+            socketClosed = true;
+          } else {
+            try {
+              Socket client = socket.accept();
+              BufferedReader in = new BufferedReader(new InputStreamReader(client.getInputStream()));
+              String message = in.readLine();
+              if (SINGLE_INSTANCE_SHARED_KEY.trim().equals(message.trim())) {
+                logger.debug("Shared key matched - new application instance found");
+                fireNewInstance();
               }
+              in.close();
+              client.close();
+            } catch (IOException e) {
+              socketClosed = true;
             }
           }
         }

@@ -13,7 +13,7 @@ public abstract class PxTableModel extends AbstractTableModel {
     protected final Map<String, String> columnNames;
 
     public PxTableModel() {
-        columnNames = new LinkedHashMap<String, String>();
+        columnNames = new LinkedHashMap<>();
         initializeTableModel();
     }
 
@@ -60,7 +60,7 @@ public abstract class PxTableModel extends AbstractTableModel {
     public int getColumnIndex(String header) {
         int index = -1;
 
-        List<Map.Entry<String, String>> entries = new LinkedList<Map.Entry<String, String>>(columnNames.entrySet());
+        List<Map.Entry<String, String>> entries = new LinkedList<>(columnNames.entrySet());
 
         for (Map.Entry<String, String> entry : entries) {
             if (entry.getKey().equals(header)) {
@@ -80,7 +80,7 @@ public abstract class PxTableModel extends AbstractTableModel {
     public String getColumnName(int index) {
         String columnName = null;
 
-        List<Map.Entry<String, String>> entries = new LinkedList<Map.Entry<String, String>>(columnNames.entrySet());
+        List<Map.Entry<String, String>> entries = new LinkedList<>(columnNames.entrySet());
         Map.Entry<String, String> entry = entries.get(index);
         if (entry != null) {
             columnName = entry.getKey();
@@ -98,7 +98,7 @@ public abstract class PxTableModel extends AbstractTableModel {
     public String getColumnTooltip(int index) {
         String tooltip = null;
 
-        List<Map.Entry<String, String>> entries = new LinkedList<Map.Entry<String, String>>(columnNames.entrySet());
+        List<Map.Entry<String, String>> entries = new LinkedList<>(columnNames.entrySet());
         Map.Entry<String, String> entry = entries.get(index);
         if (entry != null) {
             tooltip = entry.getValue();

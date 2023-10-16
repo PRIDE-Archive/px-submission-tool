@@ -127,7 +127,7 @@ public class FileSelectionValidationErrorDialog extends ContextAwareDialog imple
         private java.util.Set<String> missingFiles;
 
         public FileSelectionValidationTableModel(Map<DataFile, java.util.List<String>> dataFileWarningResults) {
-            this.missingFiles = new LinkedHashSet<String>();
+            this.missingFiles = new LinkedHashSet<>();
             for (List<String> mfs : dataFileWarningResults.values()) {
                 this.missingFiles.addAll(mfs);
             }
@@ -146,7 +146,7 @@ public class FileSelectionValidationErrorDialog extends ContextAwareDialog imple
 
         @Override
         public Object getValueAt(int rowIndex, int columnIndex) {
-            return new ArrayList<String>(this.missingFiles).get(rowIndex);
+            return new ArrayList<>(this.missingFiles).get(rowIndex);
         }
     }
 }

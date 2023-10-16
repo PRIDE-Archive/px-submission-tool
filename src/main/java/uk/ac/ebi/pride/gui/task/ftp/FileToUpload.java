@@ -2,6 +2,7 @@ package uk.ac.ebi.pride.gui.task.ftp;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * FileToUpload represents a file to be uploaded
@@ -53,11 +54,9 @@ public class FileToUpload implements Serializable {
 
         FileToUpload that = (FileToUpload) o;
 
-        if (file != null ? !file.equals(that.file) : that.file != null) return false;
-        if (fileName != null ? !fileName.equals(that.fileName) : that.fileName != null) return false;
-        if (folder != null ? !folder.equals(that.folder) : that.folder != null) return false;
-
-        return true;
+        if (!Objects.equals(file, that.file)) return false;
+        if (!Objects.equals(fileName, that.fileName)) return false;
+        return Objects.equals(folder, that.folder);
     }
 
     @Override

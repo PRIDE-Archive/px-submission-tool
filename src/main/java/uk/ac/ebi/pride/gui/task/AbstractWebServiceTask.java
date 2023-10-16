@@ -70,7 +70,7 @@ public abstract class AbstractWebServiceTask<T> extends TaskAdapter<T, String> {
             HttpEntity httpEntity = httpResponse.getEntity();
             if (statusCode == 200 && httpEntity != null) {
                 in = new BufferedReader(new InputStreamReader(httpEntity.getContent()));
-                result = new LinkedHashMap<String, String>();
+                result = new LinkedHashMap<>();
                 String str;
                 while ((str = in.readLine()) != null) {
                     if (!"".equals(str)) {
@@ -112,7 +112,7 @@ public abstract class AbstractWebServiceTask<T> extends TaskAdapter<T, String> {
     }
 
     public List<Map<String, String>> queryWebServiceForMultipleEntries(String url) {
-        List<Map<String, String>> results = new ArrayList<Map<String, String>>();
+        List<Map<String, String>> results = new ArrayList<>();
         BufferedReader in = null;
 
         try {
@@ -122,14 +122,14 @@ public abstract class AbstractWebServiceTask<T> extends TaskAdapter<T, String> {
             HttpEntity httpEntity = httpResponse.getEntity();
             if (statusCode == 200 && httpEntity != null) {
                 in = new BufferedReader(new InputStreamReader(httpEntity.getContent()));
-                Map<String, String> result = new HashMap<String, String>();
+                Map<String, String> result = new HashMap<>();
                 String str;
                 while ((str = in.readLine()) != null) {
                     str = str.trim();
                     if (!"".equals(str)) {
                         if ("//".equals(str)) {
                             results.add(result);
-                            result = new HashMap<String, String>();
+                            result = new HashMap<>();
                         } else {
                             logger.debug(str);
                             String[] parts = str.split(Constant.TAB);

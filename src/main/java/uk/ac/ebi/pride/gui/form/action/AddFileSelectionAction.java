@@ -79,7 +79,7 @@ public class AddFileSelectionAction extends AbstractAction {
         // show dialog
         int result = fileChooser.showDialog(((App) App.getInstance()).getMainFrame(), null);
 
-        List<File> filesToOpen = new ArrayList<File>();
+        List<File> filesToOpen = new ArrayList<>();
 
         // check the selection results from open fiel dialog
         if (result == JFileChooser.APPROVE_OPTION) {

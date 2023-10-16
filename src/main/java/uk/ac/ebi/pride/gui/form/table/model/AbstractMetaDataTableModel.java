@@ -59,7 +59,7 @@ public abstract class AbstractMetaDataTableModel extends PxTableModel implements
 
     protected Object getValueFromCvParams(Collection<CvParam> cvParams, int rowIndex, int columnIndex) {
         if (rowIndex >= 0 && columnIndex >= 0 && cvParams != null && !cvParams.isEmpty()) {
-            CvParam s = new ArrayList<CvParam>(cvParams).get(rowIndex);
+            CvParam s = new ArrayList<>(cvParams).get(rowIndex);
             return getColumnValueAt(s, columnIndex);
         }
 

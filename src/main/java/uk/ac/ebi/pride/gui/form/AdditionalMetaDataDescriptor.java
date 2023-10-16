@@ -128,8 +128,5 @@ public class AdditionalMetaDataDescriptor extends ContextAwareNavigationPanelDes
         metaData.clearQuantifications();
         metaData.addQuantifications(quantifications.toArray(new CvParam[quantifications.size()]));
 
-        // comment
-//        String comment = form.getComment();
-//        metaData.setReasonForPartialSubmission(comment);
     }
 }

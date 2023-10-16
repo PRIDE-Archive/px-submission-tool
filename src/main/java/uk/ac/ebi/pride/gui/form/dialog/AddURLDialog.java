@@ -49,12 +49,7 @@ public class AddURLDialog extends ContextAwareDialog {
         addButton.addActionListener(new AddURLListener());
 
         // cancel action listener
-        cancelButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                AddURLDialog.this.dispose();
-            }
-        });
+        cancelButton.addActionListener(e -> AddURLDialog.this.dispose());
 
         // populate combo box
         for (ProjectFileType massSpecFileType : ProjectFileType.values()) {

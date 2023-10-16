@@ -3,7 +3,6 @@ package uk.ac.ebi.pride.gui.data;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Resubmission;
-import uk.ac.ebi.pride.data.model.Submission;
 
 import java.io.Serializable;
 import java.util.*;
@@ -36,7 +35,7 @@ public class ResubmissionRecord implements Serializable {
     public ResubmissionRecord(Resubmission resubmission, UploadDetail uploadDetail) {
         this.resubmission = resubmission;
         this.uploadDetail = uploadDetail;
-        this.uploadedFiles = Collections.synchronizedSet(new HashSet<DataFile>());
+        this.uploadedFiles = Collections.synchronizedSet(new HashSet<>());
     }
 
     public Resubmission getResubmission() {

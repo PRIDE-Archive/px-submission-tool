@@ -26,7 +26,7 @@ public class SubmissionRecord implements Serializable {
     public SubmissionRecord() {
         this.submission = new Submission();
         this.uploadDetail = null;
-        this.uploadedFiles = Collections.synchronizedSet(new HashSet<DataFile>());
+        this.uploadedFiles = Collections.synchronizedSet(new HashSet<>());
     }
 
     public SubmissionRecord(Submission submission) {
@@ -36,7 +36,7 @@ public class SubmissionRecord implements Serializable {
     public SubmissionRecord(Submission submission, UploadDetail uploadDetail) {
         this.submission = submission;
         this.uploadDetail = uploadDetail;
-        this.uploadedFiles = Collections.synchronizedSet(new HashSet<DataFile>());
+        this.uploadedFiles = Collections.synchronizedSet(new HashSet<>());
     }
 
     public Submission getSubmission() {

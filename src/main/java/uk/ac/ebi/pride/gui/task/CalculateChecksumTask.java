@@ -38,14 +38,12 @@ public class CalculateChecksumTask extends TaskAdapter<Boolean, ChecksumMessage>
         List<Future<Tuple<String, String>>> tasks = new ArrayList<>();
         for (DataFile dataFile : dataFiles) {
             if (!dataFile.getFile().getName().equals("checksum.txt")) {
-                tasks.add(executor.submit(new Callable() {
-                    public Tuple<String, String> call() throws Exception {
-                        try {
-                            return calculateSha1Checksum(dataFile.getFile());
-                        } catch (Exception exception) {
-                            logger.error("Error in calculating checksum for file " + dataFile.getFile().getName());
-                            return null;
-                        }
+                tasks.add(executor.submit((Callable) () -> {
+                    try {
+                        return calculateSha1Checksum(dataFile.getFile());
+                    } catch (Exception exception) {
+                        logger.error("Error in calculating checksum for file " + dataFile.getFile().getName());
+                        return null;
                     }
                 }));
             }

@@ -46,7 +46,7 @@ public final class StringUtil {
      * @return List<String>    a list of string tokens
      */
     public static List<String> splitString(String str, String regex) {
-        java.util.List<String> tokens = new ArrayList<String>();
+        java.util.List<String> tokens = new ArrayList<>();
 
         if (str != null) {
             str = str.trim();

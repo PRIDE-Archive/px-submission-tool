@@ -4,8 +4,6 @@ package uk.ac.ebi.pride.gui.form.table.editor;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 /**
  * @author Rui Wang
@@ -21,12 +19,7 @@ public class ButtonCellEditor extends DefaultCellEditor {
         super(new JCheckBox());
         this.button = new JButton(text, icon);
         button.setOpaque(true);
-        button.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                fireEditingStopped();
-            }
-        });
+        button.addActionListener(e -> fireEditingStopped());
     }
 
     @Override

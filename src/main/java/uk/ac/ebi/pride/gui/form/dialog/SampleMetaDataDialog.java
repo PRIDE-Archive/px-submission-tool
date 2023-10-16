@@ -437,7 +437,7 @@ public class SampleMetaDataDialog extends ContextAwareDialog implements ActionLi
         String text = experimentalFactorTextArea.getText();
         String experimentalFactor = text == null ? "" : text.trim();
         if (!appContext.getProperty("experimental.factor.default.text").equals(experimentalFactor)) {
-            Set<CvParam> experimentalFactors = new HashSet<CvParam>();
+            Set<CvParam> experimentalFactors = new HashSet<>();
             if (!"".equals(experimentalFactor)) {
                 experimentalFactors.add(ExperimentalFactorUtil.getExperimentalFactorCvParam(experimentalFactor));
             }
