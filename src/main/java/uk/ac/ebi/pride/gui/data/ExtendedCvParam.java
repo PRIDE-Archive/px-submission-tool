@@ -29,9 +29,7 @@ public class ExtendedCvParam extends CvParam {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof CvParam)) return false;
-        if (!super.equals(o)) return false;
-
-        return true;
+        return super.equals(o);
     }
 
     @Override

@@ -2,6 +2,7 @@ package uk.ac.ebi.pride.gui.task.ftp;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * Ftp details for connecting the ftp server
@@ -56,12 +57,10 @@ public class FTPDetail implements Serializable {
         FTPDetail ftpDetail = (FTPDetail) o;
 
         if (port != ftpDetail.port) return false;
-        if (folder != null ? !folder.equals(ftpDetail.folder) : ftpDetail.folder != null) return false;
-        if (ftpAddress != null ? !ftpAddress.equals(ftpDetail.ftpAddress) : ftpDetail.ftpAddress != null) return false;
+        if (!Objects.equals(folder, ftpDetail.folder)) return false;
+        if (!Objects.equals(ftpAddress, ftpDetail.ftpAddress)) return false;
         if (!Arrays.equals(password, ftpDetail.password)) return false;
-        if (userName != null ? !userName.equals(ftpDetail.userName) : ftpDetail.userName != null) return false;
-
-        return true;
+        return Objects.equals(userName, ftpDetail.userName);
     }
 
     @Override

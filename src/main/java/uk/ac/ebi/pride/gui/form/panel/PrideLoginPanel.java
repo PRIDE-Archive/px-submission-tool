@@ -14,8 +14,6 @@ import uk.ac.ebi.pride.gui.util.ValidationState;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
@@ -152,12 +150,7 @@ public class PrideLoginPanel extends ContextAwareHeaderPanel {
         newUserButton = GUIUtilities.createLabelLikeButton(null, appContext.getProperty("pride.login.create.account.title"));
         newUserButton.setForeground(ColourUtil.HYPERLINK_COLOUR);
         newUserButton.setHorizontalTextPosition(SwingConstants.RIGHT);
-        newUserButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                HttpUtil.openURL(appContext.getProperty("pride.new.account.url"));
-            }
-        });
+        newUserButton.addActionListener(actionEvent -> HttpUtil.openURL(appContext.getProperty("pride.new.account.url")));
     }
 
     private void initComponents() {

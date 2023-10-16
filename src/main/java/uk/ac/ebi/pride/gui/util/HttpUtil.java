@@ -2,7 +2,6 @@ package uk.ac.ebi.pride.gui.util;
 
 import javax.swing.*;
 import java.awt.*;
-import java.lang.reflect.Method;
 import java.net.URI;
 
 /**

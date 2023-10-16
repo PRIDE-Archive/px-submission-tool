@@ -11,7 +11,6 @@ import uk.ac.ebi.pride.gui.form.table.model.MetaDataTableModel;
 import uk.ac.ebi.pride.gui.util.BalloonTipUtil;
 import uk.ac.ebi.pride.gui.util.BorderUtil;
 import uk.ac.ebi.pride.gui.util.ValidationState;
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 
 import javax.swing.*;
 import java.awt.*;

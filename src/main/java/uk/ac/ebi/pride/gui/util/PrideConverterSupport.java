@@ -17,7 +17,7 @@ public final class PrideConverterSupport {
 
     public static boolean isSupported(DataFile dataFile) {
         MassSpecFileFormat fileFormat = dataFile.getFileFormat();
-        if (fileFormat != null && fileFormat.getFileType().equals(ProjectFileType.SEARCH) &&
+        return fileFormat != null && fileFormat.getFileType().equals(ProjectFileType.SEARCH) &&
                 (fileFormat.equals(MassSpecFileFormat.DAT) ||
                         fileFormat.equals(MassSpecFileFormat.MZIDENTML) ||
                         fileFormat.equals(MassSpecFileFormat.OMSSA_OMX) ||
@@ -26,10 +26,6 @@ public final class PrideConverterSupport {
                         fileFormat.equals(MassSpecFileFormat.XTANDEM) ||
                         fileFormat.equals(MassSpecFileFormat.CRUX) ||
                         fileFormat.equals(MassSpecFileFormat.CSV) ||
-                        fileFormat.equals(MassSpecFileFormat.TSV))) {
-            return true;
-        } else {
-            return false;
-        }
+                        fileFormat.equals(MassSpecFileFormat.TSV));
     }
 }

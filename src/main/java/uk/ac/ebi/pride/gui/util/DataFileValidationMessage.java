@@ -22,7 +22,7 @@ public class DataFileValidationMessage extends ValidationMessage {
     public DataFileValidationMessage(ValidationState state, String message) {
         super(state, message);
 
-        this.dataFileValidationResults = new HashMap<DataFile, List<String>>();
+        this.dataFileValidationResults = new HashMap<>();
     }
 
     public Map<DataFile, List<String>> getDataFileValidationResults() {
@@ -34,12 +34,7 @@ public class DataFileValidationMessage extends ValidationMessage {
     }
 
     public void addDataFileValidationResult(DataFile dataFile, String message) {
-        List<String> validationResults = dataFileValidationResults.get(dataFile);
-
-        if (validationResults == null) {
-            validationResults = new ArrayList<String>();
-            dataFileValidationResults.put(dataFile, validationResults);
-        }
+        List<String> validationResults = dataFileValidationResults.computeIfAbsent(dataFile, k -> new ArrayList<>());
 
         validationResults.add(message);
     }

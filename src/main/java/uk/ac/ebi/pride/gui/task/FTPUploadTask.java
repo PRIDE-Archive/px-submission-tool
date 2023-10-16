@@ -73,8 +73,8 @@ public class FTPUploadTask extends TaskAdapter<Void, UploadMessage> implements T
      */
     public FTPUploadTask(SubmissionRecord submissionRecord) {
         this.submissionRecord = submissionRecord;
-        this.fileToSubmit = Collections.synchronizedSet(new LinkedHashSet<DataFile>());
-        this.fileFailToSubmit = Collections.synchronizedSet(new LinkedHashSet<DataFile>());
+        this.fileToSubmit = Collections.synchronizedSet(new LinkedHashSet<>());
+        this.fileFailToSubmit = Collections.synchronizedSet(new LinkedHashSet<>());
         this.totalFileSize = 0;
         this.uploadFileSize = 0;
         this.ongoingSubTasks = 0;

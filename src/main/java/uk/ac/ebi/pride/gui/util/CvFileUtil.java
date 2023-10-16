@@ -21,7 +21,7 @@ public final class CvFileUtil {
 
     public static Collection<String> parseByLine(String file) throws IOException {
         // NOTE - TODO - Is it important to to preserve the insertion order?
-        Collection<String> values = new LinkedHashSet<String>();
+        Collection<String> values = new LinkedHashSet<>();
 
         InputStream defaultInstrumentStream = CvFileUtil.class.getClassLoader().getResourceAsStream(file);
         BufferedReader reader = new BufferedReader(new InputStreamReader(defaultInstrumentStream));
@@ -37,7 +37,7 @@ public final class CvFileUtil {
     }
 
     public static Collection<CvParam> parseByTabDelimitedLine(String defaultValueFile) throws IOException {
-        Collection<CvParam> values = new LinkedHashSet<CvParam>();
+        Collection<CvParam> values = new LinkedHashSet<>();
 
         InputStream defaultInstrumentStream = CvFileUtil.class.getClassLoader().getResourceAsStream(defaultValueFile);
         BufferedReader reader = new BufferedReader(new InputStreamReader(defaultInstrumentStream));

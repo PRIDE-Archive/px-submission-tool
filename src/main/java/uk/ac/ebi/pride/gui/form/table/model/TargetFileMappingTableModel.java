@@ -1,14 +1,5 @@
 package uk.ac.ebi.pride.gui.form.table.model;
 
-import uk.ac.ebi.pride.App;
-import uk.ac.ebi.pride.AppContext;
-import uk.ac.ebi.pride.data.model.DataFile;
-import uk.ac.ebi.pride.gui.util.Constant;
-
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.util.List;
-
 /**
  * Table model for showing all the file mappings of a particular result file
  *

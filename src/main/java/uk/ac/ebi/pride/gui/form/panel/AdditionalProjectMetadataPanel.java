@@ -52,7 +52,7 @@ public class AdditionalProjectMetadataPanel extends ContextAwarePanel {
         // I do it this way because, apparently, the original developer wanted to preserve insertion order, for whatever
         // reasong, when reading the tags, so I won't change that, but I'll change this because we want those tags to
         // show up in alphabetical order. I don't like it, but it'll do the job
-        List<String> cvs = new ArrayList<String>(defaultParentProjects);
+        List<String> cvs = new ArrayList<>(defaultParentProjects);
         Collections.sort(cvs);
         defaultParentProjects = cvs;
 
@@ -157,7 +157,7 @@ public class AdditionalProjectMetadataPanel extends ContextAwarePanel {
     }
 
     public Set<String> getPubMedIds() {
-        Set<String> parsedPubMedIds = new HashSet<String>();
+        Set<String> parsedPubMedIds = new HashSet<>();
 
         String pubMedIds = pubmedIdTextField.getText();
         if (pubMedIds != null) {
@@ -173,7 +173,7 @@ public class AdditionalProjectMetadataPanel extends ContextAwarePanel {
     }
 
     public Set<String> getReanalysisPXAccessions() {
-        Set<String> parsedReanalysisPXAccessions = new HashSet<String>();
+        Set<String> parsedReanalysisPXAccessions = new HashSet<>();
 
         String reanalysisPXAccessions = reanalysisPXAccessionTextField.getText();
         if (reanalysisPXAccessions != null) {

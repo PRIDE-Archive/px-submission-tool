@@ -4,8 +4,6 @@ import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.data.model.CvParam;
 import uk.ac.ebi.pride.data.util.Constant;
 
-import java.util.Map;
-
 /**
  * Combo box model for modification selection
  *

@@ -1,7 +1,5 @@
 package uk.ac.ebi.pride.gui.form.table.editor;
 
-import uk.ac.ebi.pride.App;
-import uk.ac.ebi.pride.data.model.DataFile;
 //import uk.ac.ebi.pride.gui.form.dialog.FileMappingDialog;
 
 import javax.swing.*;

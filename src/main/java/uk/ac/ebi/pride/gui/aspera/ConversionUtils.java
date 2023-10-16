@@ -35,8 +35,8 @@ public class ConversionUtils
         long size1 = 0, size2 = 0;
         try
         {
-            size1 = Long.valueOf(numerator).longValue();
-            size2 = Long.valueOf(denominator).longValue();
+            size1 = Long.valueOf(numerator);
+            size2 = Long.valueOf(denominator);
         }
         catch (Exception e)
         {

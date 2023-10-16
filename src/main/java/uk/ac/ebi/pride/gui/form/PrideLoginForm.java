@@ -8,8 +8,6 @@ import uk.ac.ebi.pride.gui.util.ValidationState;
 import javax.swing.*;
 import javax.swing.border.LineBorder;
 import java.awt.*;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 
 /**
  * @author Rui Wang
@@ -36,14 +34,11 @@ public class PrideLoginForm extends Form {
      * Trigger login action when enter key is pressed
      */
     private void initPropertyListener() {
-        prideLoginPanel.addPropertyChangeListener(new PropertyChangeListener() {
-            @Override
-            public void propertyChange(PropertyChangeEvent evt) {
-                if (evt.getPropertyName().equalsIgnoreCase(PrideLoginPanel.ENTER_KEY_PRESSED)) {
-                    Navigator navigator = ((App) App.getInstance()).getNavigator();
-                    JButton nextButton = navigator.getNextButton();
-                    nextButton.doClick();
-                }
+        prideLoginPanel.addPropertyChangeListener(evt -> {
+            if (evt.getPropertyName().equalsIgnoreCase(PrideLoginPanel.ENTER_KEY_PRESSED)) {
+                Navigator navigator = ((App) App.getInstance()).getNavigator();
+                JButton nextButton = navigator.getNextButton();
+                nextButton.doClick();
             }
         });
     }

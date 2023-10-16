@@ -120,9 +120,7 @@ public class ProjectTagTableModel extends PxTableModel {
      * This method sets all the currently selected project tags.
      */
     public void setSelectedProjectTags(Collection<String> selectedProjectTags) {
-        for (String projectTag : projectTags.keySet()) {
-            projectTags.put(projectTag, selectedProjectTags.contains(projectTag));
-        }
+        projectTags.replaceAll((t, v) -> selectedProjectTags.contains(t));
         fireTableDataChanged();
     }
 

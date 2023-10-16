@@ -26,7 +26,7 @@ public class NavigationModel extends PropertyChangeHelper {
     private NavigationPanelDescriptor currentPanel;
 
     public NavigationModel() {
-        descriptors = new LinkedHashMap<Object, NavigationPanelDescriptor>();
+        descriptors = new LinkedHashMap<>();
     }
 
     /**
@@ -62,7 +62,7 @@ public class NavigationModel extends PropertyChangeHelper {
 
         // index of next panel
         if (currIndex > 0) {
-            List<Object> ids = new ArrayList<Object>(descriptors.keySet());
+            List<Object> ids = new ArrayList<>(descriptors.keySet());
             Object backPanelId = null;
             for (int i = (currIndex - 1); i >= 0; i--) {
                 if (!descriptors.get(ids.get(i)).toSkipPanel()) {
@@ -90,7 +90,7 @@ public class NavigationModel extends PropertyChangeHelper {
 
         // index of next panel
         if (currIndex > 0) {
-            List<Object> ids = new ArrayList<Object>(descriptors.keySet());
+            List<Object> ids = new ArrayList<>(descriptors.keySet());
             for (int i = (currIndex - 1); i >= 0; i--) {
                 if (!descriptors.get(ids.get(i)).toSkipPanel()) {
                     previousPanel = descriptors.get(ids.get(i));
@@ -116,7 +116,7 @@ public class NavigationModel extends PropertyChangeHelper {
 
         // index of next panel
         if (currIndex >= 0 && currIndex < descriptors.size() - 1) {
-            List<Object> ids = new ArrayList<Object>(descriptors.keySet());
+            List<Object> ids = new ArrayList<>(descriptors.keySet());
             Object nextPanelId = null;
             for (int i = (currIndex + 1); i < ids.size(); i++) {
                 if (!descriptors.get(ids.get(i)).toSkipPanel()) {
@@ -143,7 +143,7 @@ public class NavigationModel extends PropertyChangeHelper {
 
         // index of next panel
         if (currIndex >= 0 && currIndex < descriptors.size() - 1) {
-            List<Object> ids = new ArrayList<Object>(descriptors.keySet());
+            List<Object> ids = new ArrayList<>(descriptors.keySet());
             for (int i = (currIndex + 1); i < ids.size(); i++) {
                 if (!descriptors.get(ids.get(i)).toSkipPanel()) {
                     nextPanel = descriptors.get(ids.get(i));
@@ -206,7 +206,7 @@ public class NavigationModel extends PropertyChangeHelper {
 
         if (currentPanel != null) {
             Object currId = currentPanel.getNavigationPanelId();
-            List<Object> ids = new ArrayList<Object>(descriptors.keySet());
+            List<Object> ids = new ArrayList<>(descriptors.keySet());
             for (int i = 0; i < ids.size(); i++) {
                 if (ids.get(i).equals(currId)) {
                     currIndex = i;

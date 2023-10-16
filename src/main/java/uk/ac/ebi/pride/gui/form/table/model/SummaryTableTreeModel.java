@@ -142,7 +142,7 @@ public class SummaryTableTreeModel extends AbstractTreeTableModel implements Pro
     }
 
     private Set<DataFile> getReferencedDataFiles(List<DataFile> dataFiles) {
-        Set<DataFile> referencedDataFiles = new HashSet<DataFile>();
+        Set<DataFile> referencedDataFiles = new HashSet<>();
         for (DataFile dataFile : dataFiles) {
 //            if (dataFile.hasMappings()) {
 //                referencedDataFiles.addAll(dataFile.getFileMappings());

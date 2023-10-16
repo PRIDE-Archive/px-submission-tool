@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
@@ -376,7 +377,7 @@ public class SummaryItemPanel extends ContextAwarePanel
         try {
             for (String[] args : validationCommands) {
                 CommandLine cmd = MainApp.parseArgs(args);
-                logger.debug("Running command: " + args.toString());
+                logger.debug("Running command: " + Arrays.toString(args));
                 reports.add(Validator.startValidation(cmd));
             }
         } catch (ParseException e) {

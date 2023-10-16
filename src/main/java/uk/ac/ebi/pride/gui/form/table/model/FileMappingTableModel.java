@@ -41,7 +41,7 @@ public class FileMappingTableModel extends PxTableModel {
     private final Map<DataFile, Boolean> dataFiles;
 
     public FileMappingTableModel() {
-        this.dataFiles = new LinkedHashMap<DataFile, Boolean>();
+        this.dataFiles = new LinkedHashMap<>();
     }
 
     @Override
@@ -75,7 +75,7 @@ public class FileMappingTableModel extends PxTableModel {
      * @return Map<DataFile, Boolean>  a list of data files
      */
     public Map<DataFile, Boolean> getData() {
-        return new LinkedHashMap<DataFile, Boolean>(dataFiles);
+        return new LinkedHashMap<>(dataFiles);
     }
 
     @Override
@@ -91,7 +91,7 @@ public class FileMappingTableModel extends PxTableModel {
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
         if (!dataFiles.isEmpty() && rowIndex >= 0 && columnIndex >= 0) {
-            List<Map.Entry<DataFile, Boolean>> entries = new ArrayList<Map.Entry<DataFile, Boolean>>(dataFiles.entrySet());
+            List<Map.Entry<DataFile, Boolean>> entries = new ArrayList<>(dataFiles.entrySet());
 
             Map.Entry<DataFile, Boolean> entry = entries.get(rowIndex);
             DataFile dataFile = entry.getKey();
@@ -121,7 +121,7 @@ public class FileMappingTableModel extends PxTableModel {
 
     @Override
     public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
-        List<Map.Entry<DataFile, Boolean>> entries = new ArrayList<Map.Entry<DataFile, Boolean>>(dataFiles.entrySet());
+        List<Map.Entry<DataFile, Boolean>> entries = new ArrayList<>(dataFiles.entrySet());
 
         Map.Entry<DataFile, Boolean> entry = entries.get(rowIndex);
         DataFile dataFile = entry.getKey();

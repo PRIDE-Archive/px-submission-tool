@@ -1,7 +1,5 @@
 package uk.ac.ebi.pride.gui.form.table.listener;
 
-import uk.ac.ebi.pride.App;
-import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.data.model.DataFile;
 
 import javax.swing.*;

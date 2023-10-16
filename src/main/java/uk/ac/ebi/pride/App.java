@@ -112,11 +112,7 @@ public class App extends Desktop {
             System.out.println("Another instance of this application is already running.  Exiting.");
             System.exit(0);
         }
-        ApplicationInstanceManager.setApplicationInstanceListener(new ApplicationInstanceManager.ApplicationInstanceListener() {
-            public void newInstanceCreated() {
-                System.out.println("New instance detected...");
-            }
-        });
+        ApplicationInstanceManager.setApplicationInstanceListener(() -> System.out.println("New instance detected..."));
         Desktop.launch(App.class, AppContext.class, args);
     }
 
@@ -191,24 +187,24 @@ public class App extends Desktop {
      * @return boolean  true means it is running on windows
      */
     private boolean isWindowsPlatform() {
-        return (OS.indexOf("win") >= 0);
+        return (OS.contains("win"));
     }
 
     public static boolean isMac() {
 
-        return (OS.indexOf("mac") >= 0);
+        return (OS.contains("mac"));
 
     }
 
     public static boolean isUnix() {
 
-        return (OS.indexOf("nix") >= 0 || OS.indexOf("nux") >= 0 || OS.indexOf("aix") > 0 );
+        return (OS.contains("nix") || OS.contains("nux") || OS.indexOf("aix") > 0 );
 
     }
 
     public static boolean isSolaris() {
 
-        return (OS.indexOf("sunos") >= 0);
+        return (OS.contains("sunos"));
 
     }
 

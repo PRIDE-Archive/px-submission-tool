@@ -35,7 +35,6 @@ import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
-import javax.swing.event.HyperlinkListener;
 import javax.xml.bind.JAXBException;
 import java.awt.*;
 import java.io.BufferedReader;
@@ -115,7 +114,7 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
             // Assuming we only get Validation Messages of type ERROR, but we check anyway
             return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidFileWarning(quickValidationResult.numOfInvalidFiles,
                     quickValidationResult.getValidationReport().getMessages().stream()
-                            .filter(m -> m.getType() == ValidationMessage.Type.ERROR).map(m -> m.getMessage()).collect(Collectors.toList())));
+                            .filter(m -> m.getType() == ValidationMessage.Type.ERROR).map(ValidationMessage::getMessage).collect(Collectors.toList())));
         }
         setProgress(20);
 
@@ -349,15 +348,12 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
             // html content
             JEditorPane jEditorPane = new JEditorPane("text/html", "<html><body style=\"" + style + "\">" //
                     + WarningMessageGenerator.getExperimentalDesignFileMissingWarning() + "</body></html>");
-            jEditorPane.addHyperlinkListener(new HyperlinkListener() {
-                @Override
-                public void hyperlinkUpdate(HyperlinkEvent e) {
-                    try {
-                        if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED))
-                            Desktop.getDesktop().browse(e.getURL().toURI());
-                    } catch (Exception ex) {
-                        logger.error(ex.getMessage());
-                    }
+            jEditorPane.addHyperlinkListener(e -> {
+                try {
+                    if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED))
+                        Desktop.getDesktop().browse(e.getURL().toURI());
+                } catch (Exception ex) {
+                    logger.error(ex.getMessage());
                 }
             });
             jEditorPane.setEditable(false);
@@ -405,8 +401,8 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
         List<String> alreadyPresentFiles = resubmission.getResubmission().entrySet().stream()
                 .filter(f -> f.getValue().equals(ResubmissionFileChangeState.NONE))
                 .map(f -> f.getKey().getFileName()).collect(Collectors.toList());
-        List<String> duplicateFileNames = submission.getDataFiles().stream().map(dataFile -> dataFile.getFileName())
-                .filter(f -> alreadyPresentFiles.contains(f))
+        List<String> duplicateFileNames = submission.getDataFiles().stream().map(DataFile::getFileName)
+                .filter(alreadyPresentFiles::contains)
                 .collect(Collectors.toList());
 
         return duplicateFileNames;
@@ -438,11 +434,7 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
             }
         }
 
-        if (countOfWiffFiles > 0 && countOfWiffFiles != countOfWiffScanFiles) {
-            return false;
-        }
-
-        return true;
+        return countOfWiffFiles <= 0 || countOfWiffFiles == countOfWiffScanFiles;
     }
 
     private Map<DataFile, Set<String>> checkMzTabFileReferences(List<DataFile> mzTabDataFiles) {
@@ -526,7 +518,7 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
                     logger.error(errorLogMsg);
                     // Create the error entry for the current file
                     if (!filesMissingReferences.containsKey(mzTabFile)) {
-                        filesMissingReferences.put(mzTabFile, new HashSet<String>());
+                        filesMissingReferences.put(mzTabFile, new HashSet<>());
                     }
                     filesMissingReferences.get(mzTabFile).add(errorEntry);
                 }
@@ -616,7 +608,7 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
 //    }
 
     private List<DataFile> getResultOrSearchFile(List<DataFile> dataFiles, SubmissionType type) {
-        List<DataFile> holder = new ArrayList<DataFile>();
+        List<DataFile> holder = new ArrayList<>();
 
         // decide project file type to look for
         ProjectFileType typeToLookFor;
@@ -668,7 +660,7 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
             ValidationReport validationReport = SubmissionValidator.validateDataFile(dataFile);
             if (validationReport.hasError()) {
                 logger.error("runQuickValidation(): SubmissionValidator.validateDataFile(" + fileName + ") ERROR: "
-                        + validationReport.getMessages().stream().map(e -> e.toString()).reduce(",", String::concat));
+                        + validationReport.getMessages().stream().map(ValidationMessage::toString).reduce(",", String::concat));
                 result.incrementNumOfInvalidFiles();
                 // Combine the reports
                 result.getValidationReport().combine(validationReport);
@@ -773,11 +765,9 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
      */
     private void scanPrideXmlSampleDetails(List<DataFile> dataFiles) throws IOException {
         for (DataFile dataFile : dataFiles) {
-            InputStream prideInputStream = null;
 
-            try {
+            try (InputStream prideInputStream = FileUtil.getFileInputStream(dataFile.getFile())) {
                 // get file as input stream
-                prideInputStream = FileUtil.getFileInputStream(dataFile.getFile());
 
                 // scan the file
                 StringBuilder builder = readSampleDescription(prideInputStream);
@@ -792,10 +782,6 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
                     } catch (JAXBException e) {
                         logger.error("Failed to parse sample description for PRIDE XML file: " + dataFile.getFile().getName(), e);
                     }
-                }
-            } finally {
-                if (prideInputStream != null) {
-                    prideInputStream.close();
                 }
             }
         }
@@ -854,24 +840,18 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
      * @return a list of invalid pride xml
      */
     private List<DataFile> runPrideXmlProteinIdentValidation(List<DataFile> prideXmlDatafiles) throws IOException {
-        List<DataFile> invalidPrideXmlFiles = new ArrayList<DataFile>();
+        List<DataFile> invalidPrideXmlFiles = new ArrayList<>();
 
         for (DataFile dataFile : prideXmlDatafiles) {
             File file = dataFile.getFile();
             if (!isCompressed(file)) {
-                InputStream inputStream = null;
-                try {
-                    inputStream = FileUtil.getFileInputStream(file);
+                try (InputStream inputStream = FileUtil.getFileInputStream(file)) {
                     String endOfFile = FileUtil.tail(file, 7000);
 
                     if (!endOfFile.contains(PRIDEXML_GEL_FREE_IDENTIFICATION) && !endOfFile.contains(PRIDEXML_TWO_DIMENSIONAL_IDENTIFICATION)) {
                         invalidPrideXmlFiles.add(dataFile);
                     }
 
-                } finally {
-                    if (inputStream != null) {
-                        inputStream.close();
-                    }
                 }
             }
         }
@@ -886,15 +866,11 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
      * @return a list of invalid mzIdentML files
      */
     private List<DataFile> runMzIdentMLVersionValidation(List<DataFile> dataFiles) throws IOException {
-        List<DataFile> invalidMzIdentMLFiles = new ArrayList<DataFile>();
+        List<DataFile> invalidMzIdentMLFiles = new ArrayList<>();
 
         for (DataFile dataFile : dataFiles) {
-            BufferedReader fileReader = null;
-            InputStream inputStream = null;
-            try {
-                inputStream = FileUtil.getFileInputStream(dataFile.getFile());
+            try (InputStream inputStream = FileUtil.getFileInputStream(dataFile.getFile()); BufferedReader fileReader = new BufferedReader(new InputStreamReader(inputStream))) {
                 // read the first ten lines
-                fileReader = new BufferedReader(new InputStreamReader(inputStream));
 
                 boolean correctVersion = false;
                 for (int i = 0; i < 5; i++) {
@@ -907,14 +883,6 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
 
                 if (!correctVersion) {
                     invalidMzIdentMLFiles.add(dataFile);
-                }
-            } finally {
-                if (inputStream != null) {
-                    inputStream.close();
-                }
-
-                if (fileReader != null) {
-                    fileReader.close();
                 }
             }
 
@@ -976,11 +944,7 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
                         }
                     }
                     if (!present) {
-                        List<String> nonePresentPreakListFiles = invalidMzIdentMLFiles.get(dataFile);
-                        if (nonePresentPreakListFiles == null) {
-                            nonePresentPreakListFiles = new ArrayList<>();
-                            invalidMzIdentMLFiles.put(dataFile, nonePresentPreakListFiles);
-                        }
+                        List<String> nonePresentPreakListFiles = invalidMzIdentMLFiles.computeIfAbsent(dataFile, k -> new ArrayList<>());
                         nonePresentPreakListFiles.add(peakListFileName);
                     }
                 }
@@ -992,11 +956,8 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
     private Set<String> parsePeakListFileNames(File mzIdentMLFile) throws IOException {
         Set<String> peakListFileNames = new HashSet<>();
 
-        InputStream mzIdentMLInputStream = null;
-
-        try {
+        try (InputStream mzIdentMLInputStream = FileUtil.getFileInputStream(mzIdentMLFile)) {
             // get file as input stream
-            mzIdentMLInputStream = FileUtil.getFileInputStream(mzIdentMLFile);
 
             // scan the file
             BufferedReader reader = new BufferedReader(new InputStreamReader(mzIdentMLInputStream));
@@ -1014,10 +975,6 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
                 }
             }
 
-        } finally {
-            if (mzIdentMLInputStream != null) {
-                mzIdentMLInputStream.close();
-            }
         }
 
         return peakListFileNames;

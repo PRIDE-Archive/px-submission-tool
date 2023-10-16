@@ -104,7 +104,7 @@ public class SampleMetaDataTableModel extends PxTableModel implements PropertyCh
      * Format data for the table consumption
      */
     private List<Tuple<SampleMetaData.Type, CvParam>> getTableEntries() {
-        List<Tuple<SampleMetaData.Type, CvParam>> tableEntries = new ArrayList<Tuple<SampleMetaData.Type, CvParam>>();
+        List<Tuple<SampleMetaData.Type, CvParam>> tableEntries = new ArrayList<>();
 
         SampleMetaData sampleMetaData = dataFile.getSampleMetaData();
         Map<SampleMetaData.Type, Set<CvParam>> metaDataEntries = sampleMetaData.getMetaData();
@@ -117,13 +117,13 @@ public class SampleMetaDataTableModel extends PxTableModel implements PropertyCh
                 // display this in the table
                 for (CvParam param : typeSetEntry.getValue()) {
                     if (!param.getValue().equalsIgnoreCase(App.getInstance().getDesktopContext().getProperty("experimental.factor.default.value"))) {
-                        tableEntries.add(new Tuple<SampleMetaData.Type, CvParam>(type, param));
+                        tableEntries.add(new Tuple<>(type, param));
                     }
                 }
 
             } else {
                 for (CvParam param : typeSetEntry.getValue()) {
-                    tableEntries.add(new Tuple<SampleMetaData.Type, CvParam>(type, param));
+                    tableEntries.add(new Tuple<>(type, param));
                 }
             }
         }

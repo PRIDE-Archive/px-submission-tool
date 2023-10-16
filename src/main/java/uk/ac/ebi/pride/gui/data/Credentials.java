@@ -51,14 +51,8 @@ public class Credentials {
                 Object this$password = this.getPassword();
                 Object other$password = other.getPassword();
                 if (this$password == null) {
-                    if (other$password != null) {
-                        return false;
-                    }
-                } else if (!this$password.equals(other$password)) {
-                    return false;
-                }
-
-                return true;
+                    return other$password == null;
+                } else return this$password.equals(other$password);
             }
         }
     }

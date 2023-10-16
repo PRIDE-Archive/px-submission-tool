@@ -8,15 +8,12 @@ import uk.ac.ebi.pride.gui.form.table.editor.ComboBoxCellEditor;
 import uk.ac.ebi.pride.gui.form.table.editor.SampleMetaDataButtonCellEditor;
 import uk.ac.ebi.pride.gui.form.table.listener.RemoveDataFileListener;
 import uk.ac.ebi.pride.gui.form.table.listener.RemoveMetadataListener;
-import uk.ac.ebi.pride.gui.form.table.listener.RemoveSampleMetaDataListener;
 import uk.ac.ebi.pride.gui.form.table.listener.TableCellMouseMotionListener;
 import uk.ac.ebi.pride.gui.form.table.model.*;
 import uk.ac.ebi.pride.gui.form.table.renderer.*;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 
 import javax.swing.*;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableModel;
 
@@ -98,16 +95,9 @@ public class TableFactory {
         validColumn.setVisible(false);
 
         // add a listener to show/hide removal column
-        tableModel.addTableModelListener(new TableModelListener() {
-            @Override
-            public void tableChanged(TableModelEvent e) {
-                int rowCnt = ((TableModel) e.getSource()).getRowCount();
-                if (rowCnt > 0) {
-                    removalColumn.setVisible(true);
-                } else {
-                    removalColumn.setVisible(false);
-                }
-            }
+        tableModel.addTableModelListener(e -> {
+            int rowCnt = ((TableModel) e.getSource()).getRowCount();
+            removalColumn.setVisible(rowCnt > 0);
         });
 
         // add listener for removal
@@ -174,16 +164,9 @@ public class TableFactory {
         validColumn.setVisible(false);
 
         // add a listener to show/hide removal column
-        tableModel.addTableModelListener(new TableModelListener() {
-            @Override
-            public void tableChanged(TableModelEvent e) {
-                int rowCnt = ((TableModel) e.getSource()).getRowCount();
-                if (rowCnt > 0) {
-                    removalColumn.setVisible(true);
-                } else {
-                    removalColumn.setVisible(false);
-                }
-            }
+        tableModel.addTableModelListener(e -> {
+            int rowCnt = ((TableModel) e.getSource()).getRowCount();
+            removalColumn.setVisible(rowCnt > 0);
         });
 
         // add listener for removal

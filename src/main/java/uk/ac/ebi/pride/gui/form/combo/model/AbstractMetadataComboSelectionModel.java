@@ -101,11 +101,7 @@ public abstract class AbstractMetadataComboSelectionModel extends AbstractListMo
                     preselectedOntologies.put("efo", null);
                     ontology = "doid";
                 }
-                Runnable run = new Runnable() {
-                    @Override
-                    public void run() {
-                        new OLSDialog(((App) App.getInstance()).getMainFrame(), AbstractMetadataComboSelectionModel.this, true, "", ontology, "", preselectedOntologies, true);
-                    }};
+                Runnable run = () -> new OLSDialog(((App) App.getInstance()).getMainFrame(), AbstractMetadataComboSelectionModel.this, true, "", ontology, "", preselectedOntologies, true);
                 EDTUtils.invokeLater(run);
             }
         }

@@ -64,7 +64,7 @@ public class FileResubmissionDescriptor extends ContextAwareNavigationPanelDescr
 
         fileSelectionValidationTask.addTaskListener(form);
         fileSelectionValidationTask.addTaskListener(this);
-        TaskDialog<DataFileValidationMessage, Void> taskDialog = new TaskDialog<DataFileValidationMessage, Void>(((App) App.getInstance()).getMainFrame(),
+        TaskDialog<DataFileValidationMessage, Void> taskDialog = new TaskDialog<>(((App) App.getInstance()).getMainFrame(),
                 appContext.getProperty("file.selection.validation.dialog.title"),
                 appContext.getProperty("file.selection.validation.dialog.message"),
                 false);

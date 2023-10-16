@@ -220,12 +220,9 @@ public class SubmissionTypeForm extends Form {
         Icon icon = GUIUtilities.loadIcon(appContext.getProperty("resubmission.button.small.icon"));
         JButton resubmissionButton = GUIUtilities.createLabelLikeButton(icon, appContext.getProperty("resubmission.button.label"));
         resubmissionButton.setForeground(ColourUtil.HYPERLINK_COLOUR);
-        resubmissionButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                resubmissionDialog.updateState();
-                resubmissionDialog.setVisible(true);
-            }
+        resubmissionButton.addActionListener(e -> {
+            resubmissionDialog.updateState();
+            resubmissionDialog.setVisible(true);
         });
 
         linkPanel.add(resubmissionButton);
@@ -239,23 +236,13 @@ public class SubmissionTypeForm extends Form {
         icon = GUIUtilities.loadIcon(appContext.getProperty("submission.type.submission.tool.link.small.icon"));
         JButton dataButton = GUIUtilities.createLabelLikeButton(icon, appContext.getProperty("submission.type.submission.tool.submission.guideline"));
         dataButton.setForeground(ColourUtil.HYPERLINK_COLOUR);
-        dataButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                HttpUtil.openURL(appContext.getProperty("px.submission.guideline.web.url"));
-            }
-        });
+        dataButton.addActionListener(actionEvent -> HttpUtil.openURL(appContext.getProperty("px.submission.guideline.web.url")));
         linkPanel.add(dataButton);
 
         // more about proteomexchagne
         JButton moreButton = GUIUtilities.createLabelLikeButton(icon, appContext.getProperty("submission.type.submission.tool.more.detail"));
         moreButton.setForeground(ColourUtil.HYPERLINK_COLOUR);
-        moreButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent actionEvent) {
-                HttpUtil.openURL(appContext.getProperty("px.web.url"));
-            }
-        });
+        moreButton.addActionListener(actionEvent -> HttpUtil.openURL(appContext.getProperty("px.web.url")));
         linkPanel.add(moreButton);
 
         return linkPanel;
@@ -314,12 +301,8 @@ public class SubmissionTypeForm extends Form {
 
     private class TrainingModeCheckBoxController {
         public void update(JCheckBox checkBox) {
-            if (!appContext.isTrainingModeFlag()) {
-                // Hide the checkbox
-                checkBox.setVisible(false);
-            } else {
-                checkBox.setVisible(true);
-            }
+            // Hide the checkbox
+            checkBox.setVisible(appContext.isTrainingModeFlag());
         }
 
         public void init(JCheckBox trainingModeCheckBox) {

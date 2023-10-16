@@ -21,9 +21,7 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Properties;
-import java.util.Set;
 import java.util.regex.Matcher;
 
 /**
@@ -65,15 +63,13 @@ public class GetPXSubmissionDetailTask extends AbstractWebServiceTask<HashMap<St
             }
         } catch (Exception ex) {
             logger.warn("Failed to login to retrieve project details", ex);
-            Runnable eventDispatcher = new Runnable() {
-                public void run() {
-                    // show warning dialog
-                    App app = (App) App.getInstance();
-                    JOptionPane.showConfirmDialog(app.getMainFrame(),
-                            app.getDesktopContext().getProperty("pride.login.resubmission.error.message"),
-                            app.getDesktopContext().getProperty("pride.login.error.title"),
-                            JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
-                }
+            Runnable eventDispatcher = () -> {
+                // show warning dialog
+                App app = (App) App.getInstance();
+                JOptionPane.showConfirmDialog(app.getMainFrame(),
+                        app.getDesktopContext().getProperty("pride.login.resubmission.error.message"),
+                        app.getDesktopContext().getProperty("pride.login.error.title"),
+                        JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
             };
             EventQueue.invokeLater(eventDispatcher);
         }

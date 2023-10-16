@@ -15,7 +15,7 @@ public class MetaDataTableModel extends AbstractMetaDataTableModel {
     private final Set<CvParam> metaDataValues;
 
     public MetaDataTableModel() {
-        this.metaDataValues = new LinkedHashSet<CvParam>();
+        this.metaDataValues = new LinkedHashSet<>();
     }
 
     @Override
@@ -24,7 +24,7 @@ public class MetaDataTableModel extends AbstractMetaDataTableModel {
     }
 
     public Set<CvParam> getValues() {
-        return new LinkedHashSet<CvParam>(metaDataValues);
+        return new LinkedHashSet<>(metaDataValues);
     }
 
     @Override

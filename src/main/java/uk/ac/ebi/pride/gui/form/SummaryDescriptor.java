@@ -10,7 +10,6 @@ import uk.ac.ebi.pride.data.model.ResubmissionFileChangeState;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.navigation.Navigator;
-import uk.ac.ebi.pride.toolsuite.gui.prop.PropertyChangeHandler;
 
 import javax.help.HelpBroker;
 import javax.swing.*;
