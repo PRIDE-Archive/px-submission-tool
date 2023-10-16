@@ -881,8 +881,8 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                         if (peakListFileName.equalsIgnoreCase(spectraFileName)) {
                             if (spectraFile.getFileType() != ProjectFileType.PEAK &&
                                     !(spectraFile.getFileType() == ProjectFileType.RAW &&
-                                            (spectraFile.getFileFormat() != MassSpecFileFormat.MZML ||
-                                                    (spectraFile.getFileFormat() != MassSpecFileFormat.INDEXED_MZML))))
+                                            (spectraFile.getFileFormat() == MassSpecFileFormat.MZML ||
+                                                    (spectraFile.getFileFormat() == MassSpecFileFormat.INDEXED_MZML))))
                             {
                                 invalidMzIdentMLFiles.add(dataFile);
                             }
