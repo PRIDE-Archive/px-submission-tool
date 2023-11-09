@@ -130,7 +130,11 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
 
         boolean hasAdatFile = submission.getDataFiles().stream().anyMatch(dataFile ->
             FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.ADAT.getFileExtension()) ||
-                    FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.BCL.getFileExtension()));
+                    FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.BCL.getFileExtension())
+                    || FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.PARQUET.getFileExtension()));
+
+        boolean hasParquetFile = submission.getDataFiles().stream().anyMatch(dataFile ->
+                FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.PARQUET.getFileExtension()));
 
         if((hasAdatFile && !submissionType.equals(SubmissionType.AFFINITY))
         || (!hasAdatFile && submissionType.equals(SubmissionType.AFFINITY))){
@@ -246,9 +250,21 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         else if (submissionType.equals(SubmissionType.PARTIAL) || submissionType.equals(SubmissionType.AFFINITY)) {
             // should have both search engine output and raw files
             if (noSearchFile || noRawFile) {
-                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMissedFileWarning(submissionType, !noResultFile, !noSearchFile, !noRawFile));
+                if(!submissionType.equals(SubmissionType.AFFINITY)){
+                    return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMissedFileWarning(submissionType, !noResultFile, !noSearchFile, !noRawFile));
+                }
             }
             setProgress(40);
+
+            if(hasParquetFile){
+                List<DataFile> parquetFiles = submission.getDataFiles().stream().filter(dataFile ->
+                        FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.PARQUET.getFileExtension())).collect(Collectors.toList());
+                for(DataFile parquetFile : parquetFiles)    {
+                    if(!ParquetValidationTask.validate(parquetFile.getFile())){
+                        return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidParquetFileWarning(parquetFile.getFileName()));
+                    }
+                }
+            }
 
             // cannot have supported search engine output, these should be converted to PRIDE XMl
             // using PRIDE Converter
