@@ -315,4 +315,9 @@ public final class WarningMessageGenerator {
         return "<html>" + "<b>Your Submission type is Affinity Proteomics</b><br/>" + "Please upload .adat/.bml files as RAW files or go back to change the SubmissionType" + "</html>";
 
     }
+
+    public static String getInvalidParquetFileWarning(String fileName) {
+        return "<html>" + "<b>Your Submission file "+ fileName + "is invalid</b><br/>" + "Please check the logs for more details" + "</html>";
+
+    }
 }
