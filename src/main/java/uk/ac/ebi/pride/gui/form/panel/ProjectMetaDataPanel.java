@@ -24,6 +24,9 @@ import uk.ac.ebi.pride.gui.util.ValidationState;
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import java.awt.*;
+import java.util.Set;
+
+import static uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType.AFFINITY;
 
 /**
  * Panel for capturing experiment details
@@ -172,9 +175,14 @@ public class ProjectMetaDataPanel extends ContextAwarePanel {
             dataProcessingProtocolEditorPane.setBackground(ColourUtil.TEXT_FIELD_NORMAL_COLOUR);
         }
 
+        Set<CvParam> experimentMethods = appContext.getSubmissionRecord().getSubmission().getProjectMetaData().getMassSpecExperimentMethods();
+
         // mass spec experiment method
-        if (SubmissionValidator.validateExperimentMethods(appContext.getSubmissionRecord().getSubmission().getProjectMetaData().getMassSpecExperimentMethods()).hasError()) {
-            if (!inValid && showWarning) {
+        if (SubmissionValidator.validateExperimentMethods(experimentMethods).hasError()) {
+            if (!inValid && showWarning && experimentMethods.stream().anyMatch(experimentMethod -> experimentMethod.getAccession().equals("PRIDE:0000635")
+                    || experimentMethod.getAccession().equals("PRIDE:0000636") ||
+                    experimentMethod.getAccession().equals("PRIDE:0000637")))
+            {
                 warningBalloonTip = BalloonTipUtil.createErrorBalloonTip(experimentMethodComboBox, appContext.getProperty("mass.spec.experiment.method.error.message"));
                 warningBalloonTip.setVisible(true);
             }
@@ -182,6 +190,17 @@ public class ProjectMetaDataPanel extends ContextAwarePanel {
             inValid = true;
         } else {
             experimentMethodTable.setBackground(ColourUtil.TEXT_FIELD_NORMAL_COLOUR);
+        }
+
+        if(appContext.getSubmissionType().equals(AFFINITY)){
+            if(experimentMethods.stream().anyMatch(experimentMethod -> !experimentMethod.getAccession().equals("PRIDE:0000635")
+            && !experimentMethod.getAccession().equals("PRIDE:0000636") &&
+                    !experimentMethod.getAccession().equals("PRIDE:0000637"))){
+                warningBalloonTip = BalloonTipUtil.createErrorBalloonTip(experimentMethodComboBox, appContext.getProperty("affinity.experiment.method.error.message"));
+                warningBalloonTip.setVisible(true);
+                experimentMethodTable.setBackground(ColourUtil.TEXT_FIELD_WARNING_COLOUR);
+                inValid = true;
+            }
         }
 
         if (isCrosslinkDataset(appContext.getSubmissionRecord().getSubmission().getProjectMetaData(),

@@ -65,6 +65,32 @@ public class AdditionalMetaDataDescriptor extends ContextAwareNavigationPanelDes
             form.setInstrumentPanel(instrumentPanel);
             form.setInstrumentTableModel(instrumentTableModel);
             form.add(instrumentPanel);
+
+            MetaDataTableModel speciesTableModel = new MetaDataTableModel();
+            JPanel speciesPanel = form.initMetadataPanel(appContext.getProperty("species.label.title"),
+                    true,
+                    appContext.getProperty("species.combobox.default.selection"),
+                    null,
+                    appContext.getProperty("species.combobox.default.instrument.file"),
+                    Constant.NEWT,
+                    speciesTableModel);
+            form.remove(form.getSpeciesPanel());
+            form.setSpeciesPanel(speciesPanel);
+            form.setSpeciesTableModel(speciesTableModel);
+            form.add(speciesPanel);
+
+            MetaDataTableModel quantTableModel = new MetaDataTableModel();
+            JPanel quantPanel = form.initMetadataPanel(appContext.getProperty("quantification.label.title"),
+                    true,
+                    appContext.getProperty("quantification.combobox.default.selection"),
+                    null,
+                    appContext.getProperty("quantification.combobox.default.instrument.file"),
+                    Constant.PRIDE,
+                    quantTableModel);
+            form.remove(form.getQuantPanel());
+            form.setQuantPanel(quantPanel);
+            form.setQuantTableModel(speciesTableModel);
+            form.add(quantPanel);
         }
         firePropertyChange(BEFORE_DISPLAY_PANEL_PROPERTY, false, true);
     }

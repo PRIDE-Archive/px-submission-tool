@@ -44,7 +44,7 @@ public class GetPXSubmissionDetailTask extends AbstractWebServiceTask<HashMap<St
 
     @Override
     protected HashMap<String,SubmissionTypeConstants> doInBackground() throws Exception {
-        HashMap<String,SubmissionTypeConstants> pxAccessions = new LinkedHashMap<>();
+        HashMap<String,SubmissionTypeConstants> pxAndPadAccessions = new LinkedHashMap<>();
 
         try {
             setProxyIfProvided(restTemplate);
@@ -56,9 +56,13 @@ public class GetPXSubmissionDetailTask extends AbstractWebServiceTask<HashMap<St
 
             for (ProjectDetail projectDetail : projectDetailList.getProjectDetails()) {
                 String accession = projectDetail.getAccession();
-                Matcher matcher = Constant.PX_ACC_PATTERN.matcher(accession);
-                if (matcher.matches()) {
-                    pxAccessions.put(accession,projectDetail.getSubmissionType());
+                Matcher pxMatcher = Constant.PX_ACC_PATTERN.matcher(accession);
+                Matcher padMatcher = Constant.PAD_ACC_PATTERN.matcher(accession);
+                if (pxMatcher.matches()) {
+                    pxAndPadAccessions.put(accession,projectDetail.getSubmissionType());
+                }
+                if (padMatcher.matches()) {
+                    pxAndPadAccessions.put(accession,projectDetail.getSubmissionType());
                 }
             }
         } catch (Exception ex) {
@@ -74,7 +78,7 @@ public class GetPXSubmissionDetailTask extends AbstractWebServiceTask<HashMap<St
             EventQueue.invokeLater(eventDispatcher);
         }
 
-        return pxAccessions;
+        return pxAndPadAccessions;
     }
 
     public static void setProxyIfProvided(RestTemplate restTemplate) {

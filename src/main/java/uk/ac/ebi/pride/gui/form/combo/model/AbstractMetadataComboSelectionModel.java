@@ -59,6 +59,17 @@ public abstract class AbstractMetadataComboSelectionModel extends AbstractListMo
         // add all the element from a template file
         try {
             Collection<CvParam> cvParams  = CvFileUtil.parseByTabDelimitedLine(defaultValueFile);
+
+            if(appContext.getSubmissionType().equals(SubmissionType.AFFINITY) && defaultValueFile.contains("species")){
+                elements.addAll(cvParams.stream().filter(cvParam -> cvParam.getAccession().equals("9606") ||
+                        cvParam.getAccession().equals("10090")).collect(Collectors.toList()));
+            }
+
+            if(appContext.getSubmissionType().equals(SubmissionType.AFFINITY) && defaultValueFile.contains("quantification")){
+                elements.addAll(cvParams.stream().filter(cvParam -> cvParam.getAccession().equals("PRIDE:0000651") ||
+                        cvParam.getAccession().equals("PRIDE:0000652") || cvParam.getAccession().equals("PRIDE:0000653")).collect(Collectors.toList()));
+            }
+
             if(appContext.getSubmissionType().equals(SubmissionType.AFFINITY) && defaultValueFile.contains("instrument")){
                 elements.addAll(cvParams.stream().filter(cvParam -> cvParam.getCvLabel().equals(PRIDE)).collect(Collectors.toList()));
             } else if (defaultValueFile.contains("instrument")) {

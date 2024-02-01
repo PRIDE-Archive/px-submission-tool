@@ -60,4 +60,6 @@ public final class Constant {
     public static final Pattern REANALYSIS_PX_ACC_PATTERN = Pattern.compile("^(PXD\\d{6}[, ]*)+$");
 
     public static final Pattern PX_ACC_PATTERN = Pattern.compile("^PXD\\d{6}$");
+
+    public static final Pattern PAD_ACC_PATTERN = Pattern.compile("^PAD\\d{6}$");
 }

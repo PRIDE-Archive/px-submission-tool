@@ -144,12 +144,36 @@ public class AdditionalMetaDataForm extends Form {
         return instrumentPanel;
     }
 
+    public JPanel getSpeciesPanel() {
+        return speciesPanel;
+    }
+
+    public JPanel getQuantPanel() {
+        return quantPanel;
+    }
+
     public void setInstrumentPanel(JPanel instrumentPanel) {
         this.instrumentPanel = instrumentPanel;
     }
 
+    public void setSpeciesPanel(JPanel speciesPanel) {
+        this.speciesPanel = speciesPanel;
+    }
+
+    public void setQuantPanel(JPanel quantPanel) {
+        this.quantPanel = quantPanel;
+    }
+
     public void setInstrumentTableModel(MetaDataTableModel instrumentTableModel) {
         this.instrumentTableModel = instrumentTableModel;
+    }
+
+    public void setSpeciesTableModel(MetaDataTableModel speciesTableModel) {
+        this.speciesTableModel = speciesTableModel;
+    }
+
+    public void setQuantTableModel(MetaDataTableModel quantTableModel) {
+        this.quantTableModel = quantTableModel;
     }
 
     /**

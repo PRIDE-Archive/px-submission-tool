@@ -15,8 +15,9 @@ PRIDE	PRIDE:0000439	Spectral Abundance Factor - SAF	Spectral Abundance Factor - 
 PRIDE	PRIDE:0000440	Normalized Spectral Abundance Factor - NSAF	Normalized Spectral Abundance Factor - NSAF
 PRIDE	PRIDE:0000441	APEX - Absolute Protein Expression	APEX - Absolute Protein Expression
 PRIDE	PRIDE:0000513	Dimethyl Labeling	Dimethyl Labeling (DML)
-PRIDE   PRIDE:0000636   SomaScan affinity proteomics    SomaScan affinity proteomics
-PRIDE   PRIDE:0000637   Olink affinity proteomics   Olink affinity proteomics
+PRIDE	PRIDE:0000653	NPX
+PRIDE	PRIDE:0000652	Relative quantification
+PRIDE	PRIDE:0000651	Absolute quantification
 
 
 
