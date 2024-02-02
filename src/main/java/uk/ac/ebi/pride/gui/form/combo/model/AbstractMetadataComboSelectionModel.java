@@ -7,9 +7,8 @@ import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 import uk.ac.ebi.pride.data.model.CvParam;
-import uk.ac.ebi.pride.gui.util.Constant;
-import uk.ac.ebi.pride.toolsuite.gui.EDTUtils;
 import uk.ac.ebi.pride.gui.util.CvFileUtil;
+import uk.ac.ebi.pride.toolsuite.gui.EDTUtils;
 import uk.ac.ebi.pride.toolsuite.ols.dialog.OLSDialog;
 import uk.ac.ebi.pride.toolsuite.ols.dialog.OLSInputable;
 import uk.ac.ebi.pride.utilities.ols.web.service.model.Identifier;
@@ -25,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static uk.ac.ebi.pride.data.util.Constant.MS;
 import static uk.ac.ebi.pride.data.util.Constant.PRIDE;
 
 /**
@@ -58,24 +56,31 @@ public abstract class AbstractMetadataComboSelectionModel extends AbstractListMo
 
         // add all the element from a template file
         try {
-            Collection<CvParam> cvParams  = CvFileUtil.parseByTabDelimitedLine(defaultValueFile);
+            Collection<CvParam> cvParams = CvFileUtil.parseByTabDelimitedLine(defaultValueFile);
+            SubmissionType submissionType = appContext.getSubmissionType();
 
-            if(appContext.getSubmissionType().equals(SubmissionType.AFFINITY) && defaultValueFile.contains("species")){
-                elements.addAll(cvParams.stream().filter(cvParam -> cvParam.getAccession().equals("9606") ||
-                        cvParam.getAccession().equals("10090")).collect(Collectors.toList()));
-            }
-
-            if(appContext.getSubmissionType().equals(SubmissionType.AFFINITY) && defaultValueFile.contains("quantification")){
-                elements.addAll(cvParams.stream().filter(cvParam -> cvParam.getAccession().equals("PRIDE:0000651") ||
-                        cvParam.getAccession().equals("PRIDE:0000652") || cvParam.getAccession().equals("PRIDE:0000653")).collect(Collectors.toList()));
-            }
-
-            if(appContext.getSubmissionType().equals(SubmissionType.AFFINITY) && defaultValueFile.contains("instrument")){
-                elements.addAll(cvParams.stream().filter(cvParam -> cvParam.getCvLabel().equals(PRIDE)).collect(Collectors.toList()));
-            } else if (defaultValueFile.contains("instrument")) {
-                elements.addAll(cvParams.stream().filter(cvParam -> !cvParam.getCvLabel().equals(PRIDE)).collect(Collectors.toList()));
+            if (submissionType.equals(SubmissionType.AFFINITY)) {
+                otherSelectionOption = null;
+                if (defaultValueFile.contains("species")) {
+                    elements.addAll(cvParams.stream().filter(cvParam -> cvParam.getAccession().equals("9606") ||
+                            cvParam.getAccession().equals("10090")).collect(Collectors.toList()));
+                }
+                if (defaultValueFile.contains("quantification")) {
+                    elements.addAll(cvParams.stream().filter(cvParam -> cvParam.getAccession().equals("PRIDE:0000651") ||
+                            cvParam.getAccession().equals("PRIDE:0000652") || cvParam.getAccession().equals("PRIDE:0000653")).collect(Collectors.toList()));
+                }
+                if (defaultValueFile.contains("instrument")) {
+                    elements.addAll(cvParams.stream().filter(cvParam -> cvParam.getCvLabel().equals(PRIDE)).collect(Collectors.toList()));
+                }
+                if (defaultValueFile.contains("modification")) {
+                    elements.addAll(cvParams.stream().filter(cvParam -> cvParam.getCvLabel().equals(PRIDE)).collect(Collectors.toList()));
+                }
             } else {
-                elements.addAll(cvParams);
+                if (defaultValueFile.contains("instrument")) {
+                    elements.addAll(cvParams.stream().filter(cvParam -> !cvParam.getCvLabel().equals(PRIDE)).collect(Collectors.toList()));
+                } else {
+                    elements.addAll(cvParams);
+                }
             }
         } catch (IOException ioe) {
             logger.error("Failed to load default values from the template file", ioe);
@@ -138,23 +143,23 @@ public abstract class AbstractMetadataComboSelectionModel extends AbstractListMo
      * used to separate between the two. Modified row is used if the cv terms
      * are in a table and one of them are altered.
      *
-     * @param field the name of the field where the CV term will be inserted
+     * @param field         the name of the field where the CV term will be inserted
      * @param selectedValue the value to search for
-     * @param accession the accession number to search for
+     * @param accession     the accession number to search for
      * @param ontologyShort short name of the ontology to search in, e.g., GO or
-     * MOD
-     * @param ontologyLong long ontology name, e.g., Gene Ontology [GO]
-     * @param modifiedRow if the CV terms is going to be inserted into a table,
-     * the row number can be provided here, use -1 if inserting a new row
-     * @param mappedTerm the name of the previously mapped term, can be null
-     * @param metadata the metadata associated with the current term (can be
-     * null or empty)
+     *                      MOD
+     * @param ontologyLong  long ontology name, e.g., Gene Ontology [GO]
+     * @param modifiedRow   if the CV terms is going to be inserted into a table,
+     *                      the row number can be provided here, use -1 if inserting a new row
+     * @param mappedTerm    the name of the previously mapped term, can be null
+     * @param metadata      the metadata associated with the current term (can be
+     *                      null or empty)
      */
     @Override
     public void insertOLSResult(String field, Term selectedValue, Term accession,
-                         String ontologyShort, String ontologyLong, int modifiedRow, String mappedTerm, List<String> metadata) {
+                                String ontologyShort, String ontologyLong, int modifiedRow, String mappedTerm, List<String> metadata) {
         addItem((accession.getOntologyName().equalsIgnoreCase("ncbitaxon")
-                ? new CvParam("NEWT", accession.getTermOBOId().getIdentifier().substring(accession.getTermOBOId().getIdentifier().indexOf(':')+1), accession.getLabel(), null)
+                ? new CvParam("NEWT", accession.getTermOBOId().getIdentifier().substring(accession.getTermOBOId().getIdentifier().indexOf(':') + 1), accession.getLabel(), null)
                 : new CvParam(accession.getOntologyName().toUpperCase(), accession.getTermOBOId().getIdentifier(), accession.getLabel(), null)));
     }
 

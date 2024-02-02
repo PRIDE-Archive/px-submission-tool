@@ -310,9 +310,9 @@ public final class WarningMessageGenerator {
 
     public static String getInvalidSubmissionType(boolean hasAdatFile) {
         if(hasAdatFile) {
-            return "<html>" + "<b>Your submission contains .adat/.bml raw files</b><br/>" + "Please please go back and select Affinity Proteomics as Submission Type" + "</html>";
+            return "<html>" + "<b>Your submission contains .adat/.bml/.parquet raw files</b><br/>" + "Please please go back and select Affinity Proteomics as Submission Type" + "</html>";
         }
-        return "<html>" + "<b>Your Submission type is Affinity Proteomics</b><br/>" + "Please upload .adat/.bml files as RAW files or go back to change the SubmissionType" + "</html>";
+        return "<html>" + "<b>Your Submission type is Affinity Proteomics</b><br/>" + "Please upload .adat/.bml/.parquet files as RAW files or go back to change the SubmissionType" + "</html>";
 
     }
 

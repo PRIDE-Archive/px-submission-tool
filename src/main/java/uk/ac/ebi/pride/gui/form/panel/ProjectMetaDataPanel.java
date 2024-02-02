@@ -177,31 +177,23 @@ public class ProjectMetaDataPanel extends ContextAwarePanel {
 
         Set<CvParam> experimentMethods = appContext.getSubmissionRecord().getSubmission().getProjectMetaData().getMassSpecExperimentMethods();
 
-        // mass spec experiment method
-        if (SubmissionValidator.validateExperimentMethods(experimentMethods).hasError()) {
-            if (!inValid && showWarning && experimentMethods.stream().anyMatch(experimentMethod -> experimentMethod.getAccession().equals("PRIDE:0000635")
-                    || experimentMethod.getAccession().equals("PRIDE:0000636") ||
-                    experimentMethod.getAccession().equals("PRIDE:0000637")))
-            {
-                warningBalloonTip = BalloonTipUtil.createErrorBalloonTip(experimentMethodComboBox, appContext.getProperty("mass.spec.experiment.method.error.message"));
-                warningBalloonTip.setVisible(true);
-            }
+
+        if (experimentMethods.size() == 0) {
+            warningBalloonTip = BalloonTipUtil.createErrorBalloonTip(experimentMethodComboBox, appContext.getProperty("mass.spec.experiment.method.empty.error.message"));
+            warningBalloonTip.setVisible(true);
             experimentMethodTable.setBackground(ColourUtil.TEXT_FIELD_WARNING_COLOUR);
             inValid = true;
         } else {
-            experimentMethodTable.setBackground(ColourUtil.TEXT_FIELD_NORMAL_COLOUR);
-        }
-
-        if(appContext.getSubmissionType().equals(AFFINITY)){
-            if(experimentMethods.stream().anyMatch(experimentMethod -> !experimentMethod.getAccession().equals("PRIDE:0000635")
-            && !experimentMethod.getAccession().equals("PRIDE:0000636") &&
-                    !experimentMethod.getAccession().equals("PRIDE:0000637"))){
-                warningBalloonTip = BalloonTipUtil.createErrorBalloonTip(experimentMethodComboBox, appContext.getProperty("affinity.experiment.method.error.message"));
-                warningBalloonTip.setVisible(true);
-                experimentMethodTable.setBackground(ColourUtil.TEXT_FIELD_WARNING_COLOUR);
-                inValid = true;
+            if (appContext.getSubmissionType().equals(AFFINITY)) {
+                if (experimentMethods.stream().anyMatch(experimentMethod -> !experimentMethod.getAccession().equals("PRIDE:0000635")
+                        && !experimentMethod.getAccession().equals("PRIDE:0000636") &&
+                        !experimentMethod.getAccession().equals("PRIDE:0000637"))) {
+                    warningBalloonTip = BalloonTipUtil.createErrorBalloonTip(experimentMethodComboBox, appContext.getProperty("affinity.experiment.method.error.message"));
+                    warningBalloonTip.setVisible(true);
+                    experimentMethodTable.setBackground(ColourUtil.TEXT_FIELD_WARNING_COLOUR);
+                    inValid = true;
+                }
             }
-        }
 
         if (isCrosslinkDataset(appContext.getSubmissionRecord().getSubmission().getProjectMetaData(),
         title, keywords, projectDesc, sampleProcessing, dataProcessing)){
@@ -227,6 +219,21 @@ public class ProjectMetaDataPanel extends ContextAwarePanel {
                     appContext.getProperty("crosslinking.detected.dialog.title"),
                     JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
         }
+
+            // mass spec experiment method
+            else if ((SubmissionValidator.validateExperimentMethods(experimentMethods).hasError()) || experimentMethods.stream().anyMatch(experimentMethod -> experimentMethod.getAccession().equals("PRIDE:0000635")
+                    || experimentMethod.getAccession().equals("PRIDE:0000636") ||
+                    experimentMethod.getAccession().equals("PRIDE:0000637"))) {
+                warningBalloonTip = BalloonTipUtil.createErrorBalloonTip(experimentMethodComboBox, appContext.getProperty("mass.spec.experiment.method.error.message"));
+                warningBalloonTip.setVisible(true);
+                experimentMethodTable.setBackground(ColourUtil.TEXT_FIELD_WARNING_COLOUR);
+                inValid = true;
+            } else {
+                experimentMethodTable.setBackground(ColourUtil.TEXT_FIELD_NORMAL_COLOUR);
+            }
+
+        }
+
 
         return inValid ? ValidationState.ERROR : ValidationState.SUCCESS;
     }

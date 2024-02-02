@@ -1,5 +1,6 @@
 package uk.ac.ebi.pride.gui.form;
 
+import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 import uk.ac.ebi.pride.data.model.CvParam;
 import uk.ac.ebi.pride.data.util.Constant;
 import uk.ac.ebi.pride.data.validation.SubmissionValidator;
@@ -405,5 +406,21 @@ public class AdditionalMetaDataForm extends Form {
         warningBalloonTip.setVisible(true);
         this.revalidate();
         this.repaint();
+    }
+
+    public JPanel getModificationPanel() {
+        return modificationPanel;
+    }
+
+    public void setModificationPanel(JPanel modificationPanel) {
+        this.modificationPanel = modificationPanel;
+    }
+
+    public MetaDataTableModel getModificationTableModel() {
+        return modificationTableModel;
+    }
+
+    public void setModificationTableModel(MetaDataTableModel modificationTableModel) {
+        this.modificationTableModel = modificationTableModel;
     }
 }
