@@ -1,6 +1,7 @@
 package uk.ac.ebi.pride.gui.util;
 
 import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
@@ -262,7 +263,7 @@ public final class WarningMessageGenerator {
     /**
      * Show warning for missing files
      */
-    public static String getMissedFileWarning(SubmissionType submissionType,
+    public static String getMissedFileWarning(SubmissionTypeConstants submissionType,
                                               boolean hasResultFile,
                                               boolean hasSearchFile,
                                               boolean hasRawFile) {
@@ -270,7 +271,7 @@ public final class WarningMessageGenerator {
         errMsg.append("<html>");
         errMsg.append("<b>Please make sure you have the following information:</b><br/>");
 
-        if (submissionType.equals(SubmissionType.COMPLETE) && !hasResultFile) {
+        if (submissionType.equals(SubmissionTypeConstants.COMPLETE) && !hasResultFile) {
             errMsg.append("<li>");
             errMsg.append("mzIdentML or mzTab Result files (plus spectrum files)");
             errMsg.append("</li>");

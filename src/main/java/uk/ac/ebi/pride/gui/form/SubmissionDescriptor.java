@@ -4,7 +4,8 @@ import com.asperasoft.faspmanager.FaspManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
+
+import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.archive.submission.model.submission.SubmissionReferenceDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
@@ -435,7 +436,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             appContext.resetDataFileEntryCount();
             appContext.setResubmission(false);
             SubmissionRecord newSubmissionRecord = new SubmissionRecord();
-            newSubmissionRecord.getSubmission().getProjectMetaData().setSubmissionType(SubmissionType.COMPLETE);
+            newSubmissionRecord.getSubmission().getProjectMetaData().setSubmissionType(SubmissionTypeConstants.COMPLETE);
             appContext.setSubmissionRecord(newSubmissionRecord);
         }
 

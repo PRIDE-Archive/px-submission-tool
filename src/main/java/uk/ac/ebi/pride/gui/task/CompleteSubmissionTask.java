@@ -4,7 +4,8 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
+
+import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.archive.submission.model.submission.SubmissionReferenceDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
@@ -62,7 +63,7 @@ public class CompleteSubmissionTask extends TaskAdapter<SubmissionReferenceDetai
             if(ticketId!=null && !ticketId.equals("")){
                 return new SubmissionReferenceDetail(ticketId);
             }
-            if(((AppContext) context).getSubmissionType().equals(SubmissionType.AFFINITY)){
+            if(((AppContext) context).getSubmissionType().equals(SubmissionTypeConstants.AFFINITY)){
                 baseUrl = baseUrl + "?submissionType=AFFINITY";
             }
             result = restTemplate.postForObject(baseUrl, uploadDetail, SubmissionReferenceDetail.class);

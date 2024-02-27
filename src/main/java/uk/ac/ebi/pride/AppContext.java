@@ -2,13 +2,14 @@ package uk.ac.ebi.pride;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
 import uk.ac.ebi.pride.data.model.*;
 import uk.ac.ebi.pride.gui.data.ResubmissionRecord;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
 import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
+
 
 import javax.help.HelpBroker;
 import javax.help.HelpSet;
@@ -220,7 +221,7 @@ public class AppContext extends DesktopContext {
     /**
      * Get type of the submission
      */
-    public synchronized SubmissionType getSubmissionType() {
+    public synchronized SubmissionTypeConstants getSubmissionType() {
         return submissionRecord.getSubmission().getProjectMetaData().getSubmissionType();
     }
 
@@ -230,10 +231,10 @@ public class AppContext extends DesktopContext {
      * @param type submission type, it could be supported, unsupported and raw
      * only
      */
-    public synchronized void setSubmissionsType(SubmissionType type) {
+    public synchronized void setSubmissionsType(SubmissionTypeConstants type) {
         ProjectMetaData metadata = submissionRecord.getSubmission().getProjectMetaData();
         if (metadata.getSubmissionType() == null || !metadata.getSubmissionType().equals(type)) {
-            SubmissionType oldType = metadata.getSubmissionType();
+            SubmissionTypeConstants oldType = metadata.getSubmissionType();
             metadata.setSubmissionType(type);
             firePropertyChange(SUBMISSION_TYPE_CHANGED, oldType, type);
         }

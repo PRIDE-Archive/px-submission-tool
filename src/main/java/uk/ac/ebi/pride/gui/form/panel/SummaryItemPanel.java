@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
+import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
@@ -58,7 +58,7 @@ public class SummaryItemPanel extends ContextAwarePanel
     private static final boolean IS_FAST_VALIDATION_ENABLED = true; // we decided to use only FAST_VALIDATION
 
     Submission submission;
-    SubmissionType submissionType;
+    SubmissionTypeConstants submissionType;
 
     public static File checksumFile;
 
@@ -309,7 +309,7 @@ public class SummaryItemPanel extends ContextAwarePanel
     private boolean isFastValidationSupport() {
         boolean isQualified = false;
         try {
-            if (submission.getProjectMetaData().getSubmissionType().equals(SubmissionType.COMPLETE)) {
+            if (submission.getProjectMetaData().getSubmissionType().equals(SubmissionTypeConstants.COMPLETE)) {
                 for (DataFile dataFile : submission.getDataFiles()) {
                     if (dataFile.getFileFormat() != null && dataFile.getFileFormat().equals(MassSpecFileFormat.MZIDENTML)) {
                         isQualified = true;

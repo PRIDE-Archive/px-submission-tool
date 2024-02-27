@@ -3,7 +3,8 @@ package uk.ac.ebi.pride.gui.form;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.AppContext;
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
+
+import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.action.LoadSubmissionFileAction;
 import uk.ac.ebi.pride.gui.form.comp.HeaderPanel;
@@ -281,22 +282,22 @@ public class SubmissionTypeForm extends Form {
         public void actionPerformed(ActionEvent e) {
             if(!appContext.isResubmission()){
                 if (e.getActionCommand().equals(FULL_SUBMISSION_OPTION)) {
-                    appContext.setSubmissionsType(SubmissionType.COMPLETE);
+                    appContext.setSubmissionsType(SubmissionTypeConstants.COMPLETE);
                 } else if (e.getActionCommand().equals(PARTIAL_SUBMISSION_OPTION)) {
-                    appContext.setSubmissionsType(SubmissionType.PARTIAL);
+                    appContext.setSubmissionsType(SubmissionTypeConstants.PARTIAL);
                 } else if (e.getActionCommand().equals(AFFINITY_SUBMISSION_OPTION)) {
-                    appContext.setSubmissionsType(SubmissionType.AFFINITY);
+                    appContext.setSubmissionsType(SubmissionTypeConstants.AFFINITY);
                 }
             }else{ // If it is a resubmission
                 if (e.getActionCommand().equals(FULL_SUBMISSION_OPTION)) {
-                    if(!appContext.getSubmissionType().equals(SubmissionType.COMPLETE)){
+                    if(!appContext.getSubmissionType().equals(SubmissionTypeConstants.COMPLETE)){
                         resubmissionChangeTypeError = "You have selected a RESUBMISSION COMPLETE project and " +
                                 "you cannot change it a PARTIAL submission now unless you deselect RESUBMISSION";
                     }else{
                         resubmissionChangeTypeError = "";
                     }
                 } else if (e.getActionCommand().equals(PARTIAL_SUBMISSION_OPTION)) {
-                    if(!appContext.getSubmissionType().equals(SubmissionType.PARTIAL)){
+                    if(!appContext.getSubmissionType().equals(SubmissionTypeConstants.PARTIAL)){
                         resubmissionChangeTypeError = "You have selected a RESUBMISSION PARTIAL project and " +
                                 "you cannot change it to a COMPLETE submission now unless you deselect RESUBMISSION";
                     }else{

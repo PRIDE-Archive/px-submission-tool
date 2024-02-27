@@ -6,7 +6,8 @@ import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
+
+import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.SampleMetaData;
 import uk.ac.ebi.pride.data.model.Submission;
@@ -98,7 +99,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         }
         setProgress(20);
 
-        SubmissionType submissionType = submission.getProjectMetaData().getSubmissionType();
+        SubmissionTypeConstants submissionType = submission.getProjectMetaData().getSubmissionType();
 
         List<DataFile> prideXmlDataFiles = submission.getDataFilesByFormat(MassSpecFileFormat.PRIDE);
         boolean noPrideXml = prideXmlDataFiles.isEmpty();
@@ -136,12 +137,12 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         boolean hasParquetFile = submission.getDataFiles().stream().anyMatch(dataFile ->
                 FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.PARQUET.getFileExtension()));
 
-        if((hasAdatFile && !submissionType.equals(SubmissionType.AFFINITY))
-        || (!hasAdatFile && submissionType.equals(SubmissionType.AFFINITY))){
+        if((hasAdatFile && !submissionType.equals(SubmissionTypeConstants.AFFINITY))
+        || (!hasAdatFile && submissionType.equals(SubmissionTypeConstants.AFFINITY))){
                 return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSubmissionType(hasAdatFile));
         }
 
-        if (submissionType.equals(SubmissionType.COMPLETE)) {
+        if (submissionType.equals(SubmissionTypeConstants.COMPLETE)) {
 
             // should have both result files and raw files
             if (noResultFile || noRawFile) {
@@ -247,10 +248,10 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 setProgress(80);
             }
         }
-        else if (submissionType.equals(SubmissionType.PARTIAL) || submissionType.equals(SubmissionType.AFFINITY)) {
+        else if (submissionType.equals(SubmissionTypeConstants.PARTIAL) || submissionType.equals(SubmissionTypeConstants.AFFINITY)) {
             // should have both search engine output and raw files
             if (noSearchFile || noRawFile) {
-                if(!submissionType.equals(SubmissionType.AFFINITY)){
+                if(!submissionType.equals(SubmissionTypeConstants.AFFINITY)){
                     return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMissedFileWarning(submissionType, !noResultFile, !noSearchFile, !noRawFile));
                 }
             }
@@ -623,12 +624,12 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         }
     }
 
-    private List<DataFile> getResultOrSearchFile(List<DataFile> dataFiles, SubmissionType type) {
+    private List<DataFile> getResultOrSearchFile(List<DataFile> dataFiles, SubmissionTypeConstants type) {
         List<DataFile> holder = new ArrayList<>();
 
         // decide project file type to look for
         ProjectFileType typeToLookFor;
-        if (type.equals(SubmissionType.PARTIAL)) {
+        if (type.equals(SubmissionTypeConstants.PARTIAL)) {
             typeToLookFor = ProjectFileType.SEARCH;
         } else {
             typeToLookFor = ProjectFileType.RESULT;

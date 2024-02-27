@@ -11,7 +11,7 @@
 //import uk.ac.ebi.pride.gui.form.table.model.FileMappingTableModel;
 //import uk.ac.ebi.pride.gui.navigation.NavigationControlPanel;
 //import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
-//import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
+//
 //
 //import javax.swing.*;
 //import java.awt.*;
@@ -85,8 +85,8 @@
 //        Submission submission = appContext.getSubmissionRecord().getSubmission();
 //        java.util.List<DataFile> dataFiles = submission.getDataFiles();
 //        for (DataFile dataFile : dataFiles) {
-//            if ((appContext.getSubmissionType().equals(SubmissionType.COMPLETE) && !dataFile.getFileType().equals(ProjectFileType.RESULT)) ||
-//                    (appContext.getSubmissionType().equals(SubmissionType.PARTIAL) && !dataFile.getFileType().equals(ProjectFileType.SEARCH))) {
+//            if ((appContext.getSubmissionType().equals(SubmissionTypeConstants.COMPLETE) && !dataFile.getFileType().equals(ProjectFileType.RESULT)) ||
+//                    (appContext.getSubmissionType().equals(SubmissionTypeConstants.PARTIAL) && !dataFile.getFileType().equals(ProjectFileType.SEARCH))) {
 //                fileMappingTableModel.addData(dataFile, this.dataFile.containsFileMapping(dataFile));
 //            }
 //        }

@@ -1,6 +1,7 @@
 package uk.ac.ebi.pride.gui.form;
 
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
+
+import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.comp.GradientRoundedPanel;
 import uk.ac.ebi.pride.gui.form.comp.RoundedPanel;
@@ -247,14 +248,14 @@ public class PrerequisiteForm extends Form {
         return requirementPanel;
     }
 
-    public void setSubmissionType(SubmissionType submissionType) {
-        if (SubmissionType.COMPLETE.equals(submissionType)) {
+    public void setSubmissionType(SubmissionTypeConstants submissionType) {
+        if (SubmissionTypeConstants.COMPLETE.equals(submissionType)) {
             requirementItemContainer.removeAll();
             requirementItemContainer.add(resultFileRequirementItemPanel);
             requirementItemContainer.add(rawFileRequirementItemPanel);
             requirementItemContainer.add(experimentMetadataItemPanel);
             requirementItemContainer.add(labHeadItemPanel);
-        } else if (SubmissionType.PARTIAL.equals(submissionType)){
+        } else if (SubmissionTypeConstants.PARTIAL.equals(submissionType)){
             requirementItemContainer.removeAll();
             requirementItemContainer.add(identificationFileRequirementItemPanel);
             requirementItemContainer.add(rawFileRequirementItemPanel);

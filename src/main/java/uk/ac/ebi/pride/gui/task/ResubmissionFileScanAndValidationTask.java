@@ -6,7 +6,8 @@ import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
+
+import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Resubmission;
 import uk.ac.ebi.pride.data.model.ResubmissionFileChangeState;
@@ -122,7 +123,7 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
         }
         setProgress(20);
 
-        SubmissionType submissionType = submission.getProjectMetaData().getSubmissionType();
+        SubmissionTypeConstants submissionType = submission.getProjectMetaData().getSubmissionType();
 
         List<DataFile> prideXmlDataFiles = submission.getDataFilesByFormat(MassSpecFileFormat.PRIDE);
         List<DataFile> prideXmlDataFilesResub = resubmission.getFilteredDataFilesByFormat(MassSpecFileFormat.PRIDE, ResubmissionFileChangeState.DELETE);
@@ -151,7 +152,7 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
 
         boolean noResultFile = resultDataFiles.isEmpty() && resultDataFilesResub.isEmpty();
 
-        if (submissionType.equals(SubmissionType.COMPLETE)) {
+        if (submissionType.equals(SubmissionTypeConstants.COMPLETE)) {
 
             // should have both result files and raw files
             if (noResultFile || noRawFile) {
@@ -248,7 +249,7 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
                 setProgress(80);
             }
 
-        } else if (submissionType.equals(SubmissionType.PARTIAL)) {
+        } else if (submissionType.equals(SubmissionTypeConstants.PARTIAL)) {
             // should have both search engine output and raw files
             if (noSearchFile || noRawFile) {
                 return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMissedFileWarning(submissionType, !noResultFile, !noSearchFile, !noRawFile));
@@ -628,12 +629,12 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
 //        }
 //    }
 
-    private List<DataFile> getResultOrSearchFile(List<DataFile> dataFiles, SubmissionType type) {
+    private List<DataFile> getResultOrSearchFile(List<DataFile> dataFiles, SubmissionTypeConstants type) {
         List<DataFile> holder = new ArrayList<>();
 
         // decide project file type to look for
         ProjectFileType typeToLookFor;
-        if (type.equals(SubmissionType.PARTIAL)) {
+        if (type.equals(SubmissionTypeConstants.PARTIAL)) {
             typeToLookFor = ProjectFileType.SEARCH;
         } else {
             typeToLookFor = ProjectFileType.RESULT;

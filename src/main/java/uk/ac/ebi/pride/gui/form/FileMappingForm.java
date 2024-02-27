@@ -14,7 +14,7 @@
 //import uk.ac.ebi.pride.gui.util.BalloonTipUtil;
 //import uk.ac.ebi.pride.gui.util.ValidationState;
 //import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
-//import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
+//
 //
 //import javax.swing.*;
 //import javax.swing.event.ListSelectionEvent;
@@ -131,7 +131,7 @@
 //    public ValidationState doValidation() {
 //        ValidationState result;
 //        int resultOrSearchCount = 0;
-//        List<DataFile> resultOrSearchFiles = SubmissionType.COMPLETE.equals(appContext.getSubmissionType()) ?
+//        List<DataFile> resultOrSearchFiles = SubmissionTypeConstants.COMPLETE.equals(appContext.getSubmissionType()) ?
 //            appContext.getSubmissionFilesByType(ProjectFileType.RESULT) :
 //            appContext.getSubmissionFilesByType(ProjectFileType.SEARCH);
 //        Set<DataFile> foundMappedRawFiles = new HashSet<>();
@@ -150,7 +150,7 @@
 //            }
 //        }
 //        if ((0<resultOrSearchCount) || (!allRawFiles.equals(foundMappedRawFiles))) {
-//            String fileType = SubmissionType.COMPLETE.equals(appContext.getSubmissionType()) ? "result" : "search";
+//            String fileType = SubmissionTypeConstants.COMPLETE.equals(appContext.getSubmissionType()) ? "result" : "search";
 //            if (warningBalloonTip != null) {
 //                warningBalloonTip.closeBalloon(); // close previous balloon tip
 //            }

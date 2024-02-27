@@ -1,5 +1,6 @@
 package uk.ac.ebi.pride.gui.form;
 
+import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.data.model.CvParam;
 import uk.ac.ebi.pride.data.model.ProjectMetaData;
 import uk.ac.ebi.pride.data.model.Submission;
@@ -7,7 +8,7 @@ import uk.ac.ebi.pride.data.util.Constant;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.form.table.model.MetaDataTableModel;
 import uk.ac.ebi.pride.gui.util.ValidationState;
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
+
 
 import javax.help.HelpBroker;
 import javax.swing.*;
@@ -27,7 +28,7 @@ public class AdditionalMetaDataDescriptor extends ContextAwareNavigationPanelDes
 
     @Override
     public boolean toSkipPanel() {
-        return appContext.getSubmissionType().equals(SubmissionType.COMPLETE);
+        return appContext.getSubmissionType().equals(SubmissionTypeConstants.COMPLETE);
     }
 
     @Override
@@ -52,7 +53,7 @@ public class AdditionalMetaDataDescriptor extends ContextAwareNavigationPanelDes
 //            form.setComment(metaData.getReasonForPartialSubmission());
         }
 
-        if (appContext.getSubmissionType().equals(SubmissionType.AFFINITY)) {
+        if (appContext.getSubmissionType().equals(SubmissionTypeConstants.AFFINITY)) {
             MetaDataTableModel instrumentTableModel = new MetaDataTableModel();
             JPanel instrumentPanel = form.initMetadataPanel(appContext.getProperty("instrument.label.title"),
                     true,

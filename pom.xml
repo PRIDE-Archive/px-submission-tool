@@ -50,26 +50,20 @@
         <uk.ac.ebi.pride.architectural.pride-tdd.version>1.0.3</uk.ac.ebi.pride.architectural.pride-tdd.version>
         <assembly.dir>${project.name}-${project.version}</assembly.dir>
         <project.output.dir>target/classes</project.output.dir>
-        <uk.ac.ebi.pride.archive-archive-data-provider-api.version>2.0.13-SNAPSHOT</uk.ac.ebi.pride.archive-archive-data-provider-api.version>
         <uk.ac.ebi.pride.web-pride-web-utils.version>1.3.13</uk.ac.ebi.pride.web-pride-web-utils.version>
         <uk.ac.ebi.pride.jaxb-pride-jaxb.version>1.0.18</uk.ac.ebi.pride.jaxb-pride-jaxb.version>
         <uk.ac.ebi.pride.utilities-pride-utilities.version>2.0.16</uk.ac.ebi.pride.utilities-pride-utilities.version>
         <uk.ac.ebi.pride.toolsuite-inspector-swing-utils.version>2.0.3</uk.ac.ebi.pride.toolsuite-inspector-swing-utils.version>
-        <uk.ac.ebi.pride-px-submission-core.version>2.0.38-SNAPSHOT</uk.ac.ebi.pride-px-submission-core.version>
+        <uk.ac.ebi.pride-px-submission-core.version>2.1.0-SNAPSHOT</uk.ac.ebi.pride-px-submission-core.version>
         <uk.ac.ebi.pride.px-libpxreport.version>1.1</uk.ac.ebi.pride.px-libpxreport.version>
         <uk.ac.ebi.pride.toolsuite-ols-dialog.version>3.4.22-SNAPSHOT</uk.ac.ebi.pride.toolsuite-ols-dialog.version>
         <uk.ac.ebi.jmzidml-jmzidentml.version>1.2.6</uk.ac.ebi.jmzidml-jmzidentml.version>
-        <uk.ac.ebi.pride.archive-archive-submission-model.version>1.0.4-SNAPSHOT</uk.ac.ebi.pride.archive-archive-submission-model.version>
+        <uk.ac.ebi.pride.archive-archive-submission-model.version>1.0.5-SNAPSHOT</uk.ac.ebi.pride.archive-archive-submission-model.version>
         <uk.ac.ebi.pride.sdrf.jsdrf.version>1.0-SNAPSHOT</uk.ac.ebi.pride.sdrf.jsdrf.version>
         <pg.converter.version>1.8.5</pg.converter.version>
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>uk.ac.ebi.pride.archive</groupId>
-            <artifactId>archive-data-provider-api</artifactId>
-            <version>${uk.ac.ebi.pride.archive-archive-data-provider-api.version}</version>
-        </dependency>
         <dependency>
             <groupId>uk.ac.ebi.pride.archive</groupId>
             <artifactId>archive-submission-model</artifactId>
@@ -224,6 +218,12 @@
             <groupId>uk.ac.ebi.pride.toolsuite</groupId>
             <artifactId>pg-converter</artifactId>
             <version>${pg.converter.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>uk.ac.ebi.pride.archive</groupId>
+                    <artifactId>archive-data-provider-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>commons-codec</groupId>

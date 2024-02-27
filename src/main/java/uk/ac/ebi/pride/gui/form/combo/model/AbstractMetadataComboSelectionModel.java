@@ -5,7 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
+
+import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.data.model.CvParam;
 import uk.ac.ebi.pride.gui.util.CvFileUtil;
 import uk.ac.ebi.pride.toolsuite.gui.EDTUtils;
@@ -57,9 +58,9 @@ public abstract class AbstractMetadataComboSelectionModel extends AbstractListMo
         // add all the element from a template file
         try {
             Collection<CvParam> cvParams = CvFileUtil.parseByTabDelimitedLine(defaultValueFile);
-            SubmissionType submissionType = appContext.getSubmissionType();
+            SubmissionTypeConstants submissionType = appContext.getSubmissionType();
 
-            if (submissionType.equals(SubmissionType.AFFINITY)) {
+            if (submissionType.equals(SubmissionTypeConstants.AFFINITY)) {
                 otherSelectionOption = null;
                 if (defaultValueFile.contains("species")) {
                     elements.addAll(cvParams.stream().filter(cvParam -> cvParam.getAccession().equals("9606") ||

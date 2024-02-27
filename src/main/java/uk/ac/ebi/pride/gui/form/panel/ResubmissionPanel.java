@@ -5,7 +5,7 @@
 package uk.ac.ebi.pride.gui.form.panel;
 
 import uk.ac.ebi.pride.App;
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
+
 import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwarePanel;
 import uk.ac.ebi.pride.gui.task.GetPXSubmissionDetailTask;
@@ -75,8 +75,8 @@ public class ResubmissionPanel extends ContextAwarePanel implements ActionListen
      * @param pxAccession project accession
      * @return Submission Type
      */
-    public SubmissionType getSubmissionType(String pxAccession){
-        return SubmissionType.valueOf(projectDetails.get(pxAccession).getName());
+    public SubmissionTypeConstants getSubmissionType(String pxAccession){
+        return SubmissionTypeConstants.valueOf(projectDetails.get(pxAccession).getName());
     }
 
     public void setPxAccession(String pxAccession) {

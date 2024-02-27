@@ -4,7 +4,7 @@
 //import uk.ac.ebi.pride.AppContext;
 //import uk.ac.ebi.pride.data.model.DataFile;
 //import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
-//import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
+//
 //
 //import javax.swing.*;
 //import javax.swing.table.TableCellRenderer;
@@ -37,7 +37,7 @@
 //    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
 //        valid = false;
 //        count = (Integer)value;
-//        java.util.List<DataFile> dataFiles = appContext.getSubmissionType().equals(SubmissionType.COMPLETE) ?
+//        java.util.List<DataFile> dataFiles = appContext.getSubmissionType().equals(SubmissionTypeConstants.COMPLETE) ?
 //                                                appContext.getSubmissionFilesByType(ProjectFileType.RESULT) :
 //                                                appContext.getSubmissionFilesByType(ProjectFileType.SEARCH);
 //

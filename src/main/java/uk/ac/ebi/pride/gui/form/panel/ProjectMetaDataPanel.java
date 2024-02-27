@@ -26,7 +26,7 @@ import javax.swing.event.HyperlinkEvent;
 import java.awt.*;
 import java.util.Set;
 
-import static uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType.AFFINITY;
+import static uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants.AFFINITY;
 
 /**
  * Panel for capturing experiment details

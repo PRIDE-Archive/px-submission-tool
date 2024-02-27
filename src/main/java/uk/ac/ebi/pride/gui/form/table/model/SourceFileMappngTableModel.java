@@ -2,10 +2,11 @@ package uk.ac.ebi.pride.gui.form.table.model;
 
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
+import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
+
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -66,11 +67,11 @@ public class SourceFileMappngTableModel extends PxTableModel implements Property
 
     @Override
     public int getRowCount() {
-        SubmissionType submissionType = appContext.getSubmissionType();
+        SubmissionTypeConstants submissionType = appContext.getSubmissionType();
         if (submissionType == null) {
             return 0;
         } else {
-            return submissionType.equals(SubmissionType.COMPLETE) ?
+            return submissionType.equals(SubmissionTypeConstants.COMPLETE) ?
                     appContext.getSubmissionFilesByType(ProjectFileType.RESULT).size() :
                     appContext.getSubmissionFilesByType(ProjectFileType.SEARCH).size();
         }
@@ -79,7 +80,7 @@ public class SourceFileMappngTableModel extends PxTableModel implements Property
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
 
-        List<DataFile> dataFiles = appContext.getSubmissionType().equals(SubmissionType.COMPLETE) ?
+        List<DataFile> dataFiles = appContext.getSubmissionType().equals(SubmissionTypeConstants.COMPLETE) ?
                 appContext.getSubmissionFilesByType(ProjectFileType.RESULT) :
                 appContext.getSubmissionFilesByType(ProjectFileType.SEARCH);
 

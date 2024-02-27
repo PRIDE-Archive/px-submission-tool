@@ -1,6 +1,5 @@
 package uk.ac.ebi.pride.gui.form;
 
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 import uk.ac.ebi.pride.data.model.CvParam;
 import uk.ac.ebi.pride.data.util.Constant;
 import uk.ac.ebi.pride.data.validation.SubmissionValidator;
@@ -383,7 +382,7 @@ public class AdditionalMetaDataForm extends Form {
 
         // comment
 //        boolean equals = appContext.getProperty("comment.default.text").equals(commentTextArea.getText());
-//        ValidationReport validationReport = SubmissionValidator.validateReasonForPartialSubmission(commentTextArea.getText(), SubmissionType.PARTIAL);
+//        ValidationReport validationReport = SubmissionValidator.validateReasonForPartialSubmission(commentTextArea.getText(), SubmissionTypeConstants.PARTIAL);
 //        if (!invalid && (equals || validationReport.hasError())) {
 //            warningBalloonTip = BalloonTipUtil.createErrorBalloonTip(commentInputPanel, "Please leave a short comment on why submit unsupported result files");
 //            showWarnings();

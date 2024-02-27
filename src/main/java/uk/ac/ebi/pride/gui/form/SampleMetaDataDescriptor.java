@@ -1,10 +1,11 @@
 package uk.ac.ebi.pride.gui.form;
 
+import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.data.model.*;
 import uk.ac.ebi.pride.data.util.ExperimentalFactorUtil;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.util.ValidationState;
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
+
 
 import javax.help.HelpBroker;
 import java.util.HashSet;
@@ -33,7 +34,7 @@ public class SampleMetaDataDescriptor extends ContextAwareNavigationPanelDescrip
     @Override
     public boolean toSkipPanel() {
         final String resubmissionPxAccession = appContext.getSubmissionRecord().getSubmission().getProjectMetaData().getResubmissionPxAccession();
-        return !appContext.getSubmissionType().equals(SubmissionType.COMPLETE) || resubmissionPxAccession != null;
+        return !appContext.getSubmissionType().equals(SubmissionTypeConstants.COMPLETE) || resubmissionPxAccession != null;
     }
 
     @Override

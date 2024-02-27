@@ -2,9 +2,8 @@ package uk.ac.ebi.pride.gui.form.table;
 
 import org.jdesktop.swingx.table.TableColumnExt;
 import uk.ac.ebi.pride.App;
-import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
+import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.data.model.ResubmissionFileChangeState;
 import uk.ac.ebi.pride.gui.form.table.editor.ComboBoxCellEditor;
 import uk.ac.ebi.pride.gui.form.table.editor.SampleMetaDataButtonCellEditor;
@@ -49,7 +48,7 @@ public class TableFactory {
      *
      * @return JTable  file selection table
      */
-    public static JTable createFileSelectionTable(SubmissionType submissionType) {
+    public static JTable createFileSelectionTable(SubmissionTypeConstants submissionType) {
         FileSelectionTableModel tableModel = new FileSelectionTableModel();
         JTable table = new PxTable(tableModel);
 
@@ -84,7 +83,7 @@ public class TableFactory {
         // create combo box to select file type
         TableColumnExt fileTypeColumn = (TableColumnExt) table.getColumn(FileSelectionTableModel.TableHeader.TYPE.getHeader());
 
-        if(submissionType.equals(SubmissionType.AFFINITY)){
+        if(submissionType.equals(SubmissionTypeConstants.AFFINITY)){
             fileTypeColumn.setCellRenderer(new ComboBoxCellRenderer(Arrays.asList(ProjectFileType.RAW,ProjectFileType.SEARCH,ProjectFileType.EXPERIMENTAL_DESIGN,ProjectFileType.OTHER).toArray()));
             fileTypeColumn.setCellEditor(new ComboBoxCellEditor(Arrays.asList(ProjectFileType.RAW,ProjectFileType.SEARCH,ProjectFileType.EXPERIMENTAL_DESIGN,ProjectFileType.OTHER).toArray()));
         } else {

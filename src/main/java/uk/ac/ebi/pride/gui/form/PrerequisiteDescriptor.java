@@ -2,7 +2,8 @@ package uk.ac.ebi.pride.gui.form;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
+
+import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
 
@@ -36,7 +37,7 @@ public class PrerequisiteDescriptor extends ContextAwareNavigationPanelDescripto
     @Override
     public void beforeDisplayingPanel() {
         Submission submission = appContext.getSubmissionRecord().getSubmission();
-        SubmissionType submissionType = submission.getProjectMetaData().getSubmissionType();
+        SubmissionTypeConstants submissionType = submission.getProjectMetaData().getSubmissionType();
 
         // set submission type
         PrerequisiteForm form = (PrerequisiteForm) getNavigationPanel();
