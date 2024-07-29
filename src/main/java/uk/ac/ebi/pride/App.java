@@ -265,6 +265,8 @@ public class App extends Desktop {
     private void buildNavigation() {
         navigator = new Navigator();
 
+        //((AppContext) App.getInstance().getDesktopContext()).setResubmission(false);
+
         try {
             // login form
             PrideLoginDescriptor prideLoginPanel = new PrideLoginDescriptor(getDesktopContext().getProperty("pride.login.nav.desc.id"),

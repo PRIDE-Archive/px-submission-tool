@@ -132,6 +132,7 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
                 isFileExported = true;
             } catch (Exception ex) {
                 logger.error("Failed to export summary file: " + selectedFile.getAbsolutePath());
+                logger.error(ex.getMessage());
                 JOptionPane.showMessageDialog(
                         ((App) App.getInstance()).getMainFrame(),
                         appContext.getProperty("export.summary.error.dialog.message"),

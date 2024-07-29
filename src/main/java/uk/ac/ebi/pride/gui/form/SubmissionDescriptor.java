@@ -109,8 +109,10 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         SubmissionForm form = (SubmissionForm) SubmissionDescriptor.this.getNavigationPanel();
         form.enableCancelButton(true);
 
+        UploadDetail uploadDetail = updateAndGetPreviousUploadDetail();
+
         // get ftp details if null
-        if (appContext.getSubmissionRecord().getUploadDetail() == null) {
+        if (uploadDetail == null) {
             getUploadDetail(appContext.getSubmissionRecord().getSubmission());
         } else {
             firePropertyChange(BEFORE_DISPLAY_PANEL_PROPERTY, false, true);
@@ -121,15 +123,34 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         form.setProgressMessage(appContext.getProperty("progress.default.message"));
     }
 
+    public UploadDetail updateAndGetPreviousUploadDetail() {
+        UploadDetail uploadDetail = appContext.getSubmissionRecord().getUploadDetail();
+        UploadMethod userSelectedUploadMethod = appContext.getUploadMethod();
+        if(uploadDetail!=null && !userSelectedUploadMethod.equals(uploadDetail.getMethod())){
+            uploadDetail.setMethod(userSelectedUploadMethod);
+            if(userSelectedUploadMethod.equals(UploadMethod.FTP)){
+                uploadDetail.setHost("ftp-private.ebi.ac.uk");
+                uploadDetail.setPort(21);
+            } else {
+                uploadDetail.setHost("hx-fasp-1.ebi.ac.uk");
+                uploadDetail.setPort(3301);
+            }
+        }
+        return uploadDetail;
+    }
+
     private void getUploadDetail(Submission submission) {
         // retrieve the upload protocol
-        final String uploadProtocol = System.getProperty("px.upload.protocol", Constant.ASPERA);
+        final String uploadProtocol = appContext.getUploadMethod().toString();
         logger.debug("Configured upload protocol: {}", uploadProtocol);
         // choose upload method
         boolean hasURLBasedDataFiles = hasURLBasedDataFiles(submission);
         UploadMethod method;
         if (hasURLBasedDataFiles || uploadProtocol.equalsIgnoreCase(Constant.FTP)) {
             method = UploadMethod.FTP;
+            if(appContext.getSubmissionRecord().getUploadDetail()!=null){
+                appContext.getSubmissionRecord().setUploadDetail(updateAndGetPreviousUploadDetail());
+            }
         } else {
             // default is ASPERA
             method = UploadMethod.ASPERA;
@@ -321,14 +342,15 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         private void handleErrorMessage(UploadErrorMessage message) {
             logger.debug("Handle error message: {}", message.getMessage());
             SubmissionForm form = (SubmissionForm) SubmissionDescriptor.this.getNavigationPanel();
-            final String type = System.getProperty("px.upload.protocol", Constant.ASPERA);
+            final String type = (appContext.getUploadMethod()!=null)?appContext.getUploadMethod().toString():Constant.ASPERA;
             if (type.equals(Constant.ASPERA)) {
                 JOptionPane.showConfirmDialog(app.getMainFrame(),
                         appContext.getProperty("upload.aspera.error.message"),
                         appContext.getProperty("upload.detail.error.title"),
                         JOptionPane.CLOSED_OPTION, JOptionPane.ERROR_MESSAGE);
                 form.setUploadMessage("Aspera upload failed. Retry with FTP...");
-                System.exit(-1);
+                appContext.setUploadMethod(UploadMethod.FTP);
+                getUploadDetail(appContext.getSubmissionRecord().getSubmission());
             } else {
                 form.setUploadMessage(message.getMessage());
             }
@@ -411,6 +433,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             SubmissionRecordSerializer.remove();
             // reset application context
             appContext.resetDataFileEntryCount();
+            appContext.setResubmission(false);
             SubmissionRecord newSubmissionRecord = new SubmissionRecord();
             newSubmissionRecord.getSubmission().getProjectMetaData().setSubmissionType(SubmissionType.COMPLETE);
             appContext.setSubmissionRecord(newSubmissionRecord);

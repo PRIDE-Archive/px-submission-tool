@@ -8,6 +8,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestTemplate;
 import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
 import uk.ac.ebi.pride.gui.data.Credentials;
@@ -55,6 +56,11 @@ public class GetUploadDetailTask extends TaskAdapter<UploadDetail, String> {
 
         UploadDetail uploadDetail = null;
         try {
+            uploadDetail = ((AppContext)context).getSubmissionRecord().getUploadDetail();
+            if(uploadDetail !=null){
+                return uploadDetail;
+            }
+
             setProxyIfProvided(restTemplate);
 
             String credentials = this.credentials.getUsername() + ":" + this.credentials.getPassword();

@@ -2,6 +2,7 @@ package uk.ac.ebi.pride;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
 import uk.ac.ebi.pride.data.model.*;
 import uk.ac.ebi.pride.gui.data.ResubmissionRecord;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
@@ -108,6 +109,8 @@ public class AppContext extends DesktopContext {
 
     private boolean isLoggedIn = false;
 
+    private UploadMethod uploadMethod;
+
     public AppContext() {
         this.submissionRecord = new SubmissionRecord();
         this.submissionRecord.setSubmission(new Submission());
@@ -115,6 +118,14 @@ public class AppContext extends DesktopContext {
         this.resubmissionRecord = new ResubmissionRecord();
         this.resubmissionRecord.setResubmission(new Resubmission());
         this.dataFileEntryCount = 0;
+    }
+
+    public UploadMethod getUploadMethod() {
+        return uploadMethod;
+    }
+
+    public void setUploadMethod(UploadMethod uploadMethod) {
+        this.uploadMethod = uploadMethod;
     }
 
     public boolean isTrainingModeFlag() {

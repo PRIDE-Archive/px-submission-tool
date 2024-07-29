@@ -302,15 +302,13 @@ public class SubmissionTypeForm extends Form {
     private class TrainingModeCheckBoxController {
         public void update(JCheckBox checkBox) {
             // Hide the checkbox
-            checkBox.setVisible(appContext.isTrainingModeFlag());
+            //checkBox.setVisible(appContext.isTrainingModeFlag());
         }
 
         public void init(JCheckBox trainingModeCheckBox) {
+            appContext.setTrainingModeFlag(false);
             update(trainingModeCheckBox);
-            String trainingModeStatus = System.getProperty("training.mode.status");
-            if ((trainingModeStatus != null) && (trainingModeStatus.equals(AppContext.TRAINING_MODE_STATUS_ON))) {
-                trainingModeCheckBox.doClick();
-            }
+            //trainingModeCheckBox.doClick();
         }
     }
 

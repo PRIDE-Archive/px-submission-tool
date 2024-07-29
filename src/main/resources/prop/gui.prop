@@ -314,7 +314,7 @@ resubmission.no.private.px.label = No dataset available
 resubmission.select.px.dataset.label = Choose your dataset
 
 # upload
-upload.detail.error.message = <html><b>Failed to get upload credentials.</b><br/>Please ensure that you have an Internet connection.<br/>Requires outbound traffic enabled on your firewall and network for port TCP 21.<br/>In which case you should contact your system administrator.</html>
+upload.detail.error.message = <html><b>Failed to get upload credentials.</b><br/>Please ensure that you have an Internet connection.<br/>Requires outbound traffic enabled on your firewall and network for port TCP 21.<br/>Please retry restarting the tool else in case of failures again contact the administrator</html>
 upload.detail.error.title = Upload Error
 upload.error.message = <html><b>There appears to be a problem with using FTP to upload your files.</b> <br/>Requires outbound traffic enabled on your firewall and network for port TCP 21.<br/>In which case you should contact your system administrator.</html>
 upload.aspera.error.message = <html><b>There appears to be a problem with using Aspera to upload your files.</b> <br/>Requires outbound traffic enabled on your firewall and network for port TCP & UDP 33001.<br/>In which case you should contact your system administrator.Or you can try with uploading with FTP by changing <b>px.upload.protocol=ftp</b> in config/config.properties file in px-submission-tool folder</html>

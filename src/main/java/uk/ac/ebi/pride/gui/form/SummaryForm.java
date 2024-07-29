@@ -1,6 +1,7 @@
 package uk.ac.ebi.pride.gui.form;
 
 import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
 import uk.ac.ebi.pride.gui.form.panel.SummaryItemPanel;
 import uk.ac.ebi.pride.gui.form.table.TableFactory;
 import uk.ac.ebi.pride.gui.navigation.Navigator;
@@ -23,7 +24,7 @@ public class SummaryForm extends Form {
     protected JCheckBox jCheckBox = new JCheckBox();
 
     // use GridLayout with 2 rows and 1 column
-    JPanel centerPanel = new JPanel(new GridLayout(2,1));
+    JPanel centerPanel = new JPanel(new GridLayout(2, 1));
 
 
     public SummaryForm() {
@@ -45,6 +46,7 @@ public class SummaryForm extends Form {
         // set up accept license checkbox
         initDatasetLicenseAcceptCheckbox();
     }
+
 
     /**
      * Initialize experiment details panel
@@ -76,7 +78,30 @@ public class SummaryForm extends Form {
 
         JScrollPane scrollPane = new JScrollPane(summaryTable, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-        newFileTopPanel.add(scrollPane,  BorderLayout.CENTER);
+        JPanel jPanel = new JPanel();
+        JLabel label = new JLabel("Select Upload Method:");
+        // Create the checkboxes
+        JCheckBox checkBox1 = new JCheckBox("FTP");
+        JCheckBox checkBox2 = new JCheckBox("ASPERA");
+        checkBox2.setSelected(true);
+
+        // Create a ButtonGroup to make the checkboxes mutually exclusive
+        ButtonGroup group = new ButtonGroup();
+        group.add(checkBox1);
+        group.add(checkBox2);
+
+        // Add ActionListener to the checkboxes
+        checkBox1.addActionListener(e -> appContext.setUploadMethod(UploadMethod.FTP));
+        checkBox2.addActionListener(e -> appContext.setUploadMethod(UploadMethod.ASPERA));
+
+        // Add the checkboxes to the panel
+        jPanel.add(label);
+        jPanel.add(checkBox1);
+        jPanel.add(checkBox2);
+
+        newFileTopPanel.add(scrollPane, BorderLayout.CENTER);
+        newFileTopPanel.add(jPanel, BorderLayout.SOUTH);
+
         centerPanel.add(newFileTopPanel);
     }
 
@@ -106,7 +131,7 @@ public class SummaryForm extends Form {
         JPanel jPanel = new JPanel();
         jPanel.add(jCheckBox);
         jPanel.add(editorPane);
-        this.add(jPanel,BorderLayout.SOUTH);
+        this.add(jPanel, BorderLayout.SOUTH);
     }
 
     public JCheckBox getJCheckBox() {
