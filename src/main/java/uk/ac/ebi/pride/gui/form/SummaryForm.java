@@ -84,6 +84,7 @@ public class SummaryForm extends Form {
         JCheckBox checkBox1 = new JCheckBox("FTP");
         JCheckBox checkBox2 = new JCheckBox("ASPERA");
         checkBox2.setSelected(true);
+        appContext.setUploadMethod(UploadMethod.ASPERA);
 
         // Create a ButtonGroup to make the checkboxes mutually exclusive
         ButtonGroup group = new ButtonGroup();

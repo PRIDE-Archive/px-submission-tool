@@ -163,10 +163,6 @@ public class ResubmissionDialog extends ContextAwareDialog implements ActionList
                 // remove resubmission related details
                 appContext.setResubmission(false);
                 projectMetaData.setResubmissionPxAccession(null);
-                projectMetaData.getSubmitterContact().setUserName(null);
-                projectMetaData.getSubmitterContact().setEmail(null);
-                projectMetaData.getSubmitterContact().setPassword(null);
-                projectMetaData.setSubmissionType(null);
                 this.setVisible(false);
             }
 

@@ -3,18 +3,19 @@ package uk.ac.ebi.pride.gui.form;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
-import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
-import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
-import uk.ac.ebi.pride.toolsuite.gui.blocker.GUIBlocker;
+import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
+import uk.ac.ebi.pride.data.model.ProjectMetaData;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.task.CheckForUpdateTask;
+import uk.ac.ebi.pride.gui.util.SubmissionRecordSerializer;
+import uk.ac.ebi.pride.gui.util.UpdateChecker;
+import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
+import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
+import uk.ac.ebi.pride.toolsuite.gui.blocker.GUIBlocker;
 import uk.ac.ebi.pride.toolsuite.gui.task.Task;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskEvent;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskListener;
-import uk.ac.ebi.pride.gui.util.SubmissionRecordSerializer;
-import uk.ac.ebi.pride.gui.util.UpdateChecker;
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 
 import javax.help.HelpBroker;
 import javax.swing.*;
@@ -67,18 +68,26 @@ public class SubmissionTypeDescriptor extends ContextAwareNavigationPanelDescrip
         // detect previous submission record
         boolean loadPreviousSubmission = detectPreviousSubmission();
 
-        if(appContext.isResubmission() && submissionTypeForm.getResubmissionChangeTypeError().length()>1){
+        ProjectMetaData projectMetaData = appContext.getSubmissionRecord().getSubmission().getProjectMetaData();
+
+        if (!projectMetaData.isResubmission()) {
+            appContext.setResubmission(false);
+        }
+
+        if (appContext.isResubmission() && submissionTypeForm.getResubmissionChangeTypeError().length() > 1) {
             JOptionPane.showMessageDialog(app.getMainFrame(),
                     submissionTypeForm.getResubmissionChangeTypeError(),
                     appContext.getProperty("resubmission.submission.type.change.prohibit"),
                     JOptionPane.WARNING_MESSAGE,
                     GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("icon.warning.normal.small")));
             firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, true, false);
-        }else if (loadPreviousSubmission || confirmSubmissionOption()) { // detect submission type, show warning if it is not a full submission
+        } else if (loadPreviousSubmission || confirmSubmissionOption()) { // detect submission type, show warning if it is not a full submission
             firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, false, true);
         } else {
             firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, true, false);
         }
+
+
     }
 
     /**
@@ -125,6 +134,13 @@ public class SubmissionTypeDescriptor extends ContextAwareNavigationPanelDescrip
                     SubmissionRecord submissionRecord = SubmissionRecordSerializer.deserialize();
                     submissionRecord.setSummaryFileUploaded(false);
                     appContext.setSubmissionRecord(submissionRecord);
+
+                    String resubmissionAccession = submissionRecord.getSubmission().getProjectMetaData().getResubmissionPxAccession();
+                    if(resubmissionAccession!=null && !resubmissionAccession.equals("")){
+                        appContext.setResubmission(true);
+                    } else {
+                        appContext.setResubmission(false);
+                    }
                     loadPreviousSubmission = true;
                 } catch (IOException e) {
                     logger.error("Failed to parse submission record at the user space");
