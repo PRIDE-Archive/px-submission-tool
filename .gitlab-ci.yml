@@ -22,7 +22,7 @@ before_script:
     - ZIP_FILE=px-submission-tool-${VERSION}.zip
     - mkdir $VERSION
     - cp -r target/$ZIP_FILE $VERSION/
-    - ssh $SERVER_USER@$DEPLOY_SERVER "bash && mkdir -p $DEPLOY_PATH"
+    - ssh $SERVER_USER@$DEPLOY_SERVER "bash && become $SUDO_USER && mkdir -p $DEPLOY_PATH && chmod -R 777 $DEPLOY_PATH"
     - rsync -a $VERSION $SERVER_USER@$DEPLOY_SERVER:$DEPLOY_PATH/
     - ssh $SERVER_USER@$DEPLOY_SERVER "bash && cd $SYMLINK_PATH && ln -snf $DEPLOY_PATH_RELATIVE_TO_SYMLINK/$VERSION/$ZIP_FILE $SYMLINK"
 
