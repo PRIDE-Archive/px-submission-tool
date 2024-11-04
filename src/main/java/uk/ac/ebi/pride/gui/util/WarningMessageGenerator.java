@@ -3,6 +3,7 @@ package uk.ac.ebi.pride.gui.util;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
+import uk.ac.ebi.pride.gui.data.SubmissionRecord;
 
 import javax.swing.*;
 import java.util.List;
@@ -32,6 +33,24 @@ public final class WarningMessageGenerator {
 
     public static String getInvalidResultFileWarning() {
         return "<html>" + "<b>Invalid result file detected, please submit results in any of the supported file formats (see accompanying documentation)</b><br/>" + "</html>";
+    }
+
+    public static String getCrosslinkingWarning(SubmissionType submissionType) {
+
+        StringBuilder warningMsg = new StringBuilder();
+        warningMsg.append("<html>");
+        if (submissionType.equals(SubmissionType.COMPLETE)) {
+            warningMsg.append("We have detected that this submission is a COMPLETE Crosslinking dataset. <br />" +
+                    "Before proceeding, please review the guidelines on <a href=\"https://www.ebi.ac.uk/pride/markdownpage/crosslinking\">How to submit complete crosslinking dataset</a> " +
+                    "<br />for PRIDE Crosslinking dataset submissions " +
+                    "to ensure that your files and submission meet all requirements");
+        } else if (submissionType.equals(SubmissionType.PARTIAL)) {
+            warningMsg.append("We have detected that this submission is a PARTIAL Crosslinking dataset. <br />" +
+                    "You can include your submission in the newly developed <a href=\"https://www.ebi.ac.uk/pride/archive/crosslinking \">PRIDE Crosslinking Resource</a> " +
+                    "<br />if you make a COMPLETE submission and the files meet all the requirements. <br />" +
+                    "Please review the guidelines on <a href=\"https://www.ebi.ac.uk/pride/markdownpage/crosslinking\">How to submit complete crosslinking dataset.</a> ");
+        }
+        return warningMsg.toString();
     }
 
     public static String getCancelPartialSubmission() {
