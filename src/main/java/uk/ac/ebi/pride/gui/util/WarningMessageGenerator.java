@@ -42,8 +42,8 @@ public final class WarningMessageGenerator {
         if (submissionType.equals(SubmissionType.COMPLETE)) {
             warningMsg.append("We have detected that this submission is a COMPLETE Crosslinking dataset. <br />" +
                     "Before proceeding, please review the guidelines on <a href=\"https://www.ebi.ac.uk/pride/markdownpage/crosslinking\">How to submit complete crosslinking dataset</a> " +
-                    "<br />for PRIDE Crosslinking dataset submissions " +
-                    "to ensure that your files and submission meet all requirements");
+                    "to ensure that your files and submission meet all requirements" +
+                    "<br />to be included your submission in the newly developed <a href=\"https://www.ebi.ac.uk/pride/archive/crosslinking \">PRIDE Crosslinking Resource</a>");
         } else if (submissionType.equals(SubmissionType.PARTIAL)) {
             warningMsg.append("We have detected that this submission is a PARTIAL Crosslinking dataset. <br />" +
                     "You can include your submission in the newly developed <a href=\"https://www.ebi.ac.uk/pride/archive/crosslinking \">PRIDE Crosslinking Resource</a> " +

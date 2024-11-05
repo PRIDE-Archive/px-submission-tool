@@ -185,7 +185,7 @@ public class ProjectMetaDataPanel extends ContextAwarePanel {
         }
 
         if (isCrosslinkDataset(appContext.getSubmissionRecord().getSubmission().getProjectMetaData(),
-        title, keywords, projectDesc)){
+        title, keywords, projectDesc, sampleProcessing, dataProcessing)){
             JLabel label = new JLabel();
             Font font = label.getFont();
             StringBuilder style = new StringBuilder("font-family:" + font.getFamily() + ";");
@@ -212,7 +212,8 @@ public class ProjectMetaDataPanel extends ContextAwarePanel {
         return inValid ? ValidationState.ERROR : ValidationState.SUCCESS;
     }
 
-    private boolean isCrosslinkDataset(ProjectMetaData projectMetaData, String title, String keywords, String projectDesc){
+    private boolean isCrosslinkDataset(ProjectMetaData projectMetaData, String title, String keywords,
+                                       String projectDesc, String sampleProcessing, String dataProcessing) {
         boolean isCrosslinkDataset = false;
         if(!projectMetaData.getMassSpecExperimentMethods().isEmpty()){
             for(CvParam cvParam:projectMetaData.getMassSpecExperimentMethods()){
@@ -228,6 +229,12 @@ public class ProjectMetaDataPanel extends ContextAwarePanel {
             isCrosslinkDataset = true;
         }
         if(projectDesc.toLowerCase().contains("crosslink") || projectDesc.toLowerCase().contains("cross-link")){
+            isCrosslinkDataset = true;
+        }
+        if(sampleProcessing.toLowerCase().contains("crosslink") || sampleProcessing.toLowerCase().contains("cross-link")){
+            isCrosslinkDataset = true;
+        }
+        if(dataProcessing.toLowerCase().contains("crosslink") || dataProcessing.toLowerCase().contains("cross-link")){
             isCrosslinkDataset = true;
         }
         return isCrosslinkDataset;
