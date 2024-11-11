@@ -4,7 +4,11 @@
 
 package uk.ac.ebi.pride.gui.form.panel;
 
+import uk.ac.ebi.pride.data.model.CvParam;
+import uk.ac.ebi.pride.data.model.ProjectMetaData;
+import uk.ac.ebi.pride.data.util.MassSpecExperimentMethod;
 import uk.ac.ebi.pride.data.validation.SubmissionValidator;
+import uk.ac.ebi.pride.gui.util.WarningMessageGenerator;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.combo.model.ExperimentMethodSelectionModel;
 import uk.ac.ebi.pride.gui.form.combo.renderer.ExperimentMethodComboRenderer;
@@ -18,6 +22,7 @@ import uk.ac.ebi.pride.gui.util.ColourUtil;
 import uk.ac.ebi.pride.gui.util.ValidationState;
 
 import javax.swing.*;
+import javax.swing.event.HyperlinkEvent;
 import java.awt.*;
 
 /**
@@ -179,7 +184,60 @@ public class ProjectMetaDataPanel extends ContextAwarePanel {
             experimentMethodTable.setBackground(ColourUtil.TEXT_FIELD_NORMAL_COLOUR);
         }
 
+        if (isCrosslinkDataset(appContext.getSubmissionRecord().getSubmission().getProjectMetaData(),
+        title, keywords, projectDesc, sampleProcessing, dataProcessing)){
+            JLabel label = new JLabel();
+            Font font = label.getFont();
+            StringBuilder style = new StringBuilder("font-family:" + font.getFamily() + ";");
+            style.append("font-weight:" + (font.isBold() ? "bold" : "normal") + ";");
+            style.append("font-size:" + font.getSize() + "pt;");
+            JEditorPane jEditorPane = new JEditorPane("text/html", "<html><body style=\"" + style + "\">" //
+                    + WarningMessageGenerator.getCrosslinkingWarning(appContext.getSubmissionRecord().getSubmission().getProjectMetaData().getSubmissionType()) + "</body></html>");
+            jEditorPane.addHyperlinkListener(e -> {
+                try {
+                    if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED))
+                        Desktop.getDesktop().browse(e.getURL().toURI());
+                } catch (Exception ex) {
+//                    logger.error(ex.getMessage());
+                }
+            });
+            jEditorPane.setEditable(false);
+            jEditorPane.setBackground(label.getBackground());
+            JOptionPane.showConfirmDialog(app.getMainFrame(),
+                    jEditorPane,
+                    appContext.getProperty("crosslinking.detected.dialog.title"),
+                    JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
+        }
+
         return inValid ? ValidationState.ERROR : ValidationState.SUCCESS;
+    }
+
+    private boolean isCrosslinkDataset(ProjectMetaData projectMetaData, String title, String keywords,
+                                       String projectDesc, String sampleProcessing, String dataProcessing) {
+        boolean isCrosslinkDataset = false;
+        if(!projectMetaData.getMassSpecExperimentMethods().isEmpty()){
+            for(CvParam cvParam:projectMetaData.getMassSpecExperimentMethods()){
+                if(cvParam.getAccession().equals("PRIDE:0000430")){
+                    isCrosslinkDataset = true;
+                }
+            }
+        }
+        if(title.toLowerCase().contains("crosslink") || title.toLowerCase().contains("cross-link")){
+            isCrosslinkDataset = true;
+        }
+        if(keywords.toLowerCase().contains("crosslink") || keywords.toLowerCase().contains("cross-link")){
+            isCrosslinkDataset = true;
+        }
+        if(projectDesc.toLowerCase().contains("crosslink") || projectDesc.toLowerCase().contains("cross-link")){
+            isCrosslinkDataset = true;
+        }
+        if(sampleProcessing.toLowerCase().contains("crosslink") || sampleProcessing.toLowerCase().contains("cross-link")){
+            isCrosslinkDataset = true;
+        }
+        if(dataProcessing.toLowerCase().contains("crosslink") || dataProcessing.toLowerCase().contains("cross-link")){
+            isCrosslinkDataset = true;
+        }
+        return isCrosslinkDataset;
     }
 
     private void initTooltips() {
