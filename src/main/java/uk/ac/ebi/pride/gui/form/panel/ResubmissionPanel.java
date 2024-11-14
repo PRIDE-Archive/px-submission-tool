@@ -49,11 +49,6 @@ public class ResubmissionPanel extends ContextAwarePanel implements ActionListen
 
         loginButton.setActionCommand(LOGIN_ACTION);
         loginButton.addActionListener(this);
-
-        // init warning balloon
-        this.warningBalloonTip = BalloonTipUtil.createErrorBalloonTip(userNameField, "");
-        this.warningBalloonTip.setPadding(2);
-        this.warningBalloonTip.setVisible(false);
     }
 
     @Override
@@ -191,24 +186,11 @@ public class ResubmissionPanel extends ContextAwarePanel implements ActionListen
     private void initComponents() {
         // JFormDesigner - Component initialization - DO NOT MODIFY  //GEN-BEGIN:initComponents
         // Generated using JFormDesigner non-commercial license
-        userNameLabel = new JLabel();
-        userNameField = new JTextField();
-        passwordLabel = new JLabel();
-        passwordField = new JPasswordField();
         loginButton = new JButton();
-        separator1 = new JSeparator();
         pxDatasetLabel = new JLabel();
         pxDatasetComboBox = new JComboBox();
+        pxDatasetInfo = new JLabel();
 
-        //======== this ========
-
-        //---- userNameLabel ----
-        userNameLabel.setText("Email");
-        userNameLabel.setFont(userNameLabel.getFont().deriveFont(userNameLabel.getFont().getStyle() | Font.BOLD));
-
-        //---- passwordLabel ----
-        passwordLabel.setText("Password");
-        passwordLabel.setFont(passwordLabel.getFont().deriveFont(passwordLabel.getFont().getStyle() | Font.BOLD));
 
         //---- loginButton ----
         loginButton.setText("Load Private Datasets");
@@ -216,6 +198,11 @@ public class ResubmissionPanel extends ContextAwarePanel implements ActionListen
         //---- pxDatasetLabel ----
         pxDatasetLabel.setText("Select the dataset to be replaced");
         pxDatasetLabel.setFont(pxDatasetLabel.getFont().deriveFont(pxDatasetLabel.getFont().getStyle() | Font.BOLD));
+
+        //---- pxDatasetLabel ----
+        pxDatasetInfo.setText("<html>If the above dataset list is empty, either there are no datasets to resubmit, <br>" +
+                "or you have a resubmission ticket already pending.</html>");
+        pxDatasetInfo.setFont(pxDatasetLabel.getFont().deriveFont(pxDatasetInfo.getFont().getStyle() | Font.ITALIC));
 
         GroupLayout layout = new GroupLayout(this);
         setLayout(layout);
@@ -238,42 +225,30 @@ public class ResubmissionPanel extends ContextAwarePanel implements ActionListen
 //                                                                .addComponent(passwordField, GroupLayout.PREFERRED_SIZE, 156, GroupLayout.PREFERRED_SIZE))))
                                         .addComponent(pxDatasetLabel)
                                         .addComponent(pxDatasetComboBox, GroupLayout.PREFERRED_SIZE, 226, GroupLayout.PREFERRED_SIZE)
-                                        .addComponent(loginButton, GroupLayout.Alignment.TRAILING, GroupLayout.PREFERRED_SIZE, 150, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(loginButton, GroupLayout.Alignment.LEADING, GroupLayout.PREFERRED_SIZE, 150, GroupLayout.PREFERRED_SIZE)
+                                        .addComponent(pxDatasetInfo)
 //                                .addContainerGap())
         );
+
+
+
         layout.setVerticalGroup(
                 layout.createParallelGroup()
                         .addGroup(layout.createSequentialGroup()
                                 .addContainerGap()
-//                                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-//                                        .addComponent(passwordLabel)
-//                                        .addComponent(userNameLabel))
-//                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-//                                .addGroup(layout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-//                                        .addComponent(userNameField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-//                                        .addComponent(passwordField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-//                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(loginButton)
-//                                .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
-//                                .addComponent(separator1, GroupLayout.PREFERRED_SIZE, 5, GroupLayout.PREFERRED_SIZE)
-//                                .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(loginButton,GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE)
                                 .addComponent(pxDatasetLabel)
                                 .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
                                 .addComponent(pxDatasetComboBox, GroupLayout.PREFERRED_SIZE, 30, GroupLayout.PREFERRED_SIZE)
+                                .addContainerGap()
+                                .addComponent(pxDatasetInfo)
                                 .addContainerGap(18, Short.MAX_VALUE))
         );
         // JFormDesigner - End of component initialization  //GEN-END:initComponents
     }
-
-    // JFormDesigner - Variables declaration - DO NOT MODIFY  //GEN-BEGIN:variables
-    // Generated using JFormDesigner non-commercial license
-    private JLabel userNameLabel;
-    private JTextField userNameField;
-    private JLabel passwordLabel;
-    private JPasswordField passwordField;
     private JButton loginButton;
-    private JSeparator separator1;
     private JLabel pxDatasetLabel;
+    private JLabel pxDatasetInfo;
     private JComboBox pxDatasetComboBox;
     // JFormDesigner - End of variables declaration  //GEN-END:variables
 }

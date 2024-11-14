@@ -135,6 +135,14 @@ public final class WarningMessageGenerator {
         return errMsg.toString();
     }
 
+    public static String getAllFilesAreBeingRemoved() {
+        StringBuilder errMsg = new StringBuilder();
+        errMsg.append("<html>");
+        errMsg.append("<b>You are trying to delete all the files from the submission leaving less than 2 files or no files</b><br/>");
+        errMsg.append("</html>");
+        return errMsg.toString();
+    }
+
     public static String getMissingReferencedFilesWarning(Map<DataFile, Set<String>> invalidFiles) {
         StringBuilder errMsg = new StringBuilder();
         errMsg.append("<html>");

@@ -98,6 +98,10 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
             return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getDuplicateFilesWarning(duplicateFileNames));
         }
 
+        if (checkAllFileDeletions()) {
+            return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getAllFilesAreBeingRemoved());
+        }
+
         //2. If file is modified, check if the new file has been uploaded
         List<DataFile> missingModifiedFile = findMissingModifiedFiles();
         if (missingModifiedFile.size() > 0) {
@@ -108,7 +112,7 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
         QuickValidationResult quickValidationResult = runQuickValidation(submission.getDataFiles());
         setProgress(10);
 
-        // cannot have invalidate files
+        // cannot have invalid files
         if (quickValidationResult.getNumOfInvalidFiles() > 0) {
             //return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidFileWarning(quickValidationResult.numOfInvalidFiles));
             // Assuming we only get Validation Messages of type ERROR, but we check anyway
@@ -366,6 +370,23 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
         }
 
         return new DataFileValidationMessage(ValidationState.SUCCESS);
+    }
+
+    private boolean checkAllFileDeletions() {
+        List<String> deletingOrModifyingFiles = resubmission.getResubmission().entrySet().stream()
+                .filter(f -> f.getValue().equals(ResubmissionFileChangeState.DELETE) ||
+                        f.getValue().equals(ResubmissionFileChangeState.MODIFY))
+                .map(f -> f.getKey().getFileName()).collect(Collectors.toList());
+
+        long totalCountOfFilesAlreadyPresent = resubmission.getResubmission().entrySet().stream().count();
+        int filesBeingDeletedOrModified = deletingOrModifyingFiles.size();
+        long filesBeingAdded =  submission.getDataFiles().stream().count();
+
+        if( (totalCountOfFilesAlreadyPresent - filesBeingDeletedOrModified + filesBeingAdded) < 2  ) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
