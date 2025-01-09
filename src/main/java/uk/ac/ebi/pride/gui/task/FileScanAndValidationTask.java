@@ -485,7 +485,8 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         List<DataFile> invalidFiles = new ArrayList<>();
         for (DataFile dataFile : mzTabDataFiles) {
             try {
-                if (Files.size(Paths.get(dataFile.getFilePath())) > MAX_FILE_SIZE) {
+                try (BufferedReader reader = Files.newBufferedReader(Paths.get(dataFile.getFilePath()))) {
+                    List lines = reader.lines().collect(Collectors.toList());
                     throw new IllegalArgumentException("File is too large to process");
                 }
                 List lines = Files.readAllLines(Paths.get(dataFile.getFilePath()));
