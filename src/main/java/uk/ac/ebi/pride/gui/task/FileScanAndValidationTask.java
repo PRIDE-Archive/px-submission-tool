@@ -492,7 +492,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 List lines = Files.readAllLines(Paths.get(dataFile.getFilePath()));
 
                 // Check if the file is empty
-                if (lines.isEmpty()) {
+                private static final int LINE_VALIDATION_LIMIT = 100;
                     throw new IllegalArgumentException("The file is empty.");
                 }
 
