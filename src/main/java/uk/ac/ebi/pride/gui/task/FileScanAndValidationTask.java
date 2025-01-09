@@ -492,8 +492,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                     throw new IllegalArgumentException("The file is empty.");
                 }
 
-                // Process the first 100 lines or the total number of lines, whichever is smaller
-                int limit = Math.min(100, lines.size());
+                int limit = 100;
                 boolean hasPSH = false;
                 boolean hasPSM = false;
 
