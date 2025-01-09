@@ -485,7 +485,10 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         List<DataFile> invalidFiles = new ArrayList<>();
         for (DataFile dataFile : mzTabDataFiles) {
             try {
-                List<String> lines = Files.readAllLines(Paths.get(dataFile.getFilePath()));
+                if (Files.size(Paths.get(dataFile.getFilePath())) > MAX_FILE_SIZE) {
+                    throw new IllegalArgumentException("File is too large to process");
+                }
+                List lines = Files.readAllLines(Paths.get(dataFile.getFilePath()));
 
                 // Check if the file is empty
                 if (lines.isEmpty()) {
