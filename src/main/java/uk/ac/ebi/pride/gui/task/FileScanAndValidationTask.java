@@ -511,8 +511,9 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                     }
 
                     if (hasPSH && hasPSM && i >= limit) {
-                        break;
-                    }
+                        if (line != null && !line.isEmpty()) {
+                            String[] fields = line.split("\t");
+                            if(fields.length < 2){
 
                     if (i < limit) {
                         String[] fields = line.split("\t");
