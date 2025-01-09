@@ -10,9 +10,6 @@ import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.SampleMetaData;
 import uk.ac.ebi.pride.data.model.Submission;
-import uk.ac.ebi.pride.data.mztab.parser.MzTabFullDocumentQuickParser;
-import uk.ac.ebi.pride.data.mztab.parser.MzTabParser;
-import uk.ac.ebi.pride.data.mztab.parser.exceptions.MzTabParserException;
 import uk.ac.ebi.pride.data.util.FileUtil;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
 import uk.ac.ebi.pride.data.validation.SubmissionValidator;
@@ -42,6 +39,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -71,6 +70,8 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
     public static final String PRIDEXML_GEL_FREE_IDENTIFICATION = "GelFreeIdentification";
     public static final String PRIDEXML_TWO_DIMENSIONAL_IDENTIFICATION = "TwoDimensionalIdentification";
     public static final Pattern PRIDEXML_SAMPLE_DESCRIPTION_PATTERN = Pattern.compile(".*<sampleDescription[^>]*/>.*");
+
+    public static final int LINE_VALIDATION_LIMIT = 100;
 
     private Submission submission;
     private AppContext appContext;
@@ -243,8 +244,8 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             if (quickValidationResult.hasSupportedSearchFile()) {
                 boolean result = WarningMessageGenerator.showSupportedSearchFileWarning();
                 scanForFileMappings();
-                if(!result){
-                    return new DataFileValidationMessage(ValidationState.ERROR,WarningMessageGenerator.getCancelPartialSubmission());
+                if (!result) {
+                    return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getCancelPartialSubmission());
                 }
             }
             setProgress(60);
@@ -307,12 +308,12 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         }
 
         boolean isSdrfFound = false;
-        for(DataFile dataFile : submission.getDataFiles()){
-            if(dataFile.getFileType().equals(ProjectFileType.EXPERIMENTAL_DESIGN)){
+        for (DataFile dataFile : submission.getDataFiles()) {
+            if (dataFile.getFileType().equals(ProjectFileType.EXPERIMENTAL_DESIGN)) {
                 isSdrfFound = true;
                 try {
                     Set<ValidationError> validationErrors = Main.validate(dataFile.getFilePath(), true);
-                    if(validationErrors!=null && validationErrors.size()>0 ){
+                    if (validationErrors != null && validationErrors.size() > 0) {
                         logger.error("Error in file " + dataFile.getFileName() + "Please make sure you upload proper EXPERIMENTAL_DESIGN file sdrf.tsv");
                         validationErrors.stream().forEach(
                                 error -> logger.error(error.getMessage())
@@ -481,16 +482,55 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
 
     private List<DataFile> validateMzTabFiles(List<DataFile> mzTabDataFiles) {
         List<DataFile> invalidFiles = new ArrayList<>();
-        for (DataFile dataFile :
-                mzTabDataFiles) {
-            // Use the full document quick parser to get the MzTabDocuments in the DataFile objects
-            MzTabParser parser = new MzTabFullDocumentQuickParser(dataFile.getFile());
-            try {
-                // Parse the file
-                parser.parse();
-                // Set the product document in the DataFile itself for later use
-                dataFile.setMzTabDocument(parser.getMzTabDocument());
-            } catch (MzTabParserException e) {
+        for (DataFile dataFile : mzTabDataFiles) {
+
+
+            try (BufferedReader reader = Files.newBufferedReader(Paths.get(dataFile.getFilePath()))) {
+                List<String> lines = reader.lines().collect(Collectors.toList());
+                if (lines.isEmpty()) {
+                    throw new IllegalArgumentException("The file is empty.");
+                }
+
+                boolean hasPSH = false;
+                boolean hasPSM = false;
+
+                for (int i = 0; i < lines.size(); i++) {
+                    String line = lines.get(i);
+
+                    // Check for lines starting with PSH and PSM
+                    if (line.startsWith("PSH")) {
+                        hasPSH = true;
+                    } else if (line.startsWith("PSM")) {
+                        hasPSM = true;
+                    }
+
+                    if (hasPSH && hasPSM && i >= LINE_VALIDATION_LIMIT) {
+                        break;
+                    }
+
+                    if (i < LINE_VALIDATION_LIMIT) {
+                        String[] fields = line.split("\t");
+                        if (!line.isEmpty() && fields.length < 2) {
+                            int lineNo = i + 1;
+                            throw new IllegalArgumentException("Line no: " + lineNo + " is not tab delimited");
+                        }
+                    }
+                }
+
+                // Validate the presence of PSH and PSM lines
+                if (!hasPSH) {
+                    throw new IllegalArgumentException("No line starts with PSH");
+                }
+
+                if (!hasPSM) {
+                    throw new IllegalArgumentException("No line starts with PSM");
+                }
+
+                logger.info(dataFile.getFileName() + " parsed successfully.");
+
+            } catch (IOException e) {
+                System.err.println("Error reading the file: " + e.getMessage());
+            } catch (IllegalArgumentException e) {
                 logger.error("Invalid mzTab file '"
                         + dataFile.getFile().getName()
                         + "', MAIN ERROR: '"
@@ -882,8 +922,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                             if (spectraFile.getFileType() != ProjectFileType.PEAK &&
                                     !(spectraFile.getFileType() == ProjectFileType.RAW &&
                                             (spectraFile.getFileFormat() == MassSpecFileFormat.MZML ||
-                                                    (spectraFile.getFileFormat() == MassSpecFileFormat.INDEXED_MZML))))
-                            {
+                                                    (spectraFile.getFileFormat() == MassSpecFileFormat.INDEXED_MZML)))) {
                                 invalidMzIdentMLFiles.add(dataFile);
                             }
                         }
