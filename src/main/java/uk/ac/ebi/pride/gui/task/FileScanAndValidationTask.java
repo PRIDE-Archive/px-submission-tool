@@ -42,6 +42,8 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -481,24 +483,66 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
 
     private List<DataFile> validateMzTabFiles(List<DataFile> mzTabDataFiles) {
         List<DataFile> invalidFiles = new ArrayList<>();
-        for (DataFile dataFile :
-                mzTabDataFiles) {
-            // Use the full document quick parser to get the MzTabDocuments in the DataFile objects
-            MzTabParser parser = new MzTabFullDocumentQuickParser(dataFile.getFile());
+        for (DataFile dataFile : mzTabDataFiles) {
             try {
-                // Parse the file
-                parser.parse();
-                // Set the product document in the DataFile itself for later use
-                dataFile.setMzTabDocument(parser.getMzTabDocument());
-            } catch (MzTabParserException e) {
-                logger.error("Invalid mzTab file '"
-                        + dataFile.getFile().getName()
-                        + "', MAIN ERROR: '"
-                        + e.getMessage()
-                        + "'. PLEASE, REFER TO LOG FILES FOR MORE DETAILED INFORMATION");
-                invalidFiles.add(dataFile);
+                List<String> lines = Files.readAllLines(Paths.get(dataFile.getFilePath()));
+
+                // Check if the file is empty
+                if (lines.isEmpty()) {
+                    throw new IllegalArgumentException("The file is empty.");
+                }
+
+                // Process the first 100 lines or the total number of lines, whichever is smaller
+                int limit = Math.min(100, lines.size());
+                boolean hasPSH = false;
+                boolean hasPSM = false;
+
+                for (int i = 0; i < lines.size(); i++) {
+                    String line = lines.get(i);
+
+                    // Check for lines starting with PSH and PSM
+                    if (line.startsWith("PSH")) {
+                        hasPSH = true;
+                    } else if (line.startsWith("PSM")) {
+                        hasPSM = true;
+                    }
+
+                    if (hasPSH && hasPSM && i >= limit) {
+                        break;
+                    }
+
+                    if (i < limit) {
+                        String[] fields = line.split("\t");
+                        if(!line.isEmpty() && fields.length < 2){
+                            int lineNo = i+1;
+                            throw new IllegalArgumentException("Line no: " + lineNo + " is not tab delimited");
+                        }
+                    }
+                }
+
+                // Validate the presence of PSH and PSM lines
+                if (!hasPSH) {
+                    throw new IllegalArgumentException("No line starts with PSH");
+                }
+
+                if (!hasPSM) {
+                    throw new IllegalArgumentException("No line starts with PSM");
+                }
+
+                System.out.println("File parsed successfully.");
+
             }
-        }
+            catch (IOException e) {
+                System.err.println("Error reading the file: " + e.getMessage());
+            } catch (IllegalArgumentException e) {
+                    logger.error("Invalid mzTab file '"
+                            + dataFile.getFile().getName()
+                            + "', MAIN ERROR: '"
+                            + e.getMessage()
+                            + "'. PLEASE, REFER TO LOG FILES FOR MORE DETAILED INFORMATION");
+                    invalidFiles.add(dataFile);
+                }
+            }
         return invalidFiles;
     }
 
