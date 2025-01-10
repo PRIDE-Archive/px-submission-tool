@@ -215,21 +215,21 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 if (mzTabDataFiles.size() > 0) {
                     increment = 10 / mzTabDataFiles.size(); // Yes, I want the int truncated float here
                 }
-                for (DataFile mzTabDataFile :
-                        mzTabDataFiles) {
-                    mzTabDataFile.setSampleMetaData(MzTabHelper.getSampleMetaData(mzTabDataFile.getMzTabDocument()));
-                    currentProgressValue += increment;
-                    setProgress(currentProgressValue);
-                }
+//                for (DataFile mzTabDataFile :
+//                        mzTabDataFiles) {
+//                    mzTabDataFile.setSampleMetaData(MzTabHelper.getSampleMetaData(mzTabDataFile.getMzTabDocument()));
+//                    currentProgressValue += increment;
+//                    setProgress(currentProgressValue);
+//                }
                 setProgress(75);
                 // Scan mzTab files for ms-run file references that may be missing in the list of provided files,
                 // this could render those mzTab files invalid
-                Map<DataFile, Set<String>> mzTabFilesMissingReferencedFiles = new HashMap<>();
-                mzTabFilesMissingReferencedFiles = checkMzTabFileReferences(mzTabDataFiles);
-                // Throw error if missing referenced files
-                if (mzTabFilesMissingReferencedFiles.size() > 0) {
-                    return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMissingReferencedFilesWarning(mzTabFilesMissingReferencedFiles));
-                }
+//                Map<DataFile, Set<String>> mzTabFilesMissingReferencedFiles = new HashMap<>();
+//                mzTabFilesMissingReferencedFiles = checkMzTabFileReferences(mzTabDataFiles);
+//                // Throw error if missing referenced files
+//                if (mzTabFilesMissingReferencedFiles.size() > 0) {
+//                    return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMissingReferencedFilesWarning(mzTabFilesMissingReferencedFiles));
+//                }
                 setProgress(80);
             }
         } else if (submissionType.equals(SubmissionType.PARTIAL)) {
