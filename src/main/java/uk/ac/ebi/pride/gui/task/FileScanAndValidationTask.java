@@ -485,8 +485,9 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         for (DataFile dataFile : mzTabDataFiles) {
 
 
-            try (BufferedReader reader = Files.newBufferedReader(Paths.get(dataFile.getFilePath()))) {
-                List<String> lines = reader.lines().collect(Collectors.toList());
+            try (BufferedReader reader = Files.newBufferedReader(Paths.get(dataFile.getFilePath()));
+                 Stream lineStream = reader.lines()) {
+              List lines = lineStream.collect(Collectors.toList());
                 if (lines.isEmpty()) {
                     throw new IllegalArgumentException("The file is empty.");
                 }
