@@ -50,6 +50,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Validate all the files selected in the file selection step
@@ -486,8 +487,8 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
 
 
             try (BufferedReader reader = Files.newBufferedReader(Paths.get(dataFile.getFilePath()));
-                 Stream lineStream = reader.lines()) {
-              List lines = lineStream.collect(Collectors.toList());
+                 Stream<String> lineStream = reader.lines()) {
+              List<String> lines = lineStream.collect(Collectors.toList());
                 if (lines.isEmpty()) {
                     throw new IllegalArgumentException("The file is empty.");
                 }
