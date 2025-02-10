@@ -36,7 +36,7 @@ public final class WarningMessageGenerator {
         return "<html>" + "<b>Invalid result file detected, please submit results in any of the supported file formats (see accompanying documentation)</b><br/>" + "</html>";
     }
 
-    public static String getCrosslinkingWarning(SubmissionType submissionType) {
+    public static String getCrosslinkingWarning(SubmissionTypeConstants submissionType) {
 
         StringBuilder warningMsg = new StringBuilder();
         warningMsg.append("<html>");
@@ -317,8 +317,16 @@ public final class WarningMessageGenerator {
 
     }
 
-    public static String getInvalidParquetFileWarning(String fileName) {
-        return "<html>" + "<b>Your Submission file "+ fileName + "is invalid</b><br/>" + "Please check the logs for more details" + "</html>";
+    public static String getInvalidSubmissionType(boolean hasAdatFile, String instrumentType) {
+        if(hasAdatFile) {
+            return "<html>" + "<b>Your submission contains .npx.csv result files</b><br/>" + "Please please go back and select Affinity Proteomics as Submission Type" + "</html>";
+        }
+        return "<html>" + "<b>Your Submission type is Affinity Proteomics</b><br/>" + "Please upload .npx.csv files as RESULT files or go back to change the SubmissionType" + "</html>";
+
+    }
+
+    public static String getInvalidFileWarning(String fileName) {
+        return "<html>" + "<b>Your Submission file "+ fileName + " is invalid</b><br/>" + "Please check the logs for more details" + "</html>";
 
     }
 }

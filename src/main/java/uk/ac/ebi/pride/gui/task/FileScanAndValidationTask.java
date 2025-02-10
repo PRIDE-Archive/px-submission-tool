@@ -7,6 +7,7 @@ import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 
+import uk.ac.ebi.pride.data.util.AffinityFileFormat;
 import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.SampleMetaData;
@@ -134,13 +135,23 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                     FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.BCL.getFileExtension())
                     || FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.PARQUET.getFileExtension()));
 
+        boolean hasNpxFile = submission.getDataFiles().stream().anyMatch(dataFile ->
+                dataFile.getFileName().endsWith(AffinityFileFormat.NPX.getFileExtension()));
+
+
         boolean hasParquetFile = submission.getDataFiles().stream().anyMatch(dataFile ->
                 FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.PARQUET.getFileExtension()));
 
         if((hasAdatFile && !submissionType.equals(SubmissionTypeConstants.AFFINITY))
-        || (!hasAdatFile && submissionType.equals(SubmissionTypeConstants.AFFINITY))){
+                || (hasNpxFile && !submissionType.equals(SubmissionTypeConstants.AFFINITY))
+        || (!hasAdatFile && !hasNpxFile && submissionType.equals(SubmissionTypeConstants.AFFINITY))){
+            if(!hasNpxFile){
+                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSubmissionType(hasNpxFile,"olinkTarget"));
+            }
                 return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSubmissionType(hasAdatFile));
         }
+
+
 
         if (submissionType.equals(SubmissionTypeConstants.COMPLETE)) {
 
@@ -257,15 +268,26 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             }
             setProgress(40);
 
-            if(hasParquetFile){
-                List<DataFile> parquetFiles = submission.getDataFiles().stream().filter(dataFile ->
-                        FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.PARQUET.getFileExtension())).collect(Collectors.toList());
-                for(DataFile parquetFile : parquetFiles)    {
-                    if(!ParquetValidationTask.validate(parquetFile.getFile())){
-                        return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidParquetFileWarning(parquetFile.getFileName()));
+            if(hasNpxFile){
+                List<DataFile> npxFiles = submission.getDataFiles().stream()
+                        .filter(dataFile ->dataFile.getFileName()
+                                .endsWith(AffinityFileFormat.NPX.getFileExtension())).collect(Collectors.toList());
+                for(DataFile npxFile : npxFiles)    {
+                    if(!NPXValidationTask.validate(npxFile.getFile())){
+                        return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidFileWarning(npxFile.getFileName()));
                     }
                 }
             }
+
+//            if(hasParquetFile){
+//                List<DataFile> parquetFiles = submission.getDataFiles().stream().filter(dataFile ->
+//                        FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.PARQUET.getFileExtension())).collect(Collectors.toList());
+//                for(DataFile parquetFile : parquetFiles)    {
+//                    if(!ParquetValidationTask.validate(parquetFile.getFile())){
+//                        return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidParquetFileWarning(parquetFile.getFileName()));
+//                    }
+//                }
+//            }
 
             // cannot have supported search engine output, these should be converted to PRIDE XMl
             // using PRIDE Converter
@@ -283,7 +305,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             }
 
             // cannot have result files
-            if (!noResultFile) {
+            if (!noResultFile && submissionType.equals(SubmissionTypeConstants.PARTIAL)) {
                 return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getResultFileWarning());
             }
 

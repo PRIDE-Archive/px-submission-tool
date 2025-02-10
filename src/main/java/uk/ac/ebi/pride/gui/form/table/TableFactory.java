@@ -84,8 +84,8 @@ public class TableFactory {
         TableColumnExt fileTypeColumn = (TableColumnExt) table.getColumn(FileSelectionTableModel.TableHeader.TYPE.getHeader());
 
         if(submissionType.equals(SubmissionTypeConstants.AFFINITY)){
-            fileTypeColumn.setCellRenderer(new ComboBoxCellRenderer(Arrays.asList(ProjectFileType.RAW,ProjectFileType.SEARCH,ProjectFileType.EXPERIMENTAL_DESIGN,ProjectFileType.OTHER).toArray()));
-            fileTypeColumn.setCellEditor(new ComboBoxCellEditor(Arrays.asList(ProjectFileType.RAW,ProjectFileType.SEARCH,ProjectFileType.EXPERIMENTAL_DESIGN,ProjectFileType.OTHER).toArray()));
+            fileTypeColumn.setCellRenderer(new ComboBoxCellRenderer(Arrays.asList(ProjectFileType.RAW,ProjectFileType.RESULT,ProjectFileType.SEARCH,ProjectFileType.EXPERIMENTAL_DESIGN,ProjectFileType.OTHER).toArray()));
+            fileTypeColumn.setCellEditor(new ComboBoxCellEditor(Arrays.asList(ProjectFileType.RAW,ProjectFileType.RESULT,ProjectFileType.SEARCH,ProjectFileType.EXPERIMENTAL_DESIGN,ProjectFileType.OTHER).toArray()));
         } else {
             fileTypeColumn.setCellRenderer(new ComboBoxCellRenderer(ProjectFileType.values()));
             fileTypeColumn.setCellEditor(new ComboBoxCellEditor(ProjectFileType.values()));

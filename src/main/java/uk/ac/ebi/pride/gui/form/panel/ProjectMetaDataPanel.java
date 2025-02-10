@@ -183,7 +183,8 @@ public class ProjectMetaDataPanel extends ContextAwarePanel {
             warningBalloonTip.setVisible(true);
             experimentMethodTable.setBackground(ColourUtil.TEXT_FIELD_WARNING_COLOUR);
             inValid = true;
-        } else {
+        }
+        else {
             if (appContext.getSubmissionType().equals(AFFINITY)) {
                 if (experimentMethods.stream().anyMatch(experimentMethod -> !experimentMethod.getAccession().equals("PRIDE:0000635")
                         && !experimentMethod.getAccession().equals("PRIDE:0000636") &&
@@ -194,32 +195,6 @@ public class ProjectMetaDataPanel extends ContextAwarePanel {
                     inValid = true;
                 }
             }
-
-        if (isCrosslinkDataset(appContext.getSubmissionRecord().getSubmission().getProjectMetaData(),
-        title, keywords, projectDesc, sampleProcessing, dataProcessing)){
-            JLabel label = new JLabel();
-            Font font = label.getFont();
-            StringBuilder style = new StringBuilder("font-family:" + font.getFamily() + ";");
-            style.append("font-weight:" + (font.isBold() ? "bold" : "normal") + ";");
-            style.append("font-size:" + font.getSize() + "pt;");
-            JEditorPane jEditorPane = new JEditorPane("text/html", "<html><body style=\"" + style + "\">" //
-                    + WarningMessageGenerator.getCrosslinkingWarning(appContext.getSubmissionRecord().getSubmission().getProjectMetaData().getSubmissionType()) + "</body></html>");
-            jEditorPane.addHyperlinkListener(e -> {
-                try {
-                    if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED))
-                        Desktop.getDesktop().browse(e.getURL().toURI());
-                } catch (Exception ex) {
-//                    logger.error(ex.getMessage());
-                }
-            });
-            jEditorPane.setEditable(false);
-            jEditorPane.setBackground(label.getBackground());
-            JOptionPane.showConfirmDialog(app.getMainFrame(),
-                    jEditorPane,
-                    appContext.getProperty("crosslinking.detected.dialog.title"),
-                    JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
-        }
-
             // mass spec experiment method
             else if ((SubmissionValidator.validateExperimentMethods(experimentMethods).hasError()) || experimentMethods.stream().anyMatch(experimentMethod -> experimentMethod.getAccession().equals("PRIDE:0000635")
                     || experimentMethod.getAccession().equals("PRIDE:0000636") ||
@@ -230,6 +205,31 @@ public class ProjectMetaDataPanel extends ContextAwarePanel {
                 inValid = true;
             } else {
                 experimentMethodTable.setBackground(ColourUtil.TEXT_FIELD_NORMAL_COLOUR);
+            }
+
+            if (isCrosslinkDataset(appContext.getSubmissionRecord().getSubmission().getProjectMetaData(),
+                    title, keywords, projectDesc, sampleProcessing, dataProcessing)){
+                JLabel label = new JLabel();
+                Font font = label.getFont();
+                StringBuilder style = new StringBuilder("font-family:" + font.getFamily() + ";");
+                style.append("font-weight:" + (font.isBold() ? "bold" : "normal") + ";");
+                style.append("font-size:" + font.getSize() + "pt;");
+                JEditorPane jEditorPane = new JEditorPane("text/html", "<html><body style=\"" + style + "\">" //
+                        + WarningMessageGenerator.getCrosslinkingWarning(appContext.getSubmissionRecord().getSubmission().getProjectMetaData().getSubmissionType()) + "</body></html>");
+                jEditorPane.addHyperlinkListener(e -> {
+                    try {
+                        if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED))
+                            Desktop.getDesktop().browse(e.getURL().toURI());
+                    } catch (Exception ex) {
+//                    logger.error(ex.getMessage());
+                    }
+                });
+                jEditorPane.setEditable(false);
+                jEditorPane.setBackground(label.getBackground());
+                JOptionPane.showConfirmDialog(app.getMainFrame(),
+                        jEditorPane,
+                        appContext.getProperty("crosslinking.detected.dialog.title"),
+                        JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
             }
 
         }
