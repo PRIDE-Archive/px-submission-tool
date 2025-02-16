@@ -1,5 +1,6 @@
 package uk.ac.ebi.pride.gui.form;
 
+import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.data.model.CvParam;
 import uk.ac.ebi.pride.data.util.Constant;
 import uk.ac.ebi.pride.data.validation.SubmissionValidator;
@@ -358,12 +359,18 @@ public class AdditionalMetaDataForm extends Form {
             invalid = true;
         }
 
-        // modification
-        if (!invalid && SubmissionValidator.validateModifications(getModifications()).hasError()) {
-            warningBalloonTip = BalloonTipUtil.createErrorBalloonTip(modificationPanel, "Please choose modifications");
-            showWarnings();
-            invalid = true;
+        SubmissionTypeConstants submissionType = appContext.getSubmissionType();
+
+        if (!submissionType.equals(SubmissionTypeConstants.AFFINITY)) {
+            // modification
+            if (!invalid && SubmissionValidator.validateModifications(getModifications()).hasError()) {
+                warningBalloonTip = BalloonTipUtil.createErrorBalloonTip(modificationPanel, "Please choose modifications");
+                showWarnings();
+                invalid = true;
+            }
         }
+
+
 
         // instrument
         if (!invalid && SubmissionValidator.validateInstruments(getInstruments()).hasError()) {

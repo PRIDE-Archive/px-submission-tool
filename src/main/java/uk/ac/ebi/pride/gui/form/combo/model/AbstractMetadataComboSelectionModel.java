@@ -61,7 +61,7 @@ public abstract class AbstractMetadataComboSelectionModel extends AbstractListMo
             SubmissionTypeConstants submissionType = appContext.getSubmissionType();
 
             if (submissionType.equals(SubmissionTypeConstants.AFFINITY)) {
-                otherSelectionOption = null;
+                //otherSelectionOption = null;
                 if (defaultValueFile.contains("species")) {
                     elements.addAll(cvParams.stream().filter(cvParam -> cvParam.getAccession().equals("9606") ||
                             cvParam.getAccession().equals("10090")).collect(Collectors.toList()));
@@ -76,9 +76,17 @@ public abstract class AbstractMetadataComboSelectionModel extends AbstractListMo
                 if (defaultValueFile.contains("modification")) {
                     elements.addAll(cvParams.stream().filter(cvParam -> cvParam.getCvLabel().equals(PRIDE)).collect(Collectors.toList()));
                 }
+                if(defaultValueFile.contains("msmethod")){
+                    elements.addAll(cvParams.stream().filter(cvParam -> cvParam.getAccession().equals("PRIDE:0000636") ||
+                            cvParam.getAccession().equals("PRIDE:0000637")).collect(Collectors.toList()));
+                }
             } else {
                 if (defaultValueFile.contains("instrument")) {
                     elements.addAll(cvParams.stream().filter(cvParam -> !cvParam.getCvLabel().equals(PRIDE)).collect(Collectors.toList()));
+                }
+                if(defaultValueFile.contains("msmethod")){
+                    elements.addAll(cvParams.stream().filter(cvParam -> !cvParam.getAccession().equals("PRIDE:0000636") &&
+                            !cvParam.getAccession().equals("PRIDE:0000637")).collect(Collectors.toList()));
                 } else {
                     elements.addAll(cvParams);
                 }

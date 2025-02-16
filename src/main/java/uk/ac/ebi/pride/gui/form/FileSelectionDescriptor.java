@@ -1,6 +1,7 @@
 package uk.ac.ebi.pride.gui.form;
 
 import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.gui.form.table.TableFactory;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
@@ -48,6 +49,8 @@ public class FileSelectionDescriptor extends ContextAwareNavigationPanelDescript
         // validate the content in the table
         FileSelectionForm form = (FileSelectionForm) getNavigationPanel();
         Submission submission = appContext.getSubmissionRecord().getSubmission();
+
+
 
         Task fileSelectionValidationTask = new FileScanAndValidationTask(submission);
         fileSelectionValidationTask.addTaskListener(form);

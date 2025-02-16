@@ -7,6 +7,7 @@ import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 
+import uk.ac.ebi.pride.data.model.ProjectMetaData;
 import uk.ac.ebi.pride.data.util.AffinityFileFormat;
 import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.data.model.DataFile;
@@ -75,6 +76,9 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
     public static final Pattern PRIDEXML_SAMPLE_DESCRIPTION_PATTERN = Pattern.compile(".*<sampleDescription[^>]*/>.*");
 
     public static final int LINE_VALIDATION_LIMIT = 100;
+    public static final String OLINK_EXP = "PRIDE:0000637";
+
+    public static final String SOMASCAN_EXP = "PRIDE:0000636";
 
     private Submission submission;
     private AppContext appContext;
@@ -132,26 +136,33 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
 
         boolean hasAdatFile = submission.getDataFiles().stream().anyMatch(dataFile ->
             FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.ADAT.getFileExtension()) ||
-                    FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.BCL.getFileExtension())
-                    || FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.PARQUET.getFileExtension()));
+                    FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.BCL.getFileExtension()));
 
         boolean hasNpxFile = submission.getDataFiles().stream().anyMatch(dataFile ->
-                dataFile.getFileName().endsWith(AffinityFileFormat.NPX.getFileExtension()));
+                dataFile.getFileName().endsWith(AffinityFileFormat.NPX.getFileExtension()) ||
+                        dataFile.getFileName().endsWith(AffinityFileFormat.PARQUET_RESULT.getFileExtension()));
 
-
-        boolean hasParquetFile = submission.getDataFiles().stream().anyMatch(dataFile ->
-                FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.PARQUET.getFileExtension()));
-
-        if((hasAdatFile && !submissionType.equals(SubmissionTypeConstants.AFFINITY))
-                || (hasNpxFile && !submissionType.equals(SubmissionTypeConstants.AFFINITY))
-        || (!hasAdatFile && !hasNpxFile && submissionType.equals(SubmissionTypeConstants.AFFINITY))){
-            if(!hasNpxFile){
-                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSubmissionType(hasNpxFile,"olinkTarget"));
+        if(((hasAdatFile || hasNpxFile) && !submissionType.equals(SubmissionTypeConstants.AFFINITY))
+                || (!hasAdatFile && !hasNpxFile && submissionType.equals(SubmissionTypeConstants.AFFINITY))){
+            if(!submissionType.equals(SubmissionTypeConstants.AFFINITY)){
+                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSubmissionType(hasAdatFile || hasNpxFile));
             }
-                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSubmissionType(hasAdatFile));
+            return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSubmissionType(hasAdatFile || hasNpxFile));
         }
 
+        if(submissionType.equals(SubmissionTypeConstants.AFFINITY)){
+            if(submission.getProjectMetaData().getMassSpecExperimentMethods().stream().anyMatch(
+                    cvParam -> cvParam.getAccession().equals(OLINK_EXP) && hasAdatFile
+            )){
+                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidExpMethod(OLINK_EXP));
+            }
 
+            if(submission.getProjectMetaData().getMassSpecExperimentMethods().stream().anyMatch(
+                    cvParam -> cvParam.getAccession().equals(SOMASCAN_EXP) && hasNpxFile
+            )){
+                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidExpMethod(SOMASCAN_EXP));
+            }
+        }
 
         if (submissionType.equals(SubmissionTypeConstants.COMPLETE)) {
 
@@ -277,17 +288,16 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                         return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidFileWarning(npxFile.getFileName()));
                     }
                 }
-            }
+                List<DataFile> npxParquetFiles = submission.getDataFiles().stream()
+                        .filter(dataFile ->dataFile.getFileName()
+                                .endsWith(AffinityFileFormat.PARQUET_RESULT.getFileExtension())).collect(Collectors.toList());
+                for(DataFile npxParquetFile : npxParquetFiles)    {
+                    if(!ParquetValidationTask.validate(npxParquetFile.getFile())){
+                        return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidFileWarning(npxParquetFile.getFileName()));
+                    }
+                }
 
-//            if(hasParquetFile){
-//                List<DataFile> parquetFiles = submission.getDataFiles().stream().filter(dataFile ->
-//                        FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.PARQUET.getFileExtension())).collect(Collectors.toList());
-//                for(DataFile parquetFile : parquetFiles)    {
-//                    if(!ParquetValidationTask.validate(parquetFile.getFile())){
-//                        return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidParquetFileWarning(parquetFile.getFileName()));
-//                    }
-//                }
-//            }
+            }
 
             // cannot have supported search engine output, these should be converted to PRIDE XMl
             // using PRIDE Converter
@@ -316,6 +326,11 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMissingImageDataFileWarning());
             }
             setProgress(85);
+
+            if (submissionType.equals(SubmissionTypeConstants.AFFINITY)) {
+                appContext.addMassSpecExperimentMethod( new uk.ac.ebi.pride.data.model.CvParam("PRIDE","PRIDE:0000635","Affinity proteomics","Affinity proteomics")
+                );
+            }
 
         }
         else {

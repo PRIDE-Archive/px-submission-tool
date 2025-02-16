@@ -19,23 +19,20 @@ public class ProjectMetaDataForm extends Form {
 
     private ProjectMetaDataPanel projectMetaDataPanel;
 
+    private JPanel expDescContainer;
+
     public ProjectMetaDataForm() {
-        initComponents();
     }
 
-    private void initComponents() {
-        // setup the main pane
-        this.setLayout(new BorderLayout());
-
-        // init experiment details panel
-        initExpDetailsPanel();
+    public JPanel getExpDescContainer() {
+        return expDescContainer;
     }
-
     /**
      * Initialize experiment details panel
      */
-    private void initExpDetailsPanel() {
-        JPanel expDescContainer = new JPanel(new BorderLayout());
+    public void initExpDetailsPanel() {
+        this.setLayout(new BorderLayout());
+        this.expDescContainer = new JPanel(new BorderLayout());
 
         // title label
         JLabel expDescTitleLabel = new JLabel(appContext.getProperty("experiment.desc.label.title"));

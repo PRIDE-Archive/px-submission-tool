@@ -6,6 +6,7 @@ import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.util.ValidationState;
 
 import javax.help.HelpBroker;
+import javax.swing.*;
 import java.util.Set;
 
 /**
@@ -35,6 +36,13 @@ public class ProjectMetaDataDescriptor extends ContextAwareNavigationPanelDescri
     public void beforeDisplayingPanel() {
         Submission submission = appContext.getSubmissionRecord().getSubmission();
         ProjectMetaDataForm form = (ProjectMetaDataForm) getNavigationPanel();
+        JPanel jpanel = form.getExpDescContainer();
+        if(jpanel!=null){
+            form.remove(jpanel);
+        }
+
+        // init experiment details panel
+        form.initExpDetailsPanel();
         form.setProjectMetaData(submission.getProjectMetaData());
         firePropertyChange(BEFORE_DISPLAY_PANEL_PROPERTY, false, true);
     }

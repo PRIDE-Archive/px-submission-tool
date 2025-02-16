@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static uk.ac.ebi.pride.gui.task.FileScanAndValidationTask.OLINK_EXP;
+
 /**
  * @author Rui Wang
  * @version $Id$
@@ -309,19 +311,19 @@ public final class WarningMessageGenerator {
         return "<html>" + "<b>Missing mass spec imaging data</b><br/>" + "Please include .imzML files which contains mass spectrometry imaging data" + "</html>";
     }
 
-    public static String getInvalidSubmissionType(boolean hasAdatFile) {
-        if(hasAdatFile) {
-            return "<html>" + "<b>Your submission contains .adat/.bml/.parquet raw files</b><br/>" + "Please please go back and select Affinity Proteomics as Submission Type" + "</html>";
+    public static String getInvalidSubmissionType(boolean hasAdatOrNPXFile) {
+        if(hasAdatOrNPXFile) {
+            return "<html>" + "<b>Your submission contains .adat/.bml/.npx files</b><br/>" + "Please please go back and select Affinity Proteomics as Submission Type" + "</html>";
         }
         return "<html>" + "<b>Your Submission type is Affinity Proteomics</b><br/>" + "Please upload .adat/.bml/.parquet files as RAW files or go back to change the SubmissionType" + "</html>";
 
     }
 
-    public static String getInvalidSubmissionType(boolean hasAdatFile, String instrumentType) {
-        if(hasAdatFile) {
-            return "<html>" + "<b>Your submission contains .npx.csv result files</b><br/>" + "Please please go back and select Affinity Proteomics as Submission Type" + "</html>";
+    public static String getInvalidExpMethod(String instrumentType) {
+        if(instrumentType.equals(OLINK_EXP)) {
+            return "<html>" + "<b>Your submission contains .adat/.bml files</b><br/>" + "Please please go back and select Somascan as Experiment method" + "</html>";
         }
-        return "<html>" + "<b>Your Submission type is Affinity Proteomics</b><br/>" + "Please upload .npx.csv files as RESULT files or go back to change the SubmissionType" + "</html>";
+        return "<html>" + "<b>Your submission contains .npx.csv result files</b><br/>" + "Please please go back and select Olink as Experiment method" + "</html>";
 
     }
 

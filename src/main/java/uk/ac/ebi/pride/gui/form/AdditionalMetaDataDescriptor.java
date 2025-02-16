@@ -71,7 +71,7 @@ public class AdditionalMetaDataDescriptor extends ContextAwareNavigationPanelDes
             JPanel speciesPanel = form.initMetadataPanel(appContext.getProperty("species.label.title"),
                     true,
                     appContext.getProperty("species.combobox.default.selection"),
-                    null,
+                    appContext.getProperty("species.combobox.other.species"),
                     appContext.getProperty("species.combobox.default.species.file"),
                     Constant.NEWT,
                     speciesTableModel);
@@ -93,18 +93,18 @@ public class AdditionalMetaDataDescriptor extends ContextAwareNavigationPanelDes
             form.setQuantTableModel(quantTableModel);
             form.add(quantPanel);
 
-            MetaDataTableModel modTableModel = new MetaDataTableModel();
-            JPanel modPanel = form.initMetadataPanel(appContext.getProperty("modification.label.title"),
-                    true,
-                    appContext.getProperty("modification.combobox.default.selection"),
-                    null,
-                    appContext.getProperty("modification.combobox.default.modification.file"),
-                    Constant.PRIDE,
-                    modTableModel);
+//            MetaDataTableModel modTableModel = new MetaDataTableModel();
+//            JPanel modPanel = form.initMetadataPanel(appContext.getProperty("modification.label.title"),
+//                    true,
+//                    appContext.getProperty("modification.combobox.default.selection"),
+//                    null,
+//                    appContext.getProperty("modification.combobox.default.modification.file"),
+//                    Constant.PRIDE,
+//                    modTableModel);
             form.remove(form.getModificationPanel());
-            form.setModificationPanel(modPanel);
-            form.setModificationTableModel(modTableModel);
-            form.add(modPanel);
+//            form.setModificationPanel(modPanel);
+//            form.setModificationTableModel(modTableModel);
+//            form.add(modPanel);
 
 
         } else {

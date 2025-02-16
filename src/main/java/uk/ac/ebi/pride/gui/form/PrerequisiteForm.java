@@ -74,6 +74,13 @@ public class PrerequisiteForm extends Form {
         return createRequiredItemPanel(header, subHeader, icon);
     }
 
+    private JPanel createAffinityResultFilePanel() {
+        String header = appContext.getProperty("prerequisite.result.file.title");
+        String subHeader = appContext.getProperty("prerequisite.result.affinity.file.desc");
+        Icon icon = GUIUtilities.loadIcon(appContext.getProperty("prerequisite.result.file.small.icon"));
+        return createRequiredItemPanel(header, subHeader, icon);
+    }
+
     /**
      * Requirement panel for identification file
      */
@@ -94,12 +101,13 @@ public class PrerequisiteForm extends Form {
         return createRequiredItemPanel(header, subHeader, icon);
     }
 
-    private JPanel createAdatRawFilePanel() {
-        String header = appContext.getProperty("prerequisite.raw.file.title");
-        String subHeader = appContext.getProperty("prerequisite.raw.adat.file.desc");
+    private JPanel createAffinityRawFilePanel() {
+        String header = appContext.getProperty("prerequisite.raw.affinity.file.title");
+        String subHeader = appContext.getProperty("prerequisite.raw.affinity.file.desc");
         Icon icon = GUIUtilities.loadIcon(appContext.getProperty("prerequisite.raw.file.small.icon"));
         return createRequiredItemPanel(header, subHeader, icon);
     }
+
     /**
      * Requirement panel for pride login
      */
@@ -263,8 +271,8 @@ public class PrerequisiteForm extends Form {
             requirementItemContainer.add(labHeadItemPanel);
         } else {
                 requirementItemContainer.removeAll();
-                requirementItemContainer.add(identificationFileRequirementItemPanel);
-                requirementItemContainer.add(createAdatRawFilePanel());
+                requirementItemContainer.add(createAffinityResultFilePanel());
+                requirementItemContainer.add(createAffinityRawFilePanel());
                 requirementItemContainer.add(experimentMetadataItemPanel);
                 requirementItemContainer.add(labHeadItemPanel);
         }

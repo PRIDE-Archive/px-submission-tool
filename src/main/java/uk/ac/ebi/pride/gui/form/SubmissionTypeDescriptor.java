@@ -26,6 +26,7 @@ import javax.swing.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -73,6 +74,7 @@ public class SubmissionTypeDescriptor extends ContextAwareNavigationPanelDescrip
         boolean loadPreviousSubmission = detectPreviousSubmission();
 
         ProjectMetaData projectMetaData = appContext.getSubmissionRecord().getSubmission().getProjectMetaData();
+        projectMetaData.clearMassSpecExperimentMethods();
 
         if (!projectMetaData.isResubmission()) {
             appContext.setResubmission(false);
