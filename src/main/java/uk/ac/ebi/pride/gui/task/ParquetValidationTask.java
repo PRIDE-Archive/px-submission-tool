@@ -28,6 +28,10 @@ public class ParquetValidationTask {
 
     public static boolean validate(File parquetFilePath) {
         Configuration conf = new Configuration();
+        conf.setBoolean("fs.file.impl.disable.cache",true);
+        conf.set("fs.defaultFS", "file:///");
+        conf.set("fs.viewfs.impl", "org.apache.hadoop.fs.RawLocalFileSystem"); // Force local FS
+
         Path path = new Path(parquetFilePath.getPath());
 
         try {
