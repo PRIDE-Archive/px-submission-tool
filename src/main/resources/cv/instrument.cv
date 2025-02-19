@@ -28,6 +28,10 @@ PRIDE	PRIDE:0000641	SomaScan assay v4.1	SomaScan assay v4.1
 PRIDE	PRIDE:0000654	Olink instrument model	Olink instrument model
 PRIDE	PRIDE:0000655	Olink Target 96	Olink Target 96
 PRIDE	PRIDE:0000656	Olink Explore 1536	Olink Target 1536
-PRIDE	PRIDE:0000657	Olink Explore 3072	Olink Target 3072
+PRIDE	PRIDE:0000657	Olink Explore 3072/384	Olink Target 3072/384
 PRIDE	PRIDE:0000658	Olink Explore 384	Olink Target 384
+PRIDE   PRIDE:0000671   Olink Explore    Olink Explore
+PRIDE   PRIDE:0000672   Olink Target    Olink Target
+PRIDE   PRIDE:0000673   Olink Explore HT    Olink Explore HT
+
 
