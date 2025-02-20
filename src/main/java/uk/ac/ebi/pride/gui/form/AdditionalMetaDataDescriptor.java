@@ -12,6 +12,7 @@ import uk.ac.ebi.pride.gui.util.ValidationState;
 
 import javax.help.HelpBroker;
 import javax.swing.*;
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -169,6 +170,10 @@ public class AdditionalMetaDataDescriptor extends ContextAwareNavigationPanelDes
         AdditionalMetaDataForm form = (AdditionalMetaDataForm) getNavigationPanel();
         ValidationState state = form.doValidation();
         if (!ValidationState.ERROR.equals(state)) {
+            if(appContext.getSubmissionType().getName().equals(SubmissionTypeConstants.AFFINITY.name())){
+                form.setModifications(Collections.singletonList(new CvParam("PRIDE","PRIDE:0000398","No PTMs are included in the dataset",
+                        "")));
+            }
             // save user input
             saveFormContent();
 
