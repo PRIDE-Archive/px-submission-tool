@@ -112,7 +112,7 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
   private String getAbsolutePath() throws UnsupportedEncodingException {
     String jarDir;
     String jarPath =
-        AsperaGeneralTask.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+            AsperaGeneralTask.class.getProtectionDomain().getCodeSource().getLocation().getPath();
     logger.debug("Jar Path: {}", jarPath);
     String decodedJarPath = URLDecoder.decode(jarPath, "UTF-8");
     File jarFile = new File(decodedJarPath);
@@ -171,11 +171,11 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
     try {
       SecureRandom random = new SecureRandom();
       File tempDir =
-          new File(System.getProperty("java.io.tmpdir") + File.separator + random.nextLong());
+              new File(System.getProperty("java.io.tmpdir") + File.separator + random.nextLong());
       logger.info("Created temp directory? " + tempDir.mkdir());
       File submissionFile =
-          new File(
-              tempDir.getAbsolutePath() + File.separator + Constant.PX_SUBMISSION_SUMMARY_FILE);
+              new File(
+                      tempDir.getAbsolutePath() + File.separator + Constant.PX_SUBMISSION_SUMMARY_FILE);
       logger.info("Create temporary submission summary file : " + submissionFile.getAbsolutePath());
       SubmissionFileWriter.write(submissionRecord.getSubmission(), submissionFile);
       if(appContext.isResubmission()){

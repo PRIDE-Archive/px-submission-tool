@@ -2,22 +2,7 @@ package uk.ac.ebi.pride;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.ebi.pride.gui.form.AdditionalDatasetDetailsDescriptor;
-import uk.ac.ebi.pride.gui.form.AdditionalMetaDataDescriptor;
-import uk.ac.ebi.pride.gui.form.CalculateChecksumDescriptor;
-import uk.ac.ebi.pride.gui.form.FileResubmissionDescriptor;
-import uk.ac.ebi.pride.gui.form.FileSelectionDescriptor;
-import uk.ac.ebi.pride.gui.form.LabHeadDescriptor;
-import uk.ac.ebi.pride.gui.form.PrerequisiteDescriptor;
-import uk.ac.ebi.pride.gui.form.PrideLoginDescriptor;
-import uk.ac.ebi.pride.gui.form.ProjectMetaDataDescriptor;
-import uk.ac.ebi.pride.gui.form.ResubmissionSummaryDescriptor;
-import uk.ac.ebi.pride.gui.form.ResubmissionSummaryForm;
-import uk.ac.ebi.pride.gui.form.SampleMetaDataDescriptor;
-import uk.ac.ebi.pride.gui.form.SubmissionDescriptor;
-import uk.ac.ebi.pride.gui.form.SubmissionTypeDescriptor;
-import uk.ac.ebi.pride.gui.form.SummaryDescriptor;
-import uk.ac.ebi.pride.gui.form.SummaryForm;
+import uk.ac.ebi.pride.gui.form.*;
 import uk.ac.ebi.pride.gui.navigation.NavigationException;
 import uk.ac.ebi.pride.gui.navigation.NavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.navigation.Navigator;
@@ -31,9 +16,10 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.io.IOException;
-import java.util.Observable;
 
 /**
  * This is the entry point of the entire application
@@ -43,6 +29,8 @@ import java.util.Observable;
 public class App extends Desktop {
     private static final Logger logger = LoggerFactory.getLogger(App.class);
     private static final String OS = System.getProperty("os.name").toLowerCase();
+    private static final String WINDOW_CLOSING = "windowClosing";
+    private static final String WINDOW_CLOSED = "windowClosed";
 
     /**
      * Main frame of the application
@@ -55,56 +43,54 @@ public class App extends Desktop {
     private Navigator navigator;
 
     private boolean okToClose;
+    private final PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
 
-    // Window Listener for performing possible pending operations before closing the application
-    private class AppCloseWindowListener extends Observable implements WindowListener {
+    private class AppCloseWindowListener implements WindowListener {
         @Override
         public void windowOpened(WindowEvent e) {
-            //Empty
+            // No action needed
         }
 
         @Override
         public void windowClosing(WindowEvent e) {
-            logger.debug("Notifying possible observers that there is a 'Window Closing' action taking place");
-            unsetDoNotCloseAppFlag();
-            setChanged();
-            notifyObservers();
-            if (isOkToClose()) {
-                mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            } else {
-                mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-            }
-            //mainFrame.setVisible(false);
-            //mainFrame.dispose();
+            propertyChangeSupport.firePropertyChange(WINDOW_CLOSING, null, null);
         }
 
         @Override
         public void windowClosed(WindowEvent e) {
+            propertyChangeSupport.firePropertyChange(WINDOW_CLOSED, null, null);
         }
 
         @Override
         public void windowIconified(WindowEvent e) {
-            //Empty
+            // No action needed
         }
 
         @Override
         public void windowDeiconified(WindowEvent e) {
-            //Empty
+            // No action needed
         }
 
         @Override
         public void windowActivated(WindowEvent e) {
-            //Empty
+            // No action needed
         }
 
         @Override
         public void windowDeactivated(WindowEvent e) {
-            //Empty
+            // No action needed
         }
     }
 
-    // Window Listener
-    private AppCloseWindowListener appCloseWindowListener = new AppCloseWindowListener();
+    private final AppCloseWindowListener appCloseWindowListener = new AppCloseWindowListener();
+
+    public void addPropertyChangeListener(PropertyChangeListener listener) {
+        propertyChangeSupport.addPropertyChangeListener(listener);
+    }
+
+    public void removePropertyChangeListener(PropertyChangeListener listener) {
+        propertyChangeSupport.removePropertyChangeListener(listener);
+    }
 
     public static void main(String[] args) {
         if (!ApplicationInstanceManager.registerInstance()) {
@@ -154,19 +140,19 @@ public class App extends Desktop {
         String osName = System.getProperty("os.name");
         if (osName.startsWith("Mac OS")) {
             InputMap textFieldInputMap = (InputMap) UIManager.get("TextField.focusInputMap");
-            textFieldInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()), DefaultEditorKit.copyAction);
-            textFieldInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_V, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()), DefaultEditorKit.pasteAction);
-            textFieldInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()), DefaultEditorKit.cutAction);
+            textFieldInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()), DefaultEditorKit.copyAction);
+            textFieldInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_V, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()), DefaultEditorKit.pasteAction);
+            textFieldInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()), DefaultEditorKit.cutAction);
 
             InputMap textAreaInputMap = (InputMap) UIManager.get("TextArea.focusInputMap");
-            textAreaInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()), DefaultEditorKit.copyAction);
-            textAreaInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_V, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()), DefaultEditorKit.pasteAction);
-            textAreaInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()), DefaultEditorKit.cutAction);
+            textAreaInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()), DefaultEditorKit.copyAction);
+            textAreaInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_V, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()), DefaultEditorKit.pasteAction);
+            textAreaInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()), DefaultEditorKit.cutAction);
 
             InputMap passwordFieldInputMap = (InputMap) UIManager.get("PasswordField.focusInputMap");
-            passwordFieldInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()), DefaultEditorKit.copyAction);
-            passwordFieldInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_V, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()), DefaultEditorKit.pasteAction);
-            passwordFieldInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()), DefaultEditorKit.cutAction);
+            passwordFieldInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_C, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()), DefaultEditorKit.copyAction);
+            passwordFieldInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_V, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()), DefaultEditorKit.pasteAction);
+            passwordFieldInputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_X, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()), DefaultEditorKit.cutAction);
         }
     }
 
@@ -198,7 +184,7 @@ public class App extends Desktop {
 
     public static boolean isUnix() {
 
-        return (OS.contains("nix") || OS.contains("nux") || OS.indexOf("aix") > 0 );
+        return (OS.contains("nix") || OS.contains("nux") || OS.indexOf("aix") > 0);
 
     }
 
@@ -237,7 +223,7 @@ public class App extends Desktop {
             LookAndFeel laf = UIManager.getLookAndFeel();
             UIDefaults defaults = laf.getDefaults();
             defaults.put("ScrollBar.minimumThumbSize", new Dimension(30, 30));
-        } catch (Exception e){
+        } catch (Exception e) {
             logger.error("Failed to load a Look'n'Feel for the application " + e.toString());
         }
         /*if (!isWindowsPlatform()) {
@@ -270,7 +256,7 @@ public class App extends Desktop {
         try {
             // login form
             PrideLoginDescriptor prideLoginPanel = new PrideLoginDescriptor(getDesktopContext().getProperty("pride.login.nav.desc.id"),
-                    getDesktopContext().getProperty("pride.login.nav.desc.title") ,
+                    getDesktopContext().getProperty("pride.login.nav.desc.title"),
                     getDesktopContext().getProperty("pride.login.nav.desc.detail") +
                             " (version " + getDesktopContext().getProperty("px.submission.tool.version") + ")");
 
@@ -278,8 +264,8 @@ public class App extends Desktop {
 
             // register submission type form
             SubmissionTypeDescriptor submissionTypeDescriptor = new SubmissionTypeDescriptor(getDesktopContext().getProperty("submission.type.nav.desc.id"),
-                    "Step 1: " + getDesktopContext().getProperty("submission.type.nav.desc.title")+ " (1/10)",
-                    getDesktopContext().getProperty("submission.type.nav.desc.detail") );
+                    "Step 1: " + getDesktopContext().getProperty("submission.type.nav.desc.title") + " (1/10)",
+                    getDesktopContext().getProperty("submission.type.nav.desc.detail"));
             navigator.registerNavigationPanel(submissionTypeDescriptor);
 
             // register prerequisite form
@@ -296,7 +282,7 @@ public class App extends Desktop {
 
             // register file selection form
             FileSelectionDescriptor fileSelectionPanel = new FileSelectionDescriptor(getDesktopContext().getProperty("file.selection.nav.desc.id"),
-                    "Step 3: " + getDesktopContext().getProperty("file.selection.nav.desc.title" ) + " (3/10)",
+                    "Step 3: " + getDesktopContext().getProperty("file.selection.nav.desc.title") + " (3/10)",
                     getDesktopContext().getProperty("file.selection.nav.desc.detail"));
             navigator.registerNavigationPanel(fileSelectionPanel);
 
@@ -413,8 +399,8 @@ public class App extends Desktop {
     }
 
     // Get Window Listener
-    public Observable getCloseWindowListener() {
-        return appCloseWindowListener;
+    public PropertyChangeSupport getCloseWindowListener() {
+        return propertyChangeSupport;
     }
 
     public void setDoNotCloseAppFlag() {

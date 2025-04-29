@@ -3,10 +3,10 @@ package uk.ac.ebi.pride.gui.task;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.conn.params.ConnRoutePNames;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.gui.util.Constant;
@@ -173,16 +173,15 @@ public abstract class AbstractWebServiceTask<T> extends TaskAdapter<T, String> {
      * Perform a http get request using a given url
      */
     private HttpResponse doHttpGet(String url) throws IOException {
-        HttpClient httpClient = new DefaultHttpClient();
-
-        // set proxy
+        HttpClientBuilder httpClientBuilder = HttpClients.custom();
         Properties props = System.getProperties();
         String proxyHost = props.getProperty("http.proxyHost");
         String proxyPort = props.getProperty("http.proxyPort");
         if (proxyHost != null && proxyPort != null) {
             HttpHost proxy = new HttpHost(proxyHost, Integer.parseInt(proxyPort));
-            httpClient.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxy);
+            httpClientBuilder.setProxy(proxy);
         }
+        CloseableHttpClient httpClient = httpClientBuilder.build();
 
         HttpGet httpGet = new HttpGet(url);
         return httpClient.execute(httpGet);

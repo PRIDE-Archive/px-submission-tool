@@ -43,72 +43,9 @@ public class AdditionalMetaDataDescriptor extends ContextAwareNavigationPanelDes
         AdditionalMetaDataForm form = (AdditionalMetaDataForm) getNavigationPanel();
         Submission submission = appContext.getSubmissionRecord().getSubmission();
         ProjectMetaData metaData = submission.getProjectMetaData();
-        if (metaData != null) {
-            form.setSpecies(metaData.getSpecies());
-            form.setTissues(metaData.getTissues());
-            form.setCellTypes(metaData.getCellTypes());
-            form.setDiseases(metaData.getDiseases());
-            form.setInstruments(metaData.getInstruments());
-            form.setModifications(metaData.getModifications());
-            form.setQuantifications(metaData.getQuantifications());
-//            form.setComment(metaData.getReasonForPartialSubmission());
-        }
-
-        if (appContext.getSubmissionType().equals(SubmissionTypeConstants.AFFINITY)) {
-            MetaDataTableModel instrumentTableModel = new MetaDataTableModel();
-            JPanel instrumentPanel = form.initMetadataPanel(appContext.getProperty("instrument.label.title"),
-                    true,
-                    appContext.getProperty("instrument.affinity.combobox.default.selection"),
-                    null,
-                    appContext.getProperty("instrument.combobox.default.instrument.file"),
-                    Constant.PRIDE,
-                    instrumentTableModel);
-            form.remove(form.getInstrumentPanel());
-            form.setInstrumentPanel(instrumentPanel);
-            form.setInstrumentTableModel(instrumentTableModel);
-            form.add(instrumentPanel);
-
-            MetaDataTableModel speciesTableModel = new MetaDataTableModel();
-            JPanel speciesPanel = form.initMetadataPanel(appContext.getProperty("species.label.title"),
-                    true,
-                    appContext.getProperty("species.combobox.default.selection"),
-                    appContext.getProperty("species.combobox.other.species"),
-                    appContext.getProperty("species.combobox.default.species.file"),
-                    Constant.NEWT,
-                    speciesTableModel);
-            form.remove(form.getSpeciesPanel());
-            form.setSpeciesPanel(speciesPanel);
-            form.setSpeciesTableModel(speciesTableModel);
-            form.add(speciesPanel);
-
-            MetaDataTableModel quantTableModel = new MetaDataTableModel();
-            JPanel quantPanel = form.initMetadataPanel(appContext.getProperty("quantification.label.title"),
-                    true,
-                    appContext.getProperty("quantification.combobox.default.selection"),
-                    null,
-                    appContext.getProperty("quantification.combobox.default.quantification.file"),
-                    Constant.PRIDE,
-                    quantTableModel);
-            form.remove(form.getQuantPanel());
-            form.setQuantPanel(quantPanel);
-            form.setQuantTableModel(quantTableModel);
-            form.add(quantPanel);
-
-//            MetaDataTableModel modTableModel = new MetaDataTableModel();
-//            JPanel modPanel = form.initMetadataPanel(appContext.getProperty("modification.label.title"),
-//                    true,
-//                    appContext.getProperty("modification.combobox.default.selection"),
-//                    null,
-//                    appContext.getProperty("modification.combobox.default.modification.file"),
-//                    Constant.PRIDE,
-//                    modTableModel);
-            form.remove(form.getModificationPanel());
-//            form.setModificationPanel(modPanel);
-//            form.setModificationTableModel(modTableModel);
-//            form.add(modPanel);
-
-
-        } else {
+        
+        // Only initialize panels if they don't exist
+        if (form.getModificationPanel() == null || form.getQuantPanel() == null) {
             MetaDataTableModel instrumentTableModel = new MetaDataTableModel();
             JPanel instrumentPanel = form.initMetadataPanel(appContext.getProperty("instrument.label.title"),
                     true,
@@ -135,32 +72,63 @@ public class AdditionalMetaDataDescriptor extends ContextAwareNavigationPanelDes
             form.setSpeciesTableModel(speciesTableModel);
             form.add(speciesPanel);
 
-            MetaDataTableModel quantTableModel = new MetaDataTableModel();
-            JPanel quantPanel = form.initMetadataPanel(appContext.getProperty("quantification.label.title"),
-                    true,
-                    appContext.getProperty("quantification.combobox.default.selection"),
-                    appContext.getProperty("quantification.combobox.other.quantification"),
-                    appContext.getProperty("quantification.combobox.default.quantification.file"),
-                    Constant.PRIDE,
-                    quantTableModel);
-            form.remove(form.getQuantPanel());
-            form.setQuantPanel(quantPanel);
-            form.setQuantTableModel(quantTableModel);
-            form.add(quantPanel);
+            // Only add quantification and modification panels for affinity type
+            if (appContext.getSubmissionType().getName().equals(SubmissionTypeConstants.AFFINITY.name())) {
+                MetaDataTableModel quantTableModel = new MetaDataTableModel();
+                JPanel quantPanel = form.initMetadataPanel(appContext.getProperty("quantification.label.title"),
+                        true,
+                        appContext.getProperty("quantification.combobox.default.selection"),
+                        appContext.getProperty("quantification.combobox.other.quantification"),
+                        appContext.getProperty("quantification.combobox.default.quantification.file"),
+                        Constant.PRIDE,
+                        quantTableModel);
+                form.remove(form.getQuantPanel());
+                form.setQuantPanel(quantPanel);
+                form.setQuantTableModel(quantTableModel);
+                form.add(quantPanel);
 
-            MetaDataTableModel modTableModel = new MetaDataTableModel();
-            JPanel modPanel = form.initMetadataPanel(appContext.getProperty("modification.label.title"),
-                    true,
-                    appContext.getProperty("modification.combobox.default.selection"),
-                    appContext.getProperty("modification.combobox.other.modification"),
-                    appContext.getProperty("modification.combobox.default.modification.file"),
-                    Constant.PRIDE,
-                    modTableModel);
-            form.remove(form.getModificationPanel());
-            form.setModificationPanel(modPanel);
-            form.setModificationTableModel(modTableModel);
-            form.add(modPanel);
+                MetaDataTableModel modTableModel = new MetaDataTableModel();
+                JPanel modPanel = form.initMetadataPanel(appContext.getProperty("modification.label.title"),
+                        true,
+                        appContext.getProperty("modification.combobox.default.selection"),
+                        appContext.getProperty("modification.combobox.other.modification"),
+                        appContext.getProperty("modification.combobox.default.modification.file"),
+                        Constant.PRIDE,
+                        modTableModel);
+                form.remove(form.getModificationPanel());
+                form.setModificationPanel(modPanel);
+                form.setModificationTableModel(modTableModel);
+                form.add(modPanel);
+            } else {
+                // For non-affinity types, remove these panels if they exist
+                if (form.getQuantPanel() != null) {
+                    form.remove(form.getQuantPanel());
+                    form.setQuantPanel(null);
+                    form.setQuantTableModel(null);
+                }
+                if (form.getModificationPanel() != null) {
+                    form.remove(form.getModificationPanel());
+                    form.setModificationPanel(null);
+                    form.setModificationTableModel(null);
+                }
+            }
         }
+
+        // Set the data after ensuring panels exist
+        if (metaData != null) {
+            form.setSpecies(metaData.getSpecies());
+            form.setTissues(metaData.getTissues());
+            form.setCellTypes(metaData.getCellTypes());
+            form.setDiseases(metaData.getDiseases());
+            form.setInstruments(metaData.getInstruments());
+            
+            // Only set modifications and quantifications for affinity type
+            if (appContext.getSubmissionType().getName().equals(SubmissionTypeConstants.AFFINITY.name())) {
+                form.setModifications(metaData.getModifications());
+                form.setQuantifications(metaData.getQuantifications());
+            }
+        }
+        
         firePropertyChange(BEFORE_DISPLAY_PANEL_PROPERTY, false, true);
     }
 
