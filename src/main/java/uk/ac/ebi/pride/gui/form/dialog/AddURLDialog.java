@@ -18,6 +18,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 
 /**
@@ -186,7 +187,8 @@ public class AddURLDialog extends ContextAwareDialog {
                     if (type != null) {
                         // create a new data file
                         try {
-                            ((AppContext) App.getInstance().getDesktopContext()).addDataFile(new DataFile(new URL(url), (ProjectFileType) type));
+                            URL fileUrl = URI.create(url).toURL();
+                            ((AppContext) App.getInstance().getDesktopContext()).addDataFile(new DataFile(fileUrl, (ProjectFileType) type));
                             AddURLDialog.this.dispose();
                         } catch (MalformedURLException e1) {
                             showWarning(urlTextField, TEXT_FIELD_WARNING_MESSAGE);

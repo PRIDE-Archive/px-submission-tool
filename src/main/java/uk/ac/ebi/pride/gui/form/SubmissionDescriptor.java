@@ -28,9 +28,8 @@ import javax.help.HelpBroker;
 import javax.swing.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.List;
-import java.util.Observable;
-import java.util.Observer;
 
 /**
  * Navigation descriptor for submission form
@@ -40,6 +39,7 @@ import java.util.Observer;
  */
 public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor implements PropertyChangeListener {
     private static final Logger logger = LoggerFactory.getLogger(SubmissionDescriptor.class);
+    private static final String FEEDBACK_SUBMITTED = "feedbackSubmitted";
 
     /**
      * Listen to get ftp detail task
@@ -57,20 +57,18 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
     private CreateFTPDirectoryTaskListener createFTPDirectoryTaskListener;
 
     /**
-     * Listen to completion of the submission task
+     * Listen to complete submission task
      */
     private CompleteSubmissionTaskListener completeSubmissionTaskListener;
 
     /**
-     * This is the controller that will take care of the feedback submission from the point of view of a Descriptor
+     * Feedback descriptor
      */
     private FeedbackDescriptor feedbackDescriptor;
 
-    /**
-     * State indicates whether a submission has finished
-     */
     private boolean isFinished = false;
     private boolean isSucceed = false;
+    private final PropertyChangeSupport propertyChangeSupport = new PropertyChangeSupport(this);
 
     public SubmissionDescriptor(String id, String title, String desc) {
         super(id, title, desc, new SubmissionForm());
@@ -87,14 +85,12 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         form.addPropertyChangeListener(this);
     }
 
-    /**
-     * Method to be performed to show help document
-     * Override this method to add help functionality
-     */
     @Override
     public void getHelp() {
-        HelpBroker hb = appContext.getMainHelpBroker();
-        hb.showID("help.submission", "javax.help.SecondaryWindow", "main");
+        HelpBroker helpBroker = appContext.getMainHelpBroker();
+        if (helpBroker != null) {
+            helpBroker.setCurrentID("help.submission");
+        }
     }
 
     @Override
@@ -102,7 +98,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         logger.debug("Before displaying the submission panel");
 
         final String resubmissionPxAccession = appContext.getSubmissionRecord().getSubmission().getProjectMetaData().getResubmissionPxAccession();
-        if(resubmissionPxAccession != null){
+        if (resubmissionPxAccession != null) {
             final String newTitle = "Step 5: " + appContext.getProperty("submission.nav.desc.title") + " (5/5)";
             super.setTitle(newTitle);
         }
@@ -127,9 +123,9 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
     public UploadDetail updateAndGetPreviousUploadDetail() {
         UploadDetail uploadDetail = appContext.getSubmissionRecord().getUploadDetail();
         UploadMethod userSelectedUploadMethod = appContext.getUploadMethod();
-        if(uploadDetail!=null && !userSelectedUploadMethod.equals(uploadDetail.getMethod())){
+        if (uploadDetail != null && !userSelectedUploadMethod.equals(uploadDetail.getMethod())) {
             uploadDetail.setMethod(userSelectedUploadMethod);
-            if(userSelectedUploadMethod.equals(UploadMethod.FTP)){
+            if (userSelectedUploadMethod.equals(UploadMethod.FTP)) {
                 uploadDetail.setHost("ftp-private.ebi.ac.uk");
                 uploadDetail.setPort(21);
             } else {
@@ -149,7 +145,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         UploadMethod method;
         if (hasURLBasedDataFiles || uploadProtocol.equalsIgnoreCase(Constant.FTP)) {
             method = UploadMethod.FTP;
-            if(appContext.getSubmissionRecord().getUploadDetail()!=null){
+            if (appContext.getSubmissionRecord().getUploadDetail() != null) {
                 appContext.getSubmissionRecord().setUploadDetail(updateAndGetPreviousUploadDetail());
             }
         } else {
@@ -281,6 +277,18 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
 
             // set uploading message
             form.setUploadMessage(appContext.getProperty("upload.default.message"));
+        } else if (FEEDBACK_SUBMITTED.equals(evtName)) {
+            // Handle feedback submitted event
+            Boolean feedbackSubmitted = (Boolean) evt.getNewValue();
+            if (feedbackSubmitted) {
+                // Handle feedback submission
+                logger.debug("Feedback submitted");
+                // Implementation of handling feedback submission
+            } else {
+                // Handle feedback not submitted
+                logger.debug("Feedback not submitted");
+                // Implementation of handling feedback not submitted
+            }
         }
     }
 
@@ -343,7 +351,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         private void handleErrorMessage(UploadErrorMessage message) {
             logger.debug("Handle error message: {}", message.getMessage());
             SubmissionForm form = (SubmissionForm) SubmissionDescriptor.this.getNavigationPanel();
-            final String type = (appContext.getUploadMethod()!=null)?appContext.getUploadMethod().toString():Constant.ASPERA;
+            final String type = (appContext.getUploadMethod() != null) ? appContext.getUploadMethod().toString() : Constant.ASPERA;
             if (type.equals(Constant.ASPERA)) {
                 JOptionPane.showConfirmDialog(app.getMainFrame(),
                         appContext.getProperty("upload.aspera.error.message"),
@@ -418,32 +426,31 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
     /**
      * Feedback form Controller, at descriptor level
      */
-    private class FeedbackDescriptor implements Observer {
-        // Form controlled by this descriptor
+    private class FeedbackDescriptor implements PropertyChangeListener {
         private FeedbackFormController fbfController;
+        private final PropertyChangeSupport feedbackPropertyChangeSupport = new PropertyChangeSupport(this);
 
         private boolean isFormSet() {
             return fbfController != null;
         }
 
-        /**
-         * This method performs the necessary clean and reset actions originally performed by the CompleteSubmissionTaskListener
-         */
         private void cleanData() {
-            // removing submission record
-            SubmissionRecordSerializer.remove();
-            // reset application context
-            appContext.resetDataFileEntryCount();
-            appContext.setResubmission(false);
-            SubmissionRecord newSubmissionRecord = new SubmissionRecord();
-            newSubmissionRecord.getSubmission().getProjectMetaData().setSubmissionType(SubmissionTypeConstants.COMPLETE);
-            appContext.setSubmissionRecord(newSubmissionRecord);
+            if (isFormSet()) {
+                // removing submission record
+                SubmissionRecordSerializer.remove();
+                // reset application context
+                appContext.resetDataFileEntryCount();
+                appContext.setResubmission(false);
+                SubmissionRecord newSubmissionRecord = new SubmissionRecord();
+                newSubmissionRecord.getSubmission().getProjectMetaData().setSubmissionType(SubmissionTypeConstants.COMPLETE);
+                appContext.setSubmissionRecord(newSubmissionRecord);
+            }
         }
 
         private boolean submitFeedback() {
-            // If we haven't shown the feedback form, it is ok to change panel
-            if (!isFormSet())
+            if (!isFormSet()) {
                 return true;
+            }
             if (fbfController.doSubmitFeedback(new FeedbackSubmissionDescriptorTaskListener())) {
                 cleanData();
                 return true;
@@ -473,37 +480,30 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         public void setFeedbackFormController(FeedbackFormController fbfController) {
             this.fbfController = fbfController;
             logger.debug("Registering for listening to window close event");
-            ((App) App.getInstance()).getCloseWindowListener().addObserver(this);
+            app.getCloseWindowListener().addPropertyChangeListener(this);
         }
 
-        /**
-         * The main submission descriptor will delegate on this method whether to proceed or not with the given action
-         * request
-         *
-         * @return true if it is OK to proceed, false if not
-         */
         public boolean beforeHidingForPreviousPanel() {
             return submitFeedback();
         }
 
-        /**
-         * The main submission descriptor will delegate on this method whether to proceed or not with the given action
-         * request
-         *
-         * @return
-         */
         public boolean beforeHidingForNextPanel() {
             return submitFeedback();
         }
 
         @Override
-        public void update(Observable o, Object arg) {
-            // We have registered for just the close window subject, so we don't need to check which observer is
-            // notifying us
-            logger.debug("The user decided to close the application, let's see if we have feedback");
-            if (!submitFeedbackOnClose()) {
-                ((App) App.getInstance()).setDoNotCloseAppFlag();
+        public void propertyChange(PropertyChangeEvent evt) {
+            if (FEEDBACK_SUBMITTED.equals(evt.getPropertyName())) {
+                feedbackPropertyChangeSupport.firePropertyChange(FEEDBACK_SUBMITTED, null, evt.getNewValue());
             }
+        }
+
+        public void addPropertyChangeListener(PropertyChangeListener listener) {
+            feedbackPropertyChangeSupport.addPropertyChangeListener(listener);
+        }
+
+        public void removePropertyChangeListener(PropertyChangeListener listener) {
+            feedbackPropertyChangeSupport.removePropertyChangeListener(listener);
         }
 
         private class FeedbackSubmissionDescriptorTaskListener extends TaskListenerAdapter<Boolean, Void> {

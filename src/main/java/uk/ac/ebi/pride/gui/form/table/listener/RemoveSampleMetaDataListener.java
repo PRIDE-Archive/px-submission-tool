@@ -16,8 +16,8 @@ import java.awt.event.MouseEvent;
  * @version $Id$
  */
 public class RemoveSampleMetaDataListener extends MouseAdapter {
-    private JTable table;
-    private String colHeader;
+    private final JTable table;
+    private final String colHeader;
 
     public RemoveSampleMetaDataListener(JTable table, String colHeader) {
         this.table = table;
@@ -32,6 +32,7 @@ public class RemoveSampleMetaDataListener extends MouseAdapter {
             int row = table.rowAtPoint(e.getPoint());
             if (row >= 0 && row < table.getRowCount()) {
                 SampleMetaDataTableModel tableModel = (SampleMetaDataTableModel) table.getModel();
+                @SuppressWarnings("unchecked")
                 Tuple<SampleMetaData.Type, CvParam> tableEntry = (Tuple<SampleMetaData.Type, CvParam>) tableModel.getValueAt(row, col);
                 ((AppContext) App.getInstance().getDesktopContext()).removeSampleMetadataEntry(tableModel.getDataFile(), tableEntry.getKey(), tableEntry.getValue());
             }

@@ -55,7 +55,7 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
     /**
      * Handles uploading of files using Asopera
      *
-     * @throws FaspManagerException problems using the Aspera API to perform the upload
+     * @throws FaspManagerException         problems using the Aspera API to perform the upload
      * @throws UnsupportedEncodingException problems creating a temporary file
      */
     void asperaUpload() throws FaspManagerException, UnsupportedEncodingException {
@@ -63,7 +63,7 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
         logger.debug("Aspera binary location {}", ascpLocation);
         File executable = new File(ascpLocation);
         XferParams defaultTransferParams = getDefaultTransferParams();
-        PersistedAsperaFileUploader uploader = new PersistedAsperaFileUploader(executable);
+        PersistedAsperaFileUploader uploader = new PersistedAsperaFileUploader(executable, submissionRecord);
         uploader.addTransferListener(this);
         final UploadDetail uploadDetail = submissionRecord.getUploadDetail();
         final DropBoxDetail dropBox = uploadDetail.getDropBox();
@@ -98,12 +98,13 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
         xferParams.persist = true;
         return xferParams;
     }
+
     /**
      * Processes a file session event.
      *
      * @param transferEvent the transfer event
-     * @param sessionStats the session status
-     * @param fileInfo the file information
+     * @param sessionStats  the session status
+     * @param fileInfo      the file information
      */
     @Override
     public void fileSessionEvent(TransferEvent transferEvent, SessionStats sessionStats, FileInfo fileInfo) {
@@ -150,7 +151,7 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                     publish(new UploadProgressMessage(this, null, totalFileSize, totalFileSize, totalNumOfFiles, totalNumOfFiles));
                     finishedFileCount++;
                     String[] fileNameArray = fileInfo.getName().split("/");
-                    logger.info("File {} uploaded successfully" , fileNameArray[fileNameArray.length-1]);
+                    logger.info("File {} uploaded successfully", fileNameArray[fileNameArray.length - 1]);
                     // last file has finished uploading, add a new one
                     if (filesToSubmitIter.hasNext()) {
                         File file = filesToSubmitIter.next();
