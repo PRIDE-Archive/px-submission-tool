@@ -294,6 +294,22 @@
             <version>2.7.0</version>
             <scope>test</scope>
         </dependency>
+        <!-- Add Spring Core -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+            <version>5.3.20</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>5.3.20</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-beans</artifactId>
+            <version>5.3.20</version>
+        </dependency>
 
     </dependencies>
 
@@ -378,22 +394,17 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>3.7.1</version>
                 <configuration>
+                    <appendAssemblyId>false</appendAssemblyId>
                     <descriptors>
-                        <descriptor>assembly.xml</descriptor>
+                        <descriptor>${project.basedir}/assembly.xml</descriptor>
                     </descriptors>
-                    <archive>
-                        <manifest>
-                            <mainClass>uk.ac.ebi.pride.App</mainClass>
-                        </manifest>
-                    </archive>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>make-assembly</id>
+                        <id>assembly</id>
                         <phase>package</phase>
                         <goals>
                             <goal>single</goal>
