@@ -1,85 +1,33 @@
-<assembly>
-
-    <id>px-submission-tool-deployment</id>
-
+<?xml version="1.0" encoding="UTF-8"?>
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.1.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.1.0 http://maven.apache.org/xsd/assembly-2.1.0.xsd">
+    <id>dist</id>
     <formats>
         <format>zip</format>
     </formats>
-
     <includeBaseDirectory>false</includeBaseDirectory>
-
-    <dependencySets>
-        <dependencySet>
-            <outputDirectory>${assembly.dir}/lib</outputDirectory>
-            <unpack>false</unpack>
-            <scope>runtime</scope>
-            <outputFileNameMapping>${artifact.artifactId}-${artifact.baseVersion}.${artifact.extension}
-            </outputFileNameMapping>
-        </dependencySet>
-    </dependencySets>
-
     <fileSets>
         <fileSet>
-            <directory>${project.basedir}/target</directory>
+            <directory>${project.build.directory}</directory>
+            <outputDirectory>/</outputDirectory>
             <includes>
                 <include>*.jar</include>
             </includes>
-            <outputDirectory>${assembly.dir}</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}</directory>
-            <outputDirectory>${assembly.dir}/log</outputDirectory>
-            <excludes>
-                <exclude>**/*</exclude>
-            </excludes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/help</directory>
+            <directory>src/main/resources</directory>
+            <outputDirectory>/</outputDirectory>
             <includes>
-                <include>*</include>
+                <include>**/*</include>
             </includes>
-            <outputDirectory>${assembly.dir}/help</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/readme</directory>
-            <includes>
-                <include>*</include>
-            </includes>
-            <outputDirectory>${assembly.dir}</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/config</directory>
-            <outputDirectory>${assembly.dir}/config</outputDirectory>
-            <includes>
-                <include>**/**</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/aspera/bin</directory>
-            <outputDirectory>${assembly.dir}/aspera/bin</outputDirectory>
-            <includes>
-                <include>**/**</include>
-            </includes>
-            <fileMode>0755</fileMode>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/aspera/etc</directory>
-            <outputDirectory>${assembly.dir}/aspera/etc</outputDirectory>
-            <includes>
-                <include>**/**</include>
-            </includes>
-            <fileMode>0644</fileMode>
-        </fileSet>
-        <!-- Include access keys for Google API -->
-        <fileSet>
-            <directory>${project.basedir}/src/main/unfilteredResources/keyFiles</directory>
-            <outputDirectory>${assembly.dir}/keyFiles</outputDirectory>
-            <includes>
-                <include>**/**</include>
-            </includes>
-            <excludes>
-                <exclude>**/empty</exclude>
-            </excludes>
         </fileSet>
     </fileSets>
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>/lib</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+            <scope>runtime</scope>
+        </dependencySet>
+    </dependencySets>
 </assembly>
