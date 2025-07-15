@@ -5,19 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.utilities.util.IOUtilities;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.PrintStream;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketAddress;
-import java.net.SocketTimeoutException;
-import java.net.URL;
-import java.net.UnknownHostException;
+import java.io.*;
+import java.net.*;
 import java.util.Properties;
 
 /**
@@ -41,10 +30,12 @@ public class AppBootstrap {
     }
 
     private void callCommand(StringBuilder cmdBuffer) {
+        String[] cmdArray = cmdBuffer.toString().split(" ");
+        ProcessBuilder processBuilder = new ProcessBuilder(cmdArray);
         Process process;
         try {
             logger.info(cmdBuffer.toString());
-            process = Runtime.getRuntime().exec(cmdBuffer.toString());
+            process = processBuilder.start();
 
             StreamProxy errorStreamProxy = new StreamProxy(process.getErrorStream(), System.err);
             StreamProxy outStreamProxy = new StreamProxy(process.getInputStream(), System.out);

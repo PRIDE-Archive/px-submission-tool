@@ -10,6 +10,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -47,7 +48,7 @@ public class UpdateChecker {
         boolean toUpdate = false;
         BufferedReader reader = null;
         try {
-            URL url = new URL(updateUrl); // get the url for checking the update
+            URL url = URI.create(updateUrl).toURL();
             int response = ((HttpURLConnection) url.openConnection()).getResponseCode();  // connect to the url
             if (response != 404) {
                 // parse the web page

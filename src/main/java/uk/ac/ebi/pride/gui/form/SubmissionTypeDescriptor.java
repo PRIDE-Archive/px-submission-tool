@@ -141,7 +141,7 @@ public class SubmissionTypeDescriptor extends ContextAwareNavigationPanelDescrip
                     appContext.setSubmissionRecord(submissionRecord);
 
                     String resubmissionAccession = submissionRecord.getSubmission().getProjectMetaData().getResubmissionPxAccession();
-                    if(resubmissionAccession!=null && !resubmissionAccession.equals("")){
+                    if (resubmissionAccession != null && !resubmissionAccession.equals("")) {
                         appContext.setResubmission(true);
                     } else {
                         appContext.setResubmission(false);
@@ -162,7 +162,7 @@ public class SubmissionTypeDescriptor extends ContextAwareNavigationPanelDescrip
     @Override
     public void succeed(TaskEvent<Boolean> booleanTaskEvent) {
         Boolean hasUpdate = booleanTaskEvent.getValue();
-        if (hasUpdate) {
+        if (hasUpdate != null && hasUpdate) {
             UpdateChecker.showUpdateDialog();
         }
         updateChecked = true;
@@ -170,30 +170,37 @@ public class SubmissionTypeDescriptor extends ContextAwareNavigationPanelDescrip
 
     @Override
     public void started(TaskEvent<Void> event) {
+        // No implementation needed
     }
 
     @Override
     public void process(TaskEvent<List<Void>> listTaskEvent) {
+        // No implementation needed
     }
 
     @Override
     public void finished(TaskEvent<Void> event) {
+        // No implementation needed
     }
 
     @Override
     public void failed(TaskEvent<Throwable> event) {
+        logger.error("Task failed", event.getValue());
     }
 
     @Override
     public void cancelled(TaskEvent<Void> event) {
+        // No implementation needed
     }
 
     @Override
-    public void interrupted(TaskEvent<InterruptedException> iex) {
+    public void interrupted(TaskEvent<InterruptedException> event) {
+        logger.warn("Task interrupted", event.getValue());
     }
 
     @Override
-    public void progress(TaskEvent<Integer> progress) {
+    public void progress(TaskEvent<Integer> event) {
+        // No implementation needed
     }
 
     private class TrainingModeListener implements PropertyChangeListener {

@@ -6,23 +6,17 @@ import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
-
-import uk.ac.ebi.pride.data.model.ProjectMetaData;
-import uk.ac.ebi.pride.data.util.AffinityFileFormat;
 import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.SampleMetaData;
 import uk.ac.ebi.pride.data.model.Submission;
+import uk.ac.ebi.pride.data.util.AffinityFileFormat;
 import uk.ac.ebi.pride.data.util.FileUtil;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
 import uk.ac.ebi.pride.data.validation.SubmissionValidator;
 import uk.ac.ebi.pride.data.validation.ValidationMessage;
 import uk.ac.ebi.pride.data.validation.ValidationReport;
-import uk.ac.ebi.pride.gui.util.Constant;
-import uk.ac.ebi.pride.gui.util.DataFileValidationMessage;
-import uk.ac.ebi.pride.gui.util.PrideConverterSupport;
-import uk.ac.ebi.pride.gui.util.ValidationState;
-import uk.ac.ebi.pride.gui.util.WarningMessageGenerator;
+import uk.ac.ebi.pride.gui.util.*;
 import uk.ac.ebi.pride.jaxb.model.CvParam;
 import uk.ac.ebi.pride.jaxb.model.SampleDescription;
 import uk.ac.ebi.pride.jaxb.xml.unmarshaller.PrideXmlUnmarshaller;
@@ -35,21 +29,13 @@ import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import javax.xml.bind.JAXBException;
 import java.awt.*;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -135,31 +121,31 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         boolean noResultFile = resultDataFiles.isEmpty();
 
         boolean hasAdatFile = submission.getDataFiles().stream().anyMatch(dataFile ->
-            FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.ADAT.getFileExtension()) ||
-                    FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.BCL.getFileExtension()));
+                FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.ADAT.getFileExtension()) ||
+                        FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.BCL.getFileExtension()));
 
         boolean hasNpxFile = submission.getDataFiles().stream().anyMatch(dataFile ->
                 dataFile.getFileName().endsWith(AffinityFileFormat.NPX.getFileExtension()) ||
                         dataFile.getFileName().endsWith(AffinityFileFormat.PARQUET_RESULT.getFileExtension()));
 
-        if(((hasAdatFile || hasNpxFile) && !submissionType.equals(SubmissionTypeConstants.AFFINITY))
-                || (!hasAdatFile && !hasNpxFile && submissionType.equals(SubmissionTypeConstants.AFFINITY))){
-            if(!submissionType.equals(SubmissionTypeConstants.AFFINITY)){
+        if (((hasAdatFile || hasNpxFile) && !submissionType.equals(SubmissionTypeConstants.AFFINITY))
+                || (!hasAdatFile && !hasNpxFile && submissionType.equals(SubmissionTypeConstants.AFFINITY))) {
+            if (!submissionType.equals(SubmissionTypeConstants.AFFINITY)) {
                 return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSubmissionType(hasAdatFile || hasNpxFile));
             }
             return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSubmissionType(hasAdatFile || hasNpxFile));
         }
 
-        if(submissionType.equals(SubmissionTypeConstants.AFFINITY)){
-            if(submission.getProjectMetaData().getMassSpecExperimentMethods().stream().anyMatch(
+        if (submissionType.equals(SubmissionTypeConstants.AFFINITY)) {
+            if (submission.getProjectMetaData().getMassSpecExperimentMethods().stream().anyMatch(
                     cvParam -> cvParam.getAccession().equals(OLINK_EXP) && hasAdatFile
-            )){
+            )) {
                 return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidExpMethod(OLINK_EXP));
             }
 
-            if(submission.getProjectMetaData().getMassSpecExperimentMethods().stream().anyMatch(
+            if (submission.getProjectMetaData().getMassSpecExperimentMethods().stream().anyMatch(
                     cvParam -> cvParam.getAccession().equals(SOMASCAN_EXP) && hasNpxFile
-            )){
+            )) {
                 return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidExpMethod(SOMASCAN_EXP));
             }
         }
@@ -269,30 +255,29 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
 //                }
                 setProgress(80);
             }
-        }
-        else if (submissionType.equals(SubmissionTypeConstants.PARTIAL) || submissionType.equals(SubmissionTypeConstants.AFFINITY)) {
+        } else if (submissionType.equals(SubmissionTypeConstants.PARTIAL) || submissionType.equals(SubmissionTypeConstants.AFFINITY)) {
             // should have both search engine output and raw files
             if (noSearchFile || noRawFile) {
-                if(!submissionType.equals(SubmissionTypeConstants.AFFINITY)){
+                if (!submissionType.equals(SubmissionTypeConstants.AFFINITY)) {
                     return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMissedFileWarning(submissionType, !noResultFile, !noSearchFile, !noRawFile));
                 }
             }
             setProgress(40);
 
-            if(hasNpxFile){
+            if (hasNpxFile) {
                 List<DataFile> npxFiles = submission.getDataFiles().stream()
-                        .filter(dataFile ->dataFile.getFileName()
+                        .filter(dataFile -> dataFile.getFileName()
                                 .endsWith(AffinityFileFormat.NPX.getFileExtension())).collect(Collectors.toList());
-                for(DataFile npxFile : npxFiles)    {
-                    if(!NPXValidationTask.validate(npxFile.getFile())){
+                for (DataFile npxFile : npxFiles) {
+                    if (!NPXValidationTask.validate(npxFile.getFile())) {
                         return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidFileWarning(npxFile.getFileName()));
                     }
                 }
                 List<DataFile> npxParquetFiles = submission.getDataFiles().stream()
-                        .filter(dataFile ->dataFile.getFileName()
+                        .filter(dataFile -> dataFile.getFileName()
                                 .endsWith(AffinityFileFormat.PARQUET_RESULT.getFileExtension())).collect(Collectors.toList());
-                for(DataFile npxParquetFile : npxParquetFiles)    {
-                    if(!ParquetValidationTask.validate(npxParquetFile.getFile())){
+                for (DataFile npxParquetFile : npxParquetFiles) {
+                    if (!ParquetValidationTask.validate(npxParquetFile.getFile())) {
                         return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidFileWarning(npxParquetFile.getFileName()));
                     }
                 }
@@ -328,12 +313,11 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             setProgress(85);
 
             if (submissionType.equals(SubmissionTypeConstants.AFFINITY)) {
-                appContext.addMassSpecExperimentMethod( new uk.ac.ebi.pride.data.model.CvParam("PRIDE","PRIDE:0000635","Affinity proteomics","Affinity proteomics")
+                appContext.addMassSpecExperimentMethod(new uk.ac.ebi.pride.data.model.CvParam("PRIDE", "PRIDE:0000635", "Affinity proteomics", "Affinity proteomics")
                 );
             }
 
-        }
-        else {
+        } else {
             // must have raw files
             if (noRawFile) {
                 return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getMissedFileWarning(submissionType, !noResultFile, !noSearchFile, !noRawFile));
@@ -462,11 +446,11 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 submission.getDataFiles()) {
             try {
                 // If the datafile is not a file, it is a URL
-                URL dataFileToAdd = (dataFile.isFile() ? new URL("file://" + dataFile.getFilePath().toString()) : dataFile.getUrl());
+                URL dataFileToAdd = (dataFile.isFile() ? Paths.get(dataFile.getFilePath().toString()).toUri().toURL() : dataFile.getUrl());
                 // We only care about file names
                 dataFiles.put(FilenameUtils.getName(dataFileToAdd.toString().toLowerCase()), dataFile);
             } catch (MalformedURLException e) {
-                logger.error("PLEASE, REVIEW file reference '" + dataFile.getFilePath().toString() + "' as it could not be parsed as a URL, by adding 'file://' protocol");
+                logger.error("PLEASE, REVIEW file reference '" + dataFile.getFilePath().toString() + "' as it could not be parsed as a URL");
             }
         }
         for (DataFile mzTabFile : mzTabDataFiles) {
@@ -553,7 +537,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
 
             try (BufferedReader reader = Files.newBufferedReader(Paths.get(dataFile.getFilePath()));
                  Stream<String> lineStream = reader.lines()) {
-              List<String> lines = lineStream.collect(Collectors.toList());
+                List<String> lines = lineStream.collect(Collectors.toList());
                 if (lines.isEmpty()) {
                     throw new IllegalArgumentException("The file is empty.");
                 }
@@ -742,8 +726,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                         result.setMztab(true);
                     }
                 }
-            }
-            else if (ProjectFileType.RAW.equals(fileType)) {
+            } else if (ProjectFileType.RAW.equals(fileType)) {
                 if (!isValidRawCompressedFile(dataFile)) {
                     result.setUnsupportedRawFile(true);
                 } else {
@@ -752,7 +735,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                         result.setImagingRawFile(true);
                     }
                 }
-            } else if (ProjectFileType.SEARCH.equals(fileType)) {
+            } else if (ProjectFileType.SEARCH.equals(fileType) && !submission.getProjectMetaData().getSubmissionType().equals(SubmissionTypeConstants.AFFINITY)) {
                 if (PrideConverterSupport.isSupported(dataFile)) {
                     result.setSupportedSearchFile(true);
                 } else if (MassSpecFileFormat.PRIDE.equals(fileFormat) || MassSpecFileFormat.MZIDENTML.equals(fileFormat)) {

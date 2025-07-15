@@ -15,7 +15,7 @@ java -jar px-submission-xxx.jar
 NOTE: replace xxx with the correct version number
 
 === System Requirements ===
-1. Java: JRE 1.6 +
+1. Java: JDK 21 +
 2. CPU: 1 gigahertz (GHz) or faster 32-bit or 64-bit processor
 3. Memory: 100 Megabyte (MB) RAM
 3. Hard Disk: 50 MB available
