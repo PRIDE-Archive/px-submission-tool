@@ -9,12 +9,6 @@
     <name>px-submission-tool</name>
     <url>https://github.com/proteomexchange/px-submission-tool</url>
 
-    <parent>
-        <groupId>uk.ac.ebi.pride.architectural</groupId>
-        <artifactId>pride-core</artifactId>
-        <version>1.0.1</version>
-    </parent>
-
     <developers>
         <developer>
             <id>tobias</id>
