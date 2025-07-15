@@ -1,8 +1,6 @@
 package uk.ac.ebi.pride.gui.form.panel;
 
 import com.google.common.io.Files;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
@@ -16,12 +14,8 @@ import uk.ac.ebi.pride.gui.form.SummaryDescriptor;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwarePanel;
 import uk.ac.ebi.pride.gui.form.dialog.ValidationProgressDialog;
 import uk.ac.ebi.pride.gui.util.BalloonTipUtil;
-import uk.ac.ebi.pride.gui.util.ValidationReportHTMLFormatUtil;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
-import uk.ac.ebi.pride.toolsuite.pgconverter.MainApp;
-import uk.ac.ebi.pride.toolsuite.pgconverter.Validator;
-import uk.ac.ebi.pride.toolsuite.pgconverter.utils.Report;
 
 import javax.swing.*;
 import java.awt.*;
@@ -30,15 +24,11 @@ import java.awt.event.ActionListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
-import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-
-import static uk.ac.ebi.pride.toolsuite.pgconverter.utils.Utility.*;
 
 
 /**
@@ -241,28 +231,28 @@ public class SummaryItemPanel extends ContextAwarePanel
         }
     }
 
-    /**
-     * This method validate the results files before they get submitted. It construct the commands to
-     * call ms-data-core-api to validate results files along with peak files
-     */
-    private void validateFiles() {
-        String validationHTMLReport = "";
-        List<String[]> validationCommands = new ArrayList<>();
-        List<DataFile> dataFiles = submission.getDataFiles();
-        dataFiles = filterByFileScanDepth(dataFiles);
-
-        for (DataFile dataFile : dataFiles) {
-            if (dataFile.getFileType().equals(ProjectFileType.RESULT)) {
-                validationCommands.add(constructValidationCommand(dataFile, dataFile.getFileFormat()));
-                validationHTMLReport += "\n\n";
-            }
-        }
-        List<Report> reports = runValidationCommands(validationCommands);
-        ValidationReportHTMLFormatUtil formatUtil = new ValidationReportHTMLFormatUtil();
-        validationHTMLReport = formatUtil.getValidationReportInHTML(submission, reports).toString();
-        ValidationReportFrame validationReport = new ValidationReportFrame(validationHTMLReport);
-        validationReport.open();
-    }
+//    /**
+//     * This method validate the results files before they get submitted. It construct the commands to
+//     * call ms-data-core-api to validate results files along with peak files
+//     */
+//    private void validateFiles() {
+//        String validationHTMLReport = "";
+//        List<String[]> validationCommands = new ArrayList<>();
+//        List<DataFile> dataFiles = submission.getDataFiles();
+//        dataFiles = filterByFileScanDepth(dataFiles);
+//
+//        for (DataFile dataFile : dataFiles) {
+//            if (dataFile.getFileType().equals(ProjectFileType.RESULT)) {
+//                validationCommands.add(constructValidationCommand(dataFile, dataFile.getFileFormat()));
+//                validationHTMLReport += "\n\n";
+//            }
+//        }
+//        List<Report> reports = runValidationCommands(validationCommands);
+//        ValidationReportHTMLFormatUtil formatUtil = new ValidationReportHTMLFormatUtil();
+//        validationHTMLReport = formatUtil.getValidationReportInHTML(submission, reports).toString();
+//        ValidationReportFrame validationReport = new ValidationReportFrame(validationHTMLReport);
+//        validationReport.open();
+//    }
 
     private List<DataFile> filterByFileScanDepth(List<DataFile> dataFiles) {
         List<DataFile> filteredDataFiles = new ArrayList<>();
@@ -322,70 +312,70 @@ public class SummaryItemPanel extends ContextAwarePanel
         return isQualified;
     }
 
-    /**
-     * This method is a command method to construct mzIdentML, MzTab or PRIDEXML validations using
-     * validation tools on ms-data-core-api
-     *
-     * @param dataFile
-     * @param fileFormat
-     * @return
-     */
-    private String[] constructValidationCommand(DataFile dataFile, MassSpecFileFormat fileFormat) {
-        File reportFile;
-        boolean isFirstPeakFile = true;
-        List<String> command = new ArrayList<>();
-        String arg_format =
-                (!fileFormat.equals(MassSpecFileFormat.PRIDE)) ? fileFormat.getFileExtension() : "pridexml";
+//    /**
+//     * This method is a command method to construct mzIdentML, MzTab or PRIDEXML validations using
+//     * validation tools on ms-data-core-api
+//     *
+//     * @param dataFile
+//     * @param fileFormat
+//     * @return
+//     */
+//    private String[] constructValidationCommand(DataFile dataFile, MassSpecFileFormat fileFormat) {
+//        File reportFile;
+//        boolean isFirstPeakFile = true;
+//        List<String> command = new ArrayList<>();
+//        String arg_format =
+//                (!fileFormat.equals(MassSpecFileFormat.PRIDE)) ? fileFormat.getFileExtension() : "pridexml";
+//
+//        try {
+//            reportFile = File.createTempFile("testResultFile", ".log");
+//            command.add("-" + ARG_VALIDATION);
+//            command.add("-" + arg_format);
+//            command.add(dataFile.getFilePath());
+//            if (!fileFormat.equals(MassSpecFileFormat.PRIDE)) {
 
-        try {
-            reportFile = File.createTempFile("testResultFile", ".log");
-            command.add("-" + ARG_VALIDATION);
-            command.add("-" + arg_format);
-            command.add(dataFile.getFilePath());
-            if (!fileFormat.equals(MassSpecFileFormat.PRIDE)) {
-//                for (DataFile mappingFile : dataFile.getFileMappings()) {
-//                    if (mappingFile.getFileType().equals(ProjectFileType.PEAK)) {
-//                        command.add(isFirstPeakFile ? "-" + ARG_PEAK : "##");
-//                        command.add(mappingFile.getFilePath());
-//                        isFirstPeakFile = false;
-//                    }
-//                }
-            }
-            if (fileFormat.equals(MassSpecFileFormat.MZIDENTML) && IS_FAST_VALIDATION_ENABLED) {
-                logger.debug("Fast Validation switched on");
-                command.add("-" + ARG_FAST_VALIDATION);
-            }
-            command.add("-" + ARG_SCHEMA_VALIDATION);
-            command.add("-" + ARG_SKIP_SERIALIZATION);
-            command.add("-" + ARG_REPORTFILE);
-            command.add(reportFile.getAbsolutePath());
-        } catch (IOException e) {
-            logger.error(
-                    "Error occurred in construction of MzIdentML validation command: " + e.getMessage());
-        }
-        return command.stream().toArray(String[]::new);
-    }
-
-    /**
-     * This method executes the validation commands
-     *
-     * @param validationCommands List of arrays of String
-     * @return String
-     */
-    private List<Report> runValidationCommands(List<String[]> validationCommands) {
-        List<Report> reports = new ArrayList<>();
-        try {
-            for (String[] args : validationCommands) {
-                CommandLine cmd = MainApp.parseArgs(args);
-                logger.debug("Running command: " + Arrays.toString(args));
-                reports.add(Validator.startValidation(cmd));
-            }
-        } catch (ParseException e) {
-            logger.error("File validation error: " + e.getMessage());
-        }
-        return reports;
-    }
-
+    /// /                for (DataFile mappingFile : dataFile.getFileMappings()) {
+    /// /                    if (mappingFile.getFileType().equals(ProjectFileType.PEAK)) {
+    /// /                        command.add(isFirstPeakFile ? "-" + ARG_PEAK : "##");
+    /// /                        command.add(mappingFile.getFilePath());
+    /// /                        isFirstPeakFile = false;
+    /// /                    }
+    /// /                }
+//            }
+//            if (fileFormat.equals(MassSpecFileFormat.MZIDENTML) && IS_FAST_VALIDATION_ENABLED) {
+//                logger.debug("Fast Validation switched on");
+//                command.add("-" + ARG_FAST_VALIDATION);
+//            }
+//            command.add("-" + ARG_SCHEMA_VALIDATION);
+//            command.add("-" + ARG_SKIP_SERIALIZATION);
+//            command.add("-" + ARG_REPORTFILE);
+//            command.add(reportFile.getAbsolutePath());
+//        } catch (IOException e) {
+//            logger.error(
+//                    "Error occurred in construction of MzIdentML validation command: " + e.getMessage());
+//        }
+//        return command.stream().toArray(String[]::new);
+//    }
+//
+//    /**
+//     * This method executes the validation commands
+//     *
+//     * @param validationCommands List of arrays of String
+//     * @return String
+//     */
+//    private List<Report> runValidationCommands(List<String[]> validationCommands) {
+//        List<Report> reports = new ArrayList<>();
+//        try {
+//            for (String[] args : validationCommands) {
+//                CommandLine cmd = MainApp.parseArgs(args);
+//                logger.debug("Running command: " + Arrays.toString(args));
+//                reports.add(Validator.startValidation(cmd));
+//            }
+//        } catch (ParseException e) {
+//            logger.error("File validation error: " + e.getMessage());
+//        }
+//        return reports;
+//    }
     private int runBackgroundValidation() {
 
         ValidationProgressDialog validationProgessJframe =
@@ -395,7 +385,7 @@ public class SummaryItemPanel extends ContextAwarePanel
 
                     @Override
                     protected Boolean doInBackground() throws Exception {
-                        validateFiles();
+                        //validateFiles();
                         return true;
                     }
 
@@ -437,10 +427,10 @@ public class SummaryItemPanel extends ContextAwarePanel
         if (!checksumDataFile.isFile()) {
             try {
                 checksumFile.createNewFile();
-                Files.append("#Checksum File\n",checksumFile, Charset.defaultCharset());
+                Files.append("#Checksum File\n", checksumFile, Charset.defaultCharset());
                 checksumDataFile.setFile(checksumFile);
                 checksumDataFile.setFileType(ProjectFileType.OTHER);
-                if (((AppContext)context).getSubmissionRecord().getSubmission().getDataFiles().stream().noneMatch(dataFile -> dataFile.getFileName().equals(context.getProperty("checksum.filename")))) {
+                if (((AppContext) context).getSubmissionRecord().getSubmission().getDataFiles().stream().noneMatch(dataFile -> dataFile.getFileName().equals(context.getProperty("checksum.filename")))) {
                     ((AppContext) context).addDataFile(checksumDataFile);
                 }
             } catch (Exception ex) {

@@ -5,7 +5,7 @@
     <groupId>uk.ac.ebi.pride.px</groupId>
     <artifactId>px-submission-tool</artifactId>
     <packaging>jar</packaging>
-    <version>2.10.1</version>
+    <version>2.10.2</version>
     <name>px-submission-tool</name>
     <url>https://github.com/proteomexchange/px-submission-tool</url>
 
@@ -56,7 +56,6 @@
         <uk.ac.ebi.pride.archive-archive-submission-model.version>1.0.5-SNAPSHOT
         </uk.ac.ebi.pride.archive-archive-submission-model.version>
         <uk.ac.ebi.pride.sdrf.jsdrf.version>1.0-SNAPSHOT</uk.ac.ebi.pride.sdrf.jsdrf.version>
-        <pg.converter.version>1.8.5</pg.converter.version>
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
     </properties>
@@ -218,17 +217,17 @@
             <type>pom</type>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>uk.ac.ebi.pride.toolsuite</groupId>
-            <artifactId>pg-converter</artifactId>
-            <version>${pg.converter.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>uk.ac.ebi.pride.archive</groupId>
-                    <artifactId>archive-data-provider-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>uk.ac.ebi.pride.toolsuite</groupId>-->
+<!--            <artifactId>pg-converter</artifactId>-->
+<!--            <version>${pg.converter.version}</version>-->
+<!--            <exclusions>-->
+<!--                <exclusion>-->
+<!--                    <groupId>uk.ac.ebi.pride.archive</groupId>-->
+<!--                    <artifactId>archive-data-provider-api</artifactId>-->
+<!--                </exclusion>-->
+<!--            </exclusions>-->
+<!--        </dependency>-->
         <!-- Hadoop Common 3.3.6 -->
         <dependency>
             <groupId>org.apache.hadoop</groupId>

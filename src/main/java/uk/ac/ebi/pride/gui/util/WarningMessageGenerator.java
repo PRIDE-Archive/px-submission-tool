@@ -3,8 +3,6 @@ package uk.ac.ebi.pride.gui.util;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.data.model.DataFile;
-import uk.ac.ebi.pride.archive.dataprovider.project.SubmissionType;
-import uk.ac.ebi.pride.gui.data.SubmissionRecord;
 
 import javax.swing.*;
 import java.util.List;
