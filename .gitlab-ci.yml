@@ -29,7 +29,7 @@ before_script:
 
     # 4. Use srun + become to deploy zip as $SUDO_USER (e.g. pride_adm)
     - ssh $SERVER_USER@$DEPLOY_SERVER "
-      srun --cpus-per-task 1 --mem-per-cpu 150 --time 6:00:00 -p datamover --pty bash -c '
+      /ebi/slurm/codon/bin/srun --cpus-per-task 1 --mem-per-cpu 150 --time 6:00:00 -p datamover --pty bash -c '
       become $SUDO_USER && \
       mkdir -p $DEPLOY_PATH/$VERSION && \
       mv /tmp/$ZIP_FILE $DEPLOY_PATH/$VERSION/ && \
@@ -39,7 +39,7 @@ before_script:
 
     # 5. Update symlink (also as $SUDO_USER) pointing to the latest versioned zip
     - ssh $SERVER_USER@$DEPLOY_SERVER "
-            srun --cpus-per-task 1 --mem-per-cpu 150 --time 6:00:00 -p datamover --pty bash -c '
+      /ebi/slurm/codon/bin/srun --cpus-per-task 1 --mem-per-cpu 150 --time 6:00:00 -p datamover --pty bash -c '
             become $SUDO_USER && \
             cd $SYMLINK_PATH && ln -snf $DEPLOY_PATH_RELATIVE_TO_SYMLINK/$VERSION/$ZIP_FILE $SYMLINK'
         "
