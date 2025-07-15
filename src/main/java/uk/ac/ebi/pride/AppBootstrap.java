@@ -8,7 +8,6 @@ import uk.ac.ebi.pride.utilities.util.IOUtilities;
 import java.io.*;
 import java.net.*;
 import java.util.Properties;
-import javax.swing.JOptionPane;
 
 /**
  * @author Rui Wang
@@ -17,51 +16,9 @@ import javax.swing.JOptionPane;
 public class AppBootstrap {
 
     private static final Logger logger = LoggerFactory.getLogger(AppBootstrap.class);
-    private static final int REQUIRED_JAVA_VERSION = 21;
-    private static final String JAVA_DOWNLOAD_URL = "https://www.oracle.com/java/technologies/downloads/#java21";
 
     public static void main(String[] args) {
-        try {
-            checkJavaVersion();
-            new AppBootstrap().go();
-        } catch (UnsupportedClassVersionError e) {
-            String version = System.getProperty("java.version");
-            String javaHome = System.getProperty("java.home");
-            String message = String.format(
-                "Java %d or higher is required to run this application.\n\n" +
-                "Current Java version: %s\n" +
-                "Current Java path: %s\n\n" +
-                "Please download and install Java %d from:\n%s\n\n" +
-                "After installation, make sure to use the new Java version to run this application.",
-                REQUIRED_JAVA_VERSION, version, javaHome, REQUIRED_JAVA_VERSION, JAVA_DOWNLOAD_URL
-            );
-            logger.error(message);
-            JOptionPane.showMessageDialog(null, message, "Java Version Error", JOptionPane.ERROR_MESSAGE);
-            System.exit(1);
-        }
-    }
-
-    /**
-     * Check if the current Java version meets the minimum requirement
-     */
-    private static void checkJavaVersion() {
-        String version = System.getProperty("java.version");
-        String javaHome = System.getProperty("java.home");
-        int majorVersion = Integer.parseInt(version.split("\\.")[0]);
-        
-        if (majorVersion < REQUIRED_JAVA_VERSION) {
-            String message = String.format(
-                "Java %d or higher is required to run this application.\n\n" +
-                "Current Java version: %s\n" +
-                "Current Java path: %s\n\n" +
-                "Please download and install Java %d from:\n%s\n\n" +
-                "After installation, make sure to use the new Java version to run this application.",
-                REQUIRED_JAVA_VERSION, version, javaHome, REQUIRED_JAVA_VERSION, JAVA_DOWNLOAD_URL
-            );
-            logger.error(message);
-            JOptionPane.showMessageDialog(null, message, "Java Version Error", JOptionPane.ERROR_MESSAGE);
-            System.exit(1);
-        }
+        new AppBootstrap().go();
     }
 
     /**
