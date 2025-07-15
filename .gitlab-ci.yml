@@ -16,17 +16,34 @@ before_script:
 .deploy_script:
   stage: deploy
   script:
+    # 1. Build ZIP without tests
     - mvn $MAVEN_CLI_OPTS clean package -DskipTests
+
+    # 2. Get version and zip file name
     - VERSION=$(mvn org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.version -q -DforceStdout)
-    - echo $VERSION
     - ZIP_FILE=px-submission-tool-${VERSION}.zip
-    - mkdir $VERSION
-    - cp -r target/$ZIP_FILE $VERSION/
-    - echo $SERVER_USER@$DEPLOY_SERVER
-    - echo $DEPLOY_PATH/$VERSION
-    - ssh $SERVER_USER@$DEPLOY_SERVER "bash && sdml && bash && become $SUDO_USER && cd $DEPLOY_PATH && mkdir -p $VERSION && chmod -R 777 $VERSION"
-    - rsync -a $VERSION $SERVER_USER@$DEPLOY_SERVER:$DEPLOY_PATH/
-    - ssh $SERVER_USER@$DEPLOY_SERVER "bash && cd $SYMLINK_PATH && ln -snf $DEPLOY_PATH_RELATIVE_TO_SYMLINK/$VERSION/$ZIP_FILE $SYMLINK"
+    - echo "Deploying $ZIP_FILE"
+
+    # 3. Copy ZIP to login node temp location
+    - scp target/$ZIP_FILE $SERVER_USER@$DEPLOY_SERVER:/tmp/$ZIP_FILE
+
+    # 4. Use srun + become to deploy zip as $SUDO_USER (e.g. pride_adm)
+    - ssh $SERVER_USER@$DEPLOY_SERVER "
+      srun --cpus-per-task 1 --mem-per-cpu 150 --time 6:00:00 -p datamover --pty bash -c '
+      become $SUDO_USER && \
+      mkdir -p $DEPLOY_PATH/$VERSION && \
+      mv /tmp/$ZIP_FILE $DEPLOY_PATH/$VERSION/ && \
+      chmod -R 777 $DEPLOY_PATH/$VERSION
+      '
+      "
+
+    # 5. Update symlink (also as $SUDO_USER) pointing to the latest versioned zip
+    - ssh $SERVER_USER@$DEPLOY_SERVER "
+            srun --cpus-per-task 1 --mem-per-cpu 150 --time 6:00:00 -p datamover --pty bash -c '
+            become $SUDO_USER && \
+            cd $SYMLINK_PATH && ln -snf $DEPLOY_PATH_RELATIVE_TO_SYMLINK/$VERSION/$ZIP_FILE $SYMLINK'
+        "
+
 
 deploy_prod:
   environment: prod
