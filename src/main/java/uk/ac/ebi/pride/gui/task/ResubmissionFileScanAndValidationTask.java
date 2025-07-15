@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -381,13 +382,9 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
 
         long totalCountOfFilesAlreadyPresent = resubmission.getResubmission().entrySet().stream().count();
         int filesBeingDeletedOrModified = deletingOrModifyingFiles.size();
-        long filesBeingAdded =  submission.getDataFiles().stream().count();
+        //long filesBeingAdded =  submission.getDataFiles().stream().count();
 
-        if( (totalCountOfFilesAlreadyPresent - filesBeingDeletedOrModified + filesBeingAdded) < 2  ) {
-            return true;
-        }
-
-        return false;
+        return (totalCountOfFilesAlreadyPresent - filesBeingDeletedOrModified) < 2;
     }
 
     /**
@@ -416,7 +413,8 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
     }
 
     /**
-     *      *
+     * *
+     *
      * @return List of duplicate Data Files
      */
     private List<String> findDuplicateFileNames() {
@@ -467,9 +465,9 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
                 .collect(Collectors.toList())) { // newly addded files + already submitted files
             try {
                 // If the datafile is not a file, it is a URL
-                URL dataFileToAdd = (dataFile.isFile() ? new URL("file://" + dataFile.getFilePath().toString()) : dataFile.getUrl());
+                URL url = URI.create(dataFile.getFilePath().toString()).toURL();
                 // We only care about file names
-                dataFiles.put(FilenameUtils.getName(dataFileToAdd.toString().toLowerCase()), dataFile);
+                dataFiles.put(FilenameUtils.getName(url.toString().toLowerCase()), dataFile);
             } catch (MalformedURLException e) {
                 logger.error("PLEASE, REVIEW file reference '" + dataFile.getFilePath().toString() + "' as it could not be parsed as a URL, by adding 'file://' protocol");
             }
@@ -522,7 +520,7 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
                             errorEntry = "NON-Peak List/RAW referenced file '"
                                     + referencedFile
                                     + "', is NOT ALLOWED";
-                       }
+                        }
 //                        else {
 //                            mzTabFile.addFileMapping(referencedDataFile);
 //                        }

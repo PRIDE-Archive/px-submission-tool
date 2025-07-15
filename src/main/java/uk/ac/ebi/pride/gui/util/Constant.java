@@ -26,10 +26,6 @@ public final class Constant {
      */
     public static final String UNKNOWN = "Unknown";
     public static final String URL = "URL";
-    public static final String PRIDE_USER_FIRST_NAME = "First Name";
-    public static final String PRIDE_USER_LAST_NAME = "Last Name";
-    public static final String PRIDE_USER_EMAIL = "Email";
-    public static final String PRIDE_USER_AFFILIATION = "Affiliation";
 
     public static final String ADAT = "adat";
 
@@ -37,15 +33,6 @@ public final class Constant {
     public static final String EMAIL = "email";
     public static final String FTP = "ftp";
     public static final String ASPERA = "aspera";
-    public static final String PRIDE_USER_NAME = "username";
-    public static final String PRIDE_PASSWORD = "password";
-    public static final String FTP_USER_NAME = "username";
-    public static final String FTP_PASSWORD = "password";
-    public static final String FTP_FOLDER = "folder";
-    public static final String FTP_PORT = "port";
-    public static final String SUBMISSION_REFERENCE = "reference";
-    public static final String PROTEOMEXCHANGE = "1";
-    public static final String SUBMISSION_TYPE = "type";
 
     public static final String TICKET_ID = "ticketId";
 

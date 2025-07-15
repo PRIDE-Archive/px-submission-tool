@@ -18,225 +18,246 @@ import uk.ac.ebi.pride.gui.task.ftp.UploadMessage;
 import uk.ac.ebi.pride.gui.task.ftp.UploadProgressMessage;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
+import java.net.SocketException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
 import java.time.Duration;
+import java.util.Arrays;
 
 /**
- * Task for uploading all the files
- *
- * @author Rui Wang
- * @version $Id$
+ * Task for uploading files with improved reliability and error handling
  */
 public class FileFTPUploadTask extends TaskAdapter<Void, UploadMessage> implements CopyStreamListener {
-    public static final Logger logger = LoggerFactory.getLogger(FileFTPUploadTask.class);
+    private static final Logger logger = LoggerFactory.getLogger(FileFTPUploadTask.class);
 
-    public static final int BUFFER_SIZE = 2048;
-    private DataFile dataFile;
-    private UploadDetail ftpDetail;
+    private static final int BUFFER_SIZE = 1024 * 1024; // 1MB buffer
+    private static final int MAX_RETRIES = 3;
+    private static final long INITIAL_RETRY_DELAY_MS = 1000; // 1 second
+    private static final int CONNECTION_TIMEOUT_MS = 30000; // 30 seconds
+    private static final int DATA_TIMEOUT_MS = 300000; // 5 minutes
+
+    private final DataFile dataFile;
+    private final UploadDetail ftpDetail;
     private FTPClient ftp;
     private InputStream inputStream;
     private OutputStream outputStream;
-    private int retryCount = -1;
+    private int retryCount;
+    private String md5Checksum;
 
-    public FileFTPUploadTask(DataFile dataFile,
-                                UploadDetail ftpDetail) {
+    public FileFTPUploadTask(DataFile dataFile, UploadDetail ftpDetail) {
         this.dataFile = dataFile;
         this.ftpDetail = ftpDetail;
+        this.retryCount = 0;
     }
 
     @Override
     protected Void doInBackground() throws Exception {
         ftp = new FTPClient();
-        ftp.setControlKeepAliveTimeout(Duration.ofSeconds(200));
-        inputStream = null;
-        outputStream = null;
-        String fileName = dataFile.getFileName();
+        setupFTPClient();
 
         try {
-            uploadFile();
-            publish(new UploadFileSuccessMessage(this, dataFile));
-        } catch (IOException e) {
-            if (!this.isCancelled()) {
-                logger.error("IOException while uploading file: " + fileName, e);
-                if (e instanceof CopyStreamException) {
-                    IOException ioe = ((CopyStreamException) e).getIOException();
-                    logger.error("CopyStreamException contains IOException: ", ioe);
-                    logger.error("Total byte transferred: " + ((CopyStreamException) e).getTotalBytesTransferred());
-                    // print ioe stacktrace
-                    StackTraceElement[] stackTraceElements = ioe.getStackTrace();
-                    for (StackTraceElement stackTraceElement : stackTraceElements) {
-                        logger.error(stackTraceElement.toString());
-                    }
-                }
-                publish(new UploadErrorMessage(this, dataFile, "Failed file transfer: " + fileName));
+            boolean success = uploadFileWithRetry();
+            if (success) {
+                logger.info("File upload completed successfully: {}", dataFile.getFileName());
+                publish(new UploadFileSuccessMessage(this, dataFile));
             }
+        } catch (Exception e) {
+            handleUploadError(e);
         } finally {
-            if (!this.isCancelled()) {
-                logger.debug("Freeing ftp resources before finishing");
-                releaseResource();
-            }
+            releaseResources();
         }
-
         return null;
     }
 
-    private boolean ftpConnect() throws IOException {
-        int reply;
-        ftp.connect(ftpDetail.getHost(), ftpDetail.getPort());
-        ftp.login(ftpDetail.getDropBox().getUserName(), ftpDetail.getDropBox().getPassword());
-        logger.debug("FTP local address: " + ftp.getLocalAddress().getCanonicalHostName() + ":" + ftp.getLocalPort());
-        logger.debug("FTP passive host address: " + ftp.getPassiveHost() + ":" + ftp.getPassivePort());
-        logger.debug("FTP remote host address: " + ftp.getRemoteAddress().getCanonicalHostName() + ":" + ftp.getRemotePort());
+    private void setupFTPClient() {
+        ftp.setBufferSize(BUFFER_SIZE);
+        ftp.setControlKeepAliveTimeout(Duration.ofSeconds(60));
+        ftp.setConnectTimeout(CONNECTION_TIMEOUT_MS);
+        ftp.setDefaultTimeout(DATA_TIMEOUT_MS);
+    }
 
-        // After connection attempt, you should check the reply code to verify
-        // success.
-        reply = ftp.getReplyCode();
-        logger.debug("FTP connection reply code: " + reply);
+    private boolean uploadFileWithRetry() throws Exception {
+        while (retryCount < MAX_RETRIES) {
+            try {
+                if (connectToFTP()) {
+                    if (uploadFile()) {
+                        return true;
+                    }
+                }
+            } catch (IOException e) {
+                logger.warn("Upload attempt {} failed for file: {}", retryCount + 1, dataFile.getFileName(), e);
+                if (retryCount < MAX_RETRIES - 1) {
+                    long delay = INITIAL_RETRY_DELAY_MS * (long) Math.pow(2, retryCount);
+                    logger.info("Retrying in {} ms...", delay);
+                    Thread.sleep(delay);
+                }
+            }
+            retryCount++;
+        }
+        throw new IOException("Failed to upload file after " + MAX_RETRIES + " attempts: " + dataFile.getFileName());
+    }
+
+    private boolean connectToFTP() throws IOException {
+        logger.info("Connecting to FTP server: {}:{}", ftpDetail.getHost(), ftpDetail.getPort());
+
+        ftp.connect(ftpDetail.getHost(), ftpDetail.getPort());
+        int reply = ftp.getReplyCode();
 
         if (!FTPReply.isPositiveCompletion(reply)) {
-            publish(new UploadErrorMessage(this, dataFile, "Failed to connect to FTP server"));
-            return true;
+            logger.error("Failed to connect to FTP server. Reply code: {}", reply);
+            return false;
         }
 
-        // passive mode
+        if (!ftp.login(ftpDetail.getDropBox().getUserName(), ftpDetail.getDropBox().getPassword())) {
+            logger.error("Failed to login to FTP server");
+            return false;
+        }
+
+        logConnectionDetails();
+
         ftp.enterLocalPassiveMode();
-        logger.debug("FTP enter local passive mode");
+        ftp.setFileType(FTP.BINARY_FILE_TYPE);
 
-        // change working directory
         File folder = new File(ftpDetail.getFolder());
-        ftp.changeWorkingDirectory(folder.getName());
-        logger.info("Changed to the correct FTP directory for upload: " + ftpDetail.getFolder());
+        if (!ftp.changeWorkingDirectory(folder.getName())) {
+            logger.error("Failed to change to directory: {}", folder.getName());
+            return false;
+        }
 
-        ftp.setBufferSize(BUFFER_SIZE);
-        return false;
+        return true;
+    }
+
+    private void logConnectionDetails() {
+        try {
+            logger.debug("FTP Connection Details:");
+            logger.debug("Local address: {}:{}", ftp.getLocalAddress().getCanonicalHostName(), ftp.getLocalPort());
+            logger.debug("Remote address: {}:{}", ftp.getRemoteAddress().getCanonicalHostName(), ftp.getRemotePort());
+            logger.debug("Passive host: {}:{}", ftp.getPassiveHost(), ftp.getPassivePort());
+        } catch (Exception e) {
+            logger.warn("Could not log all connection details", e);
+        }
     }
 
     private boolean uploadFile() throws Exception {
+        String fileName = dataFile.getFileName();
+        long fileSize = 0;
+
+        if (dataFile.isFile()) {
+            File file = dataFile.getFile();
+            fileSize = file.length();
+            md5Checksum = calculateMD5(file);
+            logger.info("Starting upload of file: {} (Size: {} bytes, MD5: {})",
+                    fileName, fileSize, md5Checksum);
+
+            inputStream = new BufferedInputStream(new FileInputStream(file));
+        } else if (dataFile.isUrl()) {
+            URL url = dataFile.getUrl();
+            logger.info("Starting upload from URL: {}", url);
+            inputStream = new BufferedInputStream(url.openStream());
+        }
+
         try {
-            if (ftpConnect()) {
-                return true;
-            }
-            retryCount++;
-            if (retryCount >= 3) {
-                logger.info("Failed uploading 3 times for file: " + dataFile.getFilePath() + " Please try another time");
-                throw new RuntimeException("FTP transfer failure for the file attempted 3 times");
-            }
-            if (retryCount > 0) {
-                logger.info("Retrying to upload file: " + dataFile.getFilePath() + " Count " + retryCount);
-                Thread.sleep(100);
+            boolean success = ftp.storeFile(fileName, inputStream);
+            if (!success) {
+                logger.error("FTP store file failed for: {}", fileName);
+                return false;
             }
 
-            while(!FTPReply.isPositiveCompletion(ftp.sendCommand("size", dataFile.getFile().getName()))
-                    || Long.parseLong(ftp.getReplyString().split(" ")[1].trim()) != Files.size(Paths.get(dataFile.getFilePath())))
-            {
-                logger.info("Checking file size in the server and validating: " + dataFile.getFileName());
-                String fileName = dataFile.getFileName();
-                if (dataFile.isFile()) {
-                    // check whether the file is binary file
-                    File fileToUpload = dataFile.getFile();
-                    logger.debug("About to upload file: " + fileToUpload.getAbsolutePath());
-                    boolean isBinary;
-                    try {
-                        isBinary = FileUtil.isBinaryFile(fileToUpload);
-                    } catch (IOException ioe) {
-                        publish(new UploadErrorMessage(this, dataFile, "Failed to read file: " + fileToUpload.getName()));
-                        return true;
-                    }
+            // Verify file size
+            long uploadedSize = verifyFileSize(fileName);
+            if (fileSize > 0 && uploadedSize != fileSize) {
+                logger.error("File size mismatch. Expected: {}, Actual: {}", fileSize, uploadedSize);
+                return false;
+            }
 
-                    if (isBinary) {
-                        ftp.setFileType(FTP.BINARY_FILE_TYPE);
-                        logger.debug("File to upload is binary");
-                    }
+            return true;
+        } finally {
+            if (inputStream != null) {
+                inputStream.close();
+            }
+        }
+    }
 
-                    // transfer files
-                    inputStream = new FileInputStream(fileToUpload);
-                    logger.info("Starting to upload file: " + fileToUpload.getAbsolutePath());
-                    ftp.storeFile(fileName, inputStream);
-                    logger.info("Upload file done: " + fileToUpload.getAbsolutePath());
-                } else if (dataFile.isUrl()) {
-                    URL urlToUpload = dataFile.getUrl();
-                    logger.info("About to upload file: " + urlToUpload);
-                    // Treat all URL data as binary
+    private long verifyFileSize(String fileName) throws IOException {
+        if (ftp.sendCommand("SIZE", fileName) != FTPReply.FILE_STATUS) {
+            throw new IOException("Could not get file size");
+        }
+        return Long.parseLong(ftp.getReplyString().split(" ")[1].trim());
+    }
 
-                    ftp.setFileType(FTP.BINARY_FILE_TYPE);
-                    logger.debug("File to upload is binary");
-
-                    // transfer files
-                    inputStream = urlToUpload.openStream();
-                    ftp.storeFile(fileName, inputStream);
-
-                    logger.info("Starting to upload file: " + urlToUpload);
-                    ftp.storeFile(urlToUpload.getFile(), inputStream);
-                    logger.info("Upload file done: " + urlToUpload);
+    private String calculateMD5(File file) throws IOException {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            try (InputStream is = new BufferedInputStream(new FileInputStream(file))) {
+                byte[] buffer = new byte[BUFFER_SIZE];
+                int read;
+                while ((read = is.read(buffer)) != -1) {
+                    md.update(buffer, 0, read);
                 }
             }
-        } catch(IOException exception){
-            logger.error(exception.getMessage());
-            logger.error("Failed to upload file: " + dataFile.getFilePath() + " . will retry for 3 times");
-            if (!ftp.isConnected() && ftpConnect()) {
-                return true;
+            byte[] digest = md.digest();
+            StringBuilder sb = new StringBuilder();
+            for (byte b : digest) {
+                sb.append(String.format("%02x", b));
             }
-            uploadFile();
-        } catch (RuntimeException exception){
-            logger.error(exception.getMessage());
-            logger.error("Failed to upload file: " + dataFile.getFilePath() + " . tried 3 times");
+            return sb.toString();
+        } catch (Exception e) {
+            logger.warn("Could not calculate MD5 checksum", e);
+            return null;
         }
-        return false;
+    }
+
+    private void handleUploadError(Exception e) {
+        String errorMessage = String.format("Failed to upload file: %s after %d attempts",
+                dataFile.getFileName(), retryCount);
+        logger.error(errorMessage, e);
+
+        if (e instanceof CopyStreamException) {
+            CopyStreamException cse = (CopyStreamException) e;
+            logger.error("Transfer failed at {} bytes", cse.getTotalBytesTransferred());
+            if (cse.getIOException() != null) {
+                logger.error("Underlying IO error", cse.getIOException());
+            }
+        }
+
+        publish(new UploadErrorMessage(this, dataFile, errorMessage));
+    }
+
+    private void releaseResources() {
+        logger.debug("Cleaning up resources");
+        try {
+            if (inputStream != null) {
+                inputStream.close();
+            }
+            if (outputStream != null) {
+                outputStream.close();
+            }
+            if (ftp != null && ftp.isConnected()) {
+                ftp.logout();
+                ftp.disconnect();
+            }
+        } catch (IOException e) {
+            logger.warn("Error while releasing resources", e);
+        }
     }
 
     @Override
     protected void cancelled() {
-        logger.debug("Freeing ftp resources before cancelling");
-        releaseResource();
+        logger.info("Upload cancelled for file: {}", dataFile.getFileName());
+        releaseResources();
         publish(new UploadCancelMessage(this, dataFile));
-    }
-
-    /**
-     * Release ftp upload resources
-     */
-    private void releaseResource() {
-        if (inputStream != null) {
-            try {
-                inputStream.close();
-            } catch (IOException ioe) {
-                // do nothing
-            }
-        }
-
-        if (outputStream != null) {
-            try {
-                outputStream.close();
-            } catch (IOException ioe) {
-                // do nothing
-            }
-        }
-
-        if (ftp != null && ftp.isConnected()) {
-            try {
-                // logout
-                ftp.logout();
-                // disconnect
-                ftp.disconnect();
-            } catch (IOException ioe) {
-                // do nothing
-            }
-        }
     }
 
     @Override
     public void bytesTransferred(long totalBytesTransferred, int bytesTransferred, long streamSize) {
-        publish(new UploadProgressMessage(this, dataFile, streamSize, bytesTransferred));
+        publish(new UploadProgressMessage(this, dataFile, streamSize, totalBytesTransferred));
     }
 
     @Override
     public void bytesTransferred(CopyStreamEvent event) {
-        // do nothing
+        bytesTransferred(event.getTotalBytesTransferred(), event.getBytesTransferred(), event.getStreamSize());
     }
 }
