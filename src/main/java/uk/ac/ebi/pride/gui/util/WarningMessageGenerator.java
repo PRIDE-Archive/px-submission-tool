@@ -42,12 +42,12 @@ public final class WarningMessageGenerator {
 
         StringBuilder warningMsg = new StringBuilder();
         warningMsg.append("<html>");
-        if (submissionType.equals(SubmissionType.COMPLETE)) {
+        if (submissionType.equals(SubmissionTypeConstants.COMPLETE)) {
             warningMsg.append("We have detected that this submission is a COMPLETE Crosslinking dataset. <br />" +
                     "Before proceeding, please review the guidelines on <a href=\"https://www.ebi.ac.uk/pride/markdownpage/crosslinking\">How to submit complete crosslinking dataset</a> " +
                     "to ensure that your files and submission meet all requirements" +
                     "<br />to be included your submission in the newly developed <a href=\"https://www.ebi.ac.uk/pride/archive/crosslinking \">PRIDE Crosslinking Resource</a>");
-        } else if (submissionType.equals(SubmissionType.PARTIAL)) {
+        } else if (submissionType.equals(SubmissionTypeConstants.PARTIAL)) {
             warningMsg.append("We have detected that this submission is a PARTIAL Crosslinking dataset. <br />" +
                     "You can include your submission in the newly developed <a href=\"https://www.ebi.ac.uk/pride/archive/crosslinking \">PRIDE Crosslinking Resource</a> " +
                     "<br />if you make a COMPLETE submission and the files meet all the requirements. <br />" +
