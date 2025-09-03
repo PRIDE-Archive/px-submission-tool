@@ -1,4 +1,4 @@
-name: Build and Test
+name: Build and Package
 
 on:
   pull_request:
@@ -8,21 +8,16 @@ on:
 
 jobs:
   build:
-    runs-on: ${{ matrix.os }}
-    
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
-        java-version: [8, 11]
+    runs-on: ubuntu-latest
         
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Set up JDK ${{ matrix.java-version }}
+    - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
-        java-version: ${{ matrix.java-version }}
+        java-version: '21'
         distribution: 'temurin'
         
     - name: Cache Maven packages
@@ -32,24 +27,17 @@ jobs:
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
         
-    - name: Build with Maven
-      run: mvn clean compile test-compile
-      
-    - name: Run Tests
-      run: mvn test
-      
-    - name: Build Distribution
+    - name: Compile and Test
+      run: mvn clean compile test
+        
+    - name: Package Distribution
       run: mvn clean package assembly:single
       
-    - name: Verify Distribution Contents
+    - name: Verify Distribution
       run: |
         cd target
         ls -la *.zip
-        unzip -l px-submission-tool-*.zip | head -20
-        
-    - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: px-submission-tool-${{ matrix.os }}-java${{ matrix.java-version }}
-        path: target/px-submission-tool-*.zip
-        retention-days: 7
+        echo "Distribution size:"
+        du -h px-submission-tool-*.zip
+        echo "Contents:"
+        unzip -l px-submission-tool-*.zip | head -10
