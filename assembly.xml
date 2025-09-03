@@ -8,78 +8,122 @@
 
     <includeBaseDirectory>false</includeBaseDirectory>
 
-    <dependencySets>
-        <dependencySet>
-            <outputDirectory>${assembly.dir}/lib</outputDirectory>
-            <unpack>false</unpack>
-            <scope>runtime</scope>
-            <outputFileNameMapping>${artifact.artifactId}-${artifact.baseVersion}.${artifact.extension}
-            </outputFileNameMapping>
-        </dependencySet>
-    </dependencySets>
-
     <fileSets>
+        <!-- Include the fat JAR as the main application JAR -->
         <fileSet>
             <directory>${project.basedir}/target</directory>
             <includes>
-                <include>*.jar</include>
+                <include>*-fat.jar</include>
+                <include>px-submission-tool.jar</include>
             </includes>
             <outputDirectory>${assembly.dir}</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}</directory>
-            <outputDirectory>${assembly.dir}/log</outputDirectory>
-            <excludes>
-                <exclude>**/*</exclude>
-            </excludes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/help</directory>
-            <includes>
-                <include>*</include>
-            </includes>
-            <outputDirectory>${assembly.dir}/help</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/readme</directory>
-            <includes>
-                <include>*</include>
-            </includes>
-            <outputDirectory>${assembly.dir}</outputDirectory>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/config</directory>
-            <outputDirectory>${assembly.dir}/config</outputDirectory>
-            <includes>
-                <include>**/**</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/aspera/bin</directory>
-            <outputDirectory>${assembly.dir}/aspera/bin</outputDirectory>
-            <includes>
-                <include>**/**</include>
-            </includes>
-            <fileMode>0755</fileMode>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/aspera/etc</directory>
-            <outputDirectory>${assembly.dir}/aspera/etc</outputDirectory>
-            <includes>
-                <include>**/**</include>
-            </includes>
             <fileMode>0644</fileMode>
         </fileSet>
-        <!-- Include access keys for Google API -->
+        
+        <!-- Include launcher files -->
         <fileSet>
-            <directory>${project.basedir}/src/main/unfilteredResources/keyFiles</directory>
-            <outputDirectory>${assembly.dir}/keyFiles</outputDirectory>
+            <directory>${project.basedir}</directory>
             <includes>
-                <include>**/**</include>
+                <include>Start_PX_Tool.bat</include>
+                <include>run.bat</include>
+                <include>run.sh</include>
             </includes>
-            <excludes>
-                <exclude>**/empty</exclude>
-            </excludes>
+            <outputDirectory>${assembly.dir}</outputDirectory>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        
+        <!-- Include enhanced launcher scripts from resources -->
+        <fileSet>
+            <directory>src/main/resources/launchers</directory>
+            <outputDirectory>${assembly.dir}</outputDirectory>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        
+        <!-- Include launcher creation scripts -->
+        <fileSet>
+            <directory>src/main/resources/launchers</directory>
+            <includes>
+                <include>create-macos-app.sh</include>
+                <include>create-portable-app.sh</include>
+            </includes>
+            <outputDirectory>${assembly.dir}</outputDirectory>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        
+        <!-- Include launchers in root folder with version filtering -->
+        <fileSet>
+            <directory>.</directory>
+            <includes>
+                <include>start.bat</include>
+                <include>start.sh</include>
+            </includes>
+            <outputDirectory>${assembly.dir}</outputDirectory>
+            <fileMode>0755</fileMode>
+            <filtered>true</filtered>
+        </fileSet>
+        
+        <!-- Include the main JAR file -->
+        <fileSet>
+            <directory>target</directory>
+            <includes>
+                <include>px-submission-tool-${project.version}.jar</include>
+            </includes>
+            <outputDirectory>${assembly.dir}</outputDirectory>
+            <fileMode>0644</fileMode>
+        </fileSet>
+        
+        <!-- Include essential directories -->
+        <fileSet>
+            <directory>${project.basedir}</directory>
+            <includes>
+                <include>help/**</include>
+                <include>readme/**</include>
+                <include>config/**</include>
+            </includes>
+            <outputDirectory>${assembly.dir}</outputDirectory>
+            <fileMode>0644</fileMode>
+        </fileSet>
+        
+        <!-- Include Aspera files with executable permissions for the binary -->
+        <fileSet>
+            <directory>${project.basedir}</directory>
+            <includes>
+                <include>aspera/**</include>
+            </includes>
+            <outputDirectory>${assembly.dir}</outputDirectory>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        
+        <!-- JRE directories are now downloaded on-demand by launcher scripts -->
+        
+        <!-- Include macOS .app bundle if it exists -->
+        <fileSet>
+            <directory>${project.basedir}</directory>
+            <includes>
+                <include>PX_Submission_Tool.app/**</include>
+            </includes>
+            <outputDirectory>${assembly.dir}</outputDirectory>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        
+        <!-- Include macOS .command file if it exists -->
+        <fileSet>
+            <directory>${project.basedir}</directory>
+            <includes>
+                <include>Start_PX_Tool.command</include>
+            </includes>
+            <outputDirectory>${assembly.dir}</outputDirectory>
+            <fileMode>0755</fileMode>
+        </fileSet>
+        
+        <!-- Include README -->
+        <fileSet>
+            <directory>${project.basedir}</directory>
+            <includes>
+                <include>README.md</include>
+            </includes>
+            <outputDirectory>${assembly.dir}</outputDirectory>
+            <fileMode>0644</fileMode>
         </fileSet>
     </fileSets>
 </assembly>

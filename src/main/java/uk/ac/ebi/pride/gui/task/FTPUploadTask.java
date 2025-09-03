@@ -125,15 +125,25 @@ public class FTPUploadTask extends TaskAdapter<Void, UploadMessage> implements T
         // prepare for submission
         for (DataFile dataFile : submissionRecord.getSubmission().getDataFiles()) {
             long fileSize = dataFile.getFileSize();
-            totalFileSize += fileSize;
+            long actualFileSize = dataFile.getFile() != null ? dataFile.getFile().length() : 0;
+            logger.debug("File: {}, getFileSize(): {}, getFile().length(): {}", 
+                       dataFile.getFileName(), fileSize, actualFileSize);
+            
+            // Use actual file size if getFileSize() returns 0
+            long effectiveFileSize = fileSize > 0 ? fileSize : actualFileSize;
+            totalFileSize += effectiveFileSize;
+            
             if (!submissionRecord.isUploaded(dataFile)) {
                 fileToSubmit.add(dataFile);
             }
 
             if (submissionRecord.isUploaded(dataFile)) {
-                uploadFileSize += fileSize;
+                uploadFileSize += effectiveFileSize;
             }
         }
+        
+        logger.info("FTP Upload - Total file size: {} bytes, Files to upload: {}", 
+                   totalFileSize, fileToSubmit.size());
     }
 
     /**
@@ -205,7 +215,10 @@ public class FTPUploadTask extends TaskAdapter<Void, UploadMessage> implements T
                     uploadFileSize += ((UploadProgressMessage) uploadMessage).getBytesTransferred();
                     int totalNumOfFiles = submissionRecord.getSubmission().getDataFiles().size();
                     int uploadedNumOfFiles = submissionRecord.getUploadedFiles().size();
-                    publish(new UploadProgressMessage(this, uploadMessage.getDataFile(), totalFileSize, uploadFileSize, totalNumOfFiles, uploadedNumOfFiles));
+                    
+                    // Handle case when totalFileSize is 0 by using uploadFileSize as effective total
+                    long effectiveTotalSize = totalFileSize > 0 ? totalFileSize : Math.max(uploadFileSize, 1);
+                    publish(new UploadProgressMessage(this, uploadMessage.getDataFile(), effectiveTotalSize, uploadFileSize, totalNumOfFiles, uploadedNumOfFiles));
                 }
             } else if (uploadMessage instanceof UploadFileSuccessMessage) {
                 ongoingSubTasks--;
@@ -226,19 +239,35 @@ public class FTPUploadTask extends TaskAdapter<Void, UploadMessage> implements T
                 } else if (ongoingSubTasks == 0) {
                     if (fileFailToSubmit.isEmpty()) {
                         int totalNumOfFiles = submissionRecord.getSubmission().getDataFiles().size();
-                        publish(new UploadProgressMessage(this, null, totalFileSize, totalFileSize, totalNumOfFiles, totalNumOfFiles));
+                        // Handle case when totalFileSize is 0 by using uploadFileSize as effective total
+                        long effectiveTotalSize = totalFileSize > 0 ? totalFileSize : Math.max(uploadFileSize, 1);
+                        publish(new UploadProgressMessage(this, null, effectiveTotalSize, effectiveTotalSize, totalNumOfFiles, totalNumOfFiles));
                         if (!uploadFinished) {
                             uploadFinished = true;
                             publish(new UploadSuccessMessage(this));
                         }
                     } else {
+                        logger.warn("FTP upload stopped due to errors. Suggesting Globus alternative to user.");
                         publish(new UploadStoppedMessage(this, submissionRecord));
                     }
                 }
             } else if (uploadMessage instanceof UploadErrorMessage) {
                 ongoingSubTasks--;
                 logger.debug("Failed to upload file: " + fileName);
-                publish(uploadMessage);
+                
+                // Enhance error message with Globus alternative
+                UploadErrorMessage errorMessage = (UploadErrorMessage) uploadMessage;
+                String originalMessage = errorMessage.getMessage();
+                String enhancedMessage = originalMessage + 
+                    "\n\nThis could be due to network restrictions, firewall settings, or network instability." +
+                    "\n\nAlternative options:" +
+                    "\n1. Go back one step and select Aspera upload instead" +
+                    "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
+                    "\n3. Contact your system administrator to enable FTP ports (TCP 21)";
+                
+                // Create enhanced error message
+                UploadErrorMessage enhancedError = new UploadErrorMessage(this, uploadMessage.getDataFile(), enhancedMessage);
+                publish(enhancedError);
             } else if (uploadMessage instanceof UploadCancelMessage) {
                 logger.debug("Cancelled upload: " + fileName);
                 ongoingSubTasks--;

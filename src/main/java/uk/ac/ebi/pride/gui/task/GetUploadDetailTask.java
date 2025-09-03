@@ -56,15 +56,21 @@ public class GetUploadDetailTask extends TaskAdapter<UploadDetail, String> {
 
         UploadDetail uploadDetail = null;
         try {
+            logger.info("Starting upload detail retrieval for method: {}", method.getMethod());
+            logger.debug("Base URL: {}, Re-upload URL: {}, Tool version: {}", baseUrl, reUploadUrl, toolVersion);
+            
             uploadDetail = ((AppContext)context).getSubmissionRecord().getUploadDetail();
             if(uploadDetail !=null){
+                logger.info("Found existing upload detail in submission record");
                 return uploadDetail;
             }
 
             setProxyIfProvided(restTemplate);
+            logger.debug("Proxy configuration applied to RestTemplate");
 
             String credentials = this.credentials.getUsername() + ":" + this.credentials.getPassword();
             String base64Creds = Base64.getEncoder().encodeToString(credentials.getBytes());
+            logger.debug("Credentials prepared for user: {}", this.credentials.getUsername());
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -73,19 +79,41 @@ public class GetUploadDetailTask extends TaskAdapter<UploadDetail, String> {
 
             HttpEntity<String> entity = new HttpEntity<>(headers);
             String ticketId = context.getProperty(TICKET_ID);
+            
             if(ticketId!=null && !ticketId.equals("")) {
-                uploadDetail = restTemplate.exchange(reUploadUrl,HttpMethod.GET,entity,UploadDetail.class,method.getMethod(),ticketId).getBody();
-                if(uploadDetail==null){
-                    logger.error("Error in getting re-upload details either ticketId is not valid or state is not valid");
+                logger.info("Attempting re-upload with ticket ID: {}", ticketId);
+                logger.debug("Re-upload URL: {}", reUploadUrl);
+                
+                try {
+                    uploadDetail = restTemplate.exchange(reUploadUrl,HttpMethod.GET,entity,UploadDetail.class,method.getMethod(),ticketId).getBody();
+                    if(uploadDetail==null){
+                        logger.error("Re-upload API call succeeded but returned null response. Ticket ID may be invalid or state may not be valid. URL: {}, Method: {}, Ticket ID: {}", reUploadUrl, method.getMethod(), ticketId);
+                    } else {
+                        logger.info("Re-upload details retrieved successfully");
+                    }
+                } catch (Exception e) {
+                    logger.error("Exception during re-upload API call. URL: {}, Method: {}, Ticket ID: {}, Exception type: {}, Message: {}", 
+                               reUploadUrl, method.getMethod(), ticketId, e.getClass().getSimpleName(), e.getMessage(), e);
                 }
             } else {
-                uploadDetail = restTemplate.exchange(baseUrl, HttpMethod.GET, entity, UploadDetail.class, method.getMethod()).getBody();
-                if (uploadDetail == null) {
-                    logger.error("Error in getting upload details from baseUrl" + baseUrl);
+                logger.info("No ticket ID found, attempting new upload");
+                logger.debug("Base URL: {}", baseUrl);
+                
+                try {
+                    uploadDetail = restTemplate.exchange(baseUrl, HttpMethod.GET, entity, UploadDetail.class, method.getMethod()).getBody();
+                    if (uploadDetail == null) {
+                        logger.error("New upload API call succeeded but returned null response. URL: {}, Method: {}", baseUrl, method.getMethod());
+                    } else {
+                        logger.info("New upload details retrieved successfully");
+                    }
+                } catch (Exception e) {
+                    logger.error("Exception during new upload API call. URL: {}, Method: {}, Exception type: {}, Message: {}", 
+                               baseUrl, method.getMethod(), e.getClass().getSimpleName(), e.getMessage(), e);
                 }
             }
         } catch(Exception ex){
-            logger.error("Error in getting upload details" + ex.getMessage());
+            logger.error("Unexpected error in upload detail retrieval. Exception type: {}, Message: {}", 
+                       ex.getClass().getSimpleName(), ex.getMessage(), ex);
         }
         return uploadDetail;
     }

@@ -1,0 +1,110 @@
+name: Release PX Submission Tool
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags (e.g., v2.10.4)
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 8
+      uses: actions/setup-java@v4
+      with:
+        java-version: '8'
+        distribution: 'temurin'
+        
+    - name: Cache Maven packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+        
+    - name: Build with Maven
+      run: |
+        mvn clean package assembly:single
+        ls -la target/
+        
+    - name: Create Release Assets
+      run: |
+        # Create a "latest" symlink zip that always points to the current version
+        cd target
+        cp px-submission-tool-*.zip px-submission-tool-latest.zip
+        
+        # Create a universal download link file
+        echo "Latest version: ${{ github.ref_name }}" > latest-version.txt
+        echo "Download URL: https://github.com/${{ github.repository }}/releases/latest/download/px-submission-tool-${{ github.ref_name }}.zip" >> latest-version.txt
+        echo "Universal latest: https://github.com/${{ github.repository }}/releases/latest/download/px-submission-tool-latest.zip" >> latest-version.txt
+        
+        # List all assets
+        ls -la *.zip *.txt
+        
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          target/px-submission-tool-*.zip
+          target/px-submission-tool-latest.zip
+          target/latest-version.txt
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+        body: |
+          ## 🚀 PX Submission Tool ${{ github.ref_name }}
+          
+          ### 📦 Downloads
+          - **Versioned**: `px-submission-tool-${{ github.ref_name }}.zip`
+          - **Latest**: `px-submission-tool-latest.zip` (always points to current version)
+          
+          ### 🔗 Universal Links
+          - **Latest Release**: https://github.com/${{ github.repository }}/releases/latest
+          - **Latest Download**: https://github.com/${{ github.repository }}/releases/latest/download/px-submission-tool-latest.zip
+          
+          ### 📋 What's New
+          Check the commit history for detailed changes.
+          
+          ### 🖥️ Supported Platforms
+          - Windows 10+ (`.bat` launcher)
+          - macOS 10.14+ (`.app` bundle)
+          - Linux 64-bit (`.sh` launcher)
+          
+          ### 🔧 Features
+          - Self-contained with bundled JRE
+          - Aspera and FTP file transfer
+          - Globus alternative when transfers fail
+          - Comprehensive logging and error handling
+          
+          ### 📚 Documentation
+          - [README](https://github.com/${{ github.repository }}/blob/main/README.md)
+          - [PRIDE Archive](https://www.ebi.ac.uk/pride/)
+          - [ProteomeXchange](https://www.proteomexchange.org/)
+          
+          ---
+          *Built with ❤️ by the PRIDE Team*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Update Latest Release
+      run: |
+        # This step ensures the "latest" tag always points to the most recent release
+        echo "Release ${{ github.ref_name }} created successfully!"
+        echo "Universal 'latest' download link: https://github.com/${{ github.repository }}/releases/latest/download/px-submission-tool-latest.zip"
+        
+    - name: Notify Success
+      if: success()
+      run: |
+        echo "✅ Release ${{ github.ref_name }} completed successfully!"
+        echo "📦 Assets uploaded to GitHub Releases"
+        echo "🔗 Universal latest link updated"
+        
+    - name: Notify Failure
+      if: failure()
+      run: |
+        echo "❌ Release ${{ github.ref_name }} failed!"
+        echo "Please check the workflow logs for details."

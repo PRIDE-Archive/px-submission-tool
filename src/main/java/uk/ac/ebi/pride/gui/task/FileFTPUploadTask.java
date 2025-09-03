@@ -223,7 +223,15 @@ public class FileFTPUploadTask extends TaskAdapter<Void, UploadMessage> implemen
             }
         }
 
-        publish(new UploadErrorMessage(this, dataFile, errorMessage));
+        // Enhance error message with Globus alternative
+        String enhancedMessage = errorMessage + 
+            "\n\nThis could be due to network restrictions, firewall settings, or network instability." +
+            "\n\nAlternative options:" +
+            "\n1. Go back one step and select Aspera upload instead" +
+            "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
+            "\n3. Contact your system administrator to enable FTP ports (TCP 21)";
+
+        publish(new UploadErrorMessage(this, dataFile, enhancedMessage));
     }
 
     private void releaseResources() {

@@ -8,6 +8,7 @@ import uk.ac.ebi.pride.utilities.util.IOUtilities;
 import java.io.*;
 import java.net.*;
 import java.util.Properties;
+import java.util.Scanner;
 
 /**
  * @author Rui Wang
@@ -25,6 +26,9 @@ public class AppBootstrap {
      * Method to run the PX Submission tool.
      */
     private void go() {
+        // Log system information
+        logSystemInformation();
+        
         StringBuilder cmdBuffer = getCommand();
         callCommand(cmdBuffer);
     }
@@ -194,6 +198,145 @@ public class AppBootstrap {
             reason = "timeout while attempting to reach node " + server + " on port " + port;
         }
         return reason;
+    }
+
+    /**
+     * Log system information including tool version, operating system, and country
+     */
+    private void logSystemInformation() {
+        try {
+            // Get application version from properties
+            String toolVersion = getApplicationVersion();
+            
+            // Operating system information
+            String osName = System.getProperty("os.name");
+            String osVersion = System.getProperty("os.version");
+            String osArch = System.getProperty("os.arch");
+            
+            // User and working directory
+            String userHome = System.getProperty("user.home");
+            String userDir = System.getProperty("user.dir");
+            
+            // Get user's country
+            String country = getUserCountry();
+            
+            logger.info("=== PX Submission Tool System Information ===");
+            logger.info("Tool Version: {}", toolVersion);
+            logger.info("Operating System: {} {} ({})", osName, osVersion, osArch);
+            logger.info("Country: {}", country);
+            logger.info("User Home: {}", userHome);
+            logger.info("Working Directory: {}", userDir);
+            logger.info("=============================================");
+            
+        } catch (Exception e) {
+            logger.warn("Failed to log system information: {}", e.getMessage());
+        }
+    }
+    
+    /**
+     * Get the application version from properties or manifest
+     */
+    private String getApplicationVersion() {
+        try {
+            // Try to get version from system properties first
+            String version = System.getProperty("px.submission.tool.version");
+            if (version != null && !version.isEmpty()) {
+                return version;
+            }
+            
+            // Try to get from package info
+            Package pkg = AppBootstrap.class.getPackage();
+            if (pkg != null && pkg.getImplementationVersion() != null) {
+                return pkg.getImplementationVersion();
+            }
+            
+            // Fallback to reading from properties file
+            Properties props = getBootstrapSettings();
+            String propVersion = props.getProperty("px.submission.tool.version");
+            if (propVersion != null && !propVersion.isEmpty()) {
+                return propVersion;
+            }
+            
+            // Final fallback
+            return "2.10.4";
+            
+        } catch (Exception e) {
+            logger.warn("Failed to determine application version: {}", e.getMessage());
+            return "2.10.4";
+        }
+    }
+    
+    /**
+     * Get user's country based on their public IP address
+     */
+    private String getUserCountry() {
+        try {
+            // Use a free IP geolocation service
+            URL url = new URL("http://ip-api.com/json/");
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setConnectTimeout(5000); // 5 second timeout
+            connection.setReadTimeout(5000);
+            
+            int responseCode = connection.getResponseCode();
+            if (responseCode == 200) {
+                Scanner scanner = new Scanner(connection.getInputStream());
+                StringBuilder response = new StringBuilder();
+                while (scanner.hasNextLine()) {
+                    response.append(scanner.nextLine());
+                }
+                scanner.close();
+                
+                // Parse JSON response to extract country
+                String jsonResponse = response.toString();
+                String country = extractCountryFromJson(jsonResponse);
+                if (country != null && !country.isEmpty()) {
+                    return country;
+                }
+            }
+            
+        } catch (Exception e) {
+            logger.debug("Failed to determine country from IP: {}", e.getMessage());
+        }
+        
+        // Fallback: try to get country from system locale
+        try {
+            String country = System.getProperty("user.country");
+            if (country != null && !country.isEmpty()) {
+                return country;
+            }
+            
+            // Try from locale
+            java.util.Locale locale = java.util.Locale.getDefault();
+            if (locale != null && locale.getCountry() != null && !locale.getCountry().isEmpty()) {
+                return locale.getDisplayCountry();
+            }
+        } catch (Exception e) {
+            logger.debug("Failed to get country from locale: {}", e.getMessage());
+        }
+        
+        return "Unknown";
+    }
+    
+    /**
+     * Extract country from JSON response
+     */
+    private String extractCountryFromJson(String json) {
+        try {
+            // Simple JSON parsing for country field
+            // Expected format: {"country":"United States","countryCode":"US",...}
+            int countryIndex = json.indexOf("\"country\":\"");
+            if (countryIndex != -1) {
+                int startIndex = countryIndex + 11; // Length of "country":"
+                int endIndex = json.indexOf("\"", startIndex);
+                if (endIndex != -1) {
+                    return json.substring(startIndex, endIndex);
+                }
+            }
+        } catch (Exception e) {
+            logger.debug("Failed to parse country from JSON: {}", e.getMessage());
+        }
+        return null;
     }
 
     /**

@@ -59,6 +59,9 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
      * @throws UnsupportedEncodingException problems creating a temporary file
      */
     void asperaUpload() throws FaspManagerException, UnsupportedEncodingException {
+        // Prepare submission to calculate totalFileSize and set up filesToSubmitIter
+        prepareSubmission();
+        
         String ascpLocation = chooseAsperaBinary();
         logger.debug("Aspera binary location {}", ascpLocation);
         File executable = new File(ascpLocation);
@@ -113,7 +116,13 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
             faspManager = FaspManager.getSingleton();
         } catch (InitializationException e) {
             FaspManager.destroy();
-            publish(new UploadErrorMessage(this, null, "Failed to initialize via Aspera manager"));
+            String initErrorMsg = "Failed to initialize Aspera transfer manager" +
+                "\n\nThis could be due to network restrictions, firewall settings, or network instability." +
+                "\n\nAlternative options:" +
+                "\n1. Go back one step and select FTP upload instead" +
+                "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
+                "\n3. Contact your system administrator to enable Aspera ports (TCP & UDP 33001)";
+            publish(new UploadErrorMessage(this, null, initErrorMsg));
             return;
         }
         int totalNumOfFiles = submissionRecord.getSubmission().getDataFiles().size();
@@ -128,30 +137,55 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                         faspManager.addSource(sessionStats.getId(), file.getAbsolutePath(), folder + File.separator + file.getName());
                     } catch (FaspManagerException e) {
                         FaspManager.destroy();
-                        publish(new UploadErrorMessage(this, null, "Failed to upload next file via Aspera: " + file.getName()));
+                        String faspErrorMsg = "Failed to upload file via Aspera: " + file.getName() +
+                            "\n\nThis could be due to network restrictions, firewall settings, or network instability." +
+                            "\n\nAlternative options:" +
+                            "\n1. Go back one step and select FTP upload instead" +
+                            "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
+                            "\n3. Contact your system administrator to enable Aspera ports (TCP & UDP 33001)";
+                        publish(new UploadErrorMessage(this, null, faspErrorMsg));
                     }
                     count++;
                 }
                 break;
             case PROGRESS:
                 int uploadedNumOfFiles = (int) sessionStats.getFilesComplete();
+                long transferredBytes = sessionStats.getTotalTransferredBytes();
                 logger.debug("Aspera transfer in progress");
-                logger.debug("Total files: ");
-                logger.debug("Total files: " + totalNumOfFiles);
-                logger.debug("Files uploaded: " + uploadedNumOfFiles);
-                logger.debug("Total file size " + totalFileSize);
-                logger.debug("Uploaded file size " + sessionStats.getTotalTransferredBytes());
-                publish(new UploadProgressMessage(this, null, totalFileSize, sessionStats.getTotalTransferredBytes(), totalNumOfFiles, uploadedNumOfFiles));
+                logger.debug("Total files: {}", totalNumOfFiles);
+                logger.debug("Files uploaded: {}", uploadedNumOfFiles);
+                logger.debug("Total file size: {} bytes", totalFileSize);
+                logger.debug("Uploaded file size: {} bytes", transferredBytes);
+                
+                // Always publish progress, even if totalFileSize is 0
+                // Use transferredBytes as the total if totalFileSize is 0
+                long effectiveTotalSize = totalFileSize > 0 ? totalFileSize : Math.max(transferredBytes, 1);
+                publish(new UploadProgressMessage(this, null, effectiveTotalSize, transferredBytes, totalNumOfFiles, uploadedNumOfFiles));
                 break;
             case FILE_ERROR:
                 logger.info("File " + fileInfo.getName() + "Failed to submit" + fileInfo.getErrDescription());
-                publish(new UploadErrorMessage(this, null, "Failed to upload file via Aspera: " + fileInfo.getName()));
+                String fileErrorMsg = "Failed to upload file via Aspera: " + fileInfo.getName() + 
+                    "\n\nAlternative: Consider using Globus for file transfer." +
+                    "\nVisit: https://www.ebi.ac.uk/pride/markdownpage/globus";
+                publish(new UploadErrorMessage(this, null, fileErrorMsg));
+                break;
             case FILE_STOP:
                 if (fileInfo.getState().equals(FileState.FINISHED)) {
-                    publish(new UploadProgressMessage(this, null, totalFileSize, totalFileSize, totalNumOfFiles, totalNumOfFiles));
                     finishedFileCount++;
                     String[] fileNameArray = fileInfo.getName().split("/");
                     logger.info("File {} uploaded successfully", fileNameArray[fileNameArray.length - 1]);
+                    
+                    // Calculate current progress based on completed files
+                    // If totalFileSize is 0, use file count progress instead
+                    long currentProgress;
+                    if (totalFileSize > 0) {
+                        currentProgress = (finishedFileCount * totalFileSize) / totalNumOfFiles;
+                    } else {
+                        // Use file count progress when totalFileSize is 0
+                        currentProgress = (finishedFileCount * 100) / totalNumOfFiles;
+                    }
+                    publish(new UploadProgressMessage(this, null, totalFileSize > 0 ? totalFileSize : 100, currentProgress, totalNumOfFiles, finishedFileCount));
+                    
                     // last file has finished uploading, add a new one
                     if (filesToSubmitIter.hasNext()) {
                         File file = filesToSubmitIter.next();
@@ -159,11 +193,20 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                             faspManager.addSource(sessionStats.getId(), file.getAbsolutePath(), folder + File.separator + file.getName());
                         } catch (FaspManagerException e) {
                             FaspManager.destroy();
-                            publish(new UploadErrorMessage(this, null, "Failed to upload next file via Aspera: " + file.getName()));
+                            String faspErrorMsg = "Failed to upload file via Aspera: " + file.getName() +
+                                "\n\nThis could be due to network restrictions, firewall settings, or network instability." +
+                                "\n\nAlternative options:" +
+                                "\n1. Go back one step and select FTP upload instead" +
+                                "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
+                                "\n3. Contact your system administrator to enable Aspera ports (TCP & UDP 33001)";
+                            publish(new UploadErrorMessage(this, null, faspErrorMsg));
                         }
                     } else {
                         if (sessionStats.getFilesComplete() == totalNumOfFiles + 1) {
                             FaspManager.destroy();
+                            // Send final progress message with appropriate total size
+                            long finalTotalSize = totalFileSize > 0 ? totalFileSize : 100;
+                            publish(new UploadProgressMessage(this, null, finalTotalSize, finalTotalSize, totalNumOfFiles, totalNumOfFiles));
                             publish(new UploadSuccessMessage(this));
                             logger.info("Aspera all files transferred");
                         }
@@ -171,7 +214,9 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                 }
                 break;
             case SESSION_STOP:
-                publish(new UploadProgressMessage(this, null, totalFileSize, totalFileSize, totalNumOfFiles, totalNumOfFiles));
+                // Send final progress message with appropriate total size
+                long finalTotalSize = totalFileSize > 0 ? totalFileSize : 100;
+                publish(new UploadProgressMessage(this, null, finalTotalSize, finalTotalSize, totalNumOfFiles, totalNumOfFiles));
                 publish(new UploadSuccessMessage(this));
                 FaspManager.destroy();
                 logger.info("Aspera Session Stop");
@@ -179,7 +224,13 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
             case SESSION_ERROR:
                 logger.error("Aspera session Error: " + transferEvent.getDescription());
                 FaspManager.destroy();
-                publish(new UploadErrorMessage(this, null, "Failed to upload via Aspera: " + transferEvent.getDescription()));
+                String asperaErrorMsg = "Aspera transfer failed: " + transferEvent.getDescription() + 
+                    "\n\nThis could be due to network restrictions, firewall settings, or network instability." +
+                    "\n\nAlternative options:" +
+                    "\n1. Go back one step and select FTP upload instead" +
+                    "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
+                    "\n3. Contact your system administrator to enable Aspera ports (TCP & UDP 33001)";
+                publish(new UploadErrorMessage(this, null, asperaErrorMsg));
                 break;
         }
     }

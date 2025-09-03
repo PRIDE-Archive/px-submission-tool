@@ -117,7 +117,42 @@ public class SubmissionForm extends Form implements ActionListener {
      * @param message upload message
      */
     public void setUploadMessage(String message) {
-        uploadingFileLabel.setText(message);
+        if (message != null) {
+            // Handle line breaks and make URLs clickable
+            String htmlMessage = message.replace("\n", "<br>");
+            
+            // Make URLs clickable (look for http:// or https://)
+            htmlMessage = htmlMessage.replaceAll(
+                "(https?://[^\\s<>]+)", 
+                "<a href=\"$1\" style=\"color: #0066cc; text-decoration: underline;\">$1</a>"
+            );
+            
+            // Wrap in HTML tags
+            htmlMessage = "<html><body style='font-family: Arial, sans-serif;'>" + htmlMessage + "</body></html>";
+            
+            uploadingFileLabel.setText(htmlMessage);
+            
+            // Make the label handle mouse clicks for URLs
+            uploadingFileLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            uploadingFileLabel.addMouseListener(new java.awt.event.MouseAdapter() {
+                public void mouseClicked(java.awt.event.MouseEvent evt) {
+                    String text = uploadingFileLabel.getText();
+                    // Extract URL from the HTML and open it
+                    java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("href=\"(https?://[^\"]+)\"");
+                    java.util.regex.Matcher matcher = pattern.matcher(text);
+                    if (matcher.find()) {
+                        String url = matcher.group(1);
+                        try {
+                            java.awt.Desktop.getDesktop().browse(new java.net.URI(url));
+                        } catch (Exception e) {
+                            logger.warn("Could not open URL: " + url, e);
+                        }
+                    }
+                }
+            });
+        } else {
+            uploadingFileLabel.setText(message);
+        }
     }
 
     /**
@@ -181,14 +216,14 @@ public class SubmissionForm extends Form implements ActionListener {
     }
 
     /**
-     * Show submission complete message
+     * Show submission complete message with close button
      *
      * @param submissionRef submission reference id
      */
     public void showCompletionMessage(String submissionRef) {
         JPanel messagePanel = new JPanel(new BorderLayout());
         messagePanel.setBorder(BorderUtil.createLoweredBorder());
-        messagePanel.setPreferredSize(new Dimension(500, 200));
+        messagePanel.setPreferredSize(new Dimension(500, 250));
 
         JPanel contentPanel = new HeaderPanel();
         contentPanel.setLayout(new BorderLayout());
@@ -218,32 +253,15 @@ public class SubmissionForm extends Form implements ActionListener {
         messageLabel.setFont(messageLabel.getFont().deriveFont(16f));
         messageLabel.setText(App.getInstance().getDesktopContext().getProperty("submission.complete.message"));
 
+
         contentPanel.add(titlePanel, BorderLayout.NORTH);
         contentPanel.add(messageLabel, BorderLayout.CENTER);
-
 
         messagePanel.add(contentPanel, BorderLayout.CENTER);
         this.add(messagePanel, BorderLayout.SOUTH);
         this.revalidate();
         this.repaint();
-
-        // Show feeback capture panel
-        //this.showFeedbackMessage(submissionRef);
     }
 
-    // Feedback submission feature
-
-    public FeedbackFormController showFeedbackMessage(String submissionRef) {
-        // Put the upload bar on the northern border
-        this.remove(this.progPanel);
-        this.add(this.progPanel, BorderLayout.NORTH);
-
-        // TODO - Delegate the rest of the code to the FeedbackFormController
-        // Callback
-        FeedbackFormController fbfController = new FeedbackFormController(submissionRef);
-        fbfController.addToParentForm(this, BorderLayout.CENTER);
-
-        // Return the feedback subform controller (aka form)
-        return fbfController;
-    }
+    // Feedback system removed - no longer needed
 }

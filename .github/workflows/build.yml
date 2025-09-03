@@ -1,0 +1,55 @@
+name: Build and Test
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        java-version: [8, 11]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK ${{ matrix.java-version }}
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ matrix.java-version }}
+        distribution: 'temurin'
+        
+    - name: Cache Maven packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+        
+    - name: Build with Maven
+      run: mvn clean compile test-compile
+      
+    - name: Run Tests
+      run: mvn test
+      
+    - name: Build Distribution
+      run: mvn clean package assembly:single
+      
+    - name: Verify Distribution Contents
+      run: |
+        cd target
+        ls -la *.zip
+        unzip -l px-submission-tool-*.zip | head -20
+        
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: px-submission-tool-${{ matrix.os }}-java${{ matrix.java-version }}
+        path: target/px-submission-tool-*.zip
+        retention-days: 7

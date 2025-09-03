@@ -124,16 +124,16 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                 FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.ADAT.getFileExtension()) ||
                         FilenameUtils.getExtension(dataFile.getFile().getName()).equals(AffinityFileFormat.BCL.getFileExtension()));
 
-        boolean hasNpxFile = submission.getDataFiles().stream().anyMatch(dataFile ->
+        boolean hasNpxCsvorParquetFile = submission.getDataFiles().stream().anyMatch(dataFile ->
                 dataFile.getFileName().endsWith(AffinityFileFormat.NPX.getFileExtension()) ||
                         dataFile.getFileName().endsWith(AffinityFileFormat.PARQUET_RESULT.getFileExtension()));
 
-        if (((hasAdatFile || hasNpxFile) && !submissionType.equals(SubmissionTypeConstants.AFFINITY))
-                || (!hasAdatFile && !hasNpxFile && submissionType.equals(SubmissionTypeConstants.AFFINITY))) {
+        if (((hasAdatFile || hasNpxCsvorParquetFile) && !submissionType.equals(SubmissionTypeConstants.AFFINITY))
+                || (!hasAdatFile && !hasNpxCsvorParquetFile && submissionType.equals(SubmissionTypeConstants.AFFINITY))) {
             if (!submissionType.equals(SubmissionTypeConstants.AFFINITY)) {
-                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSubmissionType(hasAdatFile || hasNpxFile));
+                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSubmissionType(hasAdatFile || hasNpxCsvorParquetFile));
             }
-            return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSubmissionType(hasAdatFile || hasNpxFile));
+            return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSubmissionType(hasAdatFile || hasNpxCsvorParquetFile));
         }
 
         if (submissionType.equals(SubmissionTypeConstants.AFFINITY)) {
@@ -144,7 +144,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             }
 
             if (submission.getProjectMetaData().getMassSpecExperimentMethods().stream().anyMatch(
-                    cvParam -> cvParam.getAccession().equals(SOMASCAN_EXP) && hasNpxFile
+                    cvParam -> cvParam.getAccession().equals(SOMASCAN_EXP) && hasNpxCsvorParquetFile
             )) {
                 return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidExpMethod(SOMASCAN_EXP));
             }
@@ -264,7 +264,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             }
             setProgress(40);
 
-            if (hasNpxFile) {
+            if (hasNpxCsvorParquetFile) {
                 List<DataFile> npxFiles = submission.getDataFiles().stream()
                         .filter(dataFile -> dataFile.getFileName()
                                 .endsWith(AffinityFileFormat.NPX.getFileExtension())).collect(Collectors.toList());

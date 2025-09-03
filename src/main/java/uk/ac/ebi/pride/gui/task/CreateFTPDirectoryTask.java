@@ -58,7 +58,13 @@ public class CreateFTPDirectoryTask extends TaskAdapter<Void, UploadMessage> {
             reply = ftp.getReplyCode();
 
             if (!FTPReply.isPositiveCompletion(reply)) {
-                publish(new UploadErrorMessage(this, null, "Failed to connect to FTP server"));
+                String errorMessage = "Failed to connect to FTP server" +
+                    "\n\nThis could be due to network restrictions, firewall settings, or network instability." +
+                    "\n\nAlternative options:" +
+                    "\n1. Go back one step and select Aspera upload instead" +
+                    "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
+                    "\n3. Contact your system administrator to enable FTP ports (TCP 21)";
+                publish(new UploadErrorMessage(this, null, errorMessage));
                 return null;
             }
 
@@ -74,7 +80,13 @@ public class CreateFTPDirectoryTask extends TaskAdapter<Void, UploadMessage> {
         } catch (IOException e) {
             if (!this.isCancelled()) {
                 logger.error("IOException while upload ftp directory", e);
-                publish(new UploadErrorMessage(this, null, "Failed to initiate FTP upload"));
+                String errorMessage = "Failed to initiate FTP upload" +
+                    "\n\nThis could be due to network restrictions, firewall settings, or network instability." +
+                    "\n\nAlternative options:" +
+                    "\n1. Go back one step and select Aspera upload instead" +
+                    "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
+                    "\n3. Contact your system administrator to enable FTP ports (TCP 21)";
+                publish(new UploadErrorMessage(this, null, errorMessage));
             }
         } finally {
             if (!this.isCancelled()) {

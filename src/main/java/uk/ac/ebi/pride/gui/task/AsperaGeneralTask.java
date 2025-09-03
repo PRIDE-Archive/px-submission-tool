@@ -64,7 +64,7 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
   }
 
   /** Prepare the Aspera-based submission. */
-  private void prepareSubmission() {
+  protected void prepareSubmission() {
     logger.debug("Preparing for uploading an entire submission");
     Set<File> files = Collections.synchronizedSet(new LinkedHashSet<>());
     File submissionFile = createSubmissionFile();
@@ -153,7 +153,9 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
         ascpLocation = appContext.getProperty("aspera.client.windows64.binary");
         break;
       default:
-        String msg = "Unsupported platform detected:" + OSDetector.os + " arch: " + OSDetector.arch;
+        String msg = "Unsupported platform detected:" + OSDetector.os + " arch: " + OSDetector.arch + 
+            "\n\nAlternative: Consider using Globus for file transfer." +
+            "\nVisit: https://www.ebi.ac.uk/pride/markdownpage/globus";
         logger.error(msg);
         publish(new UploadErrorMessage(this, null, msg));
     }
@@ -184,7 +186,9 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
       SummaryDescriptor.addToolVersionAndLicenseToSummary(submissionFile.getAbsolutePath(), appContext);
       return submissionFile;
     } catch (SubmissionFileException ex) {
-      String msg = "Failed to create submission file";
+      String msg = "Failed to create submission file" +
+          "\n\nAlternative: Consider using Globus for file transfer." +
+          "\nVisit: https://www.ebi.ac.uk/pride/markdownpage/globus";
       logger.error(msg, ex);
       publish(new UploadErrorMessage(this, null, msg));
     }
