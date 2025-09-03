@@ -201,7 +201,7 @@ public class AppBootstrap {
     }
 
     /**
-     * Log system information including tool version, operating system, and country
+     * Log system information including tool version and operating system
      */
     private void logSystemInformation() {
         try {
@@ -217,13 +217,9 @@ public class AppBootstrap {
             String userHome = System.getProperty("user.home");
             String userDir = System.getProperty("user.dir");
             
-            // Get user's country
-            String country = getUserCountry();
-            
             logger.info("=== PX Submission Tool System Information ===");
             logger.info("Tool Version: {}", toolVersion);
             logger.info("Operating System: {} {} ({})", osName, osVersion, osArch);
-            logger.info("Country: {}", country);
             logger.info("User Home: {}", userHome);
             logger.info("Working Directory: {}", userDir);
             logger.info("=============================================");
@@ -266,78 +262,7 @@ public class AppBootstrap {
         }
     }
     
-    /**
-     * Get user's country based on their public IP address
-     */
-    private String getUserCountry() {
-        try {
-            // Use a free IP geolocation service
-            URL url = new URL("http://ip-api.com/json/");
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            connection.setConnectTimeout(5000); // 5 second timeout
-            connection.setReadTimeout(5000);
-            
-            int responseCode = connection.getResponseCode();
-            if (responseCode == 200) {
-                Scanner scanner = new Scanner(connection.getInputStream());
-                StringBuilder response = new StringBuilder();
-                while (scanner.hasNextLine()) {
-                    response.append(scanner.nextLine());
-                }
-                scanner.close();
-                
-                // Parse JSON response to extract country
-                String jsonResponse = response.toString();
-                String country = extractCountryFromJson(jsonResponse);
-                if (country != null && !country.isEmpty()) {
-                    return country;
-                }
-            }
-            
-        } catch (Exception e) {
-            logger.debug("Failed to determine country from IP: {}", e.getMessage());
-        }
-        
-        // Fallback: try to get country from system locale
-        try {
-            String country = System.getProperty("user.country");
-            if (country != null && !country.isEmpty()) {
-                return country;
-            }
-            
-            // Try from locale
-            java.util.Locale locale = java.util.Locale.getDefault();
-            if (locale != null && locale.getCountry() != null && !locale.getCountry().isEmpty()) {
-                return locale.getDisplayCountry();
-            }
-        } catch (Exception e) {
-            logger.debug("Failed to get country from locale: {}", e.getMessage());
-        }
-        
-        return "Unknown";
-    }
-    
-    /**
-     * Extract country from JSON response
-     */
-    private String extractCountryFromJson(String json) {
-        try {
-            // Simple JSON parsing for country field
-            // Expected format: {"country":"United States","countryCode":"US",...}
-            int countryIndex = json.indexOf("\"country\":\"");
-            if (countryIndex != -1) {
-                int startIndex = countryIndex + 11; // Length of "country":"
-                int endIndex = json.indexOf("\"", startIndex);
-                if (endIndex != -1) {
-                    return json.substring(startIndex, endIndex);
-                }
-            }
-        } catch (Exception e) {
-            logger.debug("Failed to parse country from JSON: {}", e.getMessage());
-        }
-        return null;
-    }
+
 
     /**
      * Check whether it is Windows platform
