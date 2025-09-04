@@ -27,10 +27,13 @@
 
     <!-- table of contents -->
     <div class="introduction">
-        <p>This section you will find the answers to a list of frequently asked questions:</p>
+        <p>This section contains answers to frequently asked questions:</p>
         <ul>
             <li><a href="#next">What happens to my dataset?</a></li>
             <li><a href="#wireless">Why my submission keeps failing?</a></li>
+            <li><a href="#java">Java and system requirements</a></li>
+            <li><a href="#launcher">Launcher and startup issues</a></li>
+            <li><a href="#files">File management and checksums</a></li>
         </ul>
     </div>
 
@@ -62,11 +65,76 @@
                 <h3>Why my submission keeps failing?</h3>
 
                 <p>
-                    There are two things you should check:
+                    There are several things you should check:
                     <ul>
-                        <li>Wireless network: try to use a wired connection if you using a wireless network, wireless networks is one of main reasons to have connection timeout.</li>
-                        <li>Firewall settings: check your local firewall settings with your system administrator, make sure that connections to external ftp servers are allowed.</li>
+                        <li><strong>Network connection:</strong> Try using a wired connection if you're on wireless, as wireless networks can cause connection timeouts.</li>
+                        <li><strong>Firewall settings:</strong> Check with your system administrator to ensure connections to external servers are allowed.</li>
+                        <li><strong>Transfer method:</strong> Try different transfer methods (Aspera → FTP → Globus) if one fails.</li>
+                        <li><strong>Network restrictions:</strong> Some corporate networks block certain protocols - try Globus as an alternative.</li>
                     </ul>
+                </p>
+            </div>
+
+            <div class="piProcedureSteps">
+                <a name="java"></a>
+
+                <h3>Java and system requirements</h3>
+
+                <p>
+                    <strong>Q: Do I need to install Java separately?</strong><br/>
+                    A: No! The tool automatically downloads Java 21 JRE if needed. It checks your system first and only downloads if necessary.
+                </p>
+
+                <p>
+                    <strong>Q: What if the Java download fails?</strong><br/>
+                    A: You can install Java 21 manually from <a href="https://adoptium.net/">Adoptium</a>, or check your internet connection and firewall settings.
+                </p>
+
+                <p>
+                    <strong>Q: Which operating systems are supported?</strong><br/>
+                    A: Windows 10+, macOS 10.14+, and Linux. The tool is completely portable and works on all major platforms.
+                </p>
+            </div>
+
+            <div class="piProcedureSteps">
+                <a name="launcher"></a>
+
+                <h3>Launcher and startup issues</h3>
+
+                <p>
+                    <strong>Q: The tool won't start on macOS - what should I do?</strong><br/>
+                    A: macOS security may block the launcher. Right-click <code>start.sh</code> and select "Open", or run <code>xattr -cr .</code> in Terminal.
+                </p>
+
+                <p>
+                    <strong>Q: I get permission errors on Linux/macOS</strong><br/>
+                    A: Make the launcher executable by running <code>chmod +x start.sh</code> in Terminal.
+                </p>
+
+                <p>
+                    <strong>Q: The tool says "Another instance is running" but I don't see it</strong><br/>
+                    A: Check for background Java processes and kill them, or restart your computer. The tool uses network-based locking.
+                </p>
+            </div>
+
+            <div class="piProcedureSteps">
+                <a name="files"></a>
+
+                <h3>File management and checksums</h3>
+
+                <p>
+                    <strong>Q: What are checksum.txt files?</strong><br/>
+                    A: These are automatically generated files that ensure data integrity during upload. They're protected from removal and required for submission.
+                </p>
+
+                <p>
+                    <strong>Q: Can I remove checksum.txt files?</strong><br/>
+                    A: No, these files are protected to maintain submission integrity. The tool prevents their removal and regenerates them as needed.
+                </p>
+
+                <p>
+                    <strong>Q: How do I remove individual files?</strong><br/>
+                    A: When files are present, a "Remove" column appears with trash icon buttons. Click the trash icon next to any file to remove it individually.
                 </p>
             </div>
         </div>

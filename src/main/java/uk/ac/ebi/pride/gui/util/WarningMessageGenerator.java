@@ -313,7 +313,7 @@ public final class WarningMessageGenerator {
         if(hasAdatOrNPXFile) {
             return "<html>" + "<b>Your submission contains .adat/.bml/.npx.csv/.npx.parquet files</b><br/>" + "Please please go back and select Affinity Proteomics as Submission Type" + "</html>";
         }
-        return "<html>" + "<b>Your Submission type is Affinity Proteomics</b><br/>" + "Please upload .adat/.bml/.raw.parquet/.raw.csv files as RAW files or go back to change the SubmissionType" + "</html>";
+        return "<html>" + "<b>Your Submission type is Affinity Proteomics</b><br/>" + "Please upload .adat/.bml/.raw.parquet/.raw.csv files and mandatory RESULT files or go back to change the SubmissionType" + "</html>";
 
     }
 

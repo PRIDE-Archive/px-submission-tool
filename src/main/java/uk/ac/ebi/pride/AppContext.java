@@ -282,6 +282,12 @@ public class AppContext extends DesktopContext {
      * @param dataFile data file to remove
      */
     public synchronized void removeDatafile(DataFile dataFile) {
+        // Don't allow removal of checksum.txt files
+        if (dataFile.getFileName().equals("checksum.txt")) {
+            logger.warn("Attempted to remove checksum.txt file: {}", dataFile.getFileName());
+            return;
+        }
+        
         Submission submission = submissionRecord.getSubmission();
 
         if (submission.containsDataFile(dataFile)) {
@@ -330,6 +336,12 @@ public class AppContext extends DesktopContext {
      * @param dataFile data file to remove
      */
     public synchronized void removeResubmissionDatafile(DataFile dataFile) {
+        // Don't allow removal of checksum.txt files
+        if (dataFile.getFileName().equals("checksum.txt")) {
+            logger.warn("Attempted to remove checksum.txt file from resubmission: {}", dataFile.getFileName());
+            return;
+        }
+        
         Resubmission resubmission = resubmissionRecord.getResubmission();
 
         if (resubmission.containsDataFile(dataFile)) {

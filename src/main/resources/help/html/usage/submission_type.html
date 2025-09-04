@@ -37,11 +37,11 @@
         <br/>
 
         <div class="warning">
-            Before start the submission, you need to decide on which type of submission to make:
+            Before starting the submission, you need to decide on which type of submission to make:
             <ul>
                 <li><a href="#complete">Complete submission</a></li>
                 <li><a href="#partial">Partial submission</a></li>
-                <li><a href="#bulk">Bulk submission</a></li>
+                <li><a href="#affinity">Affinity proteomics submission</a></li>
             </ul>
         </div>
 
@@ -69,8 +69,8 @@
                 </p>
 
                 <p>
-                    The complete submission requires three sets of information:
-                <li><b>Result Files</b>they are either mzIdentML or mzTab with spectrum files such as: MGF, mzML.
+                    The complete submission requires the following information:
+                <li><b>Result Files</b>: They are either mzIdentML or mzTab with spectrum files such as: MGF, mzML.
                 </li>
 
                 <li><b>Raw Files</b>: MS instrument outputs, such as: BRUKER .baf files. If your raw outputs are
@@ -81,6 +81,10 @@
                     private by default, the user name and password will help us to secure your submissions.
                     You can register a new user account at <a href="https://www.ebi.ac.uk/pride/archive/register">PRIDE</a>
                 </li>
+
+                <li><b>Experiment Details</b>: Details about the setup and context of your experiment (e.g., sample details, protocols, species, tissues)</li>
+
+                <li><b>Lab Head</b>: The affiliation of the lab head (e.g., name, email, and address)</li>
                 </p>
 
                 <p>
@@ -113,33 +117,43 @@
 
                 <li><b>PRIDE Login</b>: PRIDE user name and password. All submissions to the ProteomeXchange are
                     private by default, the user name and password will help us to secure your submissions.
-                    You can register a new user account at <a href="http://www.ebi.ac.uk/pride/startRegistration.do">PRIDE</a>
+                    You can register a new user account at <a href="https://www.ebi.ac.uk/pride/archive/register">PRIDE</a>
                 </li>
+
+                <li><b>Experiment Details</b>: Details about the setup and context of your experiment (e.g., sample details, protocols, species, tissues)</li>
+
+                <li><b>Lab Head</b>: The affiliation of the lab head (e.g., name, email, and address)</li>
                 </p>
             </div>
 
             <div class="piProcedureSteps">
-                <a name="bulk"/>
+                <a name="affinity"/>
 
-                <h3>Bulk submission</h3>
+                <h3>Affinity proteomics submission</h3>
 
                 <p>
-                    Bulk submission is mainly for submissions that contain a large set of data files,
-                    for example, more than 200 files. It helps to avoid manually assigning all the required information.
-                    Both complete submissions and partial submissions can be made used through option.
+                    This submission type is specifically designed for affinity proteomics datasets. Affinity proteomics 
+                    experiments involve the targeted quantification of proteins in a biological sample using specific 
+                    binding interactions between molecules, such as antibodies and antigens (e.g., SomaScan or Olink experiments).
                 </p>
 
                 <p>
-                    The bulk submission requires three set of information:
-                <li><b>Experiment data files</b>: The files you want to submit to the ProteomeXchange, such as: raw
-                    instrument outputs, search engine outputs.
-                </li>
-                <li><b>Submission summary file</b>: This file captures the descriptive information about a
-                    ProteomeXchange submission, such as: experimental metadata, file relations, and etc. For the
-                    details,
-                    please refer to the <a href="http://www.proteomexchange.org/bulk-submission">file format</a>.
-                </li>
+                    A PAD identifier will be provided to uniquely identify the dataset.
                 </p>
+
+                <p>
+                    The affinity proteomics submission requires the following information:
+                <li><b>Protein Quantification Files</b>: Files containing protein quantification data from affinity proteomics experiments.</li>
+                <li><b>Raw Data Files (Recommended)</b>: Raw instrument outputs, if available.</li>
+                <li><b>PRIDE Login</b>: PRIDE user name and password for secure submission.</li>
+                <li><b>Experiment Details</b>: Details about the affinity proteomics experimental setup and context.</li>
+                <li><b>Lab Head</b>: The affiliation of the lab head (e.g., name, email, and address).</li>
+                </p>
+
+                <div class="note">
+                    <strong>Note:</strong> This submission type is specifically tailored for affinity proteomics workflows 
+                    and may have different file type requirements compared to standard proteomics submissions.
+                </div>
             </div>
         </div>
     </div>

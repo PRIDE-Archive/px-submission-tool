@@ -28,12 +28,18 @@
     <!-- table of contents -->
     <div class="introduction">
         <p>
-            Resubmission on the ProteomeXchange datasets can only happen for private ProteomeXchange dataset.
+            Resubmission on the ProteomeXchange datasets can only happen for private ProteomeXchange datasets.
         </p>
 
         <p class="warning">
-            Please ensure that you have your PRIDE login credentials, this will help us locate your previous resubmissions.
+            Please ensure that you have your PRIDE login credentials, this will help us locate your previous submissions.
         </p>
+
+        <ul>
+            <li><a href="#resubmission_process">Resubmission Process</a></li>
+            <li><a href="#file_states">File States</a></li>
+            <li><a href="#validation">Validation</a></li>
+        </ul>
     </div>
 
     <!-- content -->
@@ -52,6 +58,67 @@
                     <br/>
                     <img src="images/resubmission_dialog.png" alt="Resubmission dialog">
                 </p>
+            </div>
+
+            <div class="piProcedureSteps">
+                <a name="resubmission_process"></a>
+
+                <h3>Resubmission Process</h3>
+
+                <p>
+                    During resubmission, you can modify your dataset in several ways:
+                </p>
+
+                <ul>
+                    <li><strong>Add new files</strong> - Upload additional files to your dataset</li>
+                    <li><strong>Modify existing files</strong> - Replace existing files with updated versions</li>
+                    <li><strong>Remove files</strong> - Delete files from your dataset</li>
+                    <li><strong>Keep files unchanged</strong> - Leave existing files as they are</li>
+                </ul>
+            </div>
+
+            <div class="piProcedureSteps">
+                <a name="file_states"></a>
+
+                <h3>File States</h3>
+
+                <p>
+                    In the resubmission interface, each file has a state that determines what action will be taken:
+                </p>
+
+                <ul>
+                    <li><strong>NONE</strong> - File will remain unchanged (default for existing files)</li>
+                    <li><strong>ADD</strong> - File will be added to the dataset (default for new files)</li>
+                    <li><strong>MODIFY</strong> - File will be replaced with a new version</li>
+                    <li><strong>DELETE</strong> - File will be removed from the dataset</li>
+                </ul>
+
+                <div class="note">
+                    <strong>Important:</strong> When you mark a file as MODIFY, you must upload a new file with the same name. 
+                    The system will automatically replace the old file with the new one.
+                </div>
+            </div>
+
+            <div class="piProcedureSteps">
+                <a name="validation"></a>
+
+                <h3>Validation</h3>
+
+                <p>
+                    The resubmission process includes comprehensive validation:
+                </p>
+
+                <ul>
+                    <li><strong>Duplicate detection</strong> - Prevents adding files that already exist (unless marked as MODIFY)</li>
+                    <li><strong>Missing file validation</strong> - Ensures all files marked as MODIFY have corresponding new files</li>
+                    <li><strong>File integrity checks</strong> - Validates file formats and completeness</li>
+                    <li><strong>Metadata validation</strong> - Ensures all required metadata is provided</li>
+                </ul>
+
+                <div class="warning">
+                    <strong>Validation Errors:</strong> If validation fails, you'll see detailed error messages with suggestions 
+                    on how to fix the issues. All validation errors must be resolved before submission can proceed.
+                </div>
             </div>
         </div>
     </div>

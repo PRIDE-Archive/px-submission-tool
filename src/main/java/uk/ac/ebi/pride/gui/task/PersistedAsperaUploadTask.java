@@ -29,6 +29,8 @@ import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Uploads data via Aspera.
@@ -37,11 +39,24 @@ import java.io.UnsupportedEncodingException;
 public class PersistedAsperaUploadTask extends AsperaGeneralTask implements TransferListener {
 
     public static final Logger logger = LoggerFactory.getLogger(AsperaUploadTask.class);
+    
+    // Timeout and monitoring constants (configurable via settings)
+    private final long TRANSFER_TIMEOUT_MS;
+    private final long PROGRESS_TIMEOUT_MS;
+    private final long MONITORING_INTERVAL_MS;
 
     /**
      * Finished file count
      */
     private int finishedFileCount;
+    
+    /**
+     * Transfer monitoring
+     */
+    private final AtomicLong lastProgressTime = new AtomicLong(System.currentTimeMillis());
+    private final AtomicLong transferStartTime = new AtomicLong(0);
+    private final AtomicBoolean transferCompleted = new AtomicBoolean(false);
+    private final AtomicBoolean transferTimedOut = new AtomicBoolean(false);
 
     /**
      * Constructor used for a new submission
@@ -50,6 +65,29 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
      */
     public PersistedAsperaUploadTask(SubmissionRecord submissionRecord) {
         super(submissionRecord);
+        
+        // Initialize timeout values from configuration with fallback defaults
+        long transferTimeout = 10 * 60 * 1000; // 10 minutes default
+        long progressTimeout = 2 * 60 * 1000;  // 2 minutes default
+        long monitoringInterval = 30 * 1000;   // 30 seconds default
+        
+        try {
+            DesktopContext appContext = App.getInstance().getDesktopContext();
+            transferTimeout = Long.parseLong(appContext.getProperty("aspera.timeout.transfer"));
+            progressTimeout = Long.parseLong(appContext.getProperty("aspera.timeout.progress"));
+            monitoringInterval = Long.parseLong(appContext.getProperty("aspera.timeout.monitoring"));
+            logger.debug("Aspera timeout configuration loaded: transfer={}ms, progress={}ms, monitoring={}ms", 
+                transferTimeout, progressTimeout, monitoringInterval);
+        } catch (Exception e) {
+            // Fallback to default values when Desktop is not available (e.g., in tests)
+            logger.debug("Using default Aspera timeout configuration: transfer={}ms, progress={}ms, monitoring={}ms", 
+                transferTimeout, progressTimeout, monitoringInterval);
+        }
+        
+        // Assign to final fields
+        TRANSFER_TIMEOUT_MS = transferTimeout;
+        PROGRESS_TIMEOUT_MS = progressTimeout;
+        MONITORING_INTERVAL_MS = monitoringInterval;
     }
 
     /**
@@ -73,6 +111,10 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
         RemoteLocation remoteLocation = new RemoteLocation(uploadDetail.getHost(), dropBox.getUserName(), dropBox.getPassword());
         String session = uploader.startTransferSession(remoteLocation, defaultTransferParams);
         logger.debug("Transfer Session ID: {}", session);
+        
+        // Start transfer monitoring
+        transferStartTime.set(System.currentTimeMillis());
+        startTransferMonitoring();
     }
 
     /**
@@ -100,6 +142,85 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
         xferParams.createPath = Boolean.parseBoolean(appContext.getProperty("aspera.xfer.createPath"));
         xferParams.persist = true;
         return xferParams;
+    }
+    
+    /**
+     * Starts a background thread to monitor transfer progress and detect timeouts
+     */
+    private void startTransferMonitoring() {
+        Thread monitoringThread = new Thread(() -> {
+            logger.info("Starting Aspera transfer monitoring");
+            try {
+                while (!transferCompleted.get() && !transferTimedOut.get()) {
+                    Thread.sleep(MONITORING_INTERVAL_MS);
+                    
+                    long currentTime = System.currentTimeMillis();
+                    long timeSinceStart = currentTime - transferStartTime.get();
+                    long timeSinceProgress = currentTime - lastProgressTime.get();
+                    
+                    // Check for overall timeout
+                    if (timeSinceStart > TRANSFER_TIMEOUT_MS) {
+                        logger.error("Aspera transfer timed out after {} minutes", TRANSFER_TIMEOUT_MS / 60000);
+                        transferTimedOut.set(true);
+                        handleTransferTimeout();
+                        break;
+                    }
+                    
+                    // Check for progress timeout
+                    if (timeSinceProgress > PROGRESS_TIMEOUT_MS) {
+                        logger.error("Aspera transfer stuck - no progress for {} minutes", PROGRESS_TIMEOUT_MS / 60000);
+                        transferTimedOut.set(true);
+                        handleTransferStuck();
+                        break;
+                    }
+                    
+                    logger.debug("Transfer monitoring: {}s elapsed, {}s since last progress", 
+                        timeSinceStart / 1000, timeSinceProgress / 1000);
+                }
+            } catch (InterruptedException e) {
+                logger.info("Transfer monitoring interrupted");
+                Thread.currentThread().interrupt();
+            }
+        });
+        monitoringThread.setDaemon(true);
+        monitoringThread.setName("AsperaTransferMonitor");
+        monitoringThread.start();
+    }
+    
+    /**
+     * Handles transfer timeout
+     */
+    private void handleTransferTimeout() {
+        FaspManager.destroy();
+        String timeoutMsg = "Aspera transfer timed out after " + (TRANSFER_TIMEOUT_MS / 60000) + " minutes" +
+            "\n\nThis could be due to:" +
+            "\n• Large file sizes taking longer than expected" +
+            "\n• Network instability or slow connection" +
+            "\n• Server-side processing delays" +
+            "\n\nAlternative options:" +
+            "\n1. Go back one step and select FTP upload instead" +
+            "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
+            "\n3. Try again with a more stable network connection";
+        publish(new UploadErrorMessage(this, null, timeoutMsg));
+    }
+    
+    /**
+     * Handles stuck transfer (no progress)
+     */
+    private void handleTransferStuck() {
+        FaspManager.destroy();
+        String stuckMsg = "Aspera transfer appears to be stuck - no progress for " + (PROGRESS_TIMEOUT_MS / 60000) + " minutes" +
+            "\n\nThis could be due to:" +
+            "\n• Network connectivity issues" +
+            "\n• Firewall blocking Aspera ports (TCP & UDP 33001)" +
+            "\n• Server-side problems" +
+            "\n• Network instability" +
+            "\n\nAlternative options:" +
+            "\n1. Go back one step and select FTP upload instead" +
+            "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
+            "\n3. Contact your system administrator to enable Aspera ports" +
+            "\n4. Try again with a more stable network connection";
+        publish(new UploadErrorMessage(this, null, stuckMsg));
     }
 
     /**
@@ -149,6 +270,9 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                 }
                 break;
             case PROGRESS:
+                // Update progress tracking
+                lastProgressTime.set(System.currentTimeMillis());
+                
                 int uploadedNumOfFiles = (int) sessionStats.getFilesComplete();
                 long transferredBytes = sessionStats.getTotalTransferredBytes();
                 logger.debug("Aspera transfer in progress");
@@ -203,6 +327,7 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                         }
                     } else {
                         if (sessionStats.getFilesComplete() == totalNumOfFiles + 1) {
+                            transferCompleted.set(true);
                             FaspManager.destroy();
                             // Send final progress message with appropriate total size
                             long finalTotalSize = totalFileSize > 0 ? totalFileSize : 100;
@@ -214,6 +339,7 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                 }
                 break;
             case SESSION_STOP:
+                transferCompleted.set(true);
                 // Send final progress message with appropriate total size
                 long finalTotalSize = totalFileSize > 0 ? totalFileSize : 100;
                 publish(new UploadProgressMessage(this, null, finalTotalSize, finalTotalSize, totalNumOfFiles, totalNumOfFiles));
@@ -222,6 +348,7 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                 logger.info("Aspera Session Stop");
                 break;
             case SESSION_ERROR:
+                transferCompleted.set(true);
                 logger.error("Aspera session Error: " + transferEvent.getDescription());
                 FaspManager.destroy();
                 String asperaErrorMsg = "Aspera transfer failed: " + transferEvent.getDescription() + 
@@ -231,6 +358,9 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                     "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
                     "\n3. Contact your system administrator to enable Aspera ports (TCP & UDP 33001)";
                 publish(new UploadErrorMessage(this, null, asperaErrorMsg));
+                break;
+            default:
+                logger.debug("Unhandled Aspera transfer event: {}", transferEvent);
                 break;
         }
     }

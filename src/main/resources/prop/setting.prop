@@ -68,6 +68,11 @@ aspera.xfer.token = PRIDE-Aspera-1-Token
 aspera.xfer.preCalculateJobSize = false
 aspera.xfer.createPath = true
 
+# Aspera timeout settings (in milliseconds)
+aspera.timeout.transfer = 600000
+aspera.timeout.progress = 120000
+aspera.timeout.monitoring = 30000
+
 # Report subsystem parameters
 libpxreport.keyfile.path = keyfiles/pride-submission-reports-e963f29e8d2a.p12
 libpxreport.client.service.name = libpxreport

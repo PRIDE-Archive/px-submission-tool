@@ -31,7 +31,18 @@ public class RemoveDataFileListener extends MouseAdapter {
             int row = table.rowAtPoint(e.getPoint());
             if (row >= 0 && row < table.getRowCount()) {
                 Object value = table.getValueAt(row, col);
-                ((AppContext) App.getInstance().getDesktopContext()).removeDatafile((DataFile) value);
+                DataFile dataFile = (DataFile) value;
+                
+                // Don't allow removal of checksum.txt files
+                if (dataFile.getFileName().equals("checksum.txt")) {
+                    JOptionPane.showMessageDialog(table, 
+                        "Cannot remove checksum.txt files. These files are required for submission integrity.",
+                        "File Removal Not Allowed", 
+                        JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                
+                ((AppContext) App.getInstance().getDesktopContext()).removeDatafile(dataFile);
             }
         }
     }
