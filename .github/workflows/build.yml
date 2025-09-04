@@ -1,0 +1,37 @@
+name: Build and Package
+
+on:
+  pull_request:
+    branches: [ main, master ]
+  push:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+        
+    - name: Compile and Test
+      run: mvn clean compile test
+        
+    - name: Package Distribution
+      run: mvn clean package assembly:single
+      
+    - name: Verify Distribution
+      run: |
+        cd target
+        ls -la *.zip
+        echo "Distribution size:"
+        du -h px-submission-tool-*.zip
+        echo "Contents:"
+        unzip -l px-submission-tool-*.zip | head -10

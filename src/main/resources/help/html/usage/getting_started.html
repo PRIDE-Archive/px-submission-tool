@@ -1,0 +1,168 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" type="text/css" media="all" href="css/s.css">
+    <title>Getting Started</title>
+</head>
+
+<body class="template">
+<div id="container">
+
+    <!-- header -->
+    <div id="header">
+        <h1>Getting Started</h1>
+    </div>
+
+    <!-- navigation -->
+    <table width="100%" border="0" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+        <tr>
+            <td align="left" class="topicpath">
+                <a href="prerequisite.html">Previous</a> | <a href="submission_type.html">Next</a>
+            </td>
+            <td width="70%" class="topicpath"></td>
+        </tr>
+    </table>
+
+    <!-- table of contents -->
+    <div class="introduction">
+        <p>
+            The PX Submission Tool is a portable, cross-platform application that makes it easy to submit 
+            proteomics datasets to the ProteomeXchange repository. This guide will help you get started.
+        </p>
+
+        <ul>
+            <li><a href="#download">Download and Installation</a></li>
+            <li><a href="#launch">Launching the Tool</a></li>
+            <li><a href="#troubleshooting">Troubleshooting</a></li>
+        </ul>
+    </div>
+
+    <!-- content -->
+    <div id="content">
+        <div class="section">
+            <div class="piProcedureSteps">
+                <a name="download"></a>
+
+                <h3>Download and Installation</h3>
+
+                <p>
+                    The PX Submission Tool is distributed as a portable ZIP file that works on Windows, macOS, and Linux.
+                </p>
+
+                <p>
+                    <strong>Download:</strong> Get the latest version from the 
+                    <a href="https://github.com/PRIDE-Archive/px-submission-tool/releases/latest">GitHub Releases page</a>.
+                </p>
+
+                <p>
+                    <strong>Extract:</strong> Simply extract the ZIP file to any location on your computer. 
+                    No installation is required - the tool is completely portable.
+                </p>
+
+                <div class="note">
+                    <strong>File Structure:</strong> After extraction, you'll see:
+                    <ul>
+                        <li><code>px-submission-tool-2.10.4.jar</code> - Main application</li>
+                        <li><code>start.bat</code> - Windows launcher</li>
+                        <li><code>start.sh</code> - macOS/Linux launcher</li>
+                        <li><code>README.md</code> - Detailed documentation</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="piProcedureSteps">
+                <a name="launch"></a>
+
+                <h3>Launching the Tool</h3>
+
+                <p>
+                    The tool includes smart Java management that automatically handles Java requirements:
+                </p>
+
+                <p>
+                    <strong>Windows:</strong> Double-click <code>start.bat</code> or run it from Command Prompt.
+                </p>
+
+                <p>
+                    <strong>macOS:</strong> Open Terminal, navigate to the tool directory, and run <code>./start.sh</code>.
+                </p>
+
+                <p>
+                    <strong>Linux:</strong> Open Terminal, navigate to the tool directory, and run <code>./start.sh</code>.
+                </p>
+
+                <div class="note">
+                    <strong>Smart JRE Management:</strong>
+                    <ul>
+                        <li>Checks if Java 21+ is already installed on your system</li>
+                        <li>If not found, automatically downloads Java 21 JRE</li>
+                        <li>Downloads are cached - won't download again on subsequent runs</li>
+                        <li>Works offline after initial setup</li>
+                    </ul>
+                </div>
+
+                <div class="warning">
+                    <strong>macOS Security:</strong> If you get security warnings on macOS:
+                    <ul>
+                        <li>Right-click the launcher and select "Open"</li>
+                        <li>Or run: <code>xattr -cr .</code> in Terminal to remove quarantine attributes</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="piProcedureSteps">
+                <a name="troubleshooting"></a>
+
+                <h3>Troubleshooting</h3>
+
+                <p>
+                    <strong>Java Issues:</strong> If the tool can't find or download Java:
+                </p>
+
+                <ul>
+                    <li>Install Java 21 manually from <a href="https://adoptium.net/">Adoptium</a></li>
+                    <li>Ensure your internet connection is working</li>
+                    <li>Check firewall settings if behind a corporate network</li>
+                </ul>
+
+                <p>
+                    <strong>Permission Issues:</strong> If you get permission errors:
+                </p>
+
+                <ul>
+                    <li><strong>Windows:</strong> Run Command Prompt as Administrator</li>
+                    <li><strong>macOS/Linux:</strong> Run <code>chmod +x start.sh</code> to make the script executable</li>
+                </ul>
+
+                <p>
+                    <strong>Network Issues:</strong> If the tool can't connect:
+                </p>
+
+                <ul>
+                    <li>Check your internet connection</li>
+                    <li>Verify firewall settings</li>
+                    <li>Try using a different network (mobile hotspot)</li>
+                </ul>
+
+                <div class="note">
+                    <strong>Getting Help:</strong> For additional support:
+                    <ul>
+                        <li>Check the <code>README.md</code> file for detailed instructions</li>
+                        <li>Visit the <a href="https://github.com/PRIDE-Archive/px-submission-tool">GitHub repository</a></li>
+                        <li>Contact the PRIDE HelpDesk for technical support</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="footer">
+        <p>Comments, questions, suggestions? See the
+            <a href="feedback.html">Feedback</a> page to contact <strong>PRIDE HelpDesk</strong>
+        </p>
+    </div>
+</div>
+</body>
+</html>

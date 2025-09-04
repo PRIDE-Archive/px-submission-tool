@@ -86,7 +86,7 @@ public final class BalloonTipUtil {
                                               BalloonTip.Orientation orientation, BalloonTip.AttachLocation attachLocation) {
         BalloonTipStyle tipStyle = new RoundedBalloonStyle(MESSAGE_ARC_WIDTH, MESSAGE_ARC_HEIGHT,
                 fillColour, MESSAGE_BORDER_COLOR);
-        return new BalloonTip(component, contents, tipStyle, orientation, attachLocation, 20, 10, false);
+        return new BalloonTip(component, contents, tipStyle, orientation, attachLocation, 20, 10, true);
     }
 
 }

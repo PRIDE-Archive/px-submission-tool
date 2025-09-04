@@ -64,21 +64,24 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
   }
 
   /** Prepare the Aspera-based submission. */
-  private void prepareSubmission() {
+  protected void prepareSubmission() {
     logger.debug("Preparing for uploading an entire submission");
     Set<File> files = Collections.synchronizedSet(new LinkedHashSet<>());
     File submissionFile = createSubmissionFile();
     if (submissionFile != null) {
       files.add(submissionFile);
+      logger.debug("Added submission file: {}", submissionFile.getName());
     }
     for (DataFile dataFile : submissionRecord.getSubmission().getDataFiles()) {
       totalFileSize += dataFile.getFile().length();
       if (dataFile.isFile()) {
         files.add(dataFile.getFile());
+        logger.debug("Added data file: {}", dataFile.getFile().getName());
       }
     }
     filesToSubmit = files;
     filesToSubmitIter = filesToSubmit.iterator();
+    logger.info("Prepared {} files for upload (total size: {} bytes)", files.size(), totalFileSize);
   }
 
   /**
@@ -153,7 +156,9 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
         ascpLocation = appContext.getProperty("aspera.client.windows64.binary");
         break;
       default:
-        String msg = "Unsupported platform detected:" + OSDetector.os + " arch: " + OSDetector.arch;
+        String msg = "Unsupported platform detected:" + OSDetector.os + " arch: " + OSDetector.arch + 
+            "\n\nAlternative: Consider using Globus for file transfer." +
+            "\nVisit: https://www.ebi.ac.uk/pride/markdownpage/globus";
         logger.error(msg);
         publish(new UploadErrorMessage(this, null, msg));
     }
@@ -184,7 +189,9 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
       SummaryDescriptor.addToolVersionAndLicenseToSummary(submissionFile.getAbsolutePath(), appContext);
       return submissionFile;
     } catch (SubmissionFileException ex) {
-      String msg = "Failed to create submission file";
+      String msg = "Failed to create submission file" +
+          "\n\nAlternative: Consider using Globus for file transfer." +
+          "\nVisit: https://www.ebi.ac.uk/pride/markdownpage/globus";
       logger.error(msg, ex);
       publish(new UploadErrorMessage(this, null, msg));
     }
@@ -217,5 +224,35 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
   @Override
   protected void cancelled() {
     publish(new UploadStoppedMessage(this, submissionRecord));
+  }
+  
+  /** Handle any uncaught exceptions in the background task */
+  @Override
+  protected void failed(Throwable cause) {
+    logger.error("Aspera general task failed with uncaught exception", cause);
+    
+    // Create a comprehensive error message
+    String errorMessage = "Upload failed due to an unexpected error: " + cause.getMessage() +
+        "\n\nThis could be due to:" +
+        "\n• Network connectivity issues" +
+        "\n• Firewall blocking transfer ports" +
+        "\n• Server-side problems" +
+        "\n• Network instability" +
+        "\n• System resource limitations" +
+        "\n\nAlternative options:" +
+        "\n1. Try a different transfer method (Aspera ↔ FTP)" +
+        "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
+        "\n3. Contact your system administrator" +
+        "\n4. Try again with a more stable network connection";
+    
+    // Publish the error message to be displayed to the user
+    publish(new UploadErrorMessage(this, null, errorMessage));
+    
+    // Clean up resources
+    try {
+      FaspManager.destroy();
+    } catch (Exception e) {
+      logger.warn("Error during FaspManager cleanup", e);
+    }
   }
 }

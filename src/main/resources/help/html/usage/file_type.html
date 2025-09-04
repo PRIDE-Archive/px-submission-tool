@@ -89,21 +89,32 @@
                         <td>When applicable, the files used to perform mass Spectral Search.</td>
                     </tr>
                     <tr class="piRowOdd">
+                        <td width="20%">EXPERIMENTAL_DESIGN</td>
+                        <td width="20%">Optional (for <strong>Affinity Proteomics</strong>)</td>
+                        <td>Experimental design files for affinity proteomics experiments, such as sample annotation files.</td>
+                    </tr>
+                    <tr class="piRowEven">
                         <td width="20%">MS_IMAGE_DATA</td>
                         <td width="20%">Optional, but <strong>required when there are MS image raw files</strong></td>
                         <td>MS image data, such as: imzML</td>
                     </tr>
-                    <tr class="piRowEven">
+                    <tr class="piRowOdd">
                         <td width="20%">OPTICAL_IMAGE</td>
                         <td width="20%">Optional</td>
                         <td>Optical images</td>
                     </tr>
-                    <tr class="piRowOdd">
+                    <tr class="piRowEven">
                         <td width="20%">OTHER</td>
                         <td width="20%">Optional</td>
-                        <td>Any other files related to the submission (e.g. scripts)</td>
+                        <td>Any other files related to the submission (e.g. scripts, affinity proteomics files)</td>
                     </tr>
                 </table>
+
+                <div class="note">
+                    <strong>Affinity Proteomics Submissions:</strong> For affinity proteomics experiments, additional file types 
+                    such as EXPERIMENTAL_DESIGN and OTHER may be more relevant. The tool will automatically detect and 
+                    suggest appropriate file types based on your submission type selection.
+                </div>
             </div>
         </div>
     </div>

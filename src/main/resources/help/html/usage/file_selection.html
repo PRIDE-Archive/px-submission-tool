@@ -28,12 +28,14 @@
     <!-- table of contents -->
     <div class="introduction">
         <p>
-            The File Selection step allows to select the file your want to submit, we also encourage specify the right
-            file type for each file you want to submit, this will help us to process your datasets. Please see all
+            The File Selection step allows you to select the files you want to submit. We encourage you to specify the right
+            file type for each file you want to submit, as this will help us to process your datasets. Please see all
             the predefined file types below.
 
         <ul>
             <li><a href="#usage">How to choose your files?</a></li>
+            <li><a href="#remove">How to remove files?</a></li>
+            <li><a href="#checksum">Checksum files</a></li>
         </ul>
         </p>
     </div>
@@ -62,6 +64,51 @@
                     You can change the file type by clicking the drop-down list highlighted below:
                     <br/>
                     <img src="images/select_file_type.png" alt="Select file type option in the file selection table">
+                </p>
+            </div>
+
+            <div class="piProcedureSteps">
+                <a name="remove"></a>
+
+                <h3>How to remove files?</h3>
+
+                <p>
+                    You can remove files in two ways:
+                </p>
+
+                <p>
+                    <strong>Individual file removal:</strong> When you have files in the table, a "Remove" column will appear with trash icon buttons. 
+                    Click the trash icon next to any file to remove it individually.
+                </p>
+
+                <p>
+                    <strong>Remove all files:</strong> Click the "Remove Files" button to remove all files at once. 
+                    Note that checksum.txt files are protected and cannot be removed.
+                </p>
+
+                <div class="warning">
+                    <strong>Important:</strong> checksum.txt files are automatically generated and protected from removal to maintain submission integrity.
+                </div>
+            </div>
+
+            <div class="piProcedureSteps">
+                <a name="checksum"></a>
+
+                <h3>Checksum files</h3>
+
+                <p>
+                    The tool automatically generates checksum.txt files to ensure data integrity during upload. These files:
+                </p>
+
+                <ul>
+                    <li>Are created automatically when you add files</li>
+                    <li>Contain checksums for all your data files</li>
+                    <li>Are protected from accidental removal</li>
+                    <li>Are required for successful submission</li>
+                </ul>
+
+                <p>
+                    You don't need to manually manage checksum files - the tool handles them automatically.
                 </p>
             </div>
         </div>

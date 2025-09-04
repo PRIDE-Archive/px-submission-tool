@@ -9,6 +9,7 @@ import uk.ac.ebi.pride.gui.form.table.editor.ComboBoxCellEditor;
 import uk.ac.ebi.pride.gui.form.table.editor.SampleMetaDataButtonCellEditor;
 import uk.ac.ebi.pride.gui.form.table.listener.RemoveDataFileListener;
 import uk.ac.ebi.pride.gui.form.table.listener.RemoveMetadataListener;
+import uk.ac.ebi.pride.gui.form.table.listener.RemoveResubmissionDataFileListener;
 import uk.ac.ebi.pride.gui.form.table.listener.TableCellMouseMotionListener;
 import uk.ac.ebi.pride.gui.form.table.model.*;
 import uk.ac.ebi.pride.gui.form.table.renderer.*;

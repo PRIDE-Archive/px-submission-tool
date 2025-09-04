@@ -35,7 +35,9 @@ px.submission.complete.url = http://www.proteomexchange.org/archive-submission-w
 px.resubmission.complete.url = http://www.proteomexchange.org/archive-submission-ws/resubmission/resubmit
 
 # urls for px submission tool
-px.submission.tool.update.url = https://ftp.pride.ebi.ac.uk/pub/databases/pride/resources/tools/submission-tool/
+# GitHub releases for automated updates
+px.submission.tool.update.url = https://api.github.com/repos/PRIDE-Archive/px-submission-tool/releases/latest
+px.submission.tool.download.url = https://github.com/PRIDE-Archive/px-submission-tool/releases/latest/download/px-submission-tool-${version}.zip
 px.submission.tool.url = http://www.proteomexchange.org/submission/index.html
 px.submission.summary.file.format.url = http://www.proteomexchange.org/docs/Submission_Summary_File_Format.pdf
 
@@ -65,6 +67,12 @@ aspera.xfer.cookie = PRIDE-Aspera-1-Cookie
 aspera.xfer.token = PRIDE-Aspera-1-Token
 aspera.xfer.preCalculateJobSize = false
 aspera.xfer.createPath = true
+
+# Aspera timeout settings (in milliseconds)
+aspera.timeout.transfer = 600000
+aspera.timeout.progress = 120000
+aspera.timeout.monitoring = 60000
+aspera.timeout.enableMonitoring = false
 
 # Report subsystem parameters
 libpxreport.keyfile.path = keyfiles/pride-submission-reports-e963f29e8d2a.p12

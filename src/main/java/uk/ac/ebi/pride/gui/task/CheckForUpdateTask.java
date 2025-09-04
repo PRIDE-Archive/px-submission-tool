@@ -21,9 +21,10 @@ public class CheckForUpdateTask extends TaskAdapter<Boolean, Void> {
     protected Boolean doInBackground() throws Exception {
         DesktopContext context = App.getInstance().getDesktopContext();
         String updateUrl = context.getProperty("px.submission.tool.update.url");
+        String downloadUrl = context.getProperty("px.submission.tool.download.url");
         String currentVersion = context.getProperty("px.submission.tool.version");
 
-        UpdateChecker updateChecker = new UpdateChecker(updateUrl);
+        UpdateChecker updateChecker = new UpdateChecker(updateUrl, downloadUrl);
 
         return updateChecker.hasUpdate(currentVersion);
     }

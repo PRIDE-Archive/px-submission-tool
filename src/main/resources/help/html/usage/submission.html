@@ -29,18 +29,28 @@
     <div class="introduction">
         <p>
             The final submission panel will upload the files to the ProteomeXchange and show the progress of your upload.
-            Once the submission id done, a submission reference will be shown, and an confirmation email will be
+            Once the submission is done, a submission reference will be shown, and a confirmation email will be
             sent to you.
             <ul>
                 <li><a href="#progress">Submission In Progress</a></li>
                 <li><a href="#done">Submission Finished</a></li>
+                <li><a href="#errors">Error Handling</a></li>
             </ul>
         </p>
 
         <p class="warning">
-            The submission reference is not ProteomeXchange accession, it is a temporary ID to help to support any questions
+            The submission reference is not a ProteomeXchange accession, it is a temporary ID to help support any questions
             before the dataset is officially committed to the ProteomeXchange.
         </p>
+
+        <div class="note">
+            <strong>Transfer Methods:</strong> The tool supports multiple transfer methods:
+            <ul>
+                <li><strong>Aspera</strong> - Fast transfer (recommended)</li>
+                <li><strong>FTP</strong> - Standard file transfer</li>
+                <li><strong>Globus</strong> - Alternative for restricted networks</li>
+            </ul>
+        </div>
     </div>
 
     <!-- content -->
@@ -79,6 +89,40 @@
                     <br/>
                     <img src="images/submission_done.png" alt="Submission Done">
                 </p>
+            </div>
+
+            <div class="piProcedureSteps">
+                <a name="errors"></a>
+
+                <h3>Error Handling</h3>
+
+                <p>
+                    If you encounter transfer errors, the tool provides helpful error messages and suggestions:
+                </p>
+
+                <p>
+                    <strong>Network Issues:</strong> If Aspera or FTP transfers fail due to network restrictions or instability, 
+                    the tool will suggest using Globus as an alternative transfer method.
+                </p>
+
+                <p>
+                    <strong>Error Messages:</strong> Error messages are displayed in a scrollable text area with proper formatting 
+                    to ensure you can read the complete error details.
+                </p>
+
+                <p>
+                    <strong>Retry Logic:</strong> The tool includes automatic retry logic for transient network issues.
+                </p>
+
+                <div class="note">
+                    <strong>Common Solutions:</strong>
+                    <ul>
+                        <li>Check your internet connection</li>
+                        <li>Try a different transfer method (Aspera → FTP → Globus)</li>
+                        <li>Contact your network administrator if behind a firewall</li>
+                        <li>Use Globus for large datasets or restricted networks</li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>

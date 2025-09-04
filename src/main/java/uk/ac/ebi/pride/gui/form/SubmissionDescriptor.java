@@ -26,9 +26,11 @@ import uk.ac.ebi.pride.toolsuite.gui.task.TaskListenerAdapter;
 
 import javax.help.HelpBroker;
 import javax.swing.*;
+import java.awt.Dimension;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
+import java.io.File;
 import java.util.List;
 
 /**
@@ -61,10 +63,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
      */
     private CompleteSubmissionTaskListener completeSubmissionTaskListener;
 
-    /**
-     * Feedback descriptor
-     */
-    private FeedbackDescriptor feedbackDescriptor;
+    // Feedback system removed - no longer needed
 
     private boolean isFinished = false;
     private boolean isSucceed = false;
@@ -77,7 +76,6 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         this.uploadTaskListener = new UploadTaskListener();
         this.completeSubmissionTaskListener = new CompleteSubmissionTaskListener();
         this.createFTPDirectoryTaskListener = new CreateFTPDirectoryTaskListener();
-        this.feedbackDescriptor = new FeedbackDescriptor();
 
 
         // add property change listener
@@ -208,9 +206,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             //clearSubmissionRecord();
             // We don't check for isSucceed because isFinished is only set when the upload finished with success
             logger.debug("SubmissionDescriptor::beforeHidingForPreviousPanel() - call _ isfinished");
-            if (feedbackDescriptor.beforeHidingForPreviousPanel()) {
-                app.restart();
-            }
+            app.restart();
         } else {
             logger.debug("SubmissionDescriptor::beforeHidingForPreviousPanel() - call _ cancelUpload()");
             cancelUpload();
@@ -222,6 +218,54 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         submissionRecord.setUploadDetail(null);
         submissionRecord.setSummaryFileUploaded(false);
         submissionRecord.setUploadedFiles(null);
+    }
+    
+    /**
+     * Clean up submission data and remove .px-tool folder
+     */
+    private void cleanupSubmissionData() {
+        try {
+            // Remove submission record
+            SubmissionRecordSerializer.remove();
+            
+            // Reset application context
+            appContext.resetDataFileEntryCount();
+            appContext.setResubmission(false);
+            
+            // Clear any existing ticket ID to ensure fresh API calls
+            appContext.setProperty(Constant.TICKET_ID, null);
+            logger.info("Cleared ticket ID for new submission");
+            
+            // Create new submission record
+            SubmissionRecord newSubmissionRecord = new SubmissionRecord();
+            newSubmissionRecord.getSubmission().getProjectMetaData().setSubmissionType(SubmissionTypeConstants.COMPLETE);
+            appContext.setSubmissionRecord(newSubmissionRecord);
+            
+            // Remove .px-tool folder
+            File pxToolDir = new File(System.getProperty("user.home") + File.separator + Constant.PX_TOOL_USER_DIRECTORY);
+            if (pxToolDir.exists()) {
+                deleteDirectory(pxToolDir);
+                logger.info("Removed .px-tool directory: {}", pxToolDir.getAbsolutePath());
+            }
+            
+        } catch (Exception e) {
+            logger.error("Error during cleanup: {}", e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * Recursively delete a directory
+     */
+    private void deleteDirectory(File dir) {
+        if (dir.isDirectory()) {
+            File[] files = dir.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    deleteDirectory(file);
+                }
+            }
+        }
+        dir.delete();
     }
 
     private void cancelUpload() {
@@ -240,8 +284,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
     @Override
     public void beforeHidingForNextPanel() {
         logger.debug("SubmissionDescriptor::beforeHidingForNextPanel() - call");
-        if (feedbackDescriptor.beforeHidingForNextPanel())
-            app.shutdown(null);
+        app.shutdown(null);
     }
 
     @Override
@@ -277,19 +320,8 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
 
             // set uploading message
             form.setUploadMessage(appContext.getProperty("upload.default.message"));
-        } else if (FEEDBACK_SUBMITTED.equals(evtName)) {
-            // Handle feedback submitted event
-            Boolean feedbackSubmitted = (Boolean) evt.getNewValue();
-            if (feedbackSubmitted) {
-                // Handle feedback submission
-                logger.debug("Feedback submitted");
-                // Implementation of handling feedback submission
-            } else {
-                // Handle feedback not submitted
-                logger.debug("Feedback not submitted");
-                // Implementation of handling feedback not submitted
-            }
         }
+        // Feedback system removed - no longer needed
     }
 
     /**
@@ -353,10 +385,35 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             SubmissionForm form = (SubmissionForm) SubmissionDescriptor.this.getNavigationPanel();
             final String type = (appContext.getUploadMethod() != null) ? appContext.getUploadMethod().toString() : Constant.ASPERA;
             if (type.equals(Constant.ASPERA)) {
-                JOptionPane.showConfirmDialog(app.getMainFrame(),
-                        appContext.getProperty("upload.aspera.error.message"),
-                        appContext.getProperty("upload.detail.error.title"),
-                        JOptionPane.CLOSED_OPTION, JOptionPane.ERROR_MESSAGE);
+                // Use the detailed error message from the upload task instead of the generic property
+                String errorMessage = message.getMessage();
+                if (errorMessage == null || errorMessage.trim().isEmpty()) {
+                    errorMessage = appContext.getProperty("upload.aspera.error.message");
+                }
+                
+                // Create a scrollable HTML editor pane for better line break handling
+                JEditorPane editorPane = new JEditorPane();
+                editorPane.setContentType("text/html");
+                editorPane.setEditable(false);
+                
+                // Convert line breaks to HTML breaks
+                String htmlMessage = "<html><body style='font-family: monospace; font-size: 12px;'>" +
+                    errorMessage.replace("\n", "<br>") + "</body></html>";
+                editorPane.setText(htmlMessage);
+                
+                // Calculate proper size based on content
+                int lineCount = errorMessage.split("\n").length;
+                
+                JScrollPane scrollPane = new JScrollPane(editorPane);
+                scrollPane.setPreferredSize(new Dimension(600, Math.max(200, lineCount * 20 + 50)));
+                scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+                scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+                
+                JOptionPane.showMessageDialog(app.getMainFrame(),
+                        scrollPane,
+                        "Upload Error",
+                        JOptionPane.ERROR_MESSAGE);
+                
                 form.setUploadMessage("Aspera upload failed. Retry with FTP...");
                 appContext.setUploadMethod(UploadMethod.FTP);
                 getUploadDetail(appContext.getSubmissionRecord().getSubmission());
@@ -423,101 +480,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         }
     }
 
-    /**
-     * Feedback form Controller, at descriptor level
-     */
-    private class FeedbackDescriptor implements PropertyChangeListener {
-        private FeedbackFormController fbfController;
-        private final PropertyChangeSupport feedbackPropertyChangeSupport = new PropertyChangeSupport(this);
-
-        private boolean isFormSet() {
-            return fbfController != null;
-        }
-
-        private void cleanData() {
-            if (isFormSet()) {
-                // removing submission record
-                SubmissionRecordSerializer.remove();
-                // reset application context
-                appContext.resetDataFileEntryCount();
-                appContext.setResubmission(false);
-                SubmissionRecord newSubmissionRecord = new SubmissionRecord();
-                newSubmissionRecord.getSubmission().getProjectMetaData().setSubmissionType(SubmissionTypeConstants.COMPLETE);
-                appContext.setSubmissionRecord(newSubmissionRecord);
-            }
-        }
-
-        private boolean submitFeedback() {
-            if (!isFormSet()) {
-                return true;
-            }
-            if (fbfController.doSubmitFeedback(new FeedbackSubmissionDescriptorTaskListener())) {
-                cleanData();
-                return true;
-            }
-            return false;
-        }
-
-        private boolean submitFeedbackOnClose() {
-            if (!isFormSet()) {
-                return true;
-            }
-            if (fbfController.doSubmitFeedbackOnClose()) {
-                cleanData();
-                return true;
-            }
-            return false;
-        }
-
-        public FeedbackDescriptor() {
-            fbfController = null;
-        }
-
-        public FeedbackFormController getFeedbackFormController() {
-            return fbfController;
-        }
-
-        public void setFeedbackFormController(FeedbackFormController fbfController) {
-            this.fbfController = fbfController;
-            logger.debug("Registering for listening to window close event");
-            app.getCloseWindowListener().addPropertyChangeListener(this);
-        }
-
-        public boolean beforeHidingForPreviousPanel() {
-            return submitFeedback();
-        }
-
-        public boolean beforeHidingForNextPanel() {
-            return submitFeedback();
-        }
-
-        @Override
-        public void propertyChange(PropertyChangeEvent evt) {
-            if (FEEDBACK_SUBMITTED.equals(evt.getPropertyName())) {
-                feedbackPropertyChangeSupport.firePropertyChange(FEEDBACK_SUBMITTED, null, evt.getNewValue());
-            }
-        }
-
-        public void addPropertyChangeListener(PropertyChangeListener listener) {
-            feedbackPropertyChangeSupport.addPropertyChangeListener(listener);
-        }
-
-        public void removePropertyChangeListener(PropertyChangeListener listener) {
-            feedbackPropertyChangeSupport.removePropertyChangeListener(listener);
-        }
-
-        private class FeedbackSubmissionDescriptorTaskListener extends TaskListenerAdapter<Boolean, Void> {
-            @Override
-            public void failed(TaskEvent<Throwable> event) {
-                firePropertyChange(BEFORE_FINISH_PROPERTY, false, true);
-            }
-
-            @Override
-            public void succeed(TaskEvent<Boolean> booleanTaskEvent) {
-                firePropertyChange(BEFORE_FINISH_PROPERTY, false, true);
-            }
-        }
-    }
+    // Feedback system removed - no longer needed
 
     /**
      * Complete submission task listener
@@ -528,14 +491,15 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         public void succeed(TaskEvent<SubmissionReferenceDetail> stringTaskEvent) {
             SubmissionForm form = (SubmissionForm) SubmissionDescriptor.this.getNavigationPanel();
             form.showCompletionMessage(stringTaskEvent.getValue().getReference());
-            // Show feedback submission form
-            feedbackDescriptor.setFeedbackFormController(form.showFeedbackMessage(stringTaskEvent.getValue().getReference()));
-
+            
+            // Clean up submission data and restart application
+            cleanupSubmissionData();
+            
             isFinished = true;
             isSucceed = true;
 
-            //firePropertyChange(BEFORE_FINISH_PROPERTY, false, true);
-            firePropertyChange(BEFORE_SUBMITTING_FEEDBACK_PROPERTY, false, true);
+            // Enable finish button
+            firePropertyChange(BEFORE_FINISH_PROPERTY, false, true);
         }
 
         @Override
@@ -563,11 +527,35 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             SubmissionForm form = (SubmissionForm) SubmissionDescriptor.this.getNavigationPanel();
             form.setUploadMessage(uploadMessage.getMessage());
 
+            // Use the detailed error message from the upload task
+            String errorMessage = uploadMessage.getMessage();
+            if (errorMessage == null || errorMessage.trim().isEmpty()) {
+                errorMessage = appContext.getProperty("upload.error.message");
+            }
+            
+            // Create a scrollable HTML editor pane for better line break handling
+            JEditorPane editorPane = new JEditorPane();
+            editorPane.setContentType("text/html");
+            editorPane.setEditable(false);
+            
+            // Convert line breaks to HTML breaks
+            String htmlMessage = "<html><body style='font-family: monospace; font-size: 12px;'>" +
+                errorMessage.replace("\n", "<br>") + "</body></html>";
+            editorPane.setText(htmlMessage);
+            
+            // Calculate proper size based on content
+            int lineCount = errorMessage.split("\n").length;
+            
+            JScrollPane scrollPane = new JScrollPane(editorPane);
+            scrollPane.setPreferredSize(new Dimension(600, Math.max(200, lineCount * 20 + 50)));
+            scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+            scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
             // show error message dialog
-            JOptionPane.showConfirmDialog(app.getMainFrame(),
-                    appContext.getProperty("upload.error.message"),
+            JOptionPane.showMessageDialog(app.getMainFrame(),
+                    scrollPane,
                     appContext.getProperty("upload.error.title"),
-                    JOptionPane.CLOSED_OPTION, JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.ERROR_MESSAGE);
         }
 
         private void handleSuccessMessage(UploadSuccessMessage uploadMessage) {

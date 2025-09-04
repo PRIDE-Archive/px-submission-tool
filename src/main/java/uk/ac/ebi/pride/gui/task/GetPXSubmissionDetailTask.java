@@ -45,28 +45,63 @@ public class GetPXSubmissionDetailTask extends AbstractWebServiceTask<HashMap<St
     @Override
     protected HashMap<String,SubmissionTypeConstants> doInBackground() throws Exception {
         HashMap<String,SubmissionTypeConstants> pxAndPadAccessions = new LinkedHashMap<>();
+        
+        String detailUrl = App.getInstance().getDesktopContext().getProperty("px.submission.detail.url");
+        logger.info("Starting PX submission detail retrieval for user: {}", credentials.getUsername());
+        logger.debug("Detail URL: {}", detailUrl);
 
         try {
             setProxyIfProvided(restTemplate);
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<Credentials> entity = new HttpEntity<>(credentials, headers);
-            ProjectDetailList projectDetailList = restTemplate.exchange(App.getInstance().getDesktopContext().getProperty("px.submission.detail.url"),
-                    HttpMethod.POST, entity, ProjectDetailList.class).getBody();
-
+            logger.debug("Request headers prepared with content type: {}", headers.getContentType());
+            
+            logger.info("Making API call to retrieve project details");
+            ProjectDetailList projectDetailList = restTemplate.exchange(detailUrl, HttpMethod.POST, entity, ProjectDetailList.class).getBody();
+            
+            if (projectDetailList == null) {
+                logger.error("API call succeeded but returned null ProjectDetailList. URL: {}", detailUrl);
+                return pxAndPadAccessions;
+            }
+            
+            if (projectDetailList.getProjectDetails() == null) {
+                logger.error("ProjectDetailList contains null project details. URL: {}", detailUrl);
+                return pxAndPadAccessions;
+            }
+            
+            logger.info("Retrieved {} project details", projectDetailList.getProjectDetails().size());
+            
             for (ProjectDetail projectDetail : projectDetailList.getProjectDetails()) {
+                if (projectDetail == null) {
+                    logger.warn("Encountered null ProjectDetail in list");
+                    continue;
+                }
+                
                 String accession = projectDetail.getAccession();
+                if (accession == null) {
+                    logger.warn("ProjectDetail has null accession");
+                    continue;
+                }
+                
                 Matcher pxMatcher = Constant.PX_ACC_PATTERN.matcher(accession);
                 Matcher padMatcher = Constant.PAD_ACC_PATTERN.matcher(accession);
                 if (pxMatcher.matches()) {
                     pxAndPadAccessions.put(accession,projectDetail.getSubmissionType());
+                    logger.debug("Added PX accession: {}", accession);
                 }
                 if (padMatcher.matches()) {
                     pxAndPadAccessions.put(accession,projectDetail.getSubmissionType());
+                    logger.debug("Added PAD accession: {}", accession);
                 }
             }
+            
+            logger.info("Successfully processed {} accessions", pxAndPadAccessions.size());
+            
         } catch (Exception ex) {
-            logger.warn("Failed to login to retrieve project details", ex);
+            logger.error("Failed to retrieve project details. URL: {}, Exception type: {}, Message: {}", 
+                       detailUrl, ex.getClass().getSimpleName(), ex.getMessage(), ex);
+            
             Runnable eventDispatcher = () -> {
                 // show warning dialog
                 App app = (App) App.getInstance();

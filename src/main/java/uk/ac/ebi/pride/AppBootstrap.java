@@ -8,6 +8,7 @@ import uk.ac.ebi.pride.utilities.util.IOUtilities;
 import java.io.*;
 import java.net.*;
 import java.util.Properties;
+import java.util.Scanner;
 
 /**
  * @author Rui Wang
@@ -25,6 +26,9 @@ public class AppBootstrap {
      * Method to run the PX Submission tool.
      */
     private void go() {
+        // Log system information
+        logSystemInformation();
+        
         StringBuilder cmdBuffer = getCommand();
         callCommand(cmdBuffer);
     }
@@ -195,6 +199,70 @@ public class AppBootstrap {
         }
         return reason;
     }
+
+    /**
+     * Log system information including tool version and operating system
+     */
+    private void logSystemInformation() {
+        try {
+            // Get application version from properties
+            String toolVersion = getApplicationVersion();
+            
+            // Operating system information
+            String osName = System.getProperty("os.name");
+            String osVersion = System.getProperty("os.version");
+            String osArch = System.getProperty("os.arch");
+            
+            // User and working directory
+            String userHome = System.getProperty("user.home");
+            String userDir = System.getProperty("user.dir");
+            
+            logger.info("=== PX Submission Tool System Information ===");
+            logger.info("Tool Version: {}", toolVersion);
+            logger.info("Operating System: {} {} ({})", osName, osVersion, osArch);
+            logger.info("User Home: {}", userHome);
+            logger.info("Working Directory: {}", userDir);
+            logger.info("=============================================");
+            
+        } catch (Exception e) {
+            logger.warn("Failed to log system information: {}", e.getMessage());
+        }
+    }
+    
+    /**
+     * Get the application version from properties or manifest
+     */
+    private String getApplicationVersion() {
+        try {
+            // Try to get version from system properties first
+            String version = System.getProperty("px.submission.tool.version");
+            if (version != null && !version.isEmpty()) {
+                return version;
+            }
+            
+            // Try to get from package info
+            Package pkg = AppBootstrap.class.getPackage();
+            if (pkg != null && pkg.getImplementationVersion() != null) {
+                return pkg.getImplementationVersion();
+            }
+            
+            // Fallback to reading from properties file
+            Properties props = getBootstrapSettings();
+            String propVersion = props.getProperty("px.submission.tool.version");
+            if (propVersion != null && !propVersion.isEmpty()) {
+                return propVersion;
+            }
+            
+            // Final fallback
+            return "2.10.4";
+            
+        } catch (Exception e) {
+            logger.warn("Failed to determine application version: {}", e.getMessage());
+            return "2.10.4";
+        }
+    }
+    
+
 
     /**
      * Check whether it is Windows platform
