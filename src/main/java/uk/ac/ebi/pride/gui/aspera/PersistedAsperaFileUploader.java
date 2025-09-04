@@ -43,8 +43,17 @@ public class PersistedAsperaFileUploader {
         configureTransferParameters(transferParameters);
         logger.debug("Transfer parameters configured: {}", transferParameters);
 
-        TransferOrder order = new TransferOrder(new LocalLocation(), remoteLocation, transferParameters);
-        logger.debug("Transfer order created");
+        // Enable persistence to allow adding files after session start
+        transferParameters.persist = true;
+        logger.debug("Enabled persistence for session initialization");
+
+        // Create empty LocalLocation for persistent transfers
+        // When persist=true, we cannot specify any paths in the initial TransferOrder
+        LocalLocation localFiles = new LocalLocation();
+        logger.debug("Created empty LocalLocation for persistent transfer");
+
+        TransferOrder order = new TransferOrder(localFiles, remoteLocation, transferParameters);
+        logger.debug("Transfer order created for persistent transfer");
 
         // Attempt transfer with retry mechanism
         String sessionId = null;

@@ -298,6 +298,24 @@ public class FTPUploadTask extends TaskAdapter<Void, UploadMessage> implements T
 
     @Override
     public void failed(TaskEvent<Throwable> event) {
+        logger.error("FTP upload task failed with uncaught exception", event.getValue());
+        
+        // Create a comprehensive error message
+        String errorMessage = "FTP upload failed due to an unexpected error: " + event.getValue().getMessage() +
+            "\n\nThis could be due to:" +
+            "\n• Network connectivity issues" +
+            "\n• Firewall blocking FTP ports (TCP 21)" +
+            "\n• Server-side problems" +
+            "\n• Network instability" +
+            "\n• System resource limitations" +
+            "\n\nAlternative options:" +
+            "\n1. Go back one step and select Aspera upload instead" +
+            "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
+            "\n3. Contact your system administrator to enable FTP ports" +
+            "\n4. Try again with a more stable network connection";
+        
+        // Publish the error message to be displayed to the user
+        publish(new UploadErrorMessage(this, null, errorMessage));
     }
 
     @Override

@@ -69,7 +69,7 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
         // Initialize timeout values from configuration with fallback defaults
         long transferTimeout = 10 * 60 * 1000; // 10 minutes default
         long progressTimeout = 2 * 60 * 1000;  // 2 minutes default
-        long monitoringInterval = 30 * 1000;   // 30 seconds default
+        long monitoringInterval = 60 * 1000;   // 60 seconds default (less frequent monitoring)
         
         try {
             DesktopContext appContext = App.getInstance().getDesktopContext();
@@ -112,9 +112,13 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
         String session = uploader.startTransferSession(remoteLocation, defaultTransferParams);
         logger.debug("Transfer Session ID: {}", session);
         
-        // Start transfer monitoring
+        // Start transfer monitoring (if enabled)
         transferStartTime.set(System.currentTimeMillis());
-        startTransferMonitoring();
+        if (isMonitoringEnabled()) {
+            startTransferMonitoring();
+        } else {
+            logger.debug("Aspera transfer monitoring disabled for better performance");
+        }
     }
 
     /**
@@ -137,10 +141,10 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
         xferParams.overwrite = Overwrite.DIFFERENT;
         xferParams.generateManifest = Manifest.NONE;
         xferParams.policy = Policy.FAIR;
-        xferParams.resumeCheck = Resume.FILE_ATTRIBUTES;
+        xferParams.resumeCheck = Resume.SPARSE_CHECKSUM; // Use faster resume check like original
         xferParams.preCalculateJobSize = Boolean.parseBoolean(appContext.getProperty("aspera.xfer.preCalculateJobSize"));
         xferParams.createPath = Boolean.parseBoolean(appContext.getProperty("aspera.xfer.createPath"));
-        xferParams.persist = true;
+        xferParams.persist = false; // Disable persistence to reduce overhead
         return xferParams;
     }
     
@@ -222,6 +226,19 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
             "\n4. Try again with a more stable network connection";
         publish(new UploadErrorMessage(this, null, stuckMsg));
     }
+    
+    /**
+     * Checks if transfer monitoring is enabled
+     */
+    private boolean isMonitoringEnabled() {
+        try {
+            DesktopContext appContext = App.getInstance().getDesktopContext();
+            return Boolean.parseBoolean(appContext.getProperty("aspera.timeout.enableMonitoring"));
+        } catch (Exception e) {
+            // Default to enabled if configuration is not available
+            return true;
+        }
+    }
 
     /**
      * Processes a file session event.
@@ -251,11 +268,18 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
         String folder = uploadDetail.getFolder();
         switch (transferEvent) {
             case SESSION_START:
+                // Since we're using persistent transfers, we start with an empty session
+                // Add all files to the session now
+                logger.info("SESSION_START event received. Adding files to persistent transfer session");
+                logger.debug("Total files to submit: {}", totalNumOfFiles);
+                logger.debug("Files iterator has next: {}", filesToSubmitIter.hasNext());
+                
                 int count = 0;
-                while (filesToSubmitIter.hasNext() && count < 20) {
+                while (filesToSubmitIter.hasNext() && count < 20) { // Add up to 20 files
                     File file = filesToSubmitIter.next();
                     try {
                         faspManager.addSource(sessionStats.getId(), file.getAbsolutePath(), folder + File.separator + file.getName());
+                        logger.info("Added file to transfer: {} (count: {})", file.getName(), count + 1);
                     } catch (FaspManagerException e) {
                         FaspManager.destroy();
                         String faspErrorMsg = "Failed to upload file via Aspera: " + file.getName() +
@@ -265,8 +289,22 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                             "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
                             "\n3. Contact your system administrator to enable Aspera ports (TCP & UDP 33001)";
                         publish(new UploadErrorMessage(this, null, faspErrorMsg));
+                        return; // Exit early on error
                     }
                     count++;
+                }
+                logger.info("Added {} files to transfer session in SESSION_START", count);
+                
+                // If no files were added, this could cause the transfer to hang
+                if (count == 0) {
+                    logger.error("No files were added to the transfer session! This will cause the transfer to hang.");
+                    FaspManager.destroy();
+                    String noFilesErrorMsg = "No files were added to the Aspera transfer session. This could be due to:" +
+                        "\n• No files selected for upload" +
+                        "\n• File iterator not properly initialized" +
+                        "\n• All files were already processed" +
+                        "\n\nPlease check your file selection and try again.";
+                    publish(new UploadErrorMessage(this, null, noFilesErrorMsg));
                 }
                 break;
             case PROGRESS:
@@ -326,7 +364,7 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                             publish(new UploadErrorMessage(this, null, faspErrorMsg));
                         }
                     } else {
-                        if (sessionStats.getFilesComplete() == totalNumOfFiles + 1) {
+                        if (sessionStats.getFilesComplete() == totalNumOfFiles) {
                             transferCompleted.set(true);
                             FaspManager.destroy();
                             // Send final progress message with appropriate total size
@@ -362,6 +400,39 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
             default:
                 logger.debug("Unhandled Aspera transfer event: {}", transferEvent);
                 break;
+        }
+    }
+    
+    /**
+     * Handle any uncaught exceptions in the background task
+     */
+    @Override
+    protected void failed(Throwable cause) {
+        logger.error("Aspera upload task failed with uncaught exception", cause);
+        transferCompleted.set(true);
+        
+        // Create a comprehensive error message
+        String errorMessage = "Aspera upload failed due to an unexpected error: " + cause.getMessage() +
+            "\n\nThis could be due to:" +
+            "\n• Network connectivity issues" +
+            "\n• Firewall blocking Aspera ports (TCP & UDP 33001)" +
+            "\n• Server-side problems" +
+            "\n• Network instability" +
+            "\n• System resource limitations" +
+            "\n\nAlternative options:" +
+            "\n1. Go back one step and select FTP upload instead" +
+            "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
+            "\n3. Contact your system administrator to enable Aspera ports" +
+            "\n4. Try again with a more stable network connection";
+        
+        // Publish the error message to be displayed to the user
+        publish(new UploadErrorMessage(this, null, errorMessage));
+        
+        // Clean up resources
+        try {
+            FaspManager.destroy();
+        } catch (Exception e) {
+            logger.warn("Error during FaspManager cleanup", e);
         }
     }
 }
