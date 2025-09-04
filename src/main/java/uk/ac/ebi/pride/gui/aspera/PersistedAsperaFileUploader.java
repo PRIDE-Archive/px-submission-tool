@@ -4,6 +4,7 @@ import com.asperasoft.faspmanager.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
+import uk.ac.ebi.pride.data.model.DataFile;
 
 import java.io.File;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -43,17 +44,32 @@ public class PersistedAsperaFileUploader {
         configureTransferParameters(transferParameters);
         logger.debug("Transfer parameters configured: {}", transferParameters);
 
-        // Enable persistence to allow adding files after session start
-        transferParameters.persist = true;
-        logger.debug("Enabled persistence for session initialization");
+        // Disable persistence for more reliable transfers
+        transferParameters.persist = false;
+        logger.debug("Disabled persistence for reliable transfer");
 
-        // Create empty LocalLocation for persistent transfers
-        // When persist=true, we cannot specify any paths in the initial TransferOrder
+        // Create LocalLocation with ALL files to ensure reliable transfer
         LocalLocation localFiles = new LocalLocation();
-        logger.debug("Created empty LocalLocation for persistent transfer");
+        
+        // Add all files to the transfer order for reliable transfer
+        if (submissionRecord != null && submissionRecord.getSubmission() != null && 
+            !submissionRecord.getSubmission().getDataFiles().isEmpty()) {
+            
+            for (DataFile dataFile : submissionRecord.getSubmission().getDataFiles()) {
+                File file = dataFile.getFile();
+                if (file != null && file.exists()) {
+                    localFiles.addPath(file.getAbsolutePath());
+                    logger.debug("Added file to transfer order: {}", file.getName());
+                } else {
+                    logger.warn("Skipping invalid file: {}", file != null ? file.getAbsolutePath() : "null");
+                }
+            }
+        }
+        
+        logger.debug("Created LocalLocation with all files for reliable transfer");
 
         TransferOrder order = new TransferOrder(localFiles, remoteLocation, transferParameters);
-        logger.debug("Transfer order created for persistent transfer");
+        logger.debug("Transfer order created for reliable transfer");
 
         // Attempt transfer with retry mechanism
         String sessionId = null;
@@ -62,6 +78,7 @@ public class PersistedAsperaFileUploader {
                 logger.info("Attempting transfer (attempt {}/{})", retryCount.get() + 1, MAX_RETRIES);
                 sessionId = FaspManager.getSingleton().startTransfer(order);
                 logger.info("Transfer started successfully with session ID: {}", sessionId);
+                logger.debug("Transfer order details - Remote: {}", remoteLocation.getHost());
                 break;
             } catch (Exception e) {
                 retryCount.incrementAndGet();

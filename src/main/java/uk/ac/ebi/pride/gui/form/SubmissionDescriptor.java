@@ -232,6 +232,10 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             appContext.resetDataFileEntryCount();
             appContext.setResubmission(false);
             
+            // Clear any existing ticket ID to ensure fresh API calls
+            appContext.setProperty(Constant.TICKET_ID, null);
+            logger.info("Cleared ticket ID for new submission");
+            
             // Create new submission record
             SubmissionRecord newSubmissionRecord = new SubmissionRecord();
             newSubmissionRecord.getSubmission().getProjectMetaData().setSubmissionType(SubmissionTypeConstants.COMPLETE);

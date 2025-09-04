@@ -72,7 +72,7 @@ aspera.xfer.createPath = true
 aspera.timeout.transfer = 600000
 aspera.timeout.progress = 120000
 aspera.timeout.monitoring = 60000
-aspera.timeout.enableMonitoring = true
+aspera.timeout.enableMonitoring = false
 
 # Report subsystem parameters
 libpxreport.keyfile.path = keyfiles/pride-submission-reports-e963f29e8d2a.p12

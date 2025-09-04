@@ -252,6 +252,7 @@ echo
 echo "🚀 Launching PX Submission Tool..."
 echo
 
+# Launch the application (GUI mode with file logging)
 $JAVA_CMD -jar "$JAR_FILE"
 
 # Application has exited

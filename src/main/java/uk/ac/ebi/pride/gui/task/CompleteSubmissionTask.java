@@ -82,7 +82,24 @@ public class CompleteSubmissionTask extends TaskAdapter<SubmissionReferenceDetai
             }
             
             logger.info("Making API call to complete submission. URL: {}", baseUrl);
-            result = restTemplate.postForObject(baseUrl, uploadDetail, SubmissionReferenceDetail.class);
+            logger.debug("Upload detail being sent: {}", uploadDetail);
+            
+            // Make the API call and handle the response
+            try {
+                result = restTemplate.postForObject(baseUrl, uploadDetail, SubmissionReferenceDetail.class);
+                logger.debug("API call completed, result: {}", result);
+                
+            } catch (Exception parseException) {
+                logger.error("Failed to parse API response as SubmissionReferenceDetail: {}", parseException.getMessage());
+                // Try to get raw response for debugging
+                try {
+                    String rawResponse = restTemplate.postForObject(baseUrl, uploadDetail, String.class);
+                    logger.error("Raw response that failed to parse: {}", rawResponse);
+                } catch (Exception rawException) {
+                    logger.error("Failed to get raw response: {}", rawException.getMessage());
+                }
+                throw parseException;
+            }
             
             if (result == null) {
                 logger.error("Submission completion API call succeeded but returned null response. URL: {}", baseUrl);

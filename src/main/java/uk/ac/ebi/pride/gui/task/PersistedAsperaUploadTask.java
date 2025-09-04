@@ -108,16 +108,141 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
         uploader.addTransferListener(this);
         final UploadDetail uploadDetail = submissionRecord.getUploadDetail();
         final DropBoxDetail dropBox = uploadDetail.getDropBox();
+        
+        // Log connection details
+        logger.info("=== ASPERA CONNECTION DETAILS ===");
+        logger.info("Host: {}", uploadDetail.getHost());
+        logger.info("Username: {}", dropBox.getUserName());
+        logger.info("Password: {}", dropBox.getPassword() != null ? "[PROVIDED]" : "[MISSING]");
+        logger.info("Folder: {}", uploadDetail.getFolder());
+        logger.info("Total files to upload: {}", submissionRecord.getSubmission().getDataFiles().size());
+        logger.info("Files list:");
+        for (int i = 0; i < submissionRecord.getSubmission().getDataFiles().size(); i++) {
+            var dataFile = submissionRecord.getSubmission().getDataFiles().get(i);
+            logger.info("  {}. {} ({} bytes)", i + 1, dataFile.getFile().getName(), dataFile.getFile().length());
+        }
+        logger.info("================================");
+        logger.info("Attempting to connect to server: {} with folder: {}", uploadDetail.getHost(), uploadDetail.getFolder());
+        
         RemoteLocation remoteLocation = new RemoteLocation(uploadDetail.getHost(), dropBox.getUserName(), dropBox.getPassword());
         String session = uploader.startTransferSession(remoteLocation, defaultTransferParams);
         logger.debug("Transfer Session ID: {}", session);
         
+        // All files are already in the transfer order, no need to add them separately
+        logger.info("Transfer started with all files in the order");
+        logger.info("Transfer is ready - no need to wait for SESSION_START event");
+        
         // Start transfer monitoring (if enabled)
         transferStartTime.set(System.currentTimeMillis());
+        lastProgressTime.set(System.currentTimeMillis()); // Set initial progress time
         if (isMonitoringEnabled()) {
             startTransferMonitoring();
         } else {
             logger.debug("Aspera transfer monitoring disabled for better performance");
+        }
+        
+        // Add a timeout to detect if transfer gets stuck after CONNECTING
+        new Thread(() -> {
+            try {
+                Thread.sleep(15000); // Wait 15 seconds after CONNECTING
+                if (!transferCompleted.get() && lastProgressTime.get() == transferStartTime.get()) {
+                    logger.warn("Transfer appears to be stuck after CONNECTING event - no progress for 15 seconds");
+                    logger.warn("Server: {} | Folder: {}", uploadDetail.getHost(), uploadDetail.getFolder());
+                    logger.warn("This could indicate:");
+                    logger.warn("• Server-side folder permission issues");
+                    logger.warn("• Server processing delays");
+                    logger.warn("• Network connectivity problems");
+                    logger.warn("• Aspera server overload");
+                    logger.warn("Consider trying FTP upload or Globus as alternatives");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }).start();
+    }
+
+    /**
+     * Add initial files to the transfer session immediately after session start
+     */
+    private void addInitialFilesToSession(String sessionId, String folder) {
+        try {
+            FaspManager faspManager = FaspManager.getSingleton();
+            int totalNumOfFiles = submissionRecord.getSubmission().getDataFiles().size();
+            
+            logger.info("Adding initial files to transfer session: {}", sessionId);
+            logger.debug("Total files to submit: {}", totalNumOfFiles);
+            logger.debug("Files iterator has next: {}", filesToSubmitIter.hasNext());
+            
+            // Skip the first file since it's already added in the TransferOrder
+            if (filesToSubmitIter.hasNext()) {
+                filesToSubmitIter.next();
+                logger.debug("Skipped first file (already added to TransferOrder)");
+            }
+            
+            int count = 0;
+            int maxFilesPerBatch = 4; // Add fewer files at once to avoid overwhelming (reduced since first file is already added)
+            
+            while (filesToSubmitIter.hasNext() && count < maxFilesPerBatch) {
+                File file = filesToSubmitIter.next();
+                try {
+                    // Validate file exists and is readable before adding
+                    if (!file.exists()) {
+                        logger.warn("File does not exist, skipping: {}", file.getAbsolutePath());
+                        continue;
+                    }
+                    if (!file.canRead()) {
+                        logger.warn("Cannot read file, skipping: {}", file.getAbsolutePath());
+                        continue;
+                    }
+                    
+                    faspManager.addSource(sessionId, file.getAbsolutePath(), folder + File.separator + file.getName());
+                    logger.info("Added file to transfer: {} (count: {})", file.getName(), count + 1);
+                    count++;
+                    
+                    // Small delay between file additions to avoid overwhelming the transfer
+                    Thread.sleep(100);
+                    
+                } catch (FaspManagerException e) {
+                    logger.error("Failed to add file to transfer: {}", file.getName(), e);
+                    FaspManager.destroy();
+                    String faspErrorMsg = "Failed to upload file via Aspera: " + file.getName() +
+                        "\n\nThis could be due to network restrictions, firewall settings, or network instability." +
+                        "\n\nAlternative options:" +
+                        "\n1. Go back one step and select FTP upload instead" +
+                        "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
+                        "\n3. Contact your system administrator to enable Aspera ports (TCP & UDP 33001)";
+                    publish(new UploadErrorMessage(this, null, faspErrorMsg));
+                    return; // Exit early on error
+                } catch (InterruptedException e) {
+                    logger.warn("File addition interrupted", e);
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+            logger.info("Added {} initial files to transfer session", count);
+            
+            // If no files were added, this could cause the transfer to hang
+            if (count == 0) {
+                logger.error("No files were added to the transfer session! This will cause the transfer to hang.");
+                FaspManager.destroy();
+                String noFilesErrorMsg = "No files were added to the Aspera transfer session. This could be due to:" +
+                    "\n• No files selected for upload" +
+                    "\n• File iterator not properly initialized" +
+                    "\n• All files were already processed" +
+                    "\n\nPlease check your file selection and try again.";
+                publish(new UploadErrorMessage(this, null, noFilesErrorMsg));
+            }
+            
+        } catch (Exception e) {
+            logger.error("Failed to add initial files to transfer session", e);
+            FaspManager.destroy();
+            String errorMsg = "Failed to initialize Aspera transfer: " + e.getMessage() +
+                "\n\nThis could be due to network restrictions, firewall settings, or network instability." +
+                "\n\nAlternative options:" +
+                "\n1. Go back one step and select FTP upload instead" +
+                "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
+                "\n3. Contact your system administrator to enable Aspera ports (TCP & UDP 33001)";
+            publish(new UploadErrorMessage(this, null, errorMsg));
         }
     }
 
@@ -249,6 +374,11 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
      */
     @Override
     public void fileSessionEvent(TransferEvent transferEvent, SessionStats sessionStats, FileInfo fileInfo) {
+        logger.info("Received file session event: {} with stats: {}", transferEvent, sessionStats);
+        if (transferCompleted.get()) {
+            logger.debug("Transfer already completed, ignoring event: {}", transferEvent);
+            return;
+        }
         FaspManager faspManager;
         try {
             faspManager = FaspManager.getSingleton();
@@ -267,45 +397,31 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
         UploadDetail uploadDetail = submissionRecord.getUploadDetail();
         String folder = uploadDetail.getFolder();
         switch (transferEvent) {
+            case CONNECTING:
+                logger.info("=== ASPERA CONNECTION STATUS ===");
+                logger.info("CONNECTING event received - attempting to connect to server");
+                logger.info("Host: {}", uploadDetail.getHost());
+                logger.info("Folder: {}", folder);
+                logger.info("Session stats: {}", sessionStats);
+                if (sessionStats != null) {
+                    logger.info("Connection status - Files complete: {}, Total transferred: {} bytes", 
+                        sessionStats.getFilesComplete(), sessionStats.getTotalTransferredBytes());
+                }
+                logger.info("===============================");
+                
+                // Update progress time to show we're making progress
+                lastProgressTime.set(System.currentTimeMillis());
+                break;
             case SESSION_START:
-                // Since we're using persistent transfers, we start with an empty session
-                // Add all files to the session now
-                logger.info("SESSION_START event received. Adding files to persistent transfer session");
-                logger.debug("Total files to submit: {}", totalNumOfFiles);
-                logger.debug("Files iterator has next: {}", filesToSubmitIter.hasNext());
+                // SESSION_START event received - transfer is ready (optional event)
+                logger.info("=== ASPERA SESSION READY ===");
+                logger.info("SESSION_START event received. Transfer is ready to begin");
+                logger.info("Total files to submit: {}", totalNumOfFiles);
+                logger.info("Session stats: {}", sessionStats);
+                logger.info("===========================");
                 
-                int count = 0;
-                while (filesToSubmitIter.hasNext() && count < 20) { // Add up to 20 files
-                    File file = filesToSubmitIter.next();
-                    try {
-                        faspManager.addSource(sessionStats.getId(), file.getAbsolutePath(), folder + File.separator + file.getName());
-                        logger.info("Added file to transfer: {} (count: {})", file.getName(), count + 1);
-                    } catch (FaspManagerException e) {
-                        FaspManager.destroy();
-                        String faspErrorMsg = "Failed to upload file via Aspera: " + file.getName() +
-                            "\n\nThis could be due to network restrictions, firewall settings, or network instability." +
-                            "\n\nAlternative options:" +
-                            "\n1. Go back one step and select FTP upload instead" +
-                            "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
-                            "\n3. Contact your system administrator to enable Aspera ports (TCP & UDP 33001)";
-                        publish(new UploadErrorMessage(this, null, faspErrorMsg));
-                        return; // Exit early on error
-                    }
-                    count++;
-                }
-                logger.info("Added {} files to transfer session in SESSION_START", count);
-                
-                // If no files were added, this could cause the transfer to hang
-                if (count == 0) {
-                    logger.error("No files were added to the transfer session! This will cause the transfer to hang.");
-                    FaspManager.destroy();
-                    String noFilesErrorMsg = "No files were added to the Aspera transfer session. This could be due to:" +
-                        "\n• No files selected for upload" +
-                        "\n• File iterator not properly initialized" +
-                        "\n• All files were already processed" +
-                        "\n\nPlease check your file selection and try again.";
-                    publish(new UploadErrorMessage(this, null, noFilesErrorMsg));
-                }
+                // Update progress tracking
+                lastProgressTime.set(System.currentTimeMillis());
                 break;
             case PROGRESS:
                 // Update progress tracking
@@ -335,7 +451,11 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                 if (fileInfo.getState().equals(FileState.FINISHED)) {
                     finishedFileCount++;
                     String[] fileNameArray = fileInfo.getName().split("/");
-                    logger.info("File {} uploaded successfully", fileNameArray[fileNameArray.length - 1]);
+                    logger.info("=== FILE TRANSFER COMPLETED ===");
+                    logger.info("File: {} uploaded successfully", fileNameArray[fileNameArray.length - 1]);
+                    logger.info("Progress: {}/{} files completed", sessionStats.getFilesComplete(), totalNumOfFiles);
+                    logger.info("Total transferred: {} bytes", sessionStats.getTotalTransferredBytes());
+                    logger.info("==============================");
                     
                     // Calculate current progress based on completed files
                     // If totalFileSize is 0, use file count progress instead
@@ -348,31 +468,18 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                     }
                     publish(new UploadProgressMessage(this, null, totalFileSize > 0 ? totalFileSize : 100, currentProgress, totalNumOfFiles, finishedFileCount));
                     
-                    // last file has finished uploading, add a new one
-                    if (filesToSubmitIter.hasNext()) {
-                        File file = filesToSubmitIter.next();
-                        try {
-                            faspManager.addSource(sessionStats.getId(), file.getAbsolutePath(), folder + File.separator + file.getName());
-                        } catch (FaspManagerException e) {
-                            FaspManager.destroy();
-                            String faspErrorMsg = "Failed to upload file via Aspera: " + file.getName() +
-                                "\n\nThis could be due to network restrictions, firewall settings, or network instability." +
-                                "\n\nAlternative options:" +
-                                "\n1. Go back one step and select FTP upload instead" +
-                                "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
-                                "\n3. Contact your system administrator to enable Aspera ports (TCP & UDP 33001)";
-                            publish(new UploadErrorMessage(this, null, faspErrorMsg));
-                        }
+                    // Check if all files are complete (no dynamic file addition needed)
+                    if (sessionStats.getFilesComplete() == totalNumOfFiles) {
+                        transferCompleted.set(true);
+                        FaspManager.destroy();
+                        // Send final progress message with appropriate total size
+                        long finalTotalSize = totalFileSize > 0 ? totalFileSize : 100;
+                        publish(new UploadProgressMessage(this, null, finalTotalSize, finalTotalSize, totalNumOfFiles, totalNumOfFiles));
+                        publish(new UploadSuccessMessage(this));
+                        logger.info("Aspera transfer completed successfully - all {} files transferred", totalNumOfFiles);
                     } else {
-                        if (sessionStats.getFilesComplete() == totalNumOfFiles) {
-                            transferCompleted.set(true);
-                            FaspManager.destroy();
-                            // Send final progress message with appropriate total size
-                            long finalTotalSize = totalFileSize > 0 ? totalFileSize : 100;
-                            publish(new UploadProgressMessage(this, null, finalTotalSize, finalTotalSize, totalNumOfFiles, totalNumOfFiles));
-                            publish(new UploadSuccessMessage(this));
-                            logger.info("Aspera all files transferred");
-                        }
+                        logger.debug("File completed. Progress: {}/{} files", 
+                            sessionStats.getFilesComplete(), totalNumOfFiles);
                     }
                 }
                 break;
@@ -387,14 +494,36 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                 break;
             case SESSION_ERROR:
                 transferCompleted.set(true);
-                logger.error("Aspera session Error: " + transferEvent.getDescription());
+                logger.error("Aspera session Error: {}", transferEvent.getDescription());
+                logger.error("Session stats: {}", sessionStats);
+                logger.error("File info: {}", fileInfo);
+                
+                // Get more detailed error information
+                String errorDetails = "Session error occurred";
+                if (sessionStats != null) {
+                    errorDetails += " - Files complete: " + sessionStats.getFilesComplete() + 
+                                  ", Total transferred: " + sessionStats.getTotalTransferredBytes() + " bytes";
+                }
+                if (fileInfo != null) {
+                    errorDetails += " - File: " + fileInfo.getName();
+                }
+                logger.error("Error details: {}", errorDetails);
+                
                 FaspManager.destroy();
-                String asperaErrorMsg = "Aspera transfer failed: " + transferEvent.getDescription() + 
-                    "\n\nThis could be due to network restrictions, firewall settings, or network instability." +
+                String asperaErrorMsg = "Aspera transfer failed: " + transferEvent.getDescription() +
+                    "\n\nError details: " + errorDetails +
+                    "\n\nThis could be due to:" +
+                    "\n• Network connectivity issues" +
+                    "\n• Firewall blocking Aspera ports (TCP & UDP 33001)" +
+                    "\n• Server-side problems" +
+                    "\n• Network instability" +
+                    "\n• File access permissions" +
+                    "\n• Insufficient disk space" +
                     "\n\nAlternative options:" +
                     "\n1. Go back one step and select FTP upload instead" +
                     "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
-                    "\n3. Contact your system administrator to enable Aspera ports (TCP & UDP 33001)";
+                    "\n3. Contact your system administrator to enable Aspera ports" +
+                    "\n4. Try again with a more stable network connection";
                 publish(new UploadErrorMessage(this, null, asperaErrorMsg));
                 break;
             default:

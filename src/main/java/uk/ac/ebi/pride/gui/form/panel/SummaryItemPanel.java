@@ -3,6 +3,7 @@ package uk.ac.ebi.pride.gui.form.panel;
 import com.google.common.io.Files;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.io.IOException;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
@@ -56,8 +57,44 @@ public class SummaryItemPanel extends ContextAwarePanel
         // get submission details
         submission = appContext.getSubmissionRecord().getSubmission();
         submissionType = submission.getProjectMetaData().getSubmissionType();
+        
+        // Always create checksum file in current directory of the tool
         checksumFile = new File(appContext.getProperty("checksum.filename"));
-        checksumFile.delete();
+        
+        // If checksum file already exists, rename it to backup and create new one
+        if (checksumFile.exists()) {
+            try {
+                // Create backup filename with timestamp
+                String checksumFilename = appContext.getProperty("checksum.filename");
+                String timestamp = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new java.util.Date());
+                String nameWithoutExt = checksumFilename.substring(0, checksumFilename.lastIndexOf('.'));
+                String extension = checksumFilename.substring(checksumFilename.lastIndexOf('.'));
+                String backupFilename = nameWithoutExt + "_backup_" + timestamp + extension;
+                File backupFile = new File(backupFilename);
+                
+                // Rename existing file to backup
+                if (checksumFile.renameTo(backupFile)) {
+                    logger.info("Renamed existing checksum file to backup: {}", backupFile.getAbsolutePath());
+                } else {
+                    logger.warn("Could not rename existing checksum file to backup: {}", checksumFile.getAbsolutePath());
+                    // If rename fails, try to delete the existing file
+                    if (!checksumFile.delete()) {
+                        logger.error("Could not delete existing checksum file: {}", checksumFile.getAbsolutePath());
+                        throw new IOException("Cannot remove existing checksum file: " + checksumFile.getAbsolutePath());
+                    }
+                }
+            } catch (Exception e) {
+                logger.error("Failed to handle existing checksum file", e);
+                // Show error to user
+                JOptionPane.showMessageDialog(app.getMainFrame(),
+                    "Failed to create new checksum file. Please ensure you have write permissions in the current directory.\n\n" +
+                    "Error: " + e.getMessage(),
+                    "Checksum File Creation Error",
+                    JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+        }
+        
         addChecksumFile();
         appContext.addPropertyChangeListener(this);
         populateSummaryItemPanel();
@@ -424,20 +461,48 @@ public class SummaryItemPanel extends ContextAwarePanel
     private void addChecksumFile() {
         DataFile checksumDataFile = new DataFile();
         DesktopContext context = App.getInstance().getDesktopContext();
+        
         if (!checksumDataFile.isFile()) {
             try {
-                checksumFile.createNewFile();
-                Files.append("#Checksum File\n", checksumFile, Charset.defaultCharset());
+                // Ensure checksum file is created in current directory
+                logger.info("Creating new checksum file in current directory: {}", checksumFile.getAbsolutePath());
+                
+                // Create the checksum file
+                if (!checksumFile.createNewFile()) {
+                    throw new IOException("Failed to create checksum file: " + checksumFile.getAbsolutePath());
+                }
+                
+                // Write the initial header
+                Files.write("#Checksum File\n".getBytes(), checksumFile);
+                logger.info("Successfully created checksum file: {}", checksumFile.getAbsolutePath());
+                
+                // Set up the data file
                 checksumDataFile.setFile(checksumFile);
                 checksumDataFile.setFileType(ProjectFileType.OTHER);
-                if (((AppContext) context).getSubmissionRecord().getSubmission().getDataFiles().stream().noneMatch(dataFile -> dataFile.getFileName().equals(context.getProperty("checksum.filename")))) {
+                
+                // Add to submission if not already present
+                String checksumFilename = context.getProperty("checksum.filename");
+                if (((AppContext) context).getSubmissionRecord().getSubmission().getDataFiles().stream()
+                    .noneMatch(dataFile -> dataFile.getFileName().equals(checksumFilename))) {
                     ((AppContext) context).addDataFile(checksumDataFile);
+                    logger.info("Added checksum file to submission: {}", checksumFilename);
+                } else {
+                    logger.debug("Checksum file already present in submission: {}", checksumFilename);
                 }
+                
             } catch (Exception ex) {
-                JOptionPane.showConfirmDialog(app.getMainFrame(),
-                        appContext.getProperty("checksum.file.error.message"),
-                        appContext.getProperty("checksum.file.error.title"),
-                        JOptionPane.CLOSED_OPTION, JOptionPane.ERROR_MESSAGE);
+                logger.error("Failed to create checksum file: {}", checksumFile.getAbsolutePath(), ex);
+                
+                // Show detailed error message
+                String errorMessage = "Failed to create checksum file in current directory.\n\n" +
+                    "File: " + checksumFile.getAbsolutePath() + "\n" +
+                    "Error: " + ex.getMessage() + "\n\n" +
+                    "Please ensure you have write permissions in the current directory.";
+                    
+                JOptionPane.showMessageDialog(app.getMainFrame(),
+                    errorMessage,
+                    "Checksum File Creation Error",
+                    JOptionPane.ERROR_MESSAGE);
             }
         }
     }

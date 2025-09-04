@@ -141,6 +141,7 @@ REM Launch the application
 echo 🚀 Launching PX Submission Tool...
 echo.
 
+REM Launch the application (GUI mode with file logging)
 %JAVA_CMD% -jar "%JAR_FILE%"
 
 REM Application has exited

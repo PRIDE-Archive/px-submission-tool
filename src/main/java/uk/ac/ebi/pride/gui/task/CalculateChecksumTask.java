@@ -52,10 +52,15 @@ public class CalculateChecksumTask extends TaskAdapter<Boolean, ChecksumMessage>
                     try {
                         logger.debug("Calculating SHA1 checksum for: {}", dataFile.getFile().getName());
                         Tuple<String, String> result = calculateSha1Checksum(dataFile.getFile());
-                        logger.info("Checksum calculated successfully for: {} -> {}", dataFile.getFile().getName(), result.getValue());
-                        return result;
+                        if (result != null && result.getKey() != null && result.getValue() != null) {
+                            logger.info("Checksum calculated successfully for: {} -> {}", dataFile.getFile().getName(), result.getValue());
+                            return result;
+                        } else {
+                            logger.error("Checksum calculation returned null result for file: {}", dataFile.getFile().getName());
+                            return null;
+                        }
                     } catch (Exception exception) {
-                        logger.error("Error in calculating checksum for file: {}", dataFile.getFile().getName(), exception);
+                        logger.error("Error in calculating checksum for file: {} - {}", dataFile.getFile().getName(), exception.getMessage(), exception);
                         return null;
                     }
                 }));
@@ -81,21 +86,43 @@ public class CalculateChecksumTask extends TaskAdapter<Boolean, ChecksumMessage>
         
         logger.info("=== Processing checksum results ===");
         Iterator<Future<Tuple<String, String>>> it = tasks.iterator();
-        while (it.hasNext()) {
+        long startTime = System.currentTimeMillis();
+        long timeoutMs = 300000; // 5 minutes timeout
+        
+        while (it.hasNext() && (System.currentTimeMillis() - startTime) < timeoutMs) {
             Future future = it.next();
             if (future.isDone()) {
                 try {
                     Tuple<String, String> fileChecksum = (Tuple<String, String>) future.get();
-                    publish(new ChecksumMessage(this, fileChecksum, ++i, totalNoOfFiles));
-                    logger.info("Published checksum result {}/{}: {} -> {}", i, totalNoOfFiles, 
-                               fileChecksum.getKey(), fileChecksum.getValue());
+                    
+                    // Check if checksum calculation was successful
+                    if (fileChecksum != null && fileChecksum.getKey() != null && fileChecksum.getValue() != null) {
+                        publish(new ChecksumMessage(this, fileChecksum, ++i, totalNoOfFiles));
+                        logger.info("Published checksum result {}/{}: {} -> {}", i, totalNoOfFiles, 
+                                   fileChecksum.getKey(), fileChecksum.getValue());
+                    } else {
+                        logger.warn("Checksum calculation returned null result for a file. Skipping this file.");
+                        // Still increment counter to maintain progress tracking
+                        i++;
+                    }
                     it.remove();
                 } catch (Exception e) {
                     logger.error("Error getting checksum result from future", e);
+                    // Remove the failed future and continue
+                    it.remove();
                 }
             }
             if (!it.hasNext()) {
                 it = tasks.iterator();
+            }
+        }
+        
+        // Check if we timed out
+        if ((System.currentTimeMillis() - startTime) >= timeoutMs) {
+            logger.error("Checksum calculation timed out after {} seconds. Cancelling remaining tasks.", timeoutMs / 1000);
+            // Cancel remaining tasks
+            for (Future<Tuple<String, String>> remainingTask : tasks) {
+                remainingTask.cancel(true);
             }
         }
         
@@ -109,16 +136,38 @@ public class CalculateChecksumTask extends TaskAdapter<Boolean, ChecksumMessage>
         String filePath = file.getAbsolutePath();
         logger.debug("Calculating SHA1 checksum for file: {}", filePath);
         
+        // Validate file exists and is readable
+        if (!file.exists()) {
+            throw new IOException("File does not exist: " + filePath);
+        }
+        
+        if (!file.canRead()) {
+            throw new IOException("Cannot read file: " + filePath);
+        }
+        
+        if (file.isDirectory()) {
+            throw new IOException("Cannot calculate checksum for directory: " + filePath);
+        }
+        
+        // Check for cached checksum
         if (CalculateChecksumDescriptor.checksumCalculatedFiles.containsKey(filePath)) {
             logger.debug("Using cached checksum for: {}", filePath);
             return CalculateChecksumDescriptor.checksumCalculatedFiles.get(filePath);
         }
         
+        // Calculate new checksum
         logger.debug("Calculating new SHA1 checksum for: {}", filePath);
-        String checksum = Hash.getSha1Checksum(file);
-        logger.debug("SHA1 checksum calculated: {} -> {}", filePath, checksum);
-        
-        return new Tuple<>(file.getAbsolutePath(), checksum);
+        try {
+            String checksum = Hash.getSha1Checksum(file);
+            if (checksum == null || checksum.trim().isEmpty()) {
+                throw new IOException("Checksum calculation returned null or empty result for: " + filePath);
+            }
+            logger.debug("SHA1 checksum calculated: {} -> {}", filePath, checksum);
+            return new Tuple<>(file.getAbsolutePath(), checksum);
+        } catch (Exception e) {
+            logger.error("Failed to calculate SHA1 checksum for file: {}", filePath, e);
+            throw new IOException("Failed to calculate checksum for " + filePath + ": " + e.getMessage(), e);
+        }
     }
 
 }
