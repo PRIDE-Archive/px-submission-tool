@@ -9,7 +9,7 @@ echo 📁 Working directory: %CD%
 echo.
 
 REM Check if JAR file exists
-set JAR_FILE=px-submission-tool-2.10.4.jar
+set JAR_FILE=px-submission-tool-${project.version}.jar
 if not exist "%JAR_FILE%" (
     echo ❌ Error: Could not find %JAR_FILE%
     echo Current directory: %CD%
@@ -113,10 +113,19 @@ if %errorlevel% equ 0 (
 )
 
 REM If download failed
-echo ❌ Failed to download JRE
+echo ❌ Failed to download JRE automatically
 echo.
-echo Please install Java 21 or later from: https://adoptium.net/
-echo Or ensure you have internet connection to download JRE automatically.
+echo 🔧 Troubleshooting options:
+echo.
+echo 1. Check your internet connection and try again
+echo 2. Install Java 21 manually from: https://adoptium.net/
+echo    - Download: OpenJDK 21 (JRE or JDK)
+echo    - Install and ensure 'java' command works
+echo 3. Use existing Java if you have version 21 or later:
+echo    - Set JAVA_HOME environment variable
+echo    - Or run: java -jar px-submission-tool-${project.version}.jar
+echo.
+echo 📚 For more help, see: https://github.com/PRIDE-Archive/px-submission-tool/blob/main/README.md
 echo.
 pause
 exit /b 1

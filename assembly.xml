@@ -20,32 +20,9 @@
             <fileMode>0644</fileMode>
         </fileSet>
         
-        <!-- Include launcher files -->
-        <fileSet>
-            <directory>${project.basedir}</directory>
-            <includes>
-                <include>Start_PX_Tool.bat</include>
-                <include>run.bat</include>
-                <include>run.sh</include>
-            </includes>
-            <outputDirectory>${assembly.dir}</outputDirectory>
-            <fileMode>0755</fileMode>
-        </fileSet>
-        
-        <!-- Include enhanced launcher scripts from resources -->
+        <!-- Include launcher scripts -->
         <fileSet>
             <directory>src/main/resources/launchers</directory>
-            <outputDirectory>${assembly.dir}</outputDirectory>
-            <fileMode>0755</fileMode>
-        </fileSet>
-        
-        <!-- Include launcher creation scripts -->
-        <fileSet>
-            <directory>src/main/resources/launchers</directory>
-            <includes>
-                <include>create-macos-app.sh</include>
-                <include>create-portable-app.sh</include>
-            </includes>
             <outputDirectory>${assembly.dir}</outputDirectory>
             <fileMode>0755</fileMode>
         </fileSet>
@@ -95,26 +72,6 @@
         </fileSet>
         
         <!-- JRE directories are now downloaded on-demand by launcher scripts -->
-        
-        <!-- Include macOS .app bundle if it exists -->
-        <fileSet>
-            <directory>${project.basedir}</directory>
-            <includes>
-                <include>PX_Submission_Tool.app/**</include>
-            </includes>
-            <outputDirectory>${assembly.dir}</outputDirectory>
-            <fileMode>0755</fileMode>
-        </fileSet>
-        
-        <!-- Include macOS .command file if it exists -->
-        <fileSet>
-            <directory>${project.basedir}</directory>
-            <includes>
-                <include>Start_PX_Tool.command</include>
-            </includes>
-            <outputDirectory>${assembly.dir}</outputDirectory>
-            <fileMode>0755</fileMode>
-        </fileSet>
         
         <!-- Include README -->
         <fileSet>

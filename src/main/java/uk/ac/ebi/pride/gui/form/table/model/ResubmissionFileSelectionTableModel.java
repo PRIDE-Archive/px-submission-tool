@@ -67,7 +67,13 @@ public class ResubmissionFileSelectionTableModel extends PxTableModel implements
     }
 
     public void removeAllRows(){
-        appContext.getSubmissionRecord().getSubmission().removeAllDataFiles();
+        // Remove all files except checksum.txt
+        List<DataFile> files = appContext.getSubmissionRecord().getSubmission().getDataFiles();
+        for (DataFile file : files) {
+            if (!file.getFileName().equals("checksum.txt")) {
+                appContext.removeDatafile(file);
+            }
+        }
     }
 
     @Override

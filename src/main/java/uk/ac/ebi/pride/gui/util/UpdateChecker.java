@@ -1,9 +1,9 @@
 package uk.ac.ebi.pride.gui.util;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.ebi.pride.toolsuite.gui.desktop.Desktop;
-import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
 
 import javax.swing.*;
 import java.io.BufferedReader;
@@ -12,8 +12,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.Iterator;
 
 /**
  * Check whether there is a new update using GitHub Releases API
@@ -27,14 +26,11 @@ public class UpdateChecker {
 
     public static final Logger logger = LoggerFactory.getLogger(UpdateChecker.class);
 
-    // GitHub API response patterns
-    private static final Pattern TAG_NAME_PATTERN = Pattern.compile("\"tag_name\"\\s*:\\s*\"([^\"]+)\"");
-    private static final Pattern BODY_PATTERN = Pattern.compile("\"body\"\\s*:\\s*\"([^\"]+)\"");
-    private static final Pattern HTML_URL_PATTERN = Pattern.compile("\"html_url\"\\s*:\\s*\"([^\"]+)\"");
-    private static final Pattern ASSETS_PATTERN = Pattern.compile("\"browser_download_url\"\\s*:\\s*\"([^\"]+)\"");
+    // JSON parser for GitHub API responses
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     private final String updateUrl;
-    private final String downloadUrl;
+    private static String fallbackDownloadUrl;
 
     private static String toolCurrentVersion;
     private static String latestVersion;
@@ -44,7 +40,7 @@ public class UpdateChecker {
 
     public UpdateChecker(String updateUrl, String downloadUrl) {
         this.updateUrl = updateUrl;
-        this.downloadUrl = downloadUrl;
+        fallbackDownloadUrl = downloadUrl;
     }
 
     /**
@@ -66,9 +62,19 @@ public class UpdateChecker {
             
             // Set User-Agent to avoid GitHub API rate limiting
             connection.setRequestProperty("User-Agent", "PX-Submission-Tool-UpdateChecker");
+            connection.setRequestProperty("Accept", "application/vnd.github.v3+json");
             
             int response = connection.getResponseCode();
             logger.debug("GitHub API response code: {}", response);
+            
+            // Handle rate limiting
+            if (response == 403 || response == 429) {
+                String rateLimitRemaining = connection.getHeaderField("X-RateLimit-Remaining");
+                String rateLimitReset = connection.getHeaderField("X-RateLimit-Reset");
+                logger.warn("GitHub API rate limit exceeded. Remaining: {}, Reset: {}", 
+                    rateLimitRemaining, rateLimitReset);
+                return false;
+            }
             
             if (response == HttpURLConnection.HTTP_OK) {
                 // Parse the GitHub API JSON response
@@ -83,29 +89,18 @@ public class UpdateChecker {
                 String jsonResponse = responseContent.toString();
                 logger.debug("GitHub API response: {}", jsonResponse);
                 
-                // Extract version information
-                Matcher tagMatcher = TAG_NAME_PATTERN.matcher(jsonResponse);
-                if (tagMatcher.find()) {
-                    String tagName = tagMatcher.group(1);
-                    // Remove 'v' prefix if present (e.g., "v2.10.4" -> "2.10.4")
-                    String version = tagName.startsWith("v") ? tagName.substring(1) : tagName;
-                    
-                    logger.info("Latest GitHub release version: {}", version);
-                    
-                    if (isHigherVersion(currentVersion, version)) {
-                        latestVersion = version;
-                        toUpdate = true;
-                        
-                        // Extract additional release information
-                        extractReleaseInfo(jsonResponse);
-                        
-                        logger.info("Update available: {} -> {}", currentVersion, version);
-                    } else {
-                        logger.info("No update available. Current: {}, Latest: {}", currentVersion, version);
-                    }
+                // Parse JSON response
+                JsonNode rootNode = objectMapper.readTree(jsonResponse);
+                
+                // Handle both single release and array of releases
+                if (rootNode.isArray()) {
+                    // Multiple releases - find the latest stable release
+                    toUpdate = processReleasesArray(rootNode, currentVersion);
                 } else {
-                    logger.warn("Could not extract version from GitHub API response");
+                    // Single release
+                    toUpdate = processSingleRelease(rootNode, currentVersion);
                 }
+                
             } else {
                 logger.warn("GitHub API returned non-OK response: {}", response);
             }
@@ -126,27 +121,118 @@ public class UpdateChecker {
     }
 
     /**
-     * Extract additional release information from GitHub API response
+     * Process a single release from GitHub API response
      */
-    private void extractReleaseInfo(String jsonResponse) {
-        // Extract release notes
-        Matcher bodyMatcher = BODY_PATTERN.matcher(jsonResponse);
-        if (bodyMatcher.find()) {
-            releaseNotes = bodyMatcher.group(1);
-            // Unescape JSON strings
-            releaseNotes = releaseNotes.replace("\\n", "\n").replace("\\\"", "\"");
+    private boolean processSingleRelease(JsonNode releaseNode, String currentVersion) {
+        try {
+            // Skip prereleases
+            if (releaseNode.has("prerelease") && releaseNode.get("prerelease").asBoolean()) {
+                logger.debug("Skipping prerelease: {}", releaseNode.get("tag_name").asText());
+                return false;
+            }
+            
+            String tagName = releaseNode.get("tag_name").asText();
+            String version = tagName.startsWith("v") ? tagName.substring(1) : tagName;
+            
+            logger.info("Latest GitHub release version: {}", version);
+            
+            if (isHigherVersion(currentVersion, version)) {
+                latestVersion = version;
+                extractReleaseInfo(releaseNode);
+                logger.info("Update available: {} -> {}", currentVersion, version);
+                return true;
+            } else {
+                logger.info("No update available. Current: {}, Latest: {}", currentVersion, version);
+                return false;
+            }
+        } catch (Exception e) {
+            logger.warn("Error processing single release", e);
+            return false;
         }
-        
-        // Extract release URL
-        Matcher urlMatcher = HTML_URL_PATTERN.matcher(jsonResponse);
-        if (urlMatcher.find()) {
-            releaseUrl = urlMatcher.group(1);
+    }
+    
+    /**
+     * Process an array of releases from GitHub API response
+     */
+    private boolean processReleasesArray(JsonNode releasesArray, String currentVersion) {
+        try {
+            Iterator<JsonNode> releases = releasesArray.elements();
+            
+            while (releases.hasNext()) {
+                JsonNode release = releases.next();
+                
+                // Skip prereleases
+                if (release.has("prerelease") && release.get("prerelease").asBoolean()) {
+                    logger.debug("Skipping prerelease: {}", release.get("tag_name").asText());
+                    continue;
+                }
+                
+                String tagName = release.get("tag_name").asText();
+                String version = tagName.startsWith("v") ? tagName.substring(1) : tagName;
+                
+                logger.debug("Checking release version: {}", version);
+                
+                if (isHigherVersion(currentVersion, version)) {
+                    latestVersion = version;
+                    extractReleaseInfo(release);
+                    logger.info("Update available: {} -> {}", currentVersion, version);
+                    return true;
+                }
+            }
+            
+            logger.info("No update available. Current: {}", currentVersion);
+            return false;
+        } catch (Exception e) {
+            logger.warn("Error processing releases array", e);
+            return false;
         }
-        
-        // Extract download asset URL (look for zip file)
-        Matcher assetsMatcher = ASSETS_PATTERN.matcher(jsonResponse);
-        if (assetsMatcher.find()) {
-            downloadAssetUrl = assetsMatcher.group(1);
+    }
+    
+    /**
+     * Extract additional release information from JSON node
+     */
+    private void extractReleaseInfo(JsonNode releaseNode) {
+        try {
+            // Extract release notes
+            if (releaseNode.has("body") && !releaseNode.get("body").isNull()) {
+                releaseNotes = releaseNode.get("body").asText();
+                // Properly unescape JSON strings
+                releaseNotes = releaseNotes.replace("\\n", "\n")
+                                         .replace("\\\"", "\"")
+                                         .replace("\\t", "\t")
+                                         .replace("\\\\", "\\");
+            }
+            
+            // Extract release URL
+            if (releaseNode.has("html_url") && !releaseNode.get("html_url").isNull()) {
+                releaseUrl = releaseNode.get("html_url").asText();
+            }
+            
+            // Extract download asset URL (prefer zip files)
+            if (releaseNode.has("assets") && releaseNode.get("assets").isArray()) {
+                JsonNode assets = releaseNode.get("assets");
+                Iterator<JsonNode> assetIterator = assets.elements();
+                
+                while (assetIterator.hasNext()) {
+                    JsonNode asset = assetIterator.next();
+                    if (asset.has("browser_download_url") && asset.has("name")) {
+                        String assetName = asset.get("name").asText();
+                        String assetUrl = asset.get("browser_download_url").asText();
+                        
+                        // Prefer zip files, but accept any asset if no zip is found
+                        if (assetName.endsWith(".zip")) {
+                            downloadAssetUrl = assetUrl;
+                            logger.debug("Found zip asset: {}", assetName);
+                            break;
+                        } else if (downloadAssetUrl == null) {
+                            downloadAssetUrl = assetUrl;
+                            logger.debug("Found fallback asset: {}", assetName);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Error extracting release info", e);
         }
     }
 
@@ -219,11 +305,21 @@ public class UpdateChecker {
         );
 
         if (option == JOptionPane.YES_OPTION) {
-            // Open the GitHub release page or download URL
-            String urlToOpen = releaseUrl != null ? releaseUrl : 
-                "https://github.com/PRIDE-Toolsuite/px-submission-tool/releases/latest";
+            // Prefer direct download URL if available, otherwise use fallback URLs
+            String urlToOpen;
+            if (downloadAssetUrl != null) {
+                urlToOpen = downloadAssetUrl;
+                logger.info("Opening direct download URL: {}", urlToOpen);
+            } else if (releaseUrl != null) {
+                urlToOpen = releaseUrl;
+                logger.info("Opening release page URL: {}", urlToOpen);
+            } else {
+                // Use the fallback download URL from constructor or default
+                urlToOpen = fallbackDownloadUrl != null ? fallbackDownloadUrl : 
+                    "https://github.com/PRIDE-Archive/px-submission-tool/releases/latest";
+                logger.info("Opening fallback URL: {}", urlToOpen);
+            }
             
-            logger.info("Opening update URL: {}", urlToOpen);
             HttpUtil.openURL(urlToOpen);
             
             // Check if this is a major version update that requires restart
@@ -273,5 +369,29 @@ public class UpdateChecker {
         }
         
         return false;
+    }
+    
+    /**
+     * Get the download URL for the latest version
+     * @return download URL if available, null otherwise
+     */
+    public static String getDownloadUrl() {
+        return downloadAssetUrl;
+    }
+    
+    /**
+     * Get the latest version string
+     * @return latest version if available, null otherwise
+     */
+    public static String getLatestVersion() {
+        return latestVersion;
+    }
+    
+    /**
+     * Get the release notes for the latest version
+     * @return release notes if available, null otherwise
+     */
+    public static String getReleaseNotes() {
+        return releaseNotes;
     }
 }

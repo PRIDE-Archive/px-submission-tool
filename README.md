@@ -99,11 +99,26 @@ If you get permission errors, make the scripts executable:
 chmod +x start.sh
 ```
 
-### **Java Not Found**
-The tool includes a bundled JRE, but if you encounter issues:
-- Ensure you have Java 8 or later installed
-- Set `JAVA_HOME` environment variable
-- Use the bundled JRE: `./jre-macos/Home/bin/java -jar px-submission-tool-2.10.4.jar` (macOS) or `./jre-linux/bin/java -jar px-submission-tool-2.10.4.jar` (Linux)
+### **Java Not Found or Download Failed**
+The tool automatically downloads Java 21 JRE if needed, but if you encounter issues:
+
+#### **Option 1: Manual Java Installation (Recommended)**
+1. **Download Java 21**: Visit [Adoptium](https://adoptium.net/)
+2. **Choose**: OpenJDK 21 (JRE or JDK)
+3. **Install**: Follow platform-specific installation instructions
+4. **Verify**: Run `java -version` to confirm Java 21+ is installed
+5. **Launch**: Run the tool again - it will use your system Java
+
+#### **Option 2: Use Downloaded JRE**
+If the tool previously downloaded a JRE but can't find it:
+- **Windows**: `jre-windows\bin\java.exe -jar px-submission-tool-2.10.4.jar`
+- **macOS**: `./jre-macos/Contents/Home/bin/java -jar px-submission-tool-2.10.4.jar`
+- **Linux**: `./jre-linux/bin/java -jar px-submission-tool-2.10.4.jar`
+
+#### **Option 3: Environment Variables**
+Set `JAVA_HOME` to point to your Java 21 installation:
+- **Windows**: `set JAVA_HOME=C:\Program Files\Java\jdk-21`
+- **macOS/Linux**: `export JAVA_HOME=/path/to/java21`
 
 ### **Transfer Method Failures**
 If Aspera or FTP transfers fail:
@@ -112,9 +127,8 @@ If Aspera or FTP transfers fail:
 - Globus provides reliable, high-speed file transfers
 
 ### **macOS Security Warnings**
-- Right-click the `.app` file and select "Open"
-- Go to System Preferences → Security & Privacy → General
-- Click "Allow Anyway" for the PX Submission Tool
+- If you get security warnings, run: `xattr -cr .` in the tool directory
+- Or right-click `start.sh` and select "Open" to bypass Gatekeeper
 
 ---
 
@@ -125,9 +139,9 @@ px-submission-tool-2.10.4/
 ├── start.bat                        # Windows launcher
 ├── start.sh                         # Linux/macOS launcher
 ├── px-submission-tool-2.10.4.jar # Main application JAR
-├── jre-windows/                     # Windows JRE
-├── jre-linux/                       # Linux JRE
-├── jre-macos/                       # macOS JRE
+├── jre-windows/                     # Windows JRE (downloaded on-demand)
+├── jre-linux/                       # Linux JRE (downloaded on-demand)
+├── jre-macos/                       # macOS JRE (downloaded on-demand)
 ├── aspera/                          # Aspera transfer binaries
 ├── config/                          # Configuration files
 └── help/                            # Help documentation
@@ -138,10 +152,10 @@ px-submission-tool-2.10.4/
 ## 🔧 **Advanced Usage**
 
 ### **Custom Java Installation**
-If you prefer to use your own Java installation:
+If you prefer to use your own Java 21 installation instead of the auto-downloaded JRE:
 ```bash
-# Set JAVA_HOME to your Java installation
-export JAVA_HOME=/path/to/your/java
+# Set JAVA_HOME to your Java 21 installation
+export JAVA_HOME=/path/to/your/java21
 java -jar px-submission-tool-2.10.4.jar
 ```
 
@@ -157,6 +171,43 @@ export https_proxy=http://proxy.example.com:8080
 All application logs are consolidated into a single file:
 - **Location**: `logs/px-submission.log`
 - **Contains**: Transfer progress, API calls, errors, and debugging information
+
+---
+
+## 🆘 **Troubleshooting**
+
+### **Common Issues**
+
+#### **"Java not found" or "JRE download failed"**
+1. **Check Internet**: Ensure you have internet connection for first-time JRE download
+2. **Manual Install**: Download Java 21 from [Adoptium](https://adoptium.net/)
+3. **Firewall**: Check if firewall is blocking the download
+4. **Disk Space**: Ensure you have at least 500MB free space for JRE download
+
+#### **"Permission denied" (macOS/Linux)**
+```bash
+chmod +x start.sh
+```
+
+#### **"Security warning" (macOS)**
+```bash
+xattr -cr .
+```
+
+#### **"Another instance is running"**
+1. Check for existing Java processes: `ps aux | grep java`
+2. Kill existing processes if needed
+3. Check for lock files in `~/.px-tool/` directory
+
+#### **Transfer failures (Aspera/FTP)**
+- Try the alternative transfer method suggested by the tool
+- Use **Globus** as a reliable alternative: [https://www.ebi.ac.uk/pride/markdownpage/globus](https://www.ebi.ac.uk/pride/markdownpage/globus)
+
+### **Getting Help**
+- **Documentation**: [README](https://github.com/PRIDE-Archive/px-submission-tool/blob/main/README.md)
+- **Issues**: [GitHub Issues](https://github.com/PRIDE-Archive/px-submission-tool/issues)
+- **PRIDE Support**: [PRIDE Archive](https://www.ebi.ac.uk/pride/)
+- **ProteomeXchange**: [ProteomeXchange](https://www.proteomexchange.org/)
 - **Use**: Send this file to support if you encounter issues
 
 ---
@@ -207,9 +258,9 @@ All application logs are consolidated into a single file:
 
 - **Operating System**: Windows 10+, macOS 10.14+, or Linux (64-bit)
 - **Memory**: Minimum 4GB RAM, recommended 8GB+
-- **Disk Space**: 2GB for installation, additional space for data files
+- **Disk Space**: 2GB for installation + 500MB for JRE download (if needed), additional space for data files
 - **Network**: Internet connection for data submission
-- **Java**: Bundled JRE included (Java 8+ compatible)
+- **Java**: Smart JRE management (auto-downloads Java 21 if needed)
 
 ---
 

@@ -13,18 +13,12 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Set up JDK 8
+    - name: Set up JDK 21
       uses: actions/setup-java@v4
       with:
-        java-version: '8'
+        java-version: '21'
         distribution: 'temurin'
-        
-    - name: Cache Maven packages
-      uses: actions/cache@v3
-      with:
-        path: ~/.m2
-        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-        restore-keys: ${{ runner.os }}-m2
+        cache: maven
         
     - name: Build with Maven
       run: |
@@ -46,10 +40,10 @@ jobs:
         ls -la *.zip *.txt
         
     - name: Create GitHub Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         files: |
-          target/px-submission-tool-*.zip
+          target/px-submission-tool-${{ github.ref_name }}.zip
           target/px-submission-tool-latest.zip
           target/latest-version.txt
         draft: false
@@ -70,15 +64,16 @@ jobs:
           Check the commit history for detailed changes.
           
           ### 🖥️ Supported Platforms
-          - Windows 10+ (`.bat` launcher)
-          - macOS 10.14+ (`.app` bundle)
-          - Linux 64-bit (`.sh` launcher)
+          - Windows 10+ (`start.bat` launcher)
+          - macOS 10.14+ (`start.sh` launcher)
+          - Linux 64-bit (`start.sh` launcher)
           
           ### 🔧 Features
-          - Self-contained with bundled JRE
+          - Smart JRE management (auto-downloads Java 21 if needed)
           - Aspera and FTP file transfer
           - Globus alternative when transfers fail
           - Comprehensive logging and error handling
+          - Portable distribution (~140MB download)
           
           ### 📚 Documentation
           - [README](https://github.com/${{ github.repository }}/blob/main/README.md)
