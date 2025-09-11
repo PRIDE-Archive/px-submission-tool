@@ -168,7 +168,7 @@ public class FTPUploadTask extends TaskAdapter<Void, UploadMessage> implements T
             if(appContext.isResubmission()){
                 SummaryDescriptor.addResubmissionSummary(submissionFile.getAbsolutePath(), appContext);
             }
-            SummaryDescriptor.addToolVersionAndLicenseToSummary(submissionFile.getAbsolutePath(),(AppContext) App.getInstance().getDesktopContext());
+            SummaryDescriptor.addToolVersionAndLicenseToSummary(submissionFile.getAbsolutePath(),(AppContext) App.getInstance().getDesktopContext(), "FTP");
 
             return submissionFile;
 

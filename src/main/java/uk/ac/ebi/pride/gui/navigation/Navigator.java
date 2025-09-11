@@ -59,6 +59,33 @@ public class Navigator extends JPanel implements PropertyChangeListener {
      * Id of the panel about to become current panel
      */
     private Object stagingPanelId;
+    
+    /**
+     * Flag to track if back button is acting as "New" button
+     */
+    private boolean isNewButtonMode = false;
+    
+    /**
+     * Reset the new button mode flag
+     */
+    public void resetNewButtonMode() {
+        isNewButtonMode = false;
+    }
+    
+    /**
+     * Check if back button is in "New" button mode
+     */
+    public boolean isNewButtonMode() {
+        return isNewButtonMode;
+    }
+    
+    /**
+     * Restart the application for a new submission
+     */
+    public void restartForNewSubmission() {
+        logger.info("Restarting application for new submission");
+        ((App) App.getInstance()).restart();
+    }
 
 
     public Navigator() {
@@ -322,6 +349,11 @@ public class Navigator extends JPanel implements PropertyChangeListener {
     private void changeCurrentNavigationPanel() {
         logger.debug("About to change current navigation panel");
 
+        // Reset new button mode when navigating to a different panel
+        if (isNewButtonMode) {
+            resetNewButtonMode();
+        }
+
         // get navigation panels
         NavigationPanelDescriptor nextPanel = navigationModel.getNextPanelDescriptor();
         NavigationPanelDescriptor backPanel = navigationModel.getBackPanelDescriptor();
@@ -422,6 +454,9 @@ public class Navigator extends JPanel implements PropertyChangeListener {
         Icon finishIcon = GUIUtilities.loadIcon(App.getInstance().getDesktopContext().getProperty("finish.button.small.icon"));
         nextButton.setIcon(finishIcon);
         nextButton.setHorizontalTextPosition(SwingConstants.RIGHT);
+        
+        // Set flag to indicate back button is now acting as "New" button
+        isNewButtonMode = true;
     }
 
     private void handleBeforeSubmittingFeedback(PropertyChangeEvent evt) {

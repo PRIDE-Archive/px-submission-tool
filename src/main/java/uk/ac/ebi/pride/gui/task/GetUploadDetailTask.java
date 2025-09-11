@@ -101,7 +101,7 @@ public class GetUploadDetailTask extends TaskAdapter<UploadDetail, String> {
                 
                 try {
                     uploadDetail = restTemplate.exchange(baseUrl, HttpMethod.GET, entity, UploadDetail.class, method.getMethod()).getBody();
-                    if (uploadDetail == null) {
+                    if (uploadDetail == null || uploadDetail.getDropBox() == null) {
                         logger.error("New upload API call succeeded but returned null response. URL: {}, Method: {}", baseUrl, method.getMethod());
                     } else {
                         logger.info("New upload details retrieved successfully");
@@ -115,6 +115,26 @@ public class GetUploadDetailTask extends TaskAdapter<UploadDetail, String> {
             logger.error("Unexpected error in upload detail retrieval. Exception type: {}, Message: {}", 
                        ex.getClass().getSimpleName(), ex.getMessage(), ex);
         }
+        
+        // If upload details are null, show warning message to user
+        if (uploadDetail == null || uploadDetail.getDropBox() == null) {
+            String warningMessage = "Failed to retrieve upload details for " + method.getMethod() + " upload method." +
+                "\n\nThis could be due to:" +
+                "\n• Network connectivity issues" +
+                "\n• Server-side problems" +
+                "\n• Invalid credentials" +
+                "\n• Service temporarily unavailable" +
+                "\n\nRecommended actions:" +
+                "\n1. Go back and try selecting FTP upload instead" +
+                "\n2. Check your internet connection" +
+                "\n3. Verify your PRIDE credentials" +
+                "\n4. Try again in a few minutes" +
+                "\n\nIf the problem persists, contact PRIDE support.";
+            
+            logger.warn("Upload details are null, publishing warning message to user");
+            publish(warningMessage);
+        }
+        
         return uploadDetail;
     }
 }

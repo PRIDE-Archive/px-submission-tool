@@ -128,7 +128,19 @@ public class AsperaFileUploader {
     }
 
     public void setRemoteLocation(String server, String user, String pass) {
+        logger.info("Setting RemoteLocation - Server: {}, User: {}, Pass: {}", server, user, pass != null ? "[PROVIDED]" : "[NULL]");
         this.remoteLocation = new RemoteLocation(server, user, pass);
+        logger.info("RemoteLocation created successfully");
+        
+        // Reinitialize FaspManager with new credentials
+        try {
+            logger.info("Reinitializing FaspManager with new credentials");
+            FaspManager.destroy();
+            FaspManager.getSingleton().addListener(listener);
+            logger.info("FaspManager reinitialized successfully");
+        } catch (Exception e) {
+            logger.warn("Failed to reinitialize FaspManager: {}", e.getMessage());
+        }
     }
 
     /**
@@ -145,17 +157,33 @@ public class AsperaFileUploader {
      */
     public String uploadFiles(Collection<File> filesToUpload, String destinationDirectory)
             throws FaspManagerException {
+        logger.info("Starting uploadFiles - Destination: {}", destinationDirectory);
+        logger.info("Original RemoteLocation - Host: {}, User: {}, Pass: {}", 
+            remoteLocation.getHost(), remoteLocation.getUser(), 
+            remoteLocation.getPassword() != null ? "[PROVIDED]" : "[NULL]");
+        
         // set all Files as local resources to be uploaded
         var localFiles = new LocalLocation();
         for (File file : filesToUpload) {
             localFiles.addPath(file.getAbsolutePath());
         }
         // define the destination on the server
-        remoteLocation.clear(); // clear all path, we only want to allow the one specified for this method!
-        remoteLocation.addPath(destinationDirectory);
+        // Create a new RemoteLocation to preserve authentication info
+        var destinationLocation = new RemoteLocation(remoteLocation.getHost(), remoteLocation.getUser(), remoteLocation.getPassword());
+        destinationLocation.addPath(destinationDirectory);
+        
+        logger.info("New RemoteLocation - Host: {}, User: {}, Pass: {}, Path: {}", 
+            destinationLocation.getHost(), destinationLocation.getUser(), 
+            destinationLocation.getPassword() != null ? "[PROVIDED]" : "[NULL]",
+            destinationDirectory);
+        
         // compile the transfer order
-        var order = new TransferOrder(localFiles, remoteLocation, transferParameters);
+        var order = new TransferOrder(localFiles, destinationLocation, transferParameters);
+        logger.info("TransferOrder created successfully");
+        
         // Submit the job for transfer
-        return FaspManager.getSingleton().startTransfer(order);
+        String transferId = FaspManager.getSingleton().startTransfer(order);
+        logger.info("Transfer started with ID: {}", transferId);
+        return transferId;
     }
 }

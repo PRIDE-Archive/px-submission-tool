@@ -165,6 +165,25 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         // upload files
         SubmissionRecord submissionRecord = appContext.getSubmissionRecord();
         final UploadDetail uploadDetail = submissionRecord.getUploadDetail();
+        
+        // Check if upload details are available
+        if (uploadDetail == null || uploadDetail.getDropBox()==null) {
+            String errorMessage = "Upload details are not available. This could be due to:\n" +
+                "• Network connectivity issues\n" +
+                "• Server-side problems\n" +
+                "• Invalid credentials\n" +
+                "• Service temporarily unavailable\n\n" +
+                "Please go back and try selecting a different upload method (FTP or Aspera).";
+            
+            JOptionPane.showMessageDialog(
+                null,
+                errorMessage,
+                "Upload Details Not Available",
+                JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+        
         final UploadMethod uploadMethod = uploadDetail.getMethod();
 
         Task task = null;
@@ -233,8 +252,12 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             appContext.setResubmission(false);
             
             // Clear any existing ticket ID to ensure fresh API calls
-            appContext.setProperty(Constant.TICKET_ID, null);
-            logger.info("Cleared ticket ID for new submission");
+            if (appContext.getProperty(Constant.TICKET_ID) != null) {
+                appContext.setProperty(Constant.TICKET_ID, "");
+                logger.info("Cleared ticket ID for new submission");
+            } else {
+                logger.debug("No ticket ID to clear");
+            }
             
             // Create new submission record
             SubmissionRecord newSubmissionRecord = new SubmissionRecord();
@@ -328,6 +351,40 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
      * Task listener for getting ftp details
      */
     private class UploadDetailTaskListener extends TaskListenerAdapter<UploadDetail, String> {
+
+        @Override
+        public void process(TaskEvent<List<String>> listTaskEvent) {
+            // Handle warning messages published by GetUploadDetailTask
+            for (String message : listTaskEvent.getValue()) {
+                if (message != null && !message.trim().isEmpty()) {
+                    logger.info("Received warning message from GetUploadDetailTask: {}", message);
+                    
+                    // Create a scrollable HTML editor pane for better line break handling
+                    JEditorPane editorPane = new JEditorPane();
+                    editorPane.setContentType("text/html");
+                    editorPane.setEditable(false);
+                    
+                    // Convert line breaks to HTML breaks
+                    String htmlMessage = "<html><body style='font-family: monospace; font-size: 12px;'>" +
+                        message.replace("\n", "<br>") + "</body></html>";
+                    editorPane.setText(htmlMessage);
+                    
+                    // Calculate proper size based on content
+                    int lineCount = message.split("\n").length;
+                    
+                    JScrollPane scrollPane = new JScrollPane(editorPane);
+                    scrollPane.setPreferredSize(new Dimension(600, Math.max(200, lineCount * 20 + 50)));
+                    scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+                    scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+                    
+                    // Show warning dialog
+                    JOptionPane.showMessageDialog(app.getMainFrame(),
+                            scrollPane,
+                            "Upload Details Warning",
+                            JOptionPane.WARNING_MESSAGE);
+                }
+            }
+        }
 
         @Override
         public void succeed(TaskEvent<UploadDetail> mapTaskEvent) {

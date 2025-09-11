@@ -144,6 +144,10 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
     }
 
     public static void addToolVersionAndLicenseToSummary(String fileName, AppContext appContext) {
+        addToolVersionAndLicenseToSummary(fileName, appContext, null);
+    }
+
+    public static void addToolVersionAndLicenseToSummary(String fileName, AppContext appContext, String transferMethod) {
         try {
             FileWriter fw = new FileWriter(fileName, true);
             BufferedWriter bw = new BufferedWriter(fw);
@@ -151,6 +155,20 @@ public class SummaryDescriptor extends ContextAwareNavigationPanelDescriptor {
             bw.newLine();
             bw.write("COM\tDataset License:" + appContext.getProperty("px.submission.dataset.version"));
             bw.newLine();
+            
+            // Add OS information
+            String osName = System.getProperty("os.name");
+            String osVersion = System.getProperty("os.version");
+            String osArch = System.getProperty("os.arch");
+            bw.write("COM\tOperating System:" + osName + " " + osVersion + " (" + osArch + ")");
+            bw.newLine();
+            
+            // Add transfer method if provided
+            if (transferMethod != null && !transferMethod.isEmpty()) {
+                bw.write("COM\tTransfer Method:" + transferMethod);
+                bw.newLine();
+            }
+            
             bw.close();
         } catch (IOException e) {
             e.printStackTrace();

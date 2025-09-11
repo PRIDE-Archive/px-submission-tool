@@ -3,10 +3,14 @@ package uk.ac.ebi.pride.gui.aspera;
 import com.asperasoft.faspmanager.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.ac.ebi.pride.gui.data.SubmissionRecord;
+import uk.ac.ebi.pride.data.io.SubmissionFileWriter;
 import uk.ac.ebi.pride.data.model.DataFile;
+import uk.ac.ebi.pride.gui.data.SubmissionRecord;
+import uk.ac.ebi.pride.gui.util.Constant;
 
 import java.io.File;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -44,32 +48,22 @@ public class PersistedAsperaFileUploader {
         configureTransferParameters(transferParameters);
         logger.debug("Transfer parameters configured: {}", transferParameters);
 
-        // Disable persistence for more reliable transfers
-        transferParameters.persist = false;
-        logger.debug("Disabled persistence for reliable transfer");
-
-        // Create LocalLocation with ALL files to ensure reliable transfer
+        // Create local location and add all files to it
         LocalLocation localFiles = new LocalLocation();
-        
-        // Add all files to the transfer order for reliable transfer
-        if (submissionRecord != null && submissionRecord.getSubmission() != null && 
-            !submissionRecord.getSubmission().getDataFiles().isEmpty()) {
-            
-            for (DataFile dataFile : submissionRecord.getSubmission().getDataFiles()) {
-                File file = dataFile.getFile();
-                if (file != null && file.exists()) {
-                    localFiles.addPath(file.getAbsolutePath());
-                    logger.debug("Added file to transfer order: {}", file.getName());
-                } else {
-                    logger.warn("Skipping invalid file: {}", file != null ? file.getAbsolutePath() : "null");
-                }
-            }
+        Set<File> filesToUpload = getFilesToUpload();
+        logger.info("Adding {} files to transfer order", filesToUpload.size());
+
+        if (filesToUpload.isEmpty()) {
+            throw new IllegalStateException("No files to upload! Cannot create transfer order with empty file list.");
         }
-        
-        logger.debug("Created LocalLocation with all files for reliable transfer");
+
+        for (File file : filesToUpload) {
+            localFiles.addPath(file.getAbsolutePath());
+            logger.debug("Added file to transfer: {}", file.getAbsolutePath());
+        }
 
         TransferOrder order = new TransferOrder(localFiles, remoteLocation, transferParameters);
-        logger.debug("Transfer order created for reliable transfer");
+        logger.debug("Transfer order created with {} files", filesToUpload.size());
 
         // Attempt transfer with retry mechanism
         String sessionId = null;
@@ -78,7 +72,6 @@ public class PersistedAsperaFileUploader {
                 logger.info("Attempting transfer (attempt {}/{})", retryCount.get() + 1, MAX_RETRIES);
                 sessionId = FaspManager.getSingleton().startTransfer(order);
                 logger.info("Transfer started successfully with session ID: {}", sessionId);
-                logger.debug("Transfer order details - Remote: {}", remoteLocation.getHost());
                 break;
             } catch (Exception e) {
                 retryCount.incrementAndGet();
@@ -100,6 +93,72 @@ public class PersistedAsperaFileUploader {
         }
 
         return sessionId;
+    }
+
+    private Set<File> getFilesToUpload() {
+        Set<File> files = new LinkedHashSet<>();
+
+        logger.info("Getting files to upload from submission record");
+        logger.info("Submission has {} data files", submissionRecord.getSubmission().getDataFiles().size());
+
+        // Add submission file if it exists
+        File submissionFile = createSubmissionFile();
+        if (submissionFile != null) {
+            files.add(submissionFile);
+            logger.info("Added submission file: {}", submissionFile.getName());
+        } else {
+            logger.warn("Failed to create submission file");
+        }
+
+        // Add all data files
+        int dataFileCount = 0;
+        for (DataFile dataFile : submissionRecord.getSubmission().getDataFiles()) {
+            logger.debug("Processing data file: {} (isFile: {}, file: {})",
+                    dataFile.getFileName(), dataFile.isFile(), dataFile.getFile());
+            if (dataFile.isFile() && dataFile.getFile() != null && dataFile.getFile().exists()) {
+                files.add(dataFile.getFile());
+                dataFileCount++;
+                logger.info("Added data file: {} (size: {} bytes)",
+                        dataFile.getFile().getName(), dataFile.getFile().length());
+            } else {
+                logger.warn("Skipping data file: {} (isFile: {}, file exists: {})",
+                        dataFile.getFileName(), dataFile.isFile(),
+                        dataFile.getFile() != null ? dataFile.getFile().exists() : false);
+            }
+        }
+
+        logger.info("Prepared {} files for upload ({} data files, {} total)",
+                files.size(), dataFileCount, files.size());
+
+        if (files.isEmpty()) {
+            logger.error("No files to upload! This will cause a ValidationException.");
+        }
+
+        return files;
+    }
+
+    private File createSubmissionFile() {
+        try {
+            logger.info("Creating submission file...");
+            // Create a random temporary directory
+            java.security.SecureRandom random = new java.security.SecureRandom();
+            File tempDir = new File(System.getProperty("java.io.tmpdir") + File.separator + random.nextLong());
+            boolean created = tempDir.mkdir();
+            logger.info("Created temp directory: {} (success: {})", tempDir.getAbsolutePath(), created);
+
+            File submissionFile = new File(tempDir.getAbsolutePath() + File.separator + Constant.PX_SUBMISSION_SUMMARY_FILE);
+            logger.info("Creating submission file: {}", submissionFile.getAbsolutePath());
+
+            // Write out submission details
+            SubmissionFileWriter.write(submissionRecord.getSubmission(), submissionFile);
+            logger.info("Successfully created submission file: {} (size: {} bytes)",
+                    submissionFile.getName(), submissionFile.length());
+
+            return submissionFile;
+        } catch (Exception e) {
+            logger.error("Could not create submission file: {}", e.getMessage(), e);
+            return null;
+        }
     }
 
     private void configureTransferParameters(XferParams params) {

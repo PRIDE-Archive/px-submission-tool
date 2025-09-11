@@ -1,16 +1,10 @@
 package uk.ac.ebi.pride.gui.task;
 
-import com.asperasoft.faspmanager.Encryption;
 import com.asperasoft.faspmanager.FaspManager;
 import com.asperasoft.faspmanager.FaspManagerException;
 import com.asperasoft.faspmanager.FileInfo;
 import com.asperasoft.faspmanager.FileState;
 import com.asperasoft.faspmanager.InitializationException;
-import com.asperasoft.faspmanager.Manifest;
-import com.asperasoft.faspmanager.Overwrite;
-import com.asperasoft.faspmanager.Policy;
-import com.asperasoft.faspmanager.RemoteLocation;
-import com.asperasoft.faspmanager.Resume;
 import com.asperasoft.faspmanager.SessionStats;
 import com.asperasoft.faspmanager.TransferEvent;
 import com.asperasoft.faspmanager.TransferListener;
@@ -20,12 +14,13 @@ import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.archive.submission.model.submission.DropBoxDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
-import uk.ac.ebi.pride.gui.aspera.PersistedAsperaFileUploader;
+import uk.ac.ebi.pride.gui.aspera.AsperaFileUploader;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
 import uk.ac.ebi.pride.gui.task.ftp.UploadErrorMessage;
 import uk.ac.ebi.pride.gui.task.ftp.UploadProgressMessage;
 import uk.ac.ebi.pride.gui.task.ftp.UploadSuccessMessage;
 import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
+import uk.ac.ebi.pride.toolsuite.gui.task.Task;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -103,11 +98,19 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
         String ascpLocation = chooseAsperaBinary();
         logger.debug("Aspera binary location {}", ascpLocation);
         File executable = new File(ascpLocation);
-        XferParams defaultTransferParams = getDefaultTransferParams();
-        PersistedAsperaFileUploader uploader = new PersistedAsperaFileUploader(executable, submissionRecord);
-        uploader.addTransferListener(this);
+        AsperaFileUploader uploader = new AsperaFileUploader(executable);
         final UploadDetail uploadDetail = submissionRecord.getUploadDetail();
         final DropBoxDetail dropBox = uploadDetail.getDropBox();
+        
+        // Set up the uploader with cleaned credentials
+        String cleanUsername = dropBox.getUserName() != null ? dropBox.getUserName().trim() : null;
+        String cleanPassword = dropBox.getPassword() != null ? dropBox.getPassword().trim() : null;
+        logger.info("Cleaned credentials - Username: '{}', Password: '{}'", cleanUsername, cleanPassword != null ? "[PROVIDED]" : "[NULL]");
+        uploader.setRemoteLocation(uploadDetail.getHost(), cleanUsername, cleanPassword);
+        XferParams params = AsperaFileUploader.defaultTransferParams();
+        params.createPath = true;
+        uploader.setTransferParameters(params);
+        uploader.setListener(this);
         
         // Log connection details
         logger.info("=== ASPERA CONNECTION DETAILS ===");
@@ -115,22 +118,35 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
         logger.info("Username: {}", dropBox.getUserName());
         logger.info("Password: {}", dropBox.getPassword() != null ? "[PROVIDED]" : "[MISSING]");
         logger.info("Folder: {}", uploadDetail.getFolder());
-        logger.info("Total files to upload: {}", submissionRecord.getSubmission().getDataFiles().size());
+        logger.info("Total files to upload: {}", filesToSubmit.size());
         logger.info("Files list:");
-        for (int i = 0; i < submissionRecord.getSubmission().getDataFiles().size(); i++) {
-            var dataFile = submissionRecord.getSubmission().getDataFiles().get(i);
-            logger.info("  {}. {} ({} bytes)", i + 1, dataFile.getFile().getName(), dataFile.getFile().length());
+        int i = 1;
+        for (File file : filesToSubmit) {
+            logger.info("  {}. {} ({} bytes)", i++, file.getName(), file.length());
         }
         logger.info("================================");
-        logger.info("Attempting to connect to server: {} with folder: {}", uploadDetail.getHost(), uploadDetail.getFolder());
         
-        RemoteLocation remoteLocation = new RemoteLocation(uploadDetail.getHost(), dropBox.getUserName(), dropBox.getPassword());
-        String session = uploader.startTransferSession(remoteLocation, defaultTransferParams);
-        logger.debug("Transfer Session ID: {}", session);
+        // Additional debugging for RemoteLocation
+        logger.info("=== REMOTE LOCATION DEBUG ===");
+        logger.info("RemoteLocation host: {}", uploader.getRemoteLocation());
+        logger.info("=============================");
         
-        // All files are already in the transfer order, no need to add them separately
-        logger.info("Transfer started with all files in the order");
-        logger.info("Transfer is ready - no need to wait for SESSION_START event");
+        
+        
+        // Upload files using the folder name
+        final String folder = uploadDetail.getFolder();
+        logger.info("Starting Aspera upload to folder: {}", folder);
+        
+        try {
+            String transferId = uploader.uploadFiles(filesToSubmit, folder);
+            logger.info("Transfer started with ID: {}", transferId);
+        } catch (FaspManagerException e) {
+            logger.error("Aspera upload failed: {}", e.getMessage(), e);
+            throw e;
+        } catch (Exception e) {
+            logger.error("Unexpected error during Aspera upload: {}", e.getMessage(), e);
+            throw new RuntimeException("Upload failed: " + e.getMessage(), e);
+        }
         
         // Start transfer monitoring (if enabled)
         transferStartTime.set(System.currentTimeMillis());
@@ -161,117 +177,7 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
         }).start();
     }
 
-    /**
-     * Add initial files to the transfer session immediately after session start
-     */
-    private void addInitialFilesToSession(String sessionId, String folder) {
-        try {
-            FaspManager faspManager = FaspManager.getSingleton();
-            int totalNumOfFiles = submissionRecord.getSubmission().getDataFiles().size();
-            
-            logger.info("Adding initial files to transfer session: {}", sessionId);
-            logger.debug("Total files to submit: {}", totalNumOfFiles);
-            logger.debug("Files iterator has next: {}", filesToSubmitIter.hasNext());
-            
-            // Skip the first file since it's already added in the TransferOrder
-            if (filesToSubmitIter.hasNext()) {
-                filesToSubmitIter.next();
-                logger.debug("Skipped first file (already added to TransferOrder)");
-            }
-            
-            int count = 0;
-            int maxFilesPerBatch = 4; // Add fewer files at once to avoid overwhelming (reduced since first file is already added)
-            
-            while (filesToSubmitIter.hasNext() && count < maxFilesPerBatch) {
-                File file = filesToSubmitIter.next();
-                try {
-                    // Validate file exists and is readable before adding
-                    if (!file.exists()) {
-                        logger.warn("File does not exist, skipping: {}", file.getAbsolutePath());
-                        continue;
-                    }
-                    if (!file.canRead()) {
-                        logger.warn("Cannot read file, skipping: {}", file.getAbsolutePath());
-                        continue;
-                    }
-                    
-                    faspManager.addSource(sessionId, file.getAbsolutePath(), folder + File.separator + file.getName());
-                    logger.info("Added file to transfer: {} (count: {})", file.getName(), count + 1);
-                    count++;
-                    
-                    // Small delay between file additions to avoid overwhelming the transfer
-                    Thread.sleep(100);
-                    
-                } catch (FaspManagerException e) {
-                    logger.error("Failed to add file to transfer: {}", file.getName(), e);
-                    FaspManager.destroy();
-                    String faspErrorMsg = "Failed to upload file via Aspera: " + file.getName() +
-                        "\n\nThis could be due to network restrictions, firewall settings, or network instability." +
-                        "\n\nAlternative options:" +
-                        "\n1. Go back one step and select FTP upload instead" +
-                        "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
-                        "\n3. Contact your system administrator to enable Aspera ports (TCP & UDP 33001)";
-                    publish(new UploadErrorMessage(this, null, faspErrorMsg));
-                    return; // Exit early on error
-                } catch (InterruptedException e) {
-                    logger.warn("File addition interrupted", e);
-                    Thread.currentThread().interrupt();
-                    return;
-                }
-            }
-            logger.info("Added {} initial files to transfer session", count);
-            
-            // If no files were added, this could cause the transfer to hang
-            if (count == 0) {
-                logger.error("No files were added to the transfer session! This will cause the transfer to hang.");
-                FaspManager.destroy();
-                String noFilesErrorMsg = "No files were added to the Aspera transfer session. This could be due to:" +
-                    "\n• No files selected for upload" +
-                    "\n• File iterator not properly initialized" +
-                    "\n• All files were already processed" +
-                    "\n\nPlease check your file selection and try again.";
-                publish(new UploadErrorMessage(this, null, noFilesErrorMsg));
-            }
-            
-        } catch (Exception e) {
-            logger.error("Failed to add initial files to transfer session", e);
-            FaspManager.destroy();
-            String errorMsg = "Failed to initialize Aspera transfer: " + e.getMessage() +
-                "\n\nThis could be due to network restrictions, firewall settings, or network instability." +
-                "\n\nAlternative options:" +
-                "\n1. Go back one step and select FTP upload instead" +
-                "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
-                "\n3. Contact your system administrator to enable Aspera ports (TCP & UDP 33001)";
-            publish(new UploadErrorMessage(this, null, errorMsg));
-        }
-    }
 
-    /**
-     * Set the default transfer parameters for this transfer.
-     * For supported parameters see class #XferParams
-     * For additional descriptions see the Aspera documentation
-     * of the command line tool. For example at
-     * http://download.asperasoft.com/download/docs/ascp/2.7/html/index.html
-     *
-     * @return the default transfer parameters.
-     */
-    private static XferParams getDefaultTransferParams() {
-        DesktopContext appContext = App.getInstance().getDesktopContext();
-        XferParams xferParams = new XferParams();
-        xferParams.tcpPort = Integer.parseInt(appContext.getProperty("aspera.xfer.tcpPort"));
-        xferParams.udpPort = Integer.parseInt(appContext.getProperty("aspera.xfer.udpPort")); // port used for data transfer
-        xferParams.targetRateKbps = Integer.parseInt(appContext.getProperty("aspera.xfer.targetRateKbps"));
-        xferParams.minimumRateKbps = Integer.parseInt(appContext.getProperty("aspera.xfer.minimumRateKbps"));
-        xferParams.encryption = Encryption.DEFAULT;
-        xferParams.overwrite = Overwrite.DIFFERENT;
-        xferParams.generateManifest = Manifest.NONE;
-        xferParams.policy = Policy.FAIR;
-        xferParams.resumeCheck = Resume.SPARSE_CHECKSUM; // Use faster resume check like original
-        xferParams.preCalculateJobSize = Boolean.parseBoolean(appContext.getProperty("aspera.xfer.preCalculateJobSize"));
-        xferParams.createPath = Boolean.parseBoolean(appContext.getProperty("aspera.xfer.createPath"));
-        xferParams.persist = false; // Disable persistence to reduce overhead
-        return xferParams;
-    }
     
     /**
      * Starts a background thread to monitor transfer progress and detect timeouts

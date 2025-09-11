@@ -186,7 +186,7 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
       if(appContext.isResubmission()){
         SummaryDescriptor.addResubmissionSummary(submissionFile.getAbsolutePath(), appContext);
       }
-      SummaryDescriptor.addToolVersionAndLicenseToSummary(submissionFile.getAbsolutePath(), appContext);
+      SummaryDescriptor.addToolVersionAndLicenseToSummary(submissionFile.getAbsolutePath(), appContext, "Aspera");
       return submissionFile;
     } catch (SubmissionFileException ex) {
       String msg = "Failed to create submission file" +

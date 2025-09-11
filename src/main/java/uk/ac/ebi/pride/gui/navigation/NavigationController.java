@@ -50,11 +50,17 @@ public class NavigationController implements ActionListener {
      * Called when back button pressed
      */
     private void backButtonPressed() {
-        // get current navigation panel
-        NavigationModel model = navigator.getNavigationModel();
-        NavigationPanelDescriptor previousPanel = model.getBackPanelDescriptor();
-
-        navigator.setCurrentNavigationPanel(previousPanel.getNavigationPanelId());
+        // Check if back button is acting as "New" button
+        if (navigator.isNewButtonMode()) {
+            // Trigger cleanup and restart for new submission
+            navigator.resetNewButtonMode();
+            navigator.restartForNewSubmission();
+        } else {
+            // Normal back button behavior
+            NavigationModel model = navigator.getNavigationModel();
+            NavigationPanelDescriptor previousPanel = model.getBackPanelDescriptor();
+            navigator.setCurrentNavigationPanel(previousPanel.getNavigationPanelId());
+        }
     }
 
     /**
