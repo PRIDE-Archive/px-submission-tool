@@ -509,8 +509,7 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
             SubmissionRecord submissionRecord = appContext.getSubmissionRecord();
             logger.debug("Handle stop message: {} files", submissionRecord.getSubmission().getDataFiles().size() - submissionRecord.getUploadedFiles().size());
 
-            // stop: exiting aspera upload
-            FaspManager.destroy();
+            // stop: exiting aspera upload - FaspManager cleanup removed to prevent authentication issues
 
             SubmissionForm form = (SubmissionForm) SubmissionDescriptor.this.getNavigationPanel();
             form.setUploadMessage(appContext.getProperty("upload.stop.message"));

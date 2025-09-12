@@ -248,11 +248,6 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
     // Publish the error message to be displayed to the user
     publish(new UploadErrorMessage(this, null, errorMessage));
     
-    // Clean up resources
-    try {
-      FaspManager.destroy();
-    } catch (Exception e) {
-      logger.warn("Error during FaspManager cleanup", e);
-    }
+    // Clean up resources - FaspManager cleanup removed to prevent authentication issues
   }
 }

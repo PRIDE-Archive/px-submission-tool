@@ -77,9 +77,9 @@ public class DefaultAsperaTransferListener implements TransferListener
             }
         }
 
-        if ((event == TransferEvent.SESSION_STOP) || (event == TransferEvent.SESSION_ERROR))
-        {
-            FaspManager.destroy();
-        }
+//        if ((event == TransferEvent.SESSION_STOP) || (event == TransferEvent.SESSION_ERROR))
+//        {
+//            // FaspManager cleanup removed to prevent authentication issues
+//        }
     }
 }

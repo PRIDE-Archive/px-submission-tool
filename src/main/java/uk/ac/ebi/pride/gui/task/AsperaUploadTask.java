@@ -73,7 +73,6 @@ public class AsperaUploadTask extends AsperaGeneralTask implements TransferListe
                 publish(new UploadProgressMessage(this, null, totalFileSize, sessionStats.getTotalTransferredBytes(), totalNumOfFiles, uploadedNumOfFiles));
                 break;
             case SESSION_STOP:
-                FaspManager.destroy();
                 publish(new UploadProgressMessage(this, null, totalFileSize, totalFileSize, totalNumOfFiles, totalNumOfFiles));
                 if((int)sessionStats.getFilesComplete()==totalNumOfFiles+1) {
                 publish(new UploadSuccessMessage(this));
@@ -82,7 +81,6 @@ public class AsperaUploadTask extends AsperaGeneralTask implements TransferListe
                 break;
             case SESSION_ERROR:
                 logger.debug("Aspera session Error: " + transferEvent.getDescription());
-                FaspManager.destroy();
                 publish(new UploadErrorMessage(this, null, "Failed to upload via Aspera: " + transferEvent.getDescription()));
                 break;
         }

@@ -84,7 +84,7 @@ public class AsperaFileUploader {
         this.listener = new DefaultAsperaTransferListener(); // set default listener
         this.transferParameters = defaultTransferParams(); // set default transfer parameters
         Environment.setFasp2ScpPath(getAscpPath(ascpExecutable)); // set the location of the ascp executable
-        FaspManager.getSingleton().addListener(listener);// set the default listener
+        FaspManagerSingleton.getInstance().addListener(listener);// set the default listener
     }
 
     private String getAscpPath(File executable) {
@@ -110,9 +110,9 @@ public class AsperaFileUploader {
      */
     public void setListener(TransferListener listener) throws FaspManagerException {
         // overwrite the default listener
-        FaspManager.getSingleton().removeListener(this.listener);
+        FaspManagerSingleton.getInstance().removeListener(this.listener);
         this.listener = listener;
-        FaspManager.getSingleton().addListener(listener);
+        FaspManagerSingleton.getInstance().addListener(listener);
     }
 
     public XferParams getTransferParameters() {
@@ -131,16 +131,6 @@ public class AsperaFileUploader {
         logger.info("Setting RemoteLocation - Server: {}, User: {}, Pass: {}", server, user, pass != null ? "[PROVIDED]" : "[NULL]");
         this.remoteLocation = new RemoteLocation(server, user, pass);
         logger.info("RemoteLocation created successfully");
-        
-        // Reinitialize FaspManager with new credentials
-        try {
-            logger.info("Reinitializing FaspManager with new credentials");
-            FaspManager.destroy();
-            FaspManager.getSingleton().addListener(listener);
-            logger.info("FaspManager reinitialized successfully");
-        } catch (Exception e) {
-            logger.warn("Failed to reinitialize FaspManager: {}", e.getMessage());
-        }
     }
 
     /**
@@ -182,7 +172,7 @@ public class AsperaFileUploader {
         logger.info("TransferOrder created successfully");
         
         // Submit the job for transfer
-        String transferId = FaspManager.getSingleton().startTransfer(order);
+        String transferId = FaspManagerSingleton.getInstance().startTransfer(order);
         logger.info("Transfer started with ID: {}", transferId);
         return transferId;
     }
