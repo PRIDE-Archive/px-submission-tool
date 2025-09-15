@@ -251,7 +251,7 @@ public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor 
             StringBuilder style = new StringBuilder("font-family:" + font.getFamily() + ";");
             style.append("font-weight:" + (font.isBold() ? "bold" : "normal") + ";");
             style.append("font-size:" + font.getSize() + "pt;");
-            String errorMessage = errors.contains("UserCredentials mismatch") ?
+            String errorMessage = errors.getFirst().contains("Invalid Password") ?
                     appContext.getProperty("pride.login.credentials.error.message") :
                     appContext.getProperty("pride.login.proxy.error.message");
             if (errors.getFirst().contains("incoming ticket pending")) {
