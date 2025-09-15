@@ -281,10 +281,33 @@ public class UpdateChecker {
      * Show update dialog with enhanced information
      */
     public static void showUpdateDialog() {
+        showUpdateDialog(false);
+    }
+
+    /**
+     * Show update dialog with option to force update
+     * @param forcedUpdate if true, shows a non-dismissible dialog that forces update
+     */
+    public static void showUpdateDialog(boolean forcedUpdate) {
+        showUpdateDialog(forcedUpdate, null, null);
+    }
+
+    /**
+     * Show update dialog with option to force update and version info
+     * @param forcedUpdate if true, shows a non-dismissible dialog that forces update
+     * @param currentVersion current application version
+     * @param latestVersion latest available version
+     */
+    public static void showUpdateDialog(boolean forcedUpdate, String currentVersion, String latestVersion) {
         StringBuilder message = new StringBuilder();
         message.append("<html><b>A new version of PX Submission Tool is available!</b><br><br>");
-        message.append("<b>Current Version:</b> ").append(toolCurrentVersion).append("<br>");
-        message.append("<b>Latest Version:</b> ").append(latestVersion).append("<br><br>");
+        
+        // Use provided versions or fallback to static variables
+        String displayCurrentVersion = currentVersion != null ? currentVersion : toolCurrentVersion;
+        String displayLatestVersion = latestVersion != null ? latestVersion : UpdateChecker.latestVersion;
+        
+        message.append("<b>Current Version:</b> ").append(displayCurrentVersion != null ? displayCurrentVersion : "Unknown").append("<br>");
+        message.append("<b>Latest Version:</b> ").append(displayLatestVersion != null ? displayLatestVersion : "Unknown").append("<br><br>");
         
         if (releaseNotes != null && !releaseNotes.trim().isEmpty()) {
             message.append("<b>What's New:</b><br>");
@@ -294,15 +317,34 @@ public class UpdateChecker {
             message.append(truncatedNotes.replace("\n", "<br>")).append("<br><br>");
         }
         
-        message.append("Would you like to download the latest version?</html>");
+        if (forcedUpdate) {
+            message.append("<b style='color: red;'>This update is required to continue using the application.</b><br><br>");
+            message.append("Please download and install the latest version to continue.</html>");
+        } else {
+            message.append("Would you like to download the latest version?</html>");
+        }
         
-        int option = JOptionPane.showConfirmDialog(
-            null, 
-            message.toString(), 
-            "Update Available - PX Submission Tool", 
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.INFORMATION_MESSAGE
-        );
+        int option;
+        if (forcedUpdate) {
+            // For forced updates, only show OK button
+            JOptionPane.showMessageDialog(
+                null, 
+                message.toString(), 
+                "Update Required - PX Submission Tool", 
+                JOptionPane.WARNING_MESSAGE
+            );
+            option = JOptionPane.YES_OPTION; // Always proceed with download
+        }
+        else {
+            // For optional updates, show Yes/No dialog
+            option = JOptionPane.showConfirmDialog(
+                null, 
+                message.toString(), 
+                "Update Available - PX Submission Tool", 
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.INFORMATION_MESSAGE
+            );
+        }
 
         if (option == JOptionPane.YES_OPTION) {
             // Prefer direct download URL if available, otherwise use fallback URLs
@@ -322,6 +364,19 @@ public class UpdateChecker {
             
             HttpUtil.openURL(urlToOpen);
             
+            // For forced updates, exit the application after opening download
+            if (forcedUpdate) {
+                JOptionPane.showMessageDialog(
+                    null,
+                    "<html><b>Download!</b><br><br>" +
+                    "Please install the new version and restart the application.<br>" +
+                    "The application will now exit.</html>",
+                    "Update Download",
+                    JOptionPane.INFORMATION_MESSAGE
+                );
+                System.exit(0);
+            }
+            
             // Check if this is a major version update that requires restart
             if (isMajorVersionUpdate(toolCurrentVersion, latestVersion)) {
                 int restartOption = JOptionPane.showConfirmDialog(
@@ -340,6 +395,113 @@ public class UpdateChecker {
                 }
             }
         }
+    }
+
+    /**
+     * Static version of isHigherVersion for use in static methods
+     */
+    private static boolean isHigherVersionStatic(String currentVersion, String newVersion) {
+        try {
+            String[] currentParts = currentVersion.split("\\.");
+            String[] newParts = newVersion.split("\\.");
+            
+            // Ensure we have exactly 3 parts (major.minor.patch)
+            if (currentParts.length < 3 || newParts.length < 3) {
+                logger.warn("Invalid version format - expected major.minor.patch: current={}, new={}", currentVersion, newVersion);
+                return false;
+            }
+            
+            // Compare major version
+            int currentMajor = Integer.parseInt(currentParts[0]);
+            int newMajor = Integer.parseInt(newParts[0]);
+            if (newMajor > currentMajor) return true;
+            if (newMajor < currentMajor) return false;
+            
+            // Compare minor version
+            int currentMinor = Integer.parseInt(currentParts[1]);
+            int newMinor = Integer.parseInt(newParts[1]);
+            if (newMinor > currentMinor) return true;
+            if (newMinor < currentMinor) return false;
+            
+            // Compare patch version
+            int currentPatch = Integer.parseInt(currentParts[2]);
+            int newPatch = Integer.parseInt(newParts[2]);
+            if (newPatch > currentPatch) return true;
+            if (newPatch < currentPatch) return false;
+            
+            return false; // Versions are equal
+        } catch (Exception e) {
+            logger.warn("Error comparing versions: {} vs {}", currentVersion, newVersion, e);
+            return false;
+        }
+    }
+
+    /**
+     * Check if a forced update is required
+     * @param currentVersion current application version
+     * @return true if forced update is required
+     */
+    public static boolean isForcedUpdateRequired(String currentVersion) {
+        try {
+            // Get the latest version from GitHub
+            String latestVersion = getLatestVersionFromGitHub();
+            if (latestVersion == null) {
+                logger.warn("Could not fetch latest version from GitHub, skipping forced update check");
+                return false;
+            }
+            
+            logger.info("Checking forced update: current={}, latest={}", currentVersion, latestVersion);
+            
+            // Any new version requires forced update
+            return isHigherVersionStatic(currentVersion, latestVersion);
+        } catch (Exception e) {
+            logger.warn("Error checking forced update requirement: {}", e.getMessage());
+            return false;
+        }
+    }
+
+
+    /**
+     * Fetch the latest version from GitHub Releases API
+     * @return latest version string or null if failed
+     */
+    public static String getLatestVersionFromGitHub() {
+        try {
+            String updateUrl = "https://api.github.com/repos/PRIDE-Archive/px-submission-tool/releases/latest";
+            URL url = new URL(updateUrl);
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Accept", "application/vnd.github.v3+json");
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(10000);
+
+            int responseCode = connection.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()))) {
+                    StringBuilder response = new StringBuilder();
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        response.append(line);
+                    }
+
+                    JsonNode jsonNode = objectMapper.readTree(response.toString());
+                    String latestVersion = jsonNode.get("tag_name").asText();
+                    
+                    // Remove 'v' prefix if present
+                    if (latestVersion.startsWith("v")) {
+                        latestVersion = latestVersion.substring(1);
+                    }
+                    
+                    logger.info("Fetched latest version from GitHub: {}", latestVersion);
+                    return latestVersion;
+                }
+            } else {
+                logger.warn("Failed to fetch latest version from GitHub. Response code: {}", responseCode);
+            }
+        } catch (Exception e) {
+            logger.warn("Error fetching latest version from GitHub: {}", e.getMessage());
+        }
+        return null;
     }
 
     /**

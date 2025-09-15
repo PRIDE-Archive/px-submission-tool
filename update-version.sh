@@ -21,7 +21,7 @@ if [ $# -eq 0 ]; then
     echo -e "${RED}❌ Error: No version provided${NC}"
     echo
     echo "Usage: $0 <new-version>"
-    echo "Example: $0 2.11.0"
+    echo "Example: $0 2.11.1"
     echo
     exit 1
 fi

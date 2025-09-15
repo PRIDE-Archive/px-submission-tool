@@ -127,8 +127,8 @@ public class GetUploadDetailTask extends TaskAdapter<UploadDetail, String> {
                 "\n\nRecommended actions:" +
                 "\n1. Go back and try selecting FTP upload instead" +
                 "\n2. Check your internet connection" +
-                "\n3. Verify your PRIDE credentials" +
-                "\n4. Try again in a few minutes" +
+                "\n3. Try again in a few minutes" +
+                "\n4. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus " +
                 "\n\nIf the problem persists, contact PRIDE support.";
             
             logger.warn("Upload details are null, publishing warning message to user");

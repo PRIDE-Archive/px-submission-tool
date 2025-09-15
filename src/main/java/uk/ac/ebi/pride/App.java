@@ -107,6 +107,9 @@ public class App extends Desktop {
         // load properties
         loadProps();
 
+        // Check for forced update before showing GUI
+        //checkForcedUpdate();
+
         // init key controls
         initKeyControls();
 
@@ -118,6 +121,33 @@ public class App extends Desktop {
 
         // build navigation
         buildNavigation();
+    }
+
+    /**
+     * Get latest version for display purposes
+     */
+    private String getLatestVersionForDisplay() {
+        String latestVersion = uk.ac.ebi.pride.gui.util.UpdateChecker.getLatestVersionFromGitHub();
+        return latestVersion != null ? latestVersion : "Latest";
+    }
+
+    /**
+     * Check if forced update is required and show dialog if needed
+     */
+    private void checkForcedUpdate() {
+        try {
+            DesktopContext context = getDesktopContext();
+            String currentVersion = context.getProperty("px.submission.tool.version");
+            
+            if (currentVersion != null && uk.ac.ebi.pride.gui.util.UpdateChecker.isForcedUpdateRequired(currentVersion)) {
+                // Get latest version for display
+                String latestVersion = getLatestVersionForDisplay();
+                // Show forced update dialog with version info and exit
+                uk.ac.ebi.pride.gui.util.UpdateChecker.showUpdateDialog(true, currentVersion, latestVersion);
+            }
+        } catch (Exception e) {
+            logger.warn("Error checking for forced update: {}", e.getMessage());
+        }
     }
 
     /**

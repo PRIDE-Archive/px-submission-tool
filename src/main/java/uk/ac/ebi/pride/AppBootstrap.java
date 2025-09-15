@@ -254,11 +254,11 @@ public class AppBootstrap {
             }
             
             // Final fallback
-            return "2.11.0";
+            return "2.11.1";
             
         } catch (Exception e) {
             logger.warn("Failed to determine application version: {}", e.getMessage());
-            return "2.11.0";
+            return "2.11.1";
         }
     }
     

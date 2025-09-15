@@ -13,7 +13,7 @@ if "%~1"=="" (
     echo ❌ Error: No version provided
     echo.
     echo Usage: %0 ^<new-version^>
-    echo Example: %0 2.11.0
+    echo Example: %0 2.11.1
     echo.
     pause
     exit /b 1

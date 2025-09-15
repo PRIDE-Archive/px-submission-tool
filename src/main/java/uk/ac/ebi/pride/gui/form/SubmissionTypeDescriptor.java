@@ -10,6 +10,7 @@ import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.task.CheckForUpdateTask;
 import uk.ac.ebi.pride.gui.util.SubmissionRecordSerializer;
 import uk.ac.ebi.pride.gui.util.UpdateChecker;
+import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.GUIBlocker;
@@ -160,7 +161,17 @@ public class SubmissionTypeDescriptor extends ContextAwareNavigationPanelDescrip
     public void succeed(TaskEvent<Boolean> booleanTaskEvent) {
         Boolean hasUpdate = booleanTaskEvent.getValue();
         if (hasUpdate != null && hasUpdate) {
-            UpdateChecker.showUpdateDialog();
+            DesktopContext context = App.getInstance().getDesktopContext();
+            String currentVersion = context.getProperty("px.submission.tool.version");
+            
+            // Check if forced update is required (any new version)
+            if (UpdateChecker.isForcedUpdateRequired(currentVersion)) {
+                // Get latest version for display
+                String latestVersion = UpdateChecker.getLatestVersionFromGitHub();
+                if (latestVersion == null) latestVersion = "Latest";
+                // Show forced update dialog and exit application
+                UpdateChecker.showUpdateDialog(true, currentVersion, latestVersion);
+            }
         }
         updateChecked = true;
     }

@@ -30,7 +30,7 @@ A Java-based GUI application for submitting proteomics data to the PRIDE Archive
 
 ### **Windows Issues?**
 - **Quick Fix**: Make sure JAR file is in the same folder as start.bat
-- **Manual Launch**: `java -jar px-submission-tool-2.11.0.jar`
+- **Manual Launch**: `java -jar px-submission-tool-2.11.1.jar`
 - **No Internet**: Install Java 21+ manually from [Adoptium](https://adoptium.net/)
 - **JRE Location**: Downloaded JRE is stored in `jre-windows/` folder
 
@@ -45,7 +45,7 @@ A Java-based GUI application for submitting proteomics data to the PRIDE Archive
 
 ### **macOS Issues?**
 - **Permission Fix**: `chmod +x start.sh`
-- **Manual Launch**: `java -jar px-submission-tool-2.11.0.jar`
+- **Manual Launch**: `java -jar px-submission-tool-2.11.1.jar`
 - **No Internet**: Install Java 21+ manually from [Adoptium](https://adoptium.net/)
 - **JRE Location**: Downloaded JRE is stored in `jre-macos/` folder
 
@@ -62,7 +62,7 @@ A Java-based GUI application for submitting proteomics data to the PRIDE Archive
 
 ### **Linux Issues?**
 - **Permission Fix**: `chmod +x start.sh`
-- **Manual Launch**: `java -jar px-submission-tool-2.11.0.jar`
+- **Manual Launch**: `java -jar px-submission-tool-2.11.1.jar`
 - **No Internet**: Install Java 21+ manually from [Adoptium](https://adoptium.net/)
 - **JRE Location**: Downloaded JRE is stored in `jre-linux/` folder
 
@@ -111,9 +111,9 @@ The tool automatically downloads Java 21 JRE if needed, but if you encounter iss
 
 #### **Option 2: Use Downloaded JRE**
 If the tool previously downloaded a JRE but can't find it:
-- **Windows**: `jre-windows\bin\java.exe -jar px-submission-tool-2.11.0.jar`
-- **macOS**: `./jre-macos/Contents/Home/bin/java -jar px-submission-tool-2.11.0.jar`
-- **Linux**: `./jre-linux/bin/java -jar px-submission-tool-2.11.0.jar`
+- **Windows**: `jre-windows\bin\java.exe -jar px-submission-tool-2.11.1.jar`
+- **macOS**: `./jre-macos/Contents/Home/bin/java -jar px-submission-tool-2.11.1.jar`
+- **Linux**: `./jre-linux/bin/java -jar px-submission-tool-2.11.1.jar`
 
 #### **Option 3: Environment Variables**
 Set `JAVA_HOME` to point to your Java 21 installation:
@@ -135,10 +135,10 @@ If Aspera or FTP transfers fail:
 ## 📁 **File Structure**
 
 ```
-px-submission-tool-2.11.0/
+px-submission-tool-2.11.1/
 ├── start.bat                        # Windows launcher
 ├── start.sh                         # Linux/macOS launcher
-├── px-submission-tool-2.11.0.jar # Main application JAR
+├── px-submission-tool-2.11.1.jar # Main application JAR
 ├── jre-windows/                     # Windows JRE (downloaded on-demand)
 ├── jre-linux/                       # Linux JRE (downloaded on-demand)
 ├── jre-macos/                       # macOS JRE (downloaded on-demand)
@@ -156,7 +156,7 @@ If you prefer to use your own Java 21 installation instead of the auto-downloade
 ```bash
 # Set JAVA_HOME to your Java 21 installation
 export JAVA_HOME=/path/to/your/java21
-java -jar px-submission-tool-2.11.0.jar
+java -jar px-submission-tool-2.11.1.jar
 ```
 
 ### **Proxy Configuration**
@@ -236,7 +236,7 @@ xattr -cr .
 - **Universal links**: Always provides the latest download link
 
 ### **Download Options**
-- **Versioned releases**: `px-submission-tool-2.11.0.zip` (specific version)
+- **Versioned releases**: `px-submission-tool-2.11.1.zip` (specific version)
 - **Latest release**: `px-submission-tool-latest.zip` (always current)
 - **Universal link**: `https://github.com/PRIDE-Archive/px-submission-tool/releases/latest/download/px-submission-tool-latest.zip`
 

@@ -24,6 +24,9 @@ import java.awt.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
+
+import static uk.ac.ebi.pride.gui.util.UpdateChecker.showUpdateDialog;
 
 /**
  * @author Rui Wang
@@ -241,9 +244,6 @@ public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor 
     @Override
     public void process(TaskEvent<List<String>> event) {
         List<String> errors = event.getValue();
-        String errorMessage = errors.contains("UserCredentials mismatch") ?
-                appContext.getProperty("pride.login.credentials.error.message") :
-                appContext.getProperty("pride.login.proxy.error.message");
         Runnable eventDispatcher = () -> {
             // show warning dialog
             JLabel label = new JLabel();
@@ -251,6 +251,23 @@ public class PrideLoginDescriptor extends ContextAwareNavigationPanelDescriptor 
             StringBuilder style = new StringBuilder("font-family:" + font.getFamily() + ";");
             style.append("font-weight:" + (font.isBold() ? "bold" : "normal") + ";");
             style.append("font-size:" + font.getSize() + "pt;");
+            String errorMessage = errors.contains("UserCredentials mismatch") ?
+                    appContext.getProperty("pride.login.credentials.error.message") :
+                    appContext.getProperty("pride.login.proxy.error.message");
+            if (errors.getFirst().contains("incoming ticket pending")) {
+                errorMessage = appContext.getProperty("pride.incoming.tickets.error.message");
+            }
+            if (errors.getFirst().contains("Download new version of tool")) {
+                showUpdateDialog(true, null, null);
+            }
+            if(errors.getFirst().contains("Global error message")) {
+                errorMessage = errors.getFirst().replace("Global error message", "");
+            }
+            if (Pattern.compile("User with username .* is not found")
+                    .matcher(errors.getFirst())
+                    .find()) {
+                errorMessage = errors.getFirst();
+            }
             // html content
             JEditorPane ep = new JEditorPane("text/html", "<html><body style=\"" + style + "\">" //
                     + errorMessage + "</body></html>");
