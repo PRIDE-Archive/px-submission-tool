@@ -379,6 +379,33 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             }
         }
 
+        if(quickValidationResult.hasZippedRawFile()){
+            App app = (App) App.getInstance();
+            JLabel label = new JLabel();
+            Font font = label.getFont();
+            StringBuilder style = new StringBuilder("font-family:" + font.getFamily() + ";");
+            style.append("font-weight:" + (font.isBold() ? "bold" : "normal") + ";");
+            style.append("font-size:" + font.getSize() + "pt;");
+            // html content
+            JEditorPane jEditorPane = new JEditorPane("text/html", "<html><body style=\"" + style + "\">" //
+                    + WarningMessageGenerator.getZippedRawFileWarning() + "</body></html>");
+            jEditorPane.addHyperlinkListener(e -> {
+                try {
+                    if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED))
+                        Desktop.getDesktop().browse(e.getURL().toURI());
+                } catch (Exception ex) {
+                    logger.error(ex.getMessage());
+                }
+            });
+            jEditorPane.setEditable(false);
+            jEditorPane.setBackground(label.getBackground());
+            JOptionPane.showConfirmDialog(app.getMainFrame(),
+                    jEditorPane,
+                    appContext.getProperty("zipped.raw.file.dialog.title"),
+                    JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
+            //return new DataFileValidationMessage(ValidationState.SUCCESS, WarningMessageGenerator.getExperimentalDesignFileMissingWarning());
+        }
+
         setProgress(100);
 
         if (!isSdrfFound) {
@@ -731,6 +758,9 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
                     result.setUnsupportedRawFile(true);
                 } else {
                     result.setSupportedRawFile(true);
+                    if(isRawFileZipped(dataFile)){
+                        result.setHasZippedRawFile(true);
+                    }
                     if (MassSpecFileFormat.IBD.equals(fileFormat)) {
                         result.setImagingRawFile(true);
                     }
@@ -749,6 +779,11 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         return result;
     }
 
+    private boolean isRawFileZipped(DataFile dataFile) {
+        return FileUtil.getFileExtension(dataFile.getFile())!=null
+                && "zip".equals(FileUtil.getFileExtension(dataFile.getFile()));
+    }
+
     /**
      * There cannot be multiple raw files in zipped into a single zip file.
      * This method checks if the zipped file contain more than one raw files.
@@ -758,12 +793,17 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
      */
     private boolean isValidRawCompressedFile(DataFile dataFile) {
         boolean isValid = true;
-//        int rawFileCount = 0;
-//
-//        String ext = FileUtil.getFileExtension(dataFile.getFile());
-//
-//        try {
-//            if (ext != null) {
+
+        int rawFileCount = 0;
+
+        String ext = FileUtil.getFileExtension(dataFile.getFile());
+
+        if (ext != null) {
+            if ("gz".equals(ext) || "gzip".equals(ext) || "tar".equals(ext)) {
+                isValid = false;
+            }
+        }
+
 //                if ("zip".equalsIgnoreCase(ext)) {
 //                    ZipFile zipFile = new ZipFile(dataFile.getFile());
 //                    Enumeration<? extends ZipEntry> entries = zipFile.entries();
@@ -785,11 +825,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
 //
 //                } // gzip can compress only single file, therefore, we do not need to check gzip
 //            }
-//        } catch (IOException e) {
-//            isValid = false;
-//            e.printStackTrace();
-//        }
-//
+        //
 //       if ((rawFileCount > 1)) {
 //          isValid = false;
 //           logger.error("Multiple .RAW files found in " + dataFile.getFile().getName() + ". Please unzip them and upload individually");
@@ -1060,6 +1096,7 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         boolean mztab;
         boolean unsupportedResultFile;
         boolean supportedRawFile;
+        boolean containsZippedRawFile;
         boolean unsupportedRawFile;
         boolean supportedSearchFile;
         boolean unsupportedSearchFile;
@@ -1137,6 +1174,14 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
             return unsupportedRawFile;
         }
 
+        public boolean hasZippedRawFile() {
+            return containsZippedRawFile;
+        }
+
+        public void setHasZippedRawFile(boolean containsZippedRawFile) {
+            this.containsZippedRawFile = containsZippedRawFile;
+        }
+
         public void setUnsupportedRawFile(boolean unsupportedRawFile) {
             this.unsupportedRawFile = unsupportedRawFile;
         }
@@ -1156,6 +1201,8 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         public boolean hasRawFile() {
             return supportedRawFile || unsupportedRawFile;
         }
+
+
 
         public boolean hasSupportedSearchFile() {
             return supportedSearchFile;

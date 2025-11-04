@@ -120,6 +120,7 @@ public class AdditionalMetaDataDescriptor extends ContextAwareNavigationPanelDes
             form.setTissues(metaData.getTissues());
             form.setCellTypes(metaData.getCellTypes());
             form.setDiseases(metaData.getDiseases());
+            form.setSoftwares(metaData.getSoftwares());
             form.setInstruments(metaData.getInstruments());
             
             // Only set modifications and quantifications for affinity type
@@ -197,6 +198,12 @@ public class AdditionalMetaDataDescriptor extends ContextAwareNavigationPanelDes
         Set<CvParam> diseases = form.getDiseases();
         metaData.clearDiseases();
         metaData.addDiseases(diseases.toArray(new CvParam[diseases.size()]));
+
+        // software
+        Set<CvParam> softwares = form.getSoftwares();
+        metaData.clearSoftwares();
+        metaData.addSoftwares(softwares.toArray(new CvParam[softwares.size()]));
+
 
         // instrument
         Set<CvParam> instruments = form.getInstruments();

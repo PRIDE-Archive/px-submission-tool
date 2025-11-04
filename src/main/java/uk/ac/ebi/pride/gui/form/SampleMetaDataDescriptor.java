@@ -103,6 +103,14 @@ public class SampleMetaDataDescriptor extends ContextAwareNavigationPanelDescrip
                     }
                 }
 
+                // disease
+                Set<CvParam> softwares = sampleMetaData.getMetaData(SampleMetaData.Type.SOFTWARE);
+                if (softwares != null) {
+                    for (CvParam software : softwares) {
+                        projectMetaData.addSoftwares(software);
+                    }
+                }
+
                 // modifications
                 Set<CvParam> modifications = sampleMetaData.getMetaData(SampleMetaData.Type.MODIFICATION);
                 if (modifications != null) {

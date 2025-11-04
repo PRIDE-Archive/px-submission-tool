@@ -139,6 +139,9 @@ public abstract class AbstractMetadataComboSelectionModel extends AbstractListMo
                     preselectedOntologies.put("doid", null);
                     preselectedOntologies.put("efo", null);
                     ontology = "doid";
+                } else if (((String) anItem).equalsIgnoreCase(appContext.getProperty("software.combobox.other.software"))) {
+                    preselectedOntologies.put("ms", null);
+                    ontology = "ms";
                 }
                 Runnable run = () -> new OLSDialog(((App) App.getInstance()).getMainFrame(), AbstractMetadataComboSelectionModel.this, true, "", ontology, "", preselectedOntologies, true);
                 EDTUtils.invokeLater(run);

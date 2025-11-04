@@ -17,7 +17,8 @@ public class ResubmissionRecord implements Serializable {
     private Resubmission resubmission;
     private String userName;
     private String password;
-    private UploadDetail uploadDetail;
+    // Transient: not serialized to prevent stale upload details after restart
+    private transient UploadDetail uploadDetail;
     private boolean summaryFileUploaded = false;
     private Set<DataFile> uploadedFiles;
 

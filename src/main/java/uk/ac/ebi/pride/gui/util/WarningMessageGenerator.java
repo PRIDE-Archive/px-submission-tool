@@ -74,6 +74,10 @@ public final class WarningMessageGenerator {
         return "It is recommended to submit a <a href=\"https://github.com/bigbio/proteomics-metadata-standard\">Sample to Data file format (SDRF)</a> File<br/>";
     }
 
+    public static String getZippedRawFileWarning() {
+        return "It is not recommended to submit raw files in a zipped format unless they originate from timsTOF, SELECT SERIES Cyclic IMS, ultraflex, or Synapt XS instruments.<br/>\n";
+    }
+
     public static String getMultipleResultFileFormatWarning(String formatA, String formatB) {
 
         return "<html>" + "<b>Both " + formatA + " and " + formatB + " detected, please submit results using one file format only</b><br/>" + "</html>";
@@ -224,7 +228,7 @@ public final class WarningMessageGenerator {
     public static String getUnsupportedRawFileWarning() {
 
         // Create the balloon tip
-        return "<html>" + "<b>Unsupported raw files found</b><br/>" + "zip file cannot contain multiple .RAW files." + "</html>";
+        return "<html>" + "<b>Unsupported raw files found</b><br/>" + "Only zip file compressions are allowed" + "</html>";
     }
 
     /**

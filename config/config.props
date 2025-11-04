@@ -33,4 +33,10 @@ px.ftp.server.port = 21
 px.aspera.server.address = hx-fasp-1.ebi.ac.uk
 px.aspera.server.port = 33001
 
+
+# Set to 'false' to use simple delay-based approach instead (not recommended)
+px.aspera.verify.server.files = true
+
+px.aspera.post.transfer.delay.ms = 45000
+
 px.upload.check.connection = true

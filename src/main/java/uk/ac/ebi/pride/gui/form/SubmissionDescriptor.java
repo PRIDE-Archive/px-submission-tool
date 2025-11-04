@@ -16,6 +16,7 @@ import uk.ac.ebi.pride.gui.data.SubmissionRecord;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.task.*;
 import uk.ac.ebi.pride.gui.task.ftp.*;
+import uk.ac.ebi.pride.gui.task.VerifyAsperaUploadViaApiTask;
 import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.gui.util.SubmissionRecordSerializer;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
@@ -32,6 +33,7 @@ import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.io.File;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Navigation descriptor for submission form
@@ -524,15 +526,126 @@ public class SubmissionDescriptor extends ContextAwareNavigationPanelDescriptor 
         private void handleSuccessMessage(UploadSuccessMessage message) {
             logger.debug("Handle success message");
             SubmissionForm form = (SubmissionForm) SubmissionDescriptor.this.getNavigationPanel();
-            form.setUploadMessage(appContext.getProperty("upload.success.message"));
-            form.enabledSuccessButton(true);
 
-            // complete submission task
-            // Get submission task from factory
-            Task task = UploadServiceFactory.createCompleteSubmissionTask(appContext.getSubmissionRecord());
-            task.addTaskListener(completeSubmissionTaskListener);
-            task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
-            appContext.addTask(task);
+            // Check if this is an Aspera upload
+            SubmissionRecord submissionRecord = appContext.getSubmissionRecord();
+            boolean isAsperaUpload = submissionRecord != null &&
+                    submissionRecord.getUploadDetail() != null &&
+                    submissionRecord.getUploadDetail().getMethod() ==
+                            uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod.ASPERA;
+
+            if (isAsperaUpload) {
+                // ASCP4 transfer complete - now verify via API
+                logger.info("ASCP4 transfer complete. Starting API verification...");
+                form.setUploadMessage("Verifying files on server...");
+
+                // Get files that were uploaded
+                AsperaGeneralTask uploadTask = (AsperaGeneralTask) message.getSource();
+                Set<File> uploadedFiles = uploadTask.getFilesToSubmit();
+                String remoteFolder = submissionRecord.getUploadDetail().getDropBox().getUserName() + "/" + submissionRecord.getUploadDetail().getFolder();
+
+                // Create API verification task
+                VerifyAsperaUploadViaApiTask verifyTask = new VerifyAsperaUploadViaApiTask(
+                        submissionRecord,
+                        uploadedFiles,
+                        remoteFolder
+                );
+
+                // Add listener to proceed to completion after verification or retry on failure
+                verifyTask.addTaskListener(new TaskListenerAdapter<Void, Void>() {
+                    private static final int MAX_RETRIES = 2;
+                    private int retryCount = 0;
+
+                    @Override
+                    public void succeed(TaskEvent<Void> event) {
+                        logger.info("✅ API verification successful. Proceeding to completion.");
+                        form.setUploadMessage("Transfer complete with verification!");
+                        form.enabledSuccessButton(true);
+                        Task<SubmissionReferenceDetail, String> task = UploadServiceFactory.createCompleteSubmissionTask(appContext.getSubmissionRecord());
+                        task.addTaskListener(completeSubmissionTaskListener);
+                        task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
+                        appContext.addTask(task);
+                    }
+
+                    @Override
+                    public void failed(TaskEvent<Throwable> event) {
+                        retryCount++;
+                        logger.error("❌ API verification failed (attempt {}/{}): {}", retryCount, MAX_RETRIES, event.getValue().getMessage());
+
+                        if (retryCount <= MAX_RETRIES) {
+                            logger.info("🔄 Retrying Aspera transfer... ({}/{})", retryCount, MAX_RETRIES);
+                            form.setUploadMessage("Verification failed. Retrying transfer (" + retryCount + "/" + MAX_RETRIES + ")...");
+
+                            // Retry the Aspera upload
+                            Task retryUploadTask = UploadServiceFactory.createPersistedAsperaUploadTask(submissionRecord);
+
+                            // Add listener to verify after retry upload completes
+                            retryUploadTask.addTaskListener(new UploadTaskListener() {
+                                @Override
+                                public void process(TaskEvent<List<UploadMessage>> listTaskEvent) {
+                                    for (UploadMessage uploadMessage : listTaskEvent.getValue()) {
+                                        if (uploadMessage instanceof UploadSuccessMessage) {
+                                            // Retry upload succeeded, verify again
+                                            logger.info("🔄 Retry upload successful. Verifying again...");
+                                            form.setUploadMessage("Verifying files on server...");
+
+                                            VerifyAsperaUploadViaApiTask retryVerifyTask = new VerifyAsperaUploadViaApiTask(
+                                                    submissionRecord,
+                                                    uploadedFiles,
+                                                    remoteFolder
+                                            );
+
+                                            // Add listener that calls the outer listener's succeed/fail
+                                            retryVerifyTask.addTaskListener(new TaskListenerAdapter<Void, Void>() {
+                                                @Override
+                                                public void succeed(TaskEvent<Void> event) {
+                                                    logger.info("✅ Retry verification successful. Proceeding to completion.");
+                                                    form.setUploadMessage("Transfer complete with verification!");
+                                                    form.enabledSuccessButton(true);
+                                                    Task<SubmissionReferenceDetail, String> task = UploadServiceFactory.createCompleteSubmissionTask(appContext.getSubmissionRecord());
+                                                    task.addTaskListener(completeSubmissionTaskListener);
+                                                    task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
+                                                    appContext.addTask(task);
+                                                }
+
+                                                @Override
+                                                public void failed(TaskEvent<Throwable> event) {
+                                                    logger.error("❌ Retry verification failed: {}", event.getValue().getMessage());
+                                                    form.setUploadMessage("Verification failed after retry: " + event.getValue().getMessage());
+                                                    form.enabledSuccessButton(false);
+                                                }
+                                            });
+                                            appContext.addTask(retryVerifyTask);
+                                        } else if (uploadMessage instanceof UploadErrorMessage) {
+                                            logger.error("❌ Retry upload failed");
+                                            form.setUploadMessage("Upload failed: " + ((UploadErrorMessage) uploadMessage).getMessage());
+                                            form.enabledSuccessButton(false);
+                                        }
+                                    }
+                                }
+                            });
+                            retryUploadTask.setGUIBlocker(new DefaultGUIBlocker(retryUploadTask, GUIBlocker.Scope.NONE, null));
+                            appContext.addTask(retryUploadTask);
+                        } else {
+                            logger.error("❌ API verification failed after {} retries. Cannot continue.", MAX_RETRIES);
+                            form.setUploadMessage("Verification failed after " + MAX_RETRIES + " retries. Please try again.");
+                            form.enabledSuccessButton(false);
+                        }
+                    }
+                });
+
+                appContext.addTask(verifyTask);
+            } else {
+                // FTP upload - no delay or verification needed
+                logger.debug("FTP upload completed, proceeding to validation immediately");
+                form.setUploadMessage(appContext.getProperty("upload.success.message"));
+                form.enabledSuccessButton(true);
+
+                Task task = UploadServiceFactory.createCompleteSubmissionTask(appContext.getSubmissionRecord());
+                task.addTaskListener(completeSubmissionTaskListener);
+                task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
+                appContext.addTask(task);
+            }
         }
     }
 

@@ -16,6 +16,7 @@ px.project.files.url=resubmission/files/{accession}
 # url for retrieving px ftp upload details
 px.upload.detail.url = http://www.proteomexchange.org/archive-submission-ws/submission/upload/{method}
 px.reupload.detail.url = http://www.proteomexchange.org/archive-submission-ws/submission/reupload/{method}/{ticketId}
+px.upload.verify.url = http://www.proteomexchange.org/archive-submission-ws/submission/fileListAndSize
 
 # url for completing px submission
 px.submission.complete.url = http://www.proteomexchange.org/archive-submission-ws/submission/submit
@@ -44,7 +45,7 @@ px.submission.summary.file.format.url = http://www.proteomexchange.org/docs/Subm
 # url for resubmission
 px.submission.detail.url = http://www.proteomexchange.org/archive-submission-ws/resubmission/projects
 
-# aspera client binary
+# aspera client binary (using ascp)
 aspera.client.mac.binary = aspera/bin/mac-intel/ascp
 aspera.client.linux32.binary = aspera/bin/linux-32/ascp
 aspera.client.linux64.binary = aspera/bin/linux-64/ascp
@@ -57,16 +58,31 @@ aspera.EBI.host = fasp.ebi.ac.uk
 aspera.EBI.user = prd_ascp
 aspera.EBI.password = path/to/keyFile?
 
-# aspera transfer parameters
+# aspera transfer parameters (optimized for huge files)
 # aspera.xfer.tcpPort = 22
 aspera.xfer.tcpPort = 33001
 aspera.xfer.udpPort = 33001
+
+# Transfer rates optimized for huge files (GB/TB datasets)
+# Target: ~1 Gbps (950 Mbps) - good balance of speed vs stability
 aspera.xfer.targetRateKbps = 950000
+# Minimum: 1 Mbps - ensures transfer continues even on slow networks
 aspera.xfer.minimumRateKbps = 1000
+
+# Fair policy for multiple concurrent transfers
+aspera.xfer.policy = fair
+
+# Huge file optimizations
 aspera.xfer.cookie = PRIDE-Aspera-1-Cookie
 aspera.xfer.token = PRIDE-Aspera-1-Token
-aspera.xfer.preCalculateJobSize = false
+# Pre-calculate job size for better progress tracking on huge files
+aspera.xfer.preCalculateJobSize = true
+# Create remote directories as needed
 aspera.xfer.createPath = true
+
+# Additional huge file optimizations (handled by ASCP4 command line)
+# ASCP4 automatically uses --sparse-file, --chunk-size=134217728, --compression=lz4
+# These are built into the ascp4 binary and don't need SDK configuration
 
 # Aspera timeout settings (in milliseconds)
 aspera.timeout.transfer = 600000
