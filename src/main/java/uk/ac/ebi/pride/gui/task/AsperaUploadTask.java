@@ -60,20 +60,21 @@ public class AsperaUploadTask extends AsperaGeneralTask implements TransferListe
      */
     @Override
     public void fileSessionEvent(TransferEvent transferEvent, SessionStats sessionStats, FileInfo fileInfo) {
-        int totalNumOfFiles = submissionRecord.getSubmission().getDataFiles().size();
+        // Calculate total files - use filesToSubmit.size() which includes submission file
+        int totalNumOfFiles = filesToSubmit != null ? filesToSubmit.size() : 
+                             (submissionRecord.getSubmission().getDataFiles().size() + 1);
         switch (transferEvent) {
             case PROGRESS:
                 int uploadedNumOfFiles = (int) sessionStats.getFilesComplete();
                 logger.debug("Aspera transfer in progress");
-                logger.debug("Total files: ");
-                logger.debug("Total files: " + totalNumOfFiles);
-                logger.debug("Files uploaded: " + uploadedNumOfFiles);
-                logger.debug("Total file size " + totalFileSize);
-                logger.debug("Uploaded file size " + sessionStats.getTotalTransferredBytes());
-                publish(new UploadProgressMessage(this, null, totalFileSize, sessionStats.getTotalTransferredBytes(), totalNumOfFiles, uploadedNumOfFiles));
+                logger.debug("Total files: {}", totalNumOfFiles);
+                logger.debug("Files uploaded: {}", uploadedNumOfFiles);
+                // Publish progress based on file count only (no MB/bytes calculation)
+                publish(new UploadProgressMessage(this, null, totalNumOfFiles, uploadedNumOfFiles, totalNumOfFiles, uploadedNumOfFiles));
                 break;
             case SESSION_STOP:
-                publish(new UploadProgressMessage(this, null, totalFileSize, totalFileSize, totalNumOfFiles, totalNumOfFiles));
+                // Publish final progress based on file count only
+                publish(new UploadProgressMessage(this, null, totalNumOfFiles, totalNumOfFiles, totalNumOfFiles, totalNumOfFiles));
                 if((int)sessionStats.getFilesComplete()==totalNumOfFiles+1) {
                 publish(new UploadSuccessMessage(this));
                 }
