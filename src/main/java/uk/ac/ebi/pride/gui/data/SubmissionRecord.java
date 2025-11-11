@@ -19,23 +19,18 @@ public class SubmissionRecord implements Serializable {
     private Submission submission;
     private String userName;
     private String password;
-    private UploadDetail uploadDetail;
+    // Transient: not serialized to prevent stale upload details after restart
+    private transient UploadDetail uploadDetail;
     private boolean summaryFileUploaded = false;
     private Set<DataFile> uploadedFiles;
 
     public SubmissionRecord() {
         this.submission = new Submission();
-        this.uploadDetail = null;
         this.uploadedFiles = Collections.synchronizedSet(new HashSet<>());
     }
 
     public SubmissionRecord(Submission submission) {
-        this(submission, null);
-    }
-
-    public SubmissionRecord(Submission submission, UploadDetail uploadDetail) {
         this.submission = submission;
-        this.uploadDetail = uploadDetail;
         this.uploadedFiles = Collections.synchronizedSet(new HashSet<>());
     }
 

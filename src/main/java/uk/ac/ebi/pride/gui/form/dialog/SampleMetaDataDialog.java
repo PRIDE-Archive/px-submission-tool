@@ -49,6 +49,7 @@ public class SampleMetaDataDialog extends ContextAwareDialog implements ActionLi
     private JCheckBox tissueApplyToAll;
     private JCheckBox cellTypeApplyToAll;
     private JCheckBox diseaseApplyToAll;
+    private JCheckBox softwareApplyToAll;
     private JCheckBox modificationApplyToAll;
     private JCheckBox instrumentApplyToAll;
     private JCheckBox quantificationApplyToAll;
@@ -57,6 +58,7 @@ public class SampleMetaDataDialog extends ContextAwareDialog implements ActionLi
     private ResultFileMetaDataTableModel tissueTableModel;
     private ResultFileMetaDataTableModel cellTypeTableModel;
     private ResultFileMetaDataTableModel diseaseTableModel;
+    private ResultFileMetaDataTableModel softwareTableModel;
     private ResultFileMetaDataTableModel modificationTableModel;
     private ResultFileMetaDataTableModel instrumentTableModel;
     private ResultFileMetaDataTableModel quantTableModel;
@@ -170,6 +172,18 @@ public class SampleMetaDataDialog extends ContextAwareDialog implements ActionLi
                 Constant.CL,
                 cellTypeApplyToAll,
                 cellTypeTableModel));
+
+        // software
+        softwareApplyToAll = new JCheckBox(APPLY_TO_ALL_LABEL);
+        softwareTableModel = new ResultFileMetaDataTableModel(dataFile, SampleMetaData.Type.SOFTWARE);
+        metadataSelectPanel.add(initMetadataPanel(appContext.getProperty("software.label.title"),
+                false,
+                appContext.getProperty("software.combobox.default.selection"),
+                appContext.getProperty("software.combobox.other.software"),
+                appContext.getProperty("software.combobox.default.software.file"),
+                Constant.MS,
+                softwareApplyToAll,
+                softwareTableModel));
 
         // disease
         diseaseApplyToAll = new JCheckBox(APPLY_TO_ALL_LABEL);
@@ -402,6 +416,16 @@ public class SampleMetaDataDialog extends ContextAwareDialog implements ActionLi
             appContext.setSampleMetaDataEntries(dataFile, SampleMetaData.Type.MODIFICATION, modificationTableModel.getValues());
         }
 
+
+        // check software apply to all
+        if (softwareApplyToAll.isSelected()) {
+            java.util.List<DataFile> resultFiles = appContext.getSubmissionFilesByType(ProjectFileType.RESULT);
+            for (DataFile resultFile : resultFiles) {
+                appContext.setSampleMetaDataEntries(resultFile, SampleMetaData.Type.DISEASE, softwareTableModel.getValues());
+            }
+        } else {
+            appContext.setSampleMetaDataEntries(dataFile, SampleMetaData.Type.DISEASE, softwareTableModel.getValues());
+        }
 
         // check disease apply to all
         if (diseaseApplyToAll.isSelected()) {

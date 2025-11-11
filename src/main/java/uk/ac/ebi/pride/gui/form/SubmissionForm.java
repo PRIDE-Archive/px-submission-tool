@@ -11,7 +11,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.text.NumberFormat;
 
 /**
  * This form is responsible for performing the submission and monitoring the progress
@@ -166,19 +165,24 @@ public class SubmissionForm extends Form implements ActionListener {
     /**
      * Set the status of the progress bar
      *
-     * @param bytesToTransfer  total bytes to be transferred
-     * @param bytesTransferred number of bytes already been transferred
+     * @param bytesToTransfer  total bytes to be transferred (not used for display, kept for compatibility)
+     * @param bytesTransferred number of bytes already been transferred (not used for display, kept for compatibility)
      */
     public void setProgress(long bytesToTransfer, long bytesTransferred, int totalNumOfFiles, int uploadedNumOfFiles) {
-        int percentage = Math.round((bytesTransferred * 1.0f / bytesToTransfer) * 100);
-        // set progress bar
+        // Handle case where totalNumOfFiles might be 0 (shouldn't happen, but be safe)
+        if (totalNumOfFiles <= 0) {
+            progressLabel.setText("Preparing transfer...");
+            progressBar.setValue(0);
+            return;
+        }
+        
+        // Calculate percentage based on file count only
+        int percentage = Math.round((uploadedNumOfFiles * 100.0f) / totalNumOfFiles);
+        // set progress bar based on file count
         progressBar.setValue(percentage);
 
-        // set progress label
-        String megTransferred = NumberFormat.getInstance().format(bytesTransferred / (1024 * 1024));
-        String megToTransfer = NumberFormat.getInstance().format(bytesToTransfer / (1024 * 1024));
-        String progressLabelText = percentage + "% completed - " + megTransferred + " of " + megToTransfer +
-                                    " MB [" + uploadedNumOfFiles + " of " + totalNumOfFiles + " files]";
+        // set progress label - show only file count, no MB or bytes
+        String progressLabelText = uploadedNumOfFiles + " of " + totalNumOfFiles + " files transferred";
         progressLabel.setText(progressLabelText);
     }
 

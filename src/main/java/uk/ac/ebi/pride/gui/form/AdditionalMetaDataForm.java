@@ -38,6 +38,7 @@ public class AdditionalMetaDataForm extends Form {
     private JPanel tissuePanel;
     private JPanel cellTypePanel;
     private JPanel diseasePanel;
+    private JPanel softwarePanel;
     private JPanel modificationPanel;
     private JPanel instrumentPanel;
     private JPanel quantPanel;
@@ -45,6 +46,7 @@ public class AdditionalMetaDataForm extends Form {
     private MetaDataTableModel tissueTableModel;
     private MetaDataTableModel cellTypeTableModel;
     private MetaDataTableModel diseaseTableModel;
+    private MetaDataTableModel softwareTableModel;
     private MetaDataTableModel instrumentTableModel;
     private MetaDataTableModel quantTableModel;
     private MetaDataTableModel modificationTableModel;
@@ -124,6 +126,17 @@ public class AdditionalMetaDataForm extends Form {
                 Constant.DOID,
                 diseaseTableModel);
         this.add(diseasePanel);
+
+        // software
+        softwareTableModel = new MetaDataTableModel();
+        softwarePanel = initMetadataPanel(appContext.getProperty("software.label.title"),
+                false,
+                appContext.getProperty("software.combobox.default.selection"),
+                appContext.getProperty("software.combobox.other.software"),
+                appContext.getProperty("software.combobox.default.software.file"),
+                Constant.MS,
+                softwareTableModel);
+        this.add(softwarePanel);
 
         // quantification
         quantTableModel = new MetaDataTableModel();
@@ -278,6 +291,15 @@ public class AdditionalMetaDataForm extends Form {
         cellTypeTableModel.addValues(cellTypes);
     }
 
+    public Set<CvParam> getSoftwares() {
+        return softwareTableModel.getValues();
+    }
+
+    public void setSoftwares(Collection<CvParam> softwares) {
+        softwareTableModel.clearValues();
+        softwareTableModel.addValues(softwares);
+    }
+
     public Set<CvParam> getDiseases() {
         return diseaseTableModel.getValues();
     }
@@ -347,6 +369,14 @@ public class AdditionalMetaDataForm extends Form {
         Set<CvParam> cellTypes = getCellTypes();
         if (!invalid && !cellTypes.isEmpty() && SubmissionValidator.validateCellTypes(cellTypes).hasError()) {
             warningBalloonTip = BalloonTipUtil.createErrorBalloonTip(cellTypePanel, "Please choose cell type");
+            showWarnings();
+            invalid = true;
+        }
+
+        // software
+        Set<CvParam> softwares = getDiseases();
+        if (!invalid && !softwares.isEmpty() && SubmissionValidator.validateDiseases(softwares).hasError()) {
+            warningBalloonTip = BalloonTipUtil.createErrorBalloonTip(softwarePanel, "Please choose software");
             showWarnings();
             invalid = true;
         }

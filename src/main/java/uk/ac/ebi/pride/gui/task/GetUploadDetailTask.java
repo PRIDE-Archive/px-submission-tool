@@ -59,12 +59,8 @@ public class GetUploadDetailTask extends TaskAdapter<UploadDetail, String> {
             logger.info("Starting upload detail retrieval for method: {}", method.getMethod());
             logger.debug("Base URL: {}, Re-upload URL: {}, Tool version: {}", baseUrl, reUploadUrl, toolVersion);
             
-            uploadDetail = ((AppContext)context).getSubmissionRecord().getUploadDetail();
-            if(uploadDetail !=null){
-                logger.info("Found existing upload detail in submission record");
-                return uploadDetail;
-            }
-
+            // Note: We no longer check for stored uploadDetail as it's transient and shouldn't be persisted
+            
             setProxyIfProvided(restTemplate);
             logger.debug("Proxy configuration applied to RestTemplate");
 

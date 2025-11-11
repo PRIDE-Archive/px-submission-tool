@@ -77,6 +77,10 @@ disease.combobox.default.selection = Choose disease here
 disease.combobox.other.disease = Other diseases...
 disease.combobox.default.disease.file = cv/disease.cv
 
+software.combobox.default.selection = Choose software here
+software.combobox.other.software = Other software...
+software.combobox.default.software.file = cv/software.cv
+
 combobox.tick.small.icon = icon/16x16/tick.png
 
 comment.default.text = Reasons for not being able to convert your result files to PRIDE XML, such as: MaxQuant output
@@ -95,6 +99,7 @@ add.file.mapping.button.small.icon = icon/16x16/add_mapping.png
 unsupported.result.file.dialog.message = <html><b>Partial submission option selected</b><br/><br/> Please be aware that your dataset will not be issued with a DOI number <br/>and can only be accessed via the PRIDE FTP. <br/><br/> <b>Do you want to continue?</b></html>
 unsupported.result.file.dialog.title = Submission Option
 missing.experimental.design.file.dialog.title = Missing SDRF File
+zipped.raw.file.dialog.title = Zipped Raw File Identified
 crosslinking.detected.dialog.title = Crosslinking Dataset Detected!
 
 # load submission file button
@@ -293,6 +298,7 @@ species.label.title = Species
 tissue.label.title = Tissue
 celltype.label.title = Cell type
 disease.label.title = Disease
+software.label.title = Software
 instrument.label.title = Instrument
 quantification.label.title = Quantification method
 modification.label.title = Modification

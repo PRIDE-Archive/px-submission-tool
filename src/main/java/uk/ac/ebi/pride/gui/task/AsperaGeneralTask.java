@@ -41,6 +41,11 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
 
   /** Set contains files need to be submitted along with the folder name */
   Set<File> filesToSubmit;
+  
+  /** Getter for files to submit */
+  public Set<File> getFilesToSubmit() {
+    return filesToSubmit;
+  }
   /** Iterator of the set of files to submit. */
   Iterator<File> filesToSubmitIter;
 
@@ -66,22 +71,30 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
   /** Prepare the Aspera-based submission. */
   protected void prepareSubmission() {
     logger.debug("Preparing for uploading an entire submission");
+    totalFileSize = 0; // Reset to ensure clean calculation
     Set<File> files = Collections.synchronizedSet(new LinkedHashSet<>());
     File submissionFile = createSubmissionFile();
     if (submissionFile != null) {
       files.add(submissionFile);
-      logger.debug("Added submission file: {}", submissionFile.getName());
+      totalFileSize += submissionFile.length();
+      logger.debug("Added submission file: {} (size: {} bytes)", submissionFile.getName(), submissionFile.length());
     }
     for (DataFile dataFile : submissionRecord.getSubmission().getDataFiles()) {
-      totalFileSize += dataFile.getFile().length();
-      if (dataFile.isFile()) {
-        files.add(dataFile.getFile());
-        logger.debug("Added data file: {}", dataFile.getFile().getName());
+      File file = dataFile.getFile();
+      if (file != null && file.exists()) {
+        totalFileSize += file.length();
+        if (dataFile.isFile()) {
+          files.add(file);
+          logger.debug("Added data file: {} (size: {} bytes)", file.getName(), file.length());
+        }
+      } else {
+        logger.warn("Data file is null or does not exist: {}", dataFile);
       }
     }
     filesToSubmit = files;
     filesToSubmitIter = filesToSubmit.iterator();
-    logger.info("Prepared {} files for upload (total size: {} bytes)", files.size(), totalFileSize);
+    logger.info("Prepared {} files for upload (total size: {} bytes, {} MB)", 
+                files.size(), totalFileSize, String.format("%.2f", totalFileSize / (1024.0 * 1024.0)));
   }
 
   /**

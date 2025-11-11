@@ -310,7 +310,9 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
             publish(new UploadErrorMessage(this, null, initErrorMsg));
             return;
         }
-        int totalNumOfFiles = submissionRecord.getSubmission().getDataFiles().size();
+        // Calculate total files - use filesToSubmit.size() which includes submission file
+        int totalNumOfFiles = filesToSubmit != null ? filesToSubmit.size() : 
+                             (submissionRecord.getSubmission().getDataFiles().size() + 1);
         UploadDetail uploadDetail = submissionRecord.getUploadDetail();
         String folder = uploadDetail.getFolder();
         switch (transferEvent) {
@@ -345,17 +347,13 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                 lastProgressTime.set(System.currentTimeMillis());
 
                 int uploadedNumOfFiles = (int) sessionStats.getFilesComplete();
-                long transferredBytes = sessionStats.getTotalTransferredBytes();
                 logger.debug("Aspera transfer in progress");
                 logger.debug("Total files: {}", totalNumOfFiles);
                 logger.debug("Files uploaded: {}", uploadedNumOfFiles);
-                logger.debug("Total file size: {} bytes", totalFileSize);
-                logger.debug("Uploaded file size: {} bytes", transferredBytes);
 
-                // Always publish progress, even if totalFileSize is 0
-                // Use transferredBytes as the total if totalFileSize is 0
-                long effectiveTotalSize = totalFileSize > 0 ? totalFileSize : Math.max(transferredBytes, 1);
-                publish(new UploadProgressMessage(this, null, effectiveTotalSize, transferredBytes, totalNumOfFiles, uploadedNumOfFiles));
+                // Publish progress based on file count only (no MB/bytes calculation)
+                // Use dummy values for bytes since we're only showing file count
+                publish(new UploadProgressMessage(this, null, totalNumOfFiles, uploadedNumOfFiles, totalNumOfFiles, uploadedNumOfFiles));
                 break;
             case FILE_ERROR:
                 logger.info("File " + fileInfo.getName() + "Failed to submit" + fileInfo.getErrDescription());
@@ -374,23 +372,16 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                     logger.info("Total transferred: {} bytes", sessionStats.getTotalTransferredBytes());
                     logger.info("==============================");
 
-                    // Calculate current progress based on completed files
-                    // If totalFileSize is 0, use file count progress instead
-                    long currentProgress;
-                    if (totalFileSize > 0) {
-                        currentProgress = (finishedFileCount * totalFileSize) / totalNumOfFiles;
-                    } else {
-                        // Use file count progress when totalFileSize is 0
-                        currentProgress = (finishedFileCount * 100) / totalNumOfFiles;
-                    }
-                    publish(new UploadProgressMessage(this, null, totalFileSize > 0 ? totalFileSize : 100, currentProgress, totalNumOfFiles, finishedFileCount));
+                    // Publish progress based on file count only (no MB/bytes calculation)
+                    // Use dummy values for bytes since we're only showing file count
+                    publish(new UploadProgressMessage(this, null, totalNumOfFiles, finishedFileCount, totalNumOfFiles, finishedFileCount));
 
                     // Check if all files are complete (no dynamic file addition needed)
                     if (sessionStats.getFilesComplete() == totalNumOfFiles) {
                         transferCompleted.set(true);
                         // Send final progress message with appropriate total size
-                        long finalTotalSize = totalFileSize > 0 ? totalFileSize : 100;
-                        publish(new UploadProgressMessage(this, null, finalTotalSize, finalTotalSize, totalNumOfFiles, totalNumOfFiles));
+                        // Publish final progress based on file count only
+                        publish(new UploadProgressMessage(this, null, totalNumOfFiles, totalNumOfFiles, totalNumOfFiles, totalNumOfFiles));
                         publish(new UploadSuccessMessage(this));
                         logger.info("Aspera transfer completed successfully - all {} files transferred", totalNumOfFiles);
                     } else {
@@ -402,8 +393,8 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
             case SESSION_STOP:
                 transferCompleted.set(true);
                 // Send final progress message with appropriate total size
-                long finalTotalSize = totalFileSize > 0 ? totalFileSize : 100;
-                publish(new UploadProgressMessage(this, null, finalTotalSize, finalTotalSize, totalNumOfFiles, totalNumOfFiles));
+                // Publish final progress based on file count only
+                publish(new UploadProgressMessage(this, null, totalNumOfFiles, totalNumOfFiles, totalNumOfFiles, totalNumOfFiles));
                 publish(new UploadSuccessMessage(this));
                 logger.info("Aspera Session Stop");
                 break;

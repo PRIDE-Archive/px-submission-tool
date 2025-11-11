@@ -168,9 +168,9 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
             }
             setProgress(40);
 
-            if (noPrideXml && noMzIdentML && !mzTabFilesHaveBeenProvided && !quickValidationResult.isUrlBasedResultFilePresent()) {
-                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidResultFileWarning());
-            }
+//            if (noPrideXml && noMzIdentML && !mzTabFilesHaveBeenProvided && !quickValidationResult.isUrlBasedResultFilePresent()) {
+//                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidResultFileWarning());
+//            }
 
             // cannot have both PRIDE xml and mzIdentML at the same time
             if (!noPrideXml && !noMzIdentML) {
@@ -344,6 +344,33 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
 
         setProgress(100);
 
+        if(quickValidationResult.hasZippedRawFile()){
+            App app = (App) App.getInstance();
+            JLabel label = new JLabel();
+            Font font = label.getFont();
+            StringBuilder style = new StringBuilder("font-family:" + font.getFamily() + ";");
+            style.append("font-weight:" + (font.isBold() ? "bold" : "normal") + ";");
+            style.append("font-size:" + font.getSize() + "pt;");
+            // html content
+            JEditorPane jEditorPane = new JEditorPane("text/html", "<html><body style=\"" + style + "\">" //
+                    + WarningMessageGenerator.getZippedRawFileWarning() + "</body></html>");
+            jEditorPane.addHyperlinkListener(e -> {
+                try {
+                    if (e.getEventType().equals(HyperlinkEvent.EventType.ACTIVATED))
+                        Desktop.getDesktop().browse(e.getURL().toURI());
+                } catch (Exception ex) {
+                    logger.error(ex.getMessage());
+                }
+            });
+            jEditorPane.setEditable(false);
+            jEditorPane.setBackground(label.getBackground());
+            JOptionPane.showConfirmDialog(app.getMainFrame(),
+                    jEditorPane,
+                    appContext.getProperty("zipped.raw.file.dialog.title"),
+                    JOptionPane.CLOSED_OPTION, JOptionPane.WARNING_MESSAGE);
+        }
+
+
         if (!isSdrfFound) {
             App app = (App) App.getInstance();
             JLabel label = new JLabel();
@@ -422,6 +449,7 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
                 .filter(f -> f.getValue().equals(ResubmissionFileChangeState.NONE))
                 .map(f -> f.getKey().getFileName()).collect(Collectors.toList());
         List<String> duplicateFileNames = submission.getDataFiles().stream().map(DataFile::getFileName)
+                .filter(fileName -> !fileName.equals("checksum.txt"))
                 .filter(alreadyPresentFiles::contains)
                 .collect(Collectors.toList());
 
@@ -713,6 +741,9 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
                     result.setUnsupportedRawFile(true);
                 } else {
                     result.setSupportedRawFile(true);
+                    if(isRawFileZipped(dataFile)){
+                        result.setHasZippedRawFile(true);
+                    }
                     if (MassSpecFileFormat.IBD.equals(fileFormat)) {
                         result.setImagingRawFile(true);
                     }
@@ -731,6 +762,11 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
         return result;
     }
 
+    private boolean isRawFileZipped(DataFile dataFile) {
+        return FileUtil.getFileExtension(dataFile.getFile())!=null
+                && "zip".equals(FileUtil.getFileExtension(dataFile.getFile()));
+    }
+
     /**
      * There cannot be multiple raw files in zipped into a single zip file.
      * This method checks if the zipped file contain more than one raw files.
@@ -740,6 +776,15 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
      */
     private boolean isValidRawCompressedFile(DataFile dataFile) {
         boolean isValid = true;
+        int rawFileCount = 0;
+
+        String ext = FileUtil.getFileExtension(dataFile.getFile());
+
+        if (ext != null) {
+            if ("gz".equals(ext) || "gzip".equals(ext) || "tar".equals(ext)) {
+                isValid = false;
+            }
+        }
 //        int rawFileCount = 0;
 //
 //        String ext = FileUtil.getFileExtension(dataFile.getFile());
@@ -1015,6 +1060,7 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
         boolean unsupportedResultFile;
         boolean supportedRawFile;
         boolean unsupportedRawFile;
+        boolean containsZippedRawFile;
         boolean supportedSearchFile;
         boolean unsupportedSearchFile;
         int numOfInvalidFiles = 0;
@@ -1093,6 +1139,14 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
 
         public void setUnsupportedRawFile(boolean unsupportedRawFile) {
             this.unsupportedRawFile = unsupportedRawFile;
+        }
+
+        public boolean hasZippedRawFile() {
+            return containsZippedRawFile;
+        }
+
+        public void setHasZippedRawFile(boolean containsZippedRawFile) {
+            this.containsZippedRawFile = containsZippedRawFile;
         }
 
         private boolean hasSubmissionPxFile() {
