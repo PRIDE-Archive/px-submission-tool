@@ -75,8 +75,7 @@ aspera.xfer.policy = fair
 # Huge file optimizations
 aspera.xfer.cookie = PRIDE-Aspera-1-Cookie
 aspera.xfer.token = PRIDE-Aspera-1-Token
-# Pre-calculate job size for better progress tracking on huge files
-aspera.xfer.preCalculateJobSize = true
+aspera.xfer.preCalculateJobSize = false
 # Create remote directories as needed
 aspera.xfer.createPath = true
 
