@@ -359,7 +359,16 @@ public class FileListParser {
                 // Format: "Oct 27 12:35" (assume current year)
                 String dateTimeStr = month + " " + dayPadded + " " + timeOrYear + " " + currentYear;
                 LocalDateTime dateTime = LocalDateTime.parse(dateTimeStr, TIME_FORMATTER);
-                return dateTime.atZone(ZoneId.systemDefault()).toInstant();
+                Instant instant = dateTime.atZone(ZoneId.systemDefault()).toInstant();
+                
+                // Check if the resulting timestamp is in the future (can happen at year boundaries)
+                if (instant.isAfter(Instant.now())) {
+                    // Subtract one year and rebuild the Instant
+                    dateTime = dateTime.minusYears(1);
+                    instant = dateTime.atZone(ZoneId.systemDefault()).toInstant();
+                }
+                
+                return instant;
             } else {
                 // Format: "Oct 27 2024" (year provided)
                 String dateStr = month + " " + dayPadded + " " + timeOrYear;
