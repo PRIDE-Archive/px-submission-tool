@@ -168,9 +168,9 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
             }
             setProgress(40);
 
-            if (noPrideXml && noMzIdentML && !mzTabFilesHaveBeenProvided && !quickValidationResult.isUrlBasedResultFilePresent()) {
-                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidResultFileWarning());
-            }
+//            if (noPrideXml && noMzIdentML && !mzTabFilesHaveBeenProvided && !quickValidationResult.isUrlBasedResultFilePresent()) {
+//                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidResultFileWarning());
+//            }
 
             // cannot have both PRIDE xml and mzIdentML at the same time
             if (!noPrideXml && !noMzIdentML) {
@@ -449,6 +449,7 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
                 .filter(f -> f.getValue().equals(ResubmissionFileChangeState.NONE))
                 .map(f -> f.getKey().getFileName()).collect(Collectors.toList());
         List<String> duplicateFileNames = submission.getDataFiles().stream().map(DataFile::getFileName)
+                .filter(fileName -> !fileName.equals("checksum.txt"))
                 .filter(alreadyPresentFiles::contains)
                 .collect(Collectors.toList());
 
