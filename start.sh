@@ -22,7 +22,7 @@ fi
 echo
 
 # Check if JAR file exists
-JAR_FILE="px-submission-tool-${project.version}.jar"
+JAR_FILE="px-submission-tool-2.11.2.jar"
 if [ ! -f "$JAR_FILE" ]; then
     echo "❌ Error: Could not find $JAR_FILE"
     echo "Current directory: $(pwd)"
@@ -184,7 +184,7 @@ if [ -z "$JAVA_CMD" ]; then
                     echo "   - Install and ensure 'java' command works"
                     echo "3. Use existing Java if you have version 21 or later:"
                     echo "   - Set JAVA_HOME environment variable"
-                    echo "   - Or run: java -jar px-submission-tool-${project.version}.jar"
+                    echo "   - Or run: java -jar px-submission-tool-2.11.2.jar"
                     echo
                     echo "📚 For more help, see: https://github.com/PRIDE-Archive/px-submission-tool/blob/main/README.md"
                     echo
@@ -224,7 +224,7 @@ if [ -z "$JAVA_CMD" ]; then
                 echo "   - Install and ensure 'java' command works"
                 echo "3. Use existing Java if you have version 21 or later:"
                 echo "   - Set JAVA_HOME environment variable"
-                echo "   - Or run: java -jar px-submission-tool-${project.version}.jar"
+                echo "   - Or run: java -jar px-submission-tool-2.11.2.jar"
                 echo
                 echo "📚 For more help, see: https://github.com/PRIDE-Archive/px-submission-tool/blob/main/README.md"
                 echo
@@ -252,8 +252,18 @@ echo
 echo "🚀 Launching PX Submission Tool..."
 echo
 
+# Check for debug flag
+DEBUG_FLAG=""
+for arg in "$@"; do
+    if [ "$arg" = "--debug" ] || [ "$arg" = "-d" ]; then
+        DEBUG_FLAG="--debug"
+        echo "🔍 Debug mode enabled - logs will be written to ~/.pxsubmit/logs/"
+    fi
+done
+
 # Launch the application (GUI mode with file logging)
-$JAVA_CMD -jar "$JAR_FILE"
+# --enable-native-access=ALL-UNNAMED suppresses JavaFX native library warnings
+$JAVA_CMD --enable-native-access=ALL-UNNAMED -jar "$JAR_FILE" $DEBUG_FLAG "$@"
 
 # Application has exited
 echo

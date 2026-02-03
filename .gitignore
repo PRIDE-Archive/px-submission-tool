@@ -25,3 +25,11 @@ target/
 
 # Exclude any mzTab data file
 **/*.mzTab*
+
+# Build artifacts
+dependency-reduced-pom.xml
+*.jar
+\!lib/*.jar
+jre-macos/
+jre-linux/
+jre/

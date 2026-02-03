@@ -1,0 +1,379 @@
+/*
+ * PX Submission Tool - Main Stylesheet
+ * Modern styling for JavaFX submission wizard
+ */
+
+/* ==================== Root & Fonts ==================== */
+
+.root {
+    -fx-font-family: "System", "Segoe UI", "Helvetica Neue", sans-serif;
+    -fx-font-size: 13px;
+    -fx-base: #f5f5f5;
+    -fx-accent: #0066cc;
+    -fx-focus-color: #0066cc;
+    -fx-faint-focus-color: rgba(0, 102, 204, 0.2);
+}
+
+/* ==================== Main Window ==================== */
+
+.main-window {
+    -fx-background-color: #ffffff;
+}
+
+/* ==================== Header ==================== */
+
+.wizard-header {
+    -fx-background-color: linear-gradient(to right, #003366, #006699);
+    -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 4, 0, 0, 2);
+}
+
+.wizard-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: white;
+}
+
+.wizard-description {
+    -fx-font-size: 14px;
+    -fx-text-fill: rgba(255, 255, 255, 0.9);
+}
+
+.training-mode-badge {
+    -fx-background-color: #ff9800;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+    -fx-padding: 5 12 5 12;
+    -fx-background-radius: 4;
+}
+
+/* ==================== Content Area ==================== */
+
+.content-pane {
+    -fx-background-color: #ffffff;
+}
+
+/* ==================== Button Bar ==================== */
+
+.button-bar {
+    -fx-background-color: #f8f8f8;
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 1 0 0 0;
+}
+
+/* ==================== Buttons ==================== */
+
+.button {
+    -fx-padding: 8 16 8 16;
+    -fx-background-radius: 4;
+    -fx-border-radius: 4;
+    -fx-cursor: hand;
+}
+
+.button:disabled {
+    -fx-opacity: 0.5;
+    -fx-cursor: default;
+}
+
+.help-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: #0066cc;
+    -fx-border-color: transparent;
+}
+
+.help-button:hover {
+    -fx-background-color: rgba(0, 102, 204, 0.1);
+}
+
+.cancel-button {
+    -fx-background-color: #f5f5f5;
+    -fx-text-fill: #666666;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1;
+}
+
+.cancel-button:hover {
+    -fx-background-color: #e8e8e8;
+}
+
+.back-button {
+    -fx-background-color: #f5f5f5;
+    -fx-text-fill: #333333;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1;
+}
+
+.back-button:hover {
+    -fx-background-color: #e8e8e8;
+}
+
+.next-button {
+    -fx-background-color: #0066cc;
+    -fx-text-fill: white;
+    -fx-border-color: #0055aa;
+    -fx-border-width: 1;
+}
+
+.next-button:hover {
+    -fx-background-color: #0055aa;
+}
+
+.next-button:pressed {
+    -fx-background-color: #004488;
+}
+
+/* ==================== Form Elements ==================== */
+
+.text-field, .text-area, .combo-box {
+    -fx-background-color: white;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-padding: 8;
+}
+
+.text-field:focused, .text-area:focused, .combo-box:focused {
+    -fx-border-color: #0066cc;
+    -fx-border-width: 2;
+}
+
+.text-area {
+    -fx-pref-height: 100;
+}
+
+.label {
+    -fx-text-fill: #333333;
+}
+
+.label.required::after {
+    content: " *";
+    -fx-text-fill: #cc0000;
+}
+
+/* ==================== Tables ==================== */
+
+.table-view {
+    -fx-background-color: white;
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #f5f5f5;
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 0 0 1 0;
+}
+
+.table-view .column-header {
+    -fx-background-color: transparent;
+    -fx-font-weight: bold;
+    -fx-text-fill: #333333;
+    -fx-padding: 8 10 8 10;
+}
+
+.table-view .table-row-cell {
+    -fx-background-color: white;
+    -fx-border-color: #f0f0f0;
+    -fx-border-width: 0 0 1 0;
+}
+
+.table-view .table-row-cell:odd {
+    -fx-background-color: #fafafa;
+}
+
+.table-view .table-row-cell:selected {
+    -fx-background-color: rgba(0, 102, 204, 0.15);
+}
+
+.table-view .table-row-cell:selected .text {
+    -fx-fill: #333333;
+}
+
+.table-view .table-cell {
+    -fx-padding: 8 10 8 10;
+    -fx-alignment: CENTER-LEFT;
+}
+
+/* ==================== Validation States ==================== */
+
+.validation-success {
+    -fx-text-fill: #28a745;
+}
+
+.validation-error {
+    -fx-text-fill: #dc3545;
+}
+
+.validation-warning {
+    -fx-text-fill: #ffc107;
+}
+
+.validation-pending {
+    -fx-text-fill: #6c757d;
+}
+
+.error-message {
+    -fx-text-fill: #dc3545;
+    -fx-font-size: 12px;
+}
+
+.warning-message {
+    -fx-text-fill: #856404;
+    -fx-background-color: #fff3cd;
+    -fx-padding: 8 12 8 12;
+    -fx-background-radius: 4;
+}
+
+/* ==================== Progress ==================== */
+
+.progress-bar {
+    -fx-background-color: #e0e0e0;
+    -fx-background-radius: 4;
+    -fx-pref-height: 20;
+}
+
+.progress-bar .bar {
+    -fx-background-color: #0066cc;
+    -fx-background-radius: 4;
+}
+
+.progress-bar .track {
+    -fx-background-color: #e0e0e0;
+    -fx-background-radius: 4;
+}
+
+.progress-indicator {
+    -fx-progress-color: #0066cc;
+}
+
+/* ==================== Panels & Containers ==================== */
+
+.titled-pane {
+    -fx-text-fill: #333333;
+}
+
+.titled-pane > .title {
+    -fx-background-color: #f5f5f5;
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 1;
+    -fx-border-radius: 4 4 0 0;
+    -fx-background-radius: 4 4 0 0;
+    -fx-padding: 8 12 8 12;
+}
+
+.titled-pane > .content {
+    -fx-background-color: white;
+    -fx-border-color: #e0e0e0;
+    -fx-border-width: 0 1 1 1;
+    -fx-border-radius: 0 0 4 4;
+    -fx-background-radius: 0 0 4 4;
+}
+
+.scroll-pane {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+/* ==================== Dialogs ==================== */
+
+.dialog-pane {
+    -fx-background-color: white;
+}
+
+.dialog-pane > .header-panel {
+    -fx-background-color: #f5f5f5;
+    -fx-padding: 15;
+}
+
+.dialog-pane > .content {
+    -fx-padding: 15;
+}
+
+.dialog-pane > .button-bar > .container {
+    -fx-padding: 10 15 15 15;
+}
+
+/* ==================== Tooltips ==================== */
+
+.tooltip {
+    -fx-background-color: #333333;
+    -fx-text-fill: white;
+    -fx-background-radius: 4;
+    -fx-padding: 8 12 8 12;
+    -fx-font-size: 12px;
+}
+
+/* ==================== File Drop Zone ==================== */
+
+.drop-zone {
+    -fx-background-color: #f8f9fa;
+    -fx-border-color: #dee2e6;
+    -fx-border-width: 2;
+    -fx-border-style: dashed;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 40;
+}
+
+.drop-zone:drag-over {
+    -fx-background-color: rgba(0, 102, 204, 0.1);
+    -fx-border-color: #0066cc;
+}
+
+.drop-zone .drop-icon {
+    -fx-font-size: 48px;
+    -fx-text-fill: #6c757d;
+}
+
+.drop-zone .drop-text {
+    -fx-font-size: 16px;
+    -fx-text-fill: #6c757d;
+}
+
+/* ==================== Summary Step ==================== */
+
+.summary-section {
+    -fx-background-color: #f8f9fa;
+    -fx-border-color: #e9ecef;
+    -fx-border-width: 1;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 15;
+}
+
+.summary-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: #495057;
+}
+
+.summary-value {
+    -fx-text-fill: #212529;
+}
+
+/* ==================== Metadata Tags ==================== */
+
+.metadata-tag {
+    -fx-background-color: #e9ecef;
+    -fx-text-fill: #495057;
+    -fx-padding: 4 8 4 8;
+    -fx-background-radius: 4;
+    -fx-font-size: 12px;
+}
+
+.metadata-tag-remove {
+    -fx-background-color: transparent;
+    -fx-text-fill: #6c757d;
+    -fx-padding: 0 0 0 6;
+    -fx-cursor: hand;
+}
+
+.metadata-tag-remove:hover {
+    -fx-text-fill: #dc3545;
+}

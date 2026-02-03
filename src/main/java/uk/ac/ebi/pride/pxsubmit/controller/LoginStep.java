@@ -1,0 +1,196 @@
+package uk.ac.ebi.pride.pxsubmit.controller;
+
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Parent;
+import javafx.scene.control.*;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
+
+/**
+ * Login step - First step in the submission wizard.
+ * Authenticates user with PRIDE credentials.
+ */
+public class LoginStep extends AbstractWizardStep {
+
+    private TextField usernameField;
+    private PasswordField passwordField;
+    private CheckBox trainingModeCheckbox;
+    private Label errorLabel;
+
+    public LoginStep(SubmissionModel model) {
+        super("login",
+              "PRIDE Login",
+              "Enter your PRIDE Archive credentials to continue",
+              model);
+    }
+
+    @Override
+    protected Parent createContent() {
+        VBox root = new VBox(20);
+        root.setAlignment(Pos.CENTER);
+        root.setPadding(new Insets(40));
+        root.setMaxWidth(500);
+
+        // Welcome text
+        Label welcomeLabel = new Label("Welcome to the PX Submission Tool");
+        welcomeLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+
+        Label instructionLabel = new Label(
+            "Please log in with your PRIDE Archive account.\n" +
+            "If you don't have an account, register at pride.ebi.ac.uk"
+        );
+        instructionLabel.setWrapText(true);
+        instructionLabel.setStyle("-fx-text-fill: #666;");
+
+        // Login form
+        GridPane form = new GridPane();
+        form.setHgap(10);
+        form.setVgap(15);
+        form.setAlignment(Pos.CENTER);
+
+        Label usernameLabel = new Label("Email:");
+        usernameField = new TextField();
+        usernameField.setPromptText("your.email@example.com");
+        usernameField.setPrefWidth(300);
+
+        Label passwordLabel = new Label("Password:");
+        passwordField = new PasswordField();
+        passwordField.setPromptText("Enter your password");
+        passwordField.setPrefWidth(300);
+
+        form.add(usernameLabel, 0, 0);
+        form.add(usernameField, 1, 0);
+        form.add(passwordLabel, 0, 1);
+        form.add(passwordField, 1, 1);
+
+        // Training mode checkbox
+        trainingModeCheckbox = new CheckBox("Training Mode (no files will be uploaded)");
+        trainingModeCheckbox.selectedProperty().bindBidirectional(model.trainingModeProperty());
+
+        // Error label
+        errorLabel = new Label();
+        errorLabel.setStyle("-fx-text-fill: #dc3545;");
+        errorLabel.setVisible(false);
+        errorLabel.setManaged(false);
+
+        // Register link
+        Hyperlink registerLink = new Hyperlink("Register for a PRIDE account");
+        registerLink.setOnAction(e -> openRegistrationPage());
+
+        // Forgot password link
+        Hyperlink forgotLink = new Hyperlink("Forgot password?");
+        forgotLink.setOnAction(e -> openForgotPasswordPage());
+
+        HBox linksBox = new HBox(20);
+        linksBox.setAlignment(Pos.CENTER);
+        linksBox.getChildren().addAll(registerLink, forgotLink);
+
+        root.getChildren().addAll(
+            welcomeLabel,
+            instructionLabel,
+            form,
+            trainingModeCheckbox,
+            errorLabel,
+            linksBox
+        );
+
+        return root;
+    }
+
+    @Override
+    protected void initializeStep() {
+        // Bind validation - valid when both fields have content
+        valid.bind(
+            usernameField.textProperty().isNotEmpty()
+            .and(passwordField.textProperty().isNotEmpty())
+        );
+
+        // Bind to model
+        usernameField.textProperty().addListener((obs, oldVal, newVal) -> {
+            model.setUserName(newVal);
+        });
+
+        passwordField.textProperty().addListener((obs, oldVal, newVal) -> {
+            model.setPassword(newVal);
+        });
+
+        // Pre-fill from model if available
+        if (model.getUserName() != null) {
+            usernameField.setText(model.getUserName());
+        }
+    }
+
+    @Override
+    protected void onStepEntering() {
+        // Focus username field
+        usernameField.requestFocus();
+
+        // Clear any previous error
+        hideError();
+    }
+
+    @Override
+    public boolean validate() {
+        // Basic validation
+        String username = usernameField.getText().trim();
+        String password = passwordField.getText();
+
+        if (username.isEmpty()) {
+            showError("Please enter your email address");
+            return false;
+        }
+
+        if (!username.contains("@")) {
+            showError("Please enter a valid email address");
+            return false;
+        }
+
+        if (password.isEmpty()) {
+            showError("Please enter your password");
+            return false;
+        }
+
+        // Training mode - skip actual authentication
+        if (model.isTrainingMode()) {
+            logger.info("Training mode - skipping authentication");
+            model.setLoggedIn(true);
+            return true;
+        }
+
+        // TODO: Implement actual authentication via AuthService
+        // For now, simulate successful login
+        logger.info("Login attempt for user: {}", username);
+        model.setLoggedIn(true);
+
+        return true;
+    }
+
+    @Override
+    public boolean showBackButton() {
+        return false; // First step has no back button
+    }
+
+    private void showError(String message) {
+        errorLabel.setText(message);
+        errorLabel.setVisible(true);
+        errorLabel.setManaged(true);
+    }
+
+    private void hideError() {
+        errorLabel.setVisible(false);
+        errorLabel.setManaged(false);
+    }
+
+    private void openRegistrationPage() {
+        // TODO: Open browser to registration page
+        logger.info("Opening registration page");
+    }
+
+    private void openForgotPasswordPage() {
+        // TODO: Open browser to forgot password page
+        logger.info("Opening forgot password page");
+    }
+}
