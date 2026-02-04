@@ -4,6 +4,7 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.ObservableMap;
 import javafx.collections.ObservableSet;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
@@ -12,6 +13,7 @@ import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
 import uk.ac.ebi.pride.data.model.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -33,6 +35,10 @@ public class SubmissionModel {
     // Files - observable list for direct table binding
     private final ObservableList<DataFile> files = FXCollections.observableArrayList();
     private final ObservableSet<DataFile> uploadedFiles = FXCollections.observableSet();
+
+    // Checksums - map from DataFile to checksum string
+    private final ObservableMap<DataFile, String> checksums = FXCollections.observableHashMap();
+    private final BooleanProperty checksumsCalculated = new SimpleBooleanProperty(false);
 
     // File ID counter
     private final IntegerProperty fileIdCounter = new SimpleIntegerProperty(0);
@@ -67,6 +73,9 @@ public class SubmissionModel {
 
     // Observable lists for metadata - bind directly to TableViews
     private final ObservableList<CvParam> species = FXCollections.observableArrayList();
+    private final ObservableList<CvParam> tissues = FXCollections.observableArrayList();
+    private final ObservableList<CvParam> cellTypes = FXCollections.observableArrayList();
+    private final ObservableList<CvParam> diseases = FXCollections.observableArrayList();
     private final ObservableList<CvParam> instruments = FXCollections.observableArrayList();
     private final ObservableList<CvParam> modifications = FXCollections.observableArrayList();
     private final ObservableList<CvParam> quantifications = FXCollections.observableArrayList();
@@ -176,6 +185,61 @@ public class SubmissionModel {
         return uploadedFiles.contains(dataFile);
     }
 
+    // ==================== Checksum Operations ====================
+
+    /**
+     * Store checksum for a file
+     */
+    public void setChecksum(DataFile dataFile, String checksum) {
+        if (dataFile != null && checksum != null) {
+            checksums.put(dataFile, checksum);
+        }
+    }
+
+    /**
+     * Store all checksums from a map
+     */
+    public void setChecksums(Map<DataFile, String> checksumMap) {
+        checksums.clear();
+        if (checksumMap != null) {
+            checksums.putAll(checksumMap);
+        }
+        checksumsCalculated.set(!checksums.isEmpty());
+    }
+
+    /**
+     * Get checksum for a file
+     */
+    public String getChecksum(DataFile dataFile) {
+        return checksums.get(dataFile);
+    }
+
+    /**
+     * Get all checksums
+     */
+    public ObservableMap<DataFile, String> getChecksums() {
+        return checksums;
+    }
+
+    /**
+     * Check if checksums have been calculated
+     */
+    public boolean areChecksumsCalculated() {
+        return checksumsCalculated.get();
+    }
+
+    public BooleanProperty checksumsCalculatedProperty() {
+        return checksumsCalculated;
+    }
+
+    /**
+     * Clear all checksums
+     */
+    public void clearChecksums() {
+        checksums.clear();
+        checksumsCalculated.set(false);
+    }
+
     // ==================== Metadata Operations ====================
 
     public void addSpecies(CvParam param) {
@@ -188,6 +252,42 @@ public class SubmissionModel {
     public void removeSpecies(CvParam param) {
         species.remove(param);
         submission.get().getProjectMetaData().removeSpecies(param);
+    }
+
+    public void addTissue(CvParam param) {
+        if (!tissues.contains(param)) {
+            tissues.add(param);
+            submission.get().getProjectMetaData().addTissues(param);
+        }
+    }
+
+    public void removeTissue(CvParam param) {
+        tissues.remove(param);
+        submission.get().getProjectMetaData().removeTissues(param);
+    }
+
+    public void addCellType(CvParam param) {
+        if (!cellTypes.contains(param)) {
+            cellTypes.add(param);
+            submission.get().getProjectMetaData().addCellTypes(param);
+        }
+    }
+
+    public void removeCellType(CvParam param) {
+        cellTypes.remove(param);
+        submission.get().getProjectMetaData().removeCellTypes(param);
+    }
+
+    public void addDisease(CvParam param) {
+        if (!diseases.contains(param)) {
+            diseases.add(param);
+            submission.get().getProjectMetaData().addDiseases(param);
+        }
+    }
+
+    public void removeDisease(CvParam param) {
+        diseases.remove(param);
+        submission.get().getProjectMetaData().removeDiseases(param);
     }
 
     public void addInstrument(CvParam param) {
@@ -248,6 +348,8 @@ public class SubmissionModel {
         resubmission.set(new Resubmission());
         files.clear();
         uploadedFiles.clear();
+        checksums.clear();
+        checksumsCalculated.set(false);
         fileIdCounter.set(0);
 
         userName.set(null);
@@ -256,6 +358,9 @@ public class SubmissionModel {
         summaryFileUploaded.set(false);
 
         species.clear();
+        tissues.clear();
+        cellTypes.clear();
+        diseases.clear();
         instruments.clear();
         modifications.clear();
         quantifications.clear();
@@ -316,6 +421,9 @@ public class SubmissionModel {
 
             // Load lists
             species.setAll(meta.getSpecies());
+            if (meta.getTissues() != null) tissues.setAll(meta.getTissues());
+            if (meta.getCellTypes() != null) cellTypes.setAll(meta.getCellTypes());
+            if (meta.getDiseases() != null) diseases.setAll(meta.getDiseases());
             instruments.setAll(meta.getInstruments());
             modifications.setAll(meta.getModifications());
             quantifications.setAll(meta.getQuantifications());
@@ -422,6 +530,9 @@ public class SubmissionModel {
 
     // Metadata lists
     public ObservableList<CvParam> getSpecies() { return species; }
+    public ObservableList<CvParam> getTissues() { return tissues; }
+    public ObservableList<CvParam> getCellTypes() { return cellTypes; }
+    public ObservableList<CvParam> getDiseases() { return diseases; }
     public ObservableList<CvParam> getInstruments() { return instruments; }
     public ObservableList<CvParam> getModifications() { return modifications; }
     public ObservableList<CvParam> getQuantifications() { return quantifications; }

@@ -47,6 +47,29 @@
     -fx-background-radius: 4;
 }
 
+/* Step Progress Indicator */
+.step-indicator {
+    -fx-text-fill: rgba(255, 255, 255, 0.85);
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+}
+
+.step-progress {
+    -fx-accent: #4CAF50;
+    -fx-background-color: rgba(255, 255, 255, 0.3);
+    -fx-background-radius: 3;
+}
+
+.step-progress .bar {
+    -fx-background-color: #4CAF50;
+    -fx-background-radius: 3;
+}
+
+.step-progress .track {
+    -fx-background-color: rgba(255, 255, 255, 0.3);
+    -fx-background-radius: 3;
+}
+
 /* ==================== Content Area ==================== */
 
 .content-pane {

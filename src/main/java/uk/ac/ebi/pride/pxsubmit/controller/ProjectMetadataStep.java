@@ -5,7 +5,10 @@ import javafx.geometry.Insets;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.util.Duration;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
+import uk.ac.ebi.pride.pxsubmit.view.component.ChipInput;
+import uk.ac.ebi.pride.pxsubmit.view.component.ValidationFeedback;
 
 /**
  * Step for entering project metadata.
@@ -16,13 +19,16 @@ public class ProjectMetadataStep extends AbstractWizardStep {
     // Form fields
     private TextField titleField;
     private TextArea descriptionArea;
-    private TextField keywordsField;
+    private ChipInput keywordsInput;
     private TextArea sampleProtocolArea;
     private TextArea dataProtocolArea;
 
     // Character counters
     private Label titleCounter;
     private Label descriptionCounter;
+
+    // Validation feedback
+    private ValidationFeedback validationFeedback;
 
     // Validation
     private static final int MIN_TITLE_LENGTH = 5;
@@ -51,6 +57,12 @@ public class ProjectMetadataStep extends AbstractWizardStep {
             "A short descriptive title for your project (5-500 characters)");
         titleField = new TextField();
         titleField.setPromptText("e.g., Proteome analysis of human liver cancer cells");
+        Tooltip titleTooltip = new Tooltip(
+            "Enter a descriptive title for your project.\n" +
+            "This will be displayed in PRIDE Archive.\n" +
+            "Minimum 5 characters, maximum 500.");
+        titleTooltip.setShowDelay(Duration.millis(300));
+        titleField.setTooltip(titleTooltip);
         titleCounter = new Label("0 / " + MAX_TITLE_LENGTH);
         titleCounter.setStyle("-fx-text-fill: #666; -fx-font-size: 11px;");
 
@@ -70,16 +82,30 @@ public class ProjectMetadataStep extends AbstractWizardStep {
             "• Key findings (if applicable)");
         descriptionArea.setPrefRowCount(6);
         descriptionArea.setWrapText(true);
+        Tooltip descTooltip = new Tooltip(
+            "Provide a detailed description of your project.\n" +
+            "Include scientific background, aims, and key findings.\n" +
+            "Minimum 20 characters, maximum 5000.");
+        descTooltip.setShowDelay(Duration.millis(300));
+        descriptionArea.setTooltip(descTooltip);
         descriptionCounter = new Label("0 / " + MAX_DESCRIPTION_LENGTH);
         descriptionCounter.setStyle("-fx-text-fill: #666; -fx-font-size: 11px;");
         descSection.getChildren().addAll(descriptionArea, descriptionCounter);
 
         // Keywords
         VBox keywordsSection = createSection("Keywords *",
-            "Comma-separated keywords to help others find your dataset");
-        keywordsField = new TextField();
-        keywordsField.setPromptText("e.g., liver cancer, proteomics, mass spectrometry, biomarker");
-        keywordsSection.getChildren().add(keywordsField);
+            "Type a keyword and press Enter to add it. Click \u2715 to remove.");
+        keywordsInput = new ChipInput();
+        keywordsInput.setPromptText("Type keyword and press Enter...");
+        Tooltip keywordsTooltip = new Tooltip(
+            "Add keywords that describe your dataset.\n" +
+            "Type a word and press Enter to add it as a tag.\n" +
+            "Click X on a tag to remove it.");
+        keywordsTooltip.setShowDelay(Duration.millis(300));
+        Tooltip.install(keywordsInput, keywordsTooltip);
+        Label keywordsHint = new Label("Examples: liver cancer, proteomics, mass spectrometry, biomarker");
+        keywordsHint.setStyle("-fx-text-fill: #999; -fx-font-size: 11px; -fx-font-style: italic;");
+        keywordsSection.getChildren().addAll(keywordsInput, keywordsHint);
 
         // Sample Processing Protocol
         VBox sampleSection = createSection("Sample Processing Protocol *",
@@ -93,6 +119,11 @@ public class ProjectMetadataStep extends AbstractWizardStep {
             "• Fractionation (if applicable)");
         sampleProtocolArea.setPrefRowCount(4);
         sampleProtocolArea.setWrapText(true);
+        Tooltip sampleTooltip = new Tooltip(
+            "Describe your sample preparation protocol.\n" +
+            "Include extraction methods, digestion, and fractionation.");
+        sampleTooltip.setShowDelay(Duration.millis(300));
+        sampleProtocolArea.setTooltip(sampleTooltip);
         sampleSection.getChildren().add(sampleProtocolArea);
 
         // Data Processing Protocol
@@ -107,7 +138,15 @@ public class ProjectMetadataStep extends AbstractWizardStep {
             "• Post-processing/validation");
         dataProtocolArea.setPrefRowCount(4);
         dataProtocolArea.setWrapText(true);
+        Tooltip dataTooltip = new Tooltip(
+            "Describe your data analysis workflow.\n" +
+            "Include search engine, database, and parameters used.");
+        dataTooltip.setShowDelay(Duration.millis(300));
+        dataProtocolArea.setTooltip(dataTooltip);
         dataSection.getChildren().add(dataProtocolArea);
+
+        // Validation feedback
+        validationFeedback = new ValidationFeedback();
 
         // Required fields note
         Label requiredNote = new Label("* Required fields");
@@ -119,6 +158,7 @@ public class ProjectMetadataStep extends AbstractWizardStep {
             keywordsSection,
             sampleSection,
             dataSection,
+            validationFeedback,
             requiredNote
         );
 
@@ -144,7 +184,7 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         // Bidirectional bindings to model
         titleField.textProperty().bindBidirectional(model.projectTitleProperty());
         descriptionArea.textProperty().bindBidirectional(model.projectDescriptionProperty());
-        keywordsField.textProperty().bindBidirectional(model.keywordsProperty());
+        keywordsInput.textProperty().bindBidirectional(model.keywordsProperty());
         sampleProtocolArea.textProperty().bindBidirectional(model.sampleProcessingProtocolProperty());
         dataProtocolArea.textProperty().bindBidirectional(model.dataProcessingProtocolProperty());
 
@@ -159,6 +199,7 @@ public class ProjectMetadataStep extends AbstractWizardStep {
             } else {
                 titleCounter.setStyle("-fx-text-fill: #666; -fx-font-size: 11px;");
             }
+            updateValidationFeedback();
         });
 
         descriptionArea.textProperty().addListener((obs, oldVal, newVal) -> {
@@ -171,13 +212,19 @@ public class ProjectMetadataStep extends AbstractWizardStep {
             } else {
                 descriptionCounter.setStyle("-fx-text-fill: #666; -fx-font-size: 11px;");
             }
+            updateValidationFeedback();
         });
+
+        // Update validation feedback when other fields change
+        keywordsInput.textProperty().addListener((obs, oldVal, newVal) -> updateValidationFeedback());
+        sampleProtocolArea.textProperty().addListener((obs, oldVal, newVal) -> updateValidationFeedback());
+        dataProtocolArea.textProperty().addListener((obs, oldVal, newVal) -> updateValidationFeedback());
 
         // Validation binding
         valid.bind(Bindings.createBooleanBinding(() -> {
             String title = titleField.getText();
             String desc = descriptionArea.getText();
-            String keywords = keywordsField.getText();
+            String keywords = keywordsInput.getText();
             String sampleProtocol = sampleProtocolArea.getText();
             String dataProtocol = dataProtocolArea.getText();
 
@@ -189,7 +236,7 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         },
         titleField.textProperty(),
         descriptionArea.textProperty(),
-        keywordsField.textProperty(),
+        keywordsInput.textProperty(),
         sampleProtocolArea.textProperty(),
         dataProtocolArea.textProperty()));
     }
@@ -221,9 +268,9 @@ public class ProjectMetadataStep extends AbstractWizardStep {
             return false;
         }
 
-        if (isNullOrEmpty(keywordsField.getText())) {
+        if (keywordsInput.isEmpty()) {
             showError("Please enter at least one keyword");
-            keywordsField.requestFocus();
+            keywordsInput.requestFocus();
             return false;
         }
 
@@ -267,6 +314,67 @@ public class ProjectMetadataStep extends AbstractWizardStep {
 
     private boolean isNullOrEmpty(String text) {
         return text == null || text.trim().isEmpty();
+    }
+
+    /**
+     * Update inline validation feedback based on current field values
+     */
+    private void updateValidationFeedback() {
+        validationFeedback.clear();
+
+        String title = titleField.getText();
+        String desc = descriptionArea.getText();
+        String keywords = keywordsInput.getText();
+        String sampleProtocol = sampleProtocolArea.getText();
+        String dataProtocol = dataProtocolArea.getText();
+
+        int completedFields = 0;
+        int totalFields = 5;
+
+        // Title validation
+        if (title == null || title.trim().length() < MIN_TITLE_LENGTH) {
+            validationFeedback.addWarning("Title: Minimum " + MIN_TITLE_LENGTH + " characters required");
+        } else if (title.length() > MAX_TITLE_LENGTH) {
+            validationFeedback.addError("Title: Maximum " + MAX_TITLE_LENGTH + " characters exceeded");
+        } else {
+            completedFields++;
+        }
+
+        // Description validation
+        if (desc == null || desc.trim().length() < MIN_DESCRIPTION_LENGTH) {
+            validationFeedback.addWarning("Description: Minimum " + MIN_DESCRIPTION_LENGTH + " characters required");
+        } else if (desc.length() > MAX_DESCRIPTION_LENGTH) {
+            validationFeedback.addError("Description: Maximum " + MAX_DESCRIPTION_LENGTH + " characters exceeded");
+        } else {
+            completedFields++;
+        }
+
+        // Keywords validation
+        if (isNullOrEmpty(keywords)) {
+            validationFeedback.addWarning("Keywords: At least one keyword required");
+        } else {
+            completedFields++;
+        }
+
+        // Protocol validation
+        if (isNullOrEmpty(sampleProtocol)) {
+            validationFeedback.addWarning("Sample Processing Protocol: Required");
+        } else {
+            completedFields++;
+        }
+
+        if (isNullOrEmpty(dataProtocol)) {
+            validationFeedback.addWarning("Data Processing Protocol: Required");
+        } else {
+            completedFields++;
+        }
+
+        // Show success if all complete
+        if (completedFields == totalFields) {
+            validationFeedback.setSuccess("All required fields complete - ready to proceed");
+        } else {
+            validationFeedback.addInfo(completedFields + "/" + totalFields + " required fields completed");
+        }
     }
 
     private void showError(String message) {

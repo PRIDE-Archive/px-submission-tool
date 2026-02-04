@@ -1,0 +1,431 @@
+package uk.ac.ebi.pride.pxsubmit.service;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.data.model.CvParam;
+
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * Service for querying EBI OLS (Ontology Lookup Service) REST API.
+ * Provides autocomplete functionality for ontology terms.
+ *
+ * Supported ontologies:
+ * - NCBITaxon: Species/organisms
+ * - BTO: Tissues (BRENDA Tissue Ontology)
+ * - CL: Cell types (Cell Ontology)
+ * - DOID: Diseases (Disease Ontology)
+ * - MS: Mass spectrometry (PSI-MS Ontology)
+ * - MOD: Modifications (PSI-MOD Ontology)
+ *
+ * Usage:
+ * <pre>
+ * OlsService ols = OlsService.getInstance();
+ * List<CvParam> results = ols.search("human", OlsOntology.NCBI_TAXON, 10).join();
+ * </pre>
+ */
+public class OlsService {
+
+    private static final Logger logger = LoggerFactory.getLogger(OlsService.class);
+
+    // OLS API base URL
+    private static final String OLS_BASE_URL = "https://www.ebi.ac.uk/ols4/api";
+    private static final String SEARCH_ENDPOINT = "/search";
+    private static final String SELECT_ENDPOINT = "/select";
+
+    // HTTP client configuration
+    private static final Duration TIMEOUT = Duration.ofSeconds(10);
+    private static final int MAX_RESULTS = 50;
+
+    // Singleton instance
+    private static OlsService instance;
+
+    // HTTP client and JSON mapper
+    private final HttpClient httpClient;
+    private final ObjectMapper objectMapper;
+
+    // Cache for recent searches (query -> results)
+    private final Map<String, List<CvParam>> cache = new ConcurrentHashMap<>();
+    private static final int MAX_CACHE_SIZE = 100;
+
+    /**
+     * Supported ontologies
+     */
+    public enum OlsOntology {
+        NCBI_TAXON("ncbitaxon", "NCBITaxon", "Species/Organisms"),
+        BTO("bto", "BTO", "Tissues"),
+        CL("cl", "CL", "Cell Types"),
+        DOID("doid", "DOID", "Diseases"),
+        MS("ms", "MS", "Mass Spectrometry"),
+        MOD("mod", "MOD", "Modifications"),
+        EFO("efo", "EFO", "Experimental Factor"),
+        PRIDE("pride", "PRIDE", "PRIDE Ontology"),
+        UNIMOD("unimod", "UNIMOD", "Unimod Modifications");
+
+        private final String olsId;
+        private final String cvLabel;
+        private final String displayName;
+
+        OlsOntology(String olsId, String cvLabel, String displayName) {
+            this.olsId = olsId;
+            this.cvLabel = cvLabel;
+            this.displayName = displayName;
+        }
+
+        public String getOlsId() {
+            return olsId;
+        }
+
+        public String getCvLabel() {
+            return cvLabel;
+        }
+
+        public String getDisplayName() {
+            return displayName;
+        }
+    }
+
+    /**
+     * Search result with additional metadata
+     */
+    public record OlsSearchResult(
+            CvParam cvParam,
+            String description,
+            String ontologyName,
+            boolean isObsolete
+    ) {}
+
+    private OlsService() {
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(TIMEOUT)
+                .build();
+        this.objectMapper = new ObjectMapper();
+    }
+
+    /**
+     * Get singleton instance
+     */
+    public static synchronized OlsService getInstance() {
+        if (instance == null) {
+            instance = new OlsService();
+        }
+        return instance;
+    }
+
+    /**
+     * Search for terms in a specific ontology
+     *
+     * @param query Search query
+     * @param ontology Ontology to search
+     * @param maxResults Maximum number of results
+     * @return CompletableFuture with list of matching CvParams
+     */
+    public CompletableFuture<List<CvParam>> search(String query, OlsOntology ontology, int maxResults) {
+        if (query == null || query.trim().isEmpty()) {
+            return CompletableFuture.completedFuture(Collections.emptyList());
+        }
+
+        String cacheKey = ontology.olsId + ":" + query.toLowerCase().trim();
+
+        // Check cache
+        if (cache.containsKey(cacheKey)) {
+            return CompletableFuture.completedFuture(cache.get(cacheKey));
+        }
+
+        String encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8);
+        String url = String.format("%s%s?q=%s&ontology=%s&rows=%d&local=true",
+                OLS_BASE_URL, SELECT_ENDPOINT, encodedQuery, ontology.olsId,
+                Math.min(maxResults, MAX_RESULTS));
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(TIMEOUT)
+                .header("Accept", "application/json")
+                .GET()
+                .build();
+
+        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> {
+                    if (response.statusCode() != 200) {
+                        logger.warn("OLS search failed with status {}: {}", response.statusCode(), url);
+                        return Collections.<CvParam>emptyList();
+                    }
+                    return parseSearchResponse(response.body(), ontology);
+                })
+                .thenApply(results -> {
+                    // Cache results
+                    if (cache.size() >= MAX_CACHE_SIZE) {
+                        // Simple cache eviction - clear half
+                        cache.clear();
+                    }
+                    cache.put(cacheKey, results);
+                    return results;
+                })
+                .exceptionally(e -> {
+                    logger.error("OLS search error for query '{}': {}", query, e.getMessage());
+                    return Collections.emptyList();
+                });
+    }
+
+    /**
+     * Search for terms with detailed results
+     */
+    public CompletableFuture<List<OlsSearchResult>> searchDetailed(String query, OlsOntology ontology, int maxResults) {
+        if (query == null || query.trim().isEmpty()) {
+            return CompletableFuture.completedFuture(Collections.emptyList());
+        }
+
+        String encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8);
+        String url = String.format("%s%s?q=%s&ontology=%s&rows=%d&local=true",
+                OLS_BASE_URL, SELECT_ENDPOINT, encodedQuery, ontology.olsId,
+                Math.min(maxResults, MAX_RESULTS));
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(TIMEOUT)
+                .header("Accept", "application/json")
+                .GET()
+                .build();
+
+        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> {
+                    if (response.statusCode() != 200) {
+                        logger.warn("OLS search failed with status {}: {}", response.statusCode(), url);
+                        return Collections.<OlsSearchResult>emptyList();
+                    }
+                    return parseDetailedResponse(response.body(), ontology);
+                })
+                .exceptionally(e -> {
+                    logger.error("OLS search error for query '{}': {}", query, e.getMessage());
+                    return Collections.emptyList();
+                });
+    }
+
+    /**
+     * Search across multiple ontologies
+     */
+    public CompletableFuture<List<CvParam>> searchMultiple(String query, List<OlsOntology> ontologies, int maxResultsPerOntology) {
+        List<CompletableFuture<List<CvParam>>> futures = ontologies.stream()
+                .map(ont -> search(query, ont, maxResultsPerOntology))
+                .toList();
+
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .thenApply(v -> futures.stream()
+                        .flatMap(f -> f.join().stream())
+                        .toList());
+    }
+
+    /**
+     * Get term by exact accession
+     */
+    public CompletableFuture<Optional<CvParam>> getTermByAccession(String accession, OlsOntology ontology) {
+        if (accession == null || accession.trim().isEmpty()) {
+            return CompletableFuture.completedFuture(Optional.empty());
+        }
+
+        // OLS4 API uses IRI for term lookup
+        String iri = URLEncoder.encode("http://purl.obolibrary.org/obo/" + accession.replace(":", "_"),
+                StandardCharsets.UTF_8);
+        String url = String.format("%s/ontologies/%s/terms/%s",
+                OLS_BASE_URL, ontology.olsId, iri);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(TIMEOUT)
+                .header("Accept", "application/json")
+                .GET()
+                .build();
+
+        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> {
+                    if (response.statusCode() != 200) {
+                        return Optional.<CvParam>empty();
+                    }
+                    return parseTermResponse(response.body(), ontology);
+                })
+                .exceptionally(e -> {
+                    logger.error("OLS term lookup error for '{}': {}", accession, e.getMessage());
+                    return Optional.empty();
+                });
+    }
+
+    /**
+     * Parse OLS search response
+     */
+    private List<CvParam> parseSearchResponse(String json, OlsOntology ontology) {
+        List<CvParam> results = new ArrayList<>();
+
+        try {
+            JsonNode root = objectMapper.readTree(json);
+            JsonNode response = root.path("response");
+            JsonNode docs = response.path("docs");
+
+            if (docs.isArray()) {
+                for (JsonNode doc : docs) {
+                    CvParam param = parseDoc(doc, ontology);
+                    if (param != null) {
+                        results.add(param);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error parsing OLS response: {}", e.getMessage());
+        }
+
+        return results;
+    }
+
+    /**
+     * Parse detailed response
+     */
+    private List<OlsSearchResult> parseDetailedResponse(String json, OlsOntology ontology) {
+        List<OlsSearchResult> results = new ArrayList<>();
+
+        try {
+            JsonNode root = objectMapper.readTree(json);
+            JsonNode response = root.path("response");
+            JsonNode docs = response.path("docs");
+
+            if (docs.isArray()) {
+                for (JsonNode doc : docs) {
+                    CvParam param = parseDoc(doc, ontology);
+                    if (param != null) {
+                        String description = doc.path("description").isArray() ?
+                                doc.path("description").get(0).asText("") :
+                                doc.path("description").asText("");
+                        String ontName = doc.path("ontology_name").asText(ontology.getDisplayName());
+                        boolean isObsolete = doc.path("is_obsolete").asBoolean(false);
+
+                        results.add(new OlsSearchResult(param, description, ontName, isObsolete));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error parsing OLS response: {}", e.getMessage());
+        }
+
+        return results;
+    }
+
+    /**
+     * Parse single document to CvParam
+     */
+    private CvParam parseDoc(JsonNode doc, OlsOntology ontology) {
+        String label = doc.path("label").asText(null);
+        String oboId = doc.path("obo_id").asText(null);
+
+        if (label == null || oboId == null) {
+            return null;
+        }
+
+        // Determine CV label from the accession prefix
+        String cvLabel = ontology.getCvLabel();
+        if (oboId.contains(":")) {
+            String prefix = oboId.substring(0, oboId.indexOf(":"));
+            // Map common prefixes
+            cvLabel = switch (prefix.toUpperCase()) {
+                case "NCBITAXON" -> "NEWT";
+                case "BTO" -> "BTO";
+                case "CL" -> "CL";
+                case "DOID" -> "DOID";
+                case "MS" -> "MS";
+                case "MOD" -> "MOD";
+                case "UNIMOD" -> "UNIMOD";
+                default -> prefix.toUpperCase();
+            };
+        }
+
+        return new CvParam(cvLabel, oboId, label, null);
+    }
+
+    /**
+     * Parse term lookup response
+     */
+    private Optional<CvParam> parseTermResponse(String json, OlsOntology ontology) {
+        try {
+            JsonNode root = objectMapper.readTree(json);
+            String label = root.path("label").asText(null);
+            String oboId = root.path("obo_id").asText(null);
+
+            if (label != null && oboId != null) {
+                return Optional.of(new CvParam(ontology.getCvLabel(), oboId, label, null));
+            }
+        } catch (Exception e) {
+            logger.error("Error parsing OLS term response: {}", e.getMessage());
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Clear the search cache
+     */
+    public void clearCache() {
+        cache.clear();
+    }
+
+    /**
+     * Get common species (for quick selection)
+     */
+    public static List<CvParam> getCommonSpecies() {
+        return List.of(
+                new CvParam("NEWT", "NCBITaxon:9606", "Homo sapiens", null),
+                new CvParam("NEWT", "NCBITaxon:10090", "Mus musculus", null),
+                new CvParam("NEWT", "NCBITaxon:10116", "Rattus norvegicus", null),
+                new CvParam("NEWT", "NCBITaxon:9913", "Bos taurus", null),
+                new CvParam("NEWT", "NCBITaxon:7955", "Danio rerio", null),
+                new CvParam("NEWT", "NCBITaxon:7227", "Drosophila melanogaster", null),
+                new CvParam("NEWT", "NCBITaxon:6239", "Caenorhabditis elegans", null),
+                new CvParam("NEWT", "NCBITaxon:4932", "Saccharomyces cerevisiae", null),
+                new CvParam("NEWT", "NCBITaxon:562", "Escherichia coli", null),
+                new CvParam("NEWT", "NCBITaxon:3702", "Arabidopsis thaliana", null)
+        );
+    }
+
+    /**
+     * Get common instruments
+     */
+    public static List<CvParam> getCommonInstruments() {
+        return List.of(
+                new CvParam("MS", "MS:1001911", "Q Exactive", null),
+                new CvParam("MS", "MS:1002877", "Q Exactive HF", null),
+                new CvParam("MS", "MS:1002523", "Q Exactive Plus", null),
+                new CvParam("MS", "MS:1002732", "Orbitrap Fusion", null),
+                new CvParam("MS", "MS:1002416", "Orbitrap Fusion Lumos", null),
+                new CvParam("MS", "MS:1003028", "Orbitrap Exploris 480", null),
+                new CvParam("MS", "MS:1002996", "timsTOF Pro", null),
+                new CvParam("MS", "MS:1000449", "LTQ Orbitrap", null),
+                new CvParam("MS", "MS:1001910", "LTQ Orbitrap Elite", null),
+                new CvParam("MS", "MS:1000658", "4800 Proteomics Analyzer", null),
+                new CvParam("MS", "MS:1000190", "TripleTOF 5600", null)
+        );
+    }
+
+    /**
+     * Get common modifications
+     */
+    public static List<CvParam> getCommonModifications() {
+        return List.of(
+                new CvParam("MOD", "MOD:00394", "acetylated residue", null),
+                new CvParam("MOD", "MOD:00696", "phosphorylated residue", null),
+                new CvParam("MOD", "MOD:00719", "methylated residue", null),
+                new CvParam("MOD", "MOD:01060", "S-carboxamidomethyl-L-cysteine", null),
+                new CvParam("MOD", "MOD:00425", "monohydroxylated residue", null),
+                new CvParam("MOD", "MOD:00412", "deamidated residue", null),
+                new CvParam("UNIMOD", "UNIMOD:4", "Carbamidomethyl", null),
+                new CvParam("UNIMOD", "UNIMOD:35", "Oxidation", null),
+                new CvParam("UNIMOD", "UNIMOD:1", "Acetyl", null),
+                new CvParam("UNIMOD", "UNIMOD:21", "Phospho", null)
+        );
+    }
+}

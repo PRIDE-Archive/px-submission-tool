@@ -5,26 +5,28 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 
 /**
  * Step for selecting the submission type.
- * Options: Complete, Partial, Affinity
+ * Options: PRIDE (mass spectrometry) or Affinity Proteomics
+ *
+ * Note: The COMPLETE/PARTIAL distinction is handled automatically based on file types.
+ * If the submission includes STANDARD file formats (mzIdentML, mzTab),
+ * it will be registered as a complete ProteomeXchange submission.
  */
 public class SubmissionTypeStep extends AbstractWizardStep {
 
     private ToggleGroup submissionTypeGroup;
-    private RadioButton completeRadio;
-    private RadioButton partialRadio;
+    private RadioButton prideRadio;
     private RadioButton affinityRadio;
 
     public SubmissionTypeStep(SubmissionModel model) {
         super("submission-type",
               "Select Submission Type",
-              "Choose the type of submission you want to make",
+              "Choose the type of proteomics data you want to submit",
               model);
     }
 
@@ -35,43 +37,34 @@ public class SubmissionTypeStep extends AbstractWizardStep {
         root.setAlignment(Pos.TOP_CENTER);
 
         // Title
-        Label introLabel = new Label("Please select the type of submission that best fits your data:");
+        Label introLabel = new Label("What type of proteomics data are you submitting?");
         introLabel.setStyle("-fx-font-size: 14px;");
         introLabel.setWrapText(true);
 
         // Radio button group
         submissionTypeGroup = new ToggleGroup();
 
-        // Complete Submission
-        VBox completeBox = createSubmissionOption(
-            "Complete Submission",
-            "(Recommended)",
-            "Submit processed results with the corresponding raw files.\n" +
-            "Supported result file formats: mzIdentML, mzTab, or PRIDE XML.\n" +
-            "This is the recommended option for most proteomics experiments.",
-            SubmissionTypeConstants.COMPLETE,
+        // PRIDE Submission (Mass Spectrometry)
+        VBox prideBox = createSubmissionOption(
+            "Mass Spectrometry Proteomics",
+            "PRIDE",
+            "Submit mass spectrometry-based proteomics data:\n\n" +
+            "  \u2022 RAW files from your mass spectrometer\n" +
+            "  \u2022 Analysis outputs (MaxQuant, DIA-NN, FragPipe, Spectronaut, etc.)\n" +
+            "  \u2022 Protein sequence databases (FASTA)\n" +
+            "  \u2022 Sample metadata (SDRF)",
+            SubmissionTypeConstants.PRIDE,
             true
         );
 
-        // Partial Submission
-        VBox partialBox = createSubmissionOption(
-            "Partial Submission",
-            "",
-            "Submit search engine output files with the corresponding raw files.\n" +
-            "Use this option when you don't have processed result files in\n" +
-            "a supported format (mzIdentML, mzTab, or PRIDE XML).",
-            SubmissionTypeConstants.PARTIAL,
-            false
-        );
-
-        // Affinity Submission
+        // Affinity Proteomics Submission
         VBox affinityBox = createSubmissionOption(
             "Affinity Proteomics",
-            "",
-            "Submit affinity-based proteomics data such as:\n" +
-            "• SomaScan (ADAT files)\n" +
-            "• Olink (NPX or Parquet files)\n" +
-            "Use this for non-mass spectrometry affinity experiments.",
+            "Non-MS",
+            "Submit affinity-based proteomics data:\n\n" +
+            "  \u2022 SomaScan (ADAT files)\n" +
+            "  \u2022 Olink (NPX or Parquet files)\n" +
+            "  \u2022 Other antibody-based or aptamer-based assays",
             SubmissionTypeConstants.AFFINITY,
             false
         );
@@ -84,19 +77,19 @@ public class SubmissionTypeStep extends AbstractWizardStep {
         Hyperlink guidelinesLink = new Hyperlink("Submission Guidelines");
         guidelinesLink.setOnAction(e -> openUrl("https://www.ebi.ac.uk/pride/help/archive/submission"));
 
-        Hyperlink moreInfoLink = new Hyperlink("More about ProteomeXchange");
-        moreInfoLink.setOnAction(e -> openUrl("https://www.proteomexchange.org"));
+        Hyperlink prideLink = new Hyperlink("About PRIDE");
+        prideLink.setOnAction(e -> openUrl("https://www.ebi.ac.uk/pride"));
 
-        linksBox.getChildren().addAll(guidelinesLink, moreInfoLink);
+        linksBox.getChildren().addAll(guidelinesLink, prideLink);
 
-        root.getChildren().addAll(introLabel, completeBox, partialBox, affinityBox, linksBox);
+        root.getChildren().addAll(introLabel, prideBox, affinityBox, linksBox);
 
         return root;
     }
 
     private VBox createSubmissionOption(String title, String badge, String description,
                                          SubmissionTypeConstants type, boolean selected) {
-        VBox optionBox = new VBox(5);
+        VBox optionBox = new VBox(8);
         optionBox.setPadding(new Insets(15));
         optionBox.setStyle(
             "-fx-background-color: #f8f9fa; " +
@@ -119,26 +112,30 @@ public class SubmissionTypeStep extends AbstractWizardStep {
         Label titleLabel = new Label(title);
         titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
 
-        header.getChildren().addAll(radio, titleLabel);
+        Label badgeLabel = new Label(badge);
+        badgeLabel.setStyle(
+            "-fx-background-color: #0066cc; " +
+            "-fx-text-fill: white; " +
+            "-fx-padding: 2 8; " +
+            "-fx-background-radius: 4; " +
+            "-fx-font-size: 11px; " +
+            "-fx-font-weight: bold;"
+        );
 
-        if (!badge.isEmpty()) {
-            Label badgeLabel = new Label(badge);
-            badgeLabel.setStyle("-fx-text-fill: #28a745; -fx-font-weight: bold;");
-            header.getChildren().add(badgeLabel);
-        }
+        header.getChildren().addAll(radio, titleLabel, badgeLabel);
 
         // Description
         Label descLabel = new Label(description);
-        descLabel.setStyle("-fx-text-fill: #666; -fx-padding: 0 0 0 30;");
+        descLabel.setStyle("-fx-text-fill: #666; -fx-padding: 5 0 0 28;");
         descLabel.setWrapText(true);
 
         optionBox.getChildren().addAll(header, descLabel);
 
         // Store reference
-        switch (type) {
-            case COMPLETE -> completeRadio = radio;
-            case PARTIAL -> partialRadio = radio;
-            case AFFINITY -> affinityRadio = radio;
+        if (type == SubmissionTypeConstants.PRIDE || type == SubmissionTypeConstants.PARTIAL) {
+            prideRadio = radio;
+        } else if (type == SubmissionTypeConstants.AFFINITY) {
+            affinityRadio = radio;
         }
 
         // Click anywhere in box to select
@@ -192,8 +189,7 @@ public class SubmissionTypeStep extends AbstractWizardStep {
         SubmissionTypeConstants currentType = model.getSubmissionType();
         if (currentType != null) {
             switch (currentType) {
-                case COMPLETE -> completeRadio.setSelected(true);
-                case PARTIAL -> partialRadio.setSelected(true);
+                case PRIDE, PARTIAL, COMPLETE -> prideRadio.setSelected(true);
                 case AFFINITY -> affinityRadio.setSelected(true);
             }
         }

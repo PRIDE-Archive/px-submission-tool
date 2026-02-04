@@ -7,6 +7,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
 import uk.ac.ebi.pride.data.model.DataFile;
@@ -14,7 +15,11 @@ import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 import uk.ac.ebi.pride.pxsubmit.service.ApiService;
 import uk.ac.ebi.pride.pxsubmit.service.ChecksumService;
 import uk.ac.ebi.pride.pxsubmit.service.UploadManager;
+import uk.ac.ebi.pride.pxsubmit.util.DebugMode;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Map;
 
 /**
@@ -163,8 +168,25 @@ public class SubmissionStep extends AbstractWizardStep {
     }
 
     private void calculateChecksums() {
+        // Check if checksums were already calculated in SummaryStep
+        if (model.areChecksumsCalculated() && !model.getChecksums().isEmpty()) {
+            addLog("Using pre-computed checksums (" + model.getChecksums().size() + " files)");
+            DebugMode.log("CHECKSUM", "Using pre-computed checksums from SummaryStep");
+
+            // Write checksum.txt file for upload
+            writeChecksumFile(model.getChecksums());
+
+            Platform.runLater(() -> {
+                overallProgress.setProgress(0.2);
+                // Skip to getting upload details
+                getUploadDetails();
+            });
+            return;
+        }
+
         updateStatus("Calculating checksums...");
         addLog("Calculating file checksums...");
+        DebugMode.log("CHECKSUM", "Starting checksum calculation for " + model.getFiles().size() + " files");
 
         checksumService = new ChecksumService(model.getFiles());
 
@@ -176,6 +198,14 @@ public class SubmissionStep extends AbstractWizardStep {
         checksumService.setOnSucceeded(e -> {
             Map<DataFile, String> checksums = checksumService.getValue();
             addLog("Checksums calculated for " + checksums.size() + " files");
+            DebugMode.log("CHECKSUM", "Checksums calculated: " + checksums.size());
+
+            // Store checksums in model
+            model.setChecksums(checksums);
+            DebugMode.log("CHECKSUM", "Checksums stored in model");
+
+            // Write checksum.txt file
+            writeChecksumFile(checksums);
 
             Platform.runLater(() -> {
                 currentFileLabel.textProperty().unbind();
@@ -188,11 +218,50 @@ public class SubmissionStep extends AbstractWizardStep {
         });
 
         checksumService.setOnFailed(e -> {
-            addLog("ERROR: Checksum calculation failed - " + e.getSource().getException().getMessage());
+            Throwable ex = e.getSource().getException();
+            addLog("ERROR: Checksum calculation failed - " + ex.getMessage());
+            DebugMode.log("CHECKSUM", "FAILED: " + ex.getMessage());
             handleError("Checksum calculation failed");
         });
 
         checksumService.start();
+    }
+
+    /**
+     * Write checksum.txt file and add it to the file list for upload
+     */
+    private void writeChecksumFile(Map<DataFile, String> checksums) {
+        try {
+            File tempDir = Files.createTempDirectory("px-submission-").toFile();
+            tempDir.deleteOnExit();
+            File checksumFile = ChecksumService.writeChecksumFile(checksums, tempDir);
+            checksumFile.deleteOnExit();
+
+            // Check if checksum.txt is already in the file list
+            boolean alreadyExists = model.getFiles().stream()
+                .anyMatch(f -> "checksum.txt".equals(f.getFileName()));
+
+            if (!alreadyExists) {
+                // Add checksum.txt to the file list for upload
+                DataFile checksumDataFile = new DataFile();
+                checksumDataFile.setFile(checksumFile);
+                checksumDataFile.setFileType(ProjectFileType.OTHER);
+                model.addFile(checksumDataFile);
+            }
+
+            addLog("Checksum file created: checksum.txt");
+            DebugMode.log("CHECKSUM", "checksum.txt created at: " + checksumFile.getAbsolutePath());
+
+            // Log individual checksums in debug mode
+            for (Map.Entry<DataFile, String> entry : checksums.entrySet()) {
+                DebugMode.log("CHECKSUM", entry.getKey().getFileName() + " -> " + entry.getValue());
+            }
+
+        } catch (IOException ex) {
+            addLog("WARNING: Could not write checksum file - " + ex.getMessage());
+            logger.warn("Could not write checksum file", ex);
+            DebugMode.log("CHECKSUM", "ERROR writing checksum.txt: " + ex.getMessage());
+        }
     }
 
     private void getUploadDetails() {

@@ -10,6 +10,8 @@ import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -45,6 +47,8 @@ public class WizardController implements Initializable {
     @FXML private Label titleLabel;
     @FXML private Label descriptionLabel;
     @FXML private Label trainingModeLabel;
+    @FXML private Label stepIndicatorLabel;
+    @FXML private ProgressBar stepProgressBar;
 
     @FXML private StackPane contentPane;
 
@@ -93,6 +97,22 @@ public class WizardController implements Initializable {
             WizardStep step = currentStep.get();
             return step != null ? step.getDescription() : "";
         }, currentStep));
+
+        // Bind step progress indicator
+        if (stepIndicatorLabel != null) {
+            stepIndicatorLabel.textProperty().bind(Bindings.createStringBinding(() -> {
+                int current = currentStepIndex.get() + 1;
+                int total = steps.size();
+                return String.format("Step %d of %d", current, total);
+            }, currentStepIndex, steps));
+        }
+
+        if (stepProgressBar != null) {
+            stepProgressBar.progressProperty().bind(Bindings.createDoubleBinding(() -> {
+                if (steps.isEmpty()) return 0.0;
+                return (double) (currentStepIndex.get() + 1) / steps.size();
+            }, currentStepIndex, steps));
+        }
 
         // Bind button states
         canGoBack.bind(Bindings.createBooleanBinding(() -> {

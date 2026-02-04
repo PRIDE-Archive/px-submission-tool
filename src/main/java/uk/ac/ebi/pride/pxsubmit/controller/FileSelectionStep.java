@@ -11,10 +11,12 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.data.model.DataFile;
-import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 import uk.ac.ebi.pride.pxsubmit.service.ValidationService;
+import uk.ac.ebi.pride.pxsubmit.util.FileTypeDetector;
+import uk.ac.ebi.pride.pxsubmit.view.component.FileClassificationPanel;
 import uk.ac.ebi.pride.pxsubmit.view.component.FileTableView;
+import uk.ac.ebi.pride.pxsubmit.view.component.ValidationFeedback;
 
 import java.io.File;
 import java.util.List;
@@ -26,6 +28,8 @@ import java.util.List;
 public class FileSelectionStep extends AbstractWizardStep {
 
     private FileTableView fileTable;
+    private FileClassificationPanel classificationPanel;
+    private ValidationFeedback validationFeedback;
     private Label summaryLabel;
     private Button addFilesButton;
     private Button addFolderButton;
@@ -81,7 +85,16 @@ public class FileSelectionStep extends AbstractWizardStep {
             spacer, validateButton
         );
 
-        topBox.getChildren().addAll(instructionLabel, buttonBar);
+        // File classification panel
+        classificationPanel = new FileClassificationPanel();
+        classificationPanel.setShowDetails(true);
+        classificationPanel.setShowWarnings(true);
+        classificationPanel.setOnTypeSelected((type, files) -> {
+            // Filter table to show only files of this type
+            fileTable.filterByType(type);
+        });
+
+        topBox.getChildren().addAll(instructionLabel, buttonBar, classificationPanel);
         root.setTop(topBox);
 
         // Center: File table
@@ -98,12 +111,15 @@ public class FileSelectionStep extends AbstractWizardStep {
 
         root.setCenter(fileTable);
 
-        // Bottom: Summary and validation status
+        // Bottom: Summary, validation feedback, and validation status
         VBox bottomBox = new VBox(10);
         bottomBox.setPadding(new Insets(10, 0, 0, 0));
 
         summaryLabel = new Label("No files added");
         summaryLabel.setStyle("-fx-font-weight: bold;");
+
+        // Inline validation feedback
+        validationFeedback = new ValidationFeedback();
 
         // Validation progress
         HBox validationBox = new HBox(10);
@@ -118,7 +134,7 @@ public class FileSelectionStep extends AbstractWizardStep {
 
         validationBox.getChildren().addAll(validationProgress, validationStatus);
 
-        bottomBox.getChildren().addAll(summaryLabel, validationBox);
+        bottomBox.getChildren().addAll(summaryLabel, validationFeedback, validationBox);
         root.setBottom(bottomBox);
 
         return root;
@@ -214,65 +230,10 @@ public class FileSelectionStep extends AbstractWizardStep {
     }
 
     /**
-     * Detect file type based on extension and format
+     * Detect file type using FileTypeDetector
      */
     private ProjectFileType detectFileType(File file) {
-        try {
-            MassSpecFileFormat format = MassSpecFileFormat.checkFormat(file);
-
-            if (format != null) {
-                return switch (format) {
-                    case PRIDE, MZIDENTML, MZTAB -> ProjectFileType.RESULT;
-                    case MZML, INDEXED_MZML -> ProjectFileType.RAW;
-                    default -> guessTypeFromExtension(file);
-                };
-            }
-        } catch (java.io.IOException e) {
-            logger.debug("Could not determine file format for {}: {}", file.getName(), e.getMessage());
-        }
-
-        return guessTypeFromExtension(file);
-    }
-
-    private ProjectFileType guessTypeFromExtension(File file) {
-        String name = file.getName().toLowerCase();
-
-        // Raw files
-        if (name.endsWith(".raw") || name.endsWith(".wiff") || name.endsWith(".d") ||
-            name.endsWith(".baf") || name.endsWith(".tdf")) {
-            return ProjectFileType.RAW;
-        }
-
-        // Result files
-        if (name.endsWith(".mzid") || name.endsWith(".mzidentml") ||
-            name.endsWith(".mztab") || name.endsWith(".pride.xml")) {
-            return ProjectFileType.RESULT;
-        }
-
-        // Search files
-        if (name.endsWith(".dat") || name.endsWith(".msf") || name.endsWith(".pep.xml") ||
-            name.endsWith(".pepxml") || name.endsWith(".t.xml")) {
-            return ProjectFileType.SEARCH;
-        }
-
-        // Peak files
-        if (name.endsWith(".mgf") || name.endsWith(".dta") || name.endsWith(".pkl") ||
-            name.endsWith(".ms2") || name.endsWith(".apl")) {
-            return ProjectFileType.PEAK;
-        }
-
-        // SDRF/experimental design
-        if (name.equals("sdrf.tsv") || name.endsWith(".sdrf.tsv")) {
-            return ProjectFileType.EXPERIMENTAL_DESIGN;
-        }
-
-        // Affinity files
-        if (name.endsWith(".adat") || name.endsWith(".npx") || name.endsWith(".parquet")) {
-            return ProjectFileType.RAW;
-        }
-
-        // Default to OTHER
-        return ProjectFileType.OTHER;
+        return FileTypeDetector.detectFileType(file);
     }
 
     /**
@@ -363,47 +324,62 @@ public class FileSelectionStep extends AbstractWizardStep {
     }
 
     /**
-     * Update the summary label
+     * Update the summary label, classification panel, and validation feedback
      */
     private void updateSummary() {
+        // Update classification panel
+        classificationPanel.setFiles(model.getFiles());
+
+        // Clear and update validation feedback
+        validationFeedback.clear();
+
         int total = model.getFiles().size();
         if (total == 0) {
-            summaryLabel.setText("No files added");
+            summaryLabel.setText("No files added - drag and drop files or use the buttons above");
+            summaryLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #666;");
+            validationFeedback.addInfo("Add your RAW files (mandatory) and analysis outputs to proceed");
             return;
         }
 
-        // Count by type
+        // Count file types
         long rawCount = model.getFiles().stream()
             .filter(f -> f.getFileType() == ProjectFileType.RAW).count();
+        long analysisCount = model.getFiles().stream()
+            .filter(f -> f.getFileType() == ProjectFileType.SEARCH).count();
         long resultCount = model.getFiles().stream()
             .filter(f -> f.getFileType() == ProjectFileType.RESULT).count();
-        long searchCount = model.getFiles().stream()
-            .filter(f -> f.getFileType() == ProjectFileType.SEARCH).count();
-        long peakCount = model.getFiles().stream()
-            .filter(f -> f.getFileType() == ProjectFileType.PEAK).count();
-        long otherCount = total - rawCount - resultCount - searchCount - peakCount;
+        boolean hasFasta = model.getFiles().stream()
+            .anyMatch(f -> FileTypeDetector.isFastaFile(f.getFile()));
 
-        // Calculate total size
-        long totalSize = model.getFiles().stream()
-            .filter(f -> f.getFile() != null)
-            .mapToLong(f -> f.getFile().length())
-            .sum();
-
-        StringBuilder sb = new StringBuilder();
-        sb.append(String.format("%d files (%s) - ", total, formatSize(totalSize)));
-
-        if (rawCount > 0) sb.append(rawCount).append(" raw, ");
-        if (resultCount > 0) sb.append(resultCount).append(" result, ");
-        if (searchCount > 0) sb.append(searchCount).append(" search, ");
-        if (peakCount > 0) sb.append(peakCount).append(" peak, ");
-        if (otherCount > 0) sb.append(otherCount).append(" other");
-
-        String summary = sb.toString();
-        if (summary.endsWith(", ")) {
-            summary = summary.substring(0, summary.length() - 2);
+        // File requirement validation
+        if (rawCount == 0) {
+            validationFeedback.addError("RAW files are required - add your instrument output files (.raw, .wiff, .d, .mzML)");
         }
 
-        summaryLabel.setText(summary);
+        if (analysisCount == 0 && resultCount == 0) {
+            validationFeedback.addWarning("No analysis files detected - consider adding search engine outputs");
+        }
+
+        if (!hasFasta) {
+            validationFeedback.addInfo("Recommended: Add a FASTA database for sequence validation");
+        }
+
+        // Success messages
+        if (rawCount > 0) {
+            validationFeedback.addInfo(rawCount + " RAW file(s) detected");
+        }
+
+        // Show validation status based on mandatory files
+        if (classificationPanel.hasAllMandatoryFiles()) {
+            summaryLabel.setText(total + " files ready for submission");
+            summaryLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #28a745;");
+            if (!validationFeedback.hasErrors()) {
+                validationFeedback.addInfo("All mandatory files present - you can proceed to the next step");
+            }
+        } else {
+            summaryLabel.setText(total + " files added - missing mandatory files");
+            summaryLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #ffc107;");
+        }
     }
 
     private String formatSize(long size) {

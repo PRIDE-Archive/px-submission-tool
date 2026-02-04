@@ -10,6 +10,8 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.ProgressBar?>
+<?import javafx.scene.control.Tooltip?>
 
 <!--
     Main window layout for the PX Submission Tool.
@@ -49,10 +51,30 @@
                        managed="false"/>
             </HBox>
 
+            <!-- Step Progress Indicator -->
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <padding>
+                    <Insets top="10"/>
+                </padding>
+
+                <Label fx:id="stepIndicatorLabel"
+                       text="Step 1 of 9"
+                       styleClass="step-indicator"/>
+
+                <ProgressBar fx:id="stepProgressBar"
+                             progress="0.0"
+                             prefWidth="200"
+                             maxHeight="6"
+                             styleClass="step-progress"/>
+
+                <!-- Spacer -->
+                <Region HBox.hgrow="ALWAYS"/>
+            </HBox>
+
             <!-- Title and Description -->
             <VBox spacing="5">
                 <padding>
-                    <Insets top="10"/>
+                    <Insets top="5"/>
                 </padding>
                 <Label fx:id="titleLabel"
                        text="Welcome"
@@ -83,7 +105,11 @@
             <!-- Help Button (left side) -->
             <Button fx:id="helpButton"
                     text="Help"
-                    styleClass="help-button"/>
+                    styleClass="help-button">
+                <tooltip>
+                    <Tooltip text="Get help with the submission process"/>
+                </tooltip>
+            </Button>
 
             <!-- Spacer to push other buttons to the right -->
             <Region HBox.hgrow="ALWAYS"/>
@@ -91,7 +117,11 @@
             <!-- Cancel Button -->
             <Button fx:id="cancelButton"
                     text="Cancel"
-                    styleClass="cancel-button"/>
+                    styleClass="cancel-button">
+                <tooltip>
+                    <Tooltip text="Cancel and exit the submission wizard"/>
+                </tooltip>
+            </Button>
 
             <!-- Spacer between Cancel and Back/Next -->
             <Region prefWidth="30"/>
@@ -99,13 +129,21 @@
             <!-- Back Button -->
             <Button fx:id="backButton"
                     text="Back"
-                    styleClass="back-button"/>
+                    styleClass="back-button">
+                <tooltip>
+                    <Tooltip text="Go back to the previous step"/>
+                </tooltip>
+            </Button>
 
             <!-- Next Button -->
             <Button fx:id="nextButton"
                     text="Next"
                     styleClass="next-button"
-                    defaultButton="true"/>
+                    defaultButton="true">
+                <tooltip>
+                    <Tooltip fx:id="nextButtonTooltip" text="Proceed to the next step"/>
+                </tooltip>
+            </Button>
         </HBox>
     </bottom>
 

@@ -142,11 +142,24 @@ public class PxSubmitApplication extends Application {
         wizardController.setOnHelp(this::showHelp);
         wizardController.setOnFinish(this::handleFinish);
 
-        // Register wizard steps
+        // Register wizard steps in order:
+        // 1. Welcome - Introduction and guidelines
+        // 2. Login - PRIDE authentication
+        // 3. Submission Type - Choose submission type
+        // 4. File Selection - Add files (drag-drop)
+        // 5. File Review - Review and adjust classifications
+        // 6. Sample Metadata - Species, tissue, instrument, etc. (with SDRF parsing)
+        // 7. Project Metadata - Title, description, keywords
+        // 8. Summary - Review before upload
+        // 9. Submission - Upload and complete
+
+        wizardController.addStep(new WelcomeStep(model));
         wizardController.addStep(new LoginStep(model));
         wizardController.addStep(new SubmissionTypeStep(model));
-        wizardController.addStep(new ProjectMetadataStep(model));
         wizardController.addStep(new FileSelectionStep(model));
+        wizardController.addStep(new FileReviewStep(model));
+        wizardController.addStep(new SampleMetadataStep(model));
+        wizardController.addStep(new ProjectMetadataStep(model));
         wizardController.addStep(new SummaryStep(model));
         wizardController.addStep(new SubmissionStep(model));
 
@@ -318,15 +331,38 @@ public class PxSubmitApplication extends Application {
     }
 
     /**
-     * Load application icon
+     * Load application icon for both window and macOS dock
      */
     private void loadAppIcon(Stage stage) {
-        try (InputStream is = getClass().getResourceAsStream("/images/pride_logo.png")) {
-            if (is != null) {
-                stage.getIcons().add(new Image(is));
+        // Use the upload icon (128x128 square) for proper dock display
+        String iconPath = "/icon/128x128/upload.png";
+
+        try {
+            // Load icon for JavaFX window
+            try (InputStream is = getClass().getResourceAsStream(iconPath)) {
+                if (is != null) {
+                    stage.getIcons().add(new Image(is));
+                }
+            }
+
+            // Set macOS dock icon using AWT Taskbar API (Java 9+)
+            if (java.awt.Taskbar.isTaskbarSupported()) {
+                java.awt.Taskbar taskbar = java.awt.Taskbar.getTaskbar();
+                if (taskbar.isSupported(java.awt.Taskbar.Feature.ICON_IMAGE)) {
+                    try (InputStream is = getClass().getResourceAsStream(iconPath)) {
+                        if (is != null) {
+                            java.awt.Image awtImage = javax.imageio.ImageIO.read(is);
+                            taskbar.setIconImage(awtImage);
+                        }
+                    }
+                }
             }
         } catch (IOException e) {
             logger.warn("Failed to load application icon", e);
+        } catch (UnsupportedOperationException e) {
+            logger.debug("Taskbar icon not supported on this platform");
+        } catch (SecurityException e) {
+            logger.warn("Security exception setting taskbar icon", e);
         }
     }
 
