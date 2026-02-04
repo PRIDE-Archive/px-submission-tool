@@ -46,6 +46,7 @@ public abstract class AbstractWizardStep implements WizardStep {
 
     protected final SubmissionModel model;
     protected final BooleanProperty valid = new SimpleBooleanProperty(false);
+    protected WizardController wizardController;
 
     private Parent content;
     private boolean initialized = false;
@@ -190,5 +191,19 @@ public abstract class AbstractWizardStep implements WizardStep {
      */
     protected boolean isValid() {
         return valid.get();
+    }
+
+    /**
+     * Set wizard controller reference
+     */
+    public void setWizardController(WizardController controller) {
+        this.wizardController = controller;
+    }
+
+    /**
+     * Get wizard controller
+     */
+    protected WizardController getWizardController() {
+        return wizardController;
     }
 }

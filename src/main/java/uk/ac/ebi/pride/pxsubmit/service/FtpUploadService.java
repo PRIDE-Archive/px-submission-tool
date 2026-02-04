@@ -121,8 +121,32 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
 
         @Override
         protected UploadResult call() throws Exception {
+            // Validate upload details
+            if (uploadDetail == null) {
+                throw new IllegalStateException("Upload detail is null");
+            }
+            if (uploadDetail.getHost() == null || uploadDetail.getHost().isEmpty()) {
+                throw new IllegalStateException("FTP host is not configured");
+            }
+            if (uploadDetail.getDropBox() == null) {
+                throw new IllegalStateException("DropBox credentials are not configured");
+            }
+            if (uploadDetail.getDropBox().getUserName() == null ||
+                uploadDetail.getDropBox().getUserName().isEmpty()) {
+                throw new IllegalStateException("FTP username is not configured");
+            }
+            if (uploadDetail.getDropBox().getPassword() == null ||
+                uploadDetail.getDropBox().getPassword().isEmpty()) {
+                throw new IllegalStateException("FTP password is not configured");
+            }
+
             log("Starting FTP upload of " + files.size() + " files");
             log("Target: " + uploadDetail.getHost() + ":" + uploadDetail.getPort());
+            log("Folder: " + uploadDetail.getFolder());
+            log("Username: " + uploadDetail.getDropBox().getUserName());
+
+            // Create FTP directory FIRST (before parallel uploads)
+            createFtpDirectory();
 
             // Initialize file queue
             fileQueue.addAll(files);
@@ -212,6 +236,74 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
             });
         }
 
+        /**
+         * Create FTP directory before uploads begin (like master branch CreateFTPDirectoryTask)
+         */
+        private void createFtpDirectory() throws IOException {
+            FTPClient ftp = new FTPClient();
+            ftp.setControlKeepAliveTimeout(Duration.ofSeconds(300));
+
+            try {
+                log("Creating FTP directory...");
+                System.out.println("FTP: Creating upload directory...");
+
+                ftp.connect(uploadDetail.getHost(), uploadDetail.getPort());
+
+                int reply = ftp.getReplyCode();
+                if (!FTPReply.isPositiveCompletion(reply)) {
+                    String errorMsg = "Failed to connect to FTP server - Reply code: " + reply;
+                    System.err.println("FTP ERROR: " + errorMsg);
+                    throw new IOException(errorMsg);
+                }
+
+                String username = uploadDetail.getDropBox().getUserName();
+                if (!ftp.login(username, uploadDetail.getDropBox().getPassword())) {
+                    String errorMsg = "FTP login failed for user: " + username;
+                    System.err.println("FTP ERROR: " + errorMsg);
+                    throw new IOException(errorMsg);
+                }
+
+                System.out.println("FTP: Connected as " + username);
+
+                // Enter passive mode
+                ftp.enterLocalPassiveMode();
+
+                // Create directory using folder name (like master branch)
+                File folder = new File(uploadDetail.getFolder());
+                String folderName = folder.getName();
+
+                logger.info("Creating directory: {}", folderName);
+                System.out.println("FTP: Creating directory: " + folderName);
+
+                // mkd creates the directory
+                ftp.mkd(folderName);
+
+                // Check if successful (mkd returns 257 on success)
+                int mkdReply = ftp.getReplyCode();
+                if (mkdReply == 257) {
+                    log("Directory created successfully: " + folderName);
+                    System.out.println("FTP: Directory created successfully: " + folderName);
+                } else if (mkdReply == 550) {
+                    // Directory might already exist, which is OK
+                    log("Directory may already exist: " + folderName);
+                    System.out.println("FTP: Directory may already exist (continuing): " + folderName);
+                } else {
+                    log("Directory creation returned: " + ftp.getReplyString());
+                    System.out.println("FTP: Directory creation reply: " + ftp.getReplyString());
+                }
+
+            } finally {
+                if (ftp.isConnected()) {
+                    try {
+                        ftp.logout();
+                        ftp.disconnect();
+                    } catch (IOException e) {
+                        // Ignore cleanup errors
+                    }
+                }
+            }
+        }
+
         private void updateOverallProgress() {
             long uploaded = bytesUploaded.get();
             long total = totalBytes.get();
@@ -247,30 +339,50 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
                     ftp.setDefaultTimeout(DATA_TIMEOUT_MS);
 
                     // Connect
-                    logger.debug("Connecting to FTP for file: {}", fileName);
+                    logger.info("Connecting to FTP {}:{} for file: {}",
+                        uploadDetail.getHost(), uploadDetail.getPort(), fileName);
                     ftp.connect(uploadDetail.getHost(), uploadDetail.getPort());
 
-                    if (!FTPReply.isPositiveCompletion(ftp.getReplyCode())) {
-                        throw new IOException("FTP connection failed: " + ftp.getReplyCode());
+                    int replyCode = ftp.getReplyCode();
+                    if (!FTPReply.isPositiveCompletion(replyCode)) {
+                        String errorMsg = "FTP connection failed - Reply code: " + replyCode + " - " + ftp.getReplyString();
+                        System.err.println("FTP ERROR: " + errorMsg);
+                        throw new IOException(errorMsg);
                     }
+                    logger.debug("FTP connected successfully");
 
                     // Login
-                    if (!ftp.login(uploadDetail.getDropBox().getUserName(),
-                                   uploadDetail.getDropBox().getPassword())) {
-                        throw new IOException("FTP login failed");
+                    String username = uploadDetail.getDropBox().getUserName();
+                    logger.debug("Attempting FTP login as user: {}", username);
+                    if (!ftp.login(username, uploadDetail.getDropBox().getPassword())) {
+                        String errorMsg = "FTP login failed for user: " + username + " - Reply: " + ftp.getReplyString();
+                        System.err.println("FTP ERROR: " + errorMsg);
+                        throw new IOException(errorMsg);
                     }
+                    logger.debug("FTP login successful");
+                    System.out.println("FTP: Connected and logged in successfully as " + username);
 
                     // Configure transfer mode
                     ftp.enterLocalPassiveMode();
                     ftp.setFileType(FTP.BINARY_FILE_TYPE);
 
-                    // Change to upload directory
+                    // Change to upload directory (use folder.getName() like master branch)
                     String folder = uploadDetail.getFolder();
                     if (folder != null && !folder.isEmpty()) {
                         File folderFile = new File(folder);
-                        if (!ftp.changeWorkingDirectory(folderFile.getName())) {
-                            throw new IOException("Failed to change directory: " + folder);
+                        String folderName = folderFile.getName();
+
+                        logger.info("Changing to directory: {}", folderName);
+                        System.out.println("FTP: Changing to directory: " + folderName);
+
+                        if (!ftp.changeWorkingDirectory(folderName)) {
+                            String errorMsg = "Failed to change to directory: " + folderName + " - Reply: " + ftp.getReplyString();
+                            logger.error(errorMsg);
+                            System.err.println("FTP ERROR: " + errorMsg);
+                            throw new IOException(errorMsg);
                         }
+                        logger.info("Successfully in directory: {}", folderName);
+                        System.out.println("FTP: Successfully in directory: " + folderName);
                     }
 
                     // Upload file
@@ -304,12 +416,14 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
 
                     filesUploaded.incrementAndGet();
                     logger.info("Successfully uploaded: {}", fileName);
+                    System.out.println("FTP: Successfully uploaded: " + fileName);
                     return new SingleFileResult(dataFile, true, null);
 
                 } catch (Exception e) {
                     retryCount++;
-                    logger.warn("Upload attempt {} failed for {}: {}",
-                            retryCount, fileName, e.getMessage());
+                    String errorMsg = "Upload attempt " + retryCount + " failed for " + fileName + ": " + e.getMessage();
+                    logger.warn(errorMsg);
+                    System.err.println("FTP ERROR: " + errorMsg);
 
                     if (retryCount < MAX_RETRIES) {
                         try {
@@ -335,6 +449,7 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
 
             String errorMsg = "Failed after " + MAX_RETRIES + " attempts";
             logger.error("Upload failed for {}: {}", fileName, errorMsg);
+            System.err.println("FTP ERROR: Upload failed for " + fileName + ": " + errorMsg);
             return new SingleFileResult(dataFile, false, errorMsg);
         }
 

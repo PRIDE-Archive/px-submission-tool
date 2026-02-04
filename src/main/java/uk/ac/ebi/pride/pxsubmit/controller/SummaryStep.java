@@ -1,28 +1,18 @@
 package uk.ac.ebi.pride.pxsubmit.controller;
 
-import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.data.model.CvParam;
-import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
-import uk.ac.ebi.pride.pxsubmit.service.ChecksumService;
 import uk.ac.ebi.pride.pxsubmit.util.FileTypeDetector;
 import uk.ac.ebi.pride.pxsubmit.view.component.ValidationFeedback;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import java.util.stream.Collectors;
 
 /**
@@ -32,8 +22,6 @@ import java.util.stream.Collectors;
 public class SummaryStep extends AbstractWizardStep {
 
     private VBox contentBox;
-    private boolean checksumsComputed = false;
-    private ChecksumService checksumService;
 
     public SummaryStep(SubmissionModel model) {
         super("summary",
@@ -62,8 +50,6 @@ public class SummaryStep extends AbstractWizardStep {
 
     @Override
     protected void onStepEntering() {
-        // Reset checksum state when entering (user may have changed files)
-        checksumsComputed = false;
         // Rebuild summary each time we enter
         buildSummary();
     }
@@ -326,131 +312,8 @@ public class SummaryStep extends AbstractWizardStep {
             }
         }
 
-        // Compute checksums if not already done
-        if (!checksumsComputed && !model.getFiles().isEmpty()) {
-            return showChecksumDialog();
-        }
-
+        // Checksum computation is now handled in the next step (ChecksumComputationStep)
         return true;
-    }
-
-    /**
-     * Show a progress dialog for checksum computation
-     * @return true if checksums were computed successfully, false if cancelled or failed
-     */
-    private boolean showChecksumDialog() {
-        AtomicBoolean success = new AtomicBoolean(false);
-        AtomicBoolean completed = new AtomicBoolean(false);
-
-        // Create progress dialog
-        Stage progressStage = new Stage();
-        progressStage.initModality(Modality.APPLICATION_MODAL);
-        progressStage.initStyle(StageStyle.DECORATED);
-        progressStage.setTitle("Computing Checksums");
-        progressStage.setResizable(false);
-
-        VBox dialogContent = new VBox(15);
-        dialogContent.setPadding(new Insets(25));
-        dialogContent.setAlignment(Pos.CENTER);
-        dialogContent.setStyle("-fx-background-color: white;");
-
-        Label titleLabel = new Label("Preparing Submission");
-        titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-
-        Label statusLabel = new Label("Computing file checksums for integrity verification...");
-        statusLabel.setStyle("-fx-text-fill: #666;");
-
-        ProgressBar progressBar = new ProgressBar(0);
-        progressBar.setPrefWidth(350);
-
-        Label fileCountLabel = new Label("0 / " + model.getFiles().size() + " files");
-        fileCountLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 12px;");
-
-        Label currentFileLabel = new Label("");
-        currentFileLabel.setStyle("-fx-text-fill: #999; -fx-font-size: 11px;");
-        currentFileLabel.setMaxWidth(350);
-        currentFileLabel.setWrapText(true);
-
-        Button cancelButton = new Button("Cancel");
-        cancelButton.setOnAction(e -> {
-            if (checksumService != null && checksumService.isRunning()) {
-                checksumService.cancel();
-            }
-            completed.set(true);
-            progressStage.close();
-        });
-
-        dialogContent.getChildren().addAll(
-            titleLabel, statusLabel, progressBar, fileCountLabel, currentFileLabel, cancelButton
-        );
-
-        Scene dialogScene = new Scene(dialogContent, 400, 220);
-        progressStage.setScene(dialogScene);
-
-        // Center on parent if available
-        progressStage.setOnShown(e -> {
-            if (contentBox.getScene() != null && contentBox.getScene().getWindow() != null) {
-                Stage parent = (Stage) contentBox.getScene().getWindow();
-                progressStage.setX(parent.getX() + (parent.getWidth() - progressStage.getWidth()) / 2);
-                progressStage.setY(parent.getY() + (parent.getHeight() - progressStage.getHeight()) / 2);
-            }
-        });
-
-        // Prevent closing via X button during processing
-        progressStage.setOnCloseRequest(e -> {
-            if (checksumService != null && checksumService.isRunning()) {
-                checksumService.cancel();
-            }
-            completed.set(true);
-        });
-
-        // Start checksum service
-        checksumService = new ChecksumService(model.getFiles());
-
-        // Bind progress
-        progressBar.progressProperty().bind(checksumService.progressProperty());
-        currentFileLabel.textProperty().bind(checksumService.currentFileNameProperty());
-
-        checksumService.filesProcessedProperty().addListener((obs, oldVal, newVal) -> {
-            Platform.runLater(() ->
-                fileCountLabel.setText(newVal + " / " + model.getFiles().size() + " files")
-            );
-        });
-
-        checksumService.setOnSucceeded(e -> {
-            Map<DataFile, String> checksums = checksumService.getValue();
-            model.setChecksums(checksums);
-            checksumsComputed = true;
-            success.set(true);
-            completed.set(true);
-            Platform.runLater(progressStage::close);
-        });
-
-        checksumService.setOnFailed(e -> {
-            Throwable ex = e.getSource().getException();
-            completed.set(true);
-            Platform.runLater(() -> {
-                progressStage.close();
-                Alert errorAlert = new Alert(Alert.AlertType.ERROR);
-                errorAlert.setTitle("Checksum Error");
-                errorAlert.setHeaderText("Failed to compute file checksums");
-                errorAlert.setContentText(ex != null ? ex.getMessage() : "Unknown error");
-                errorAlert.showAndWait();
-            });
-        });
-
-        checksumService.setOnCancelled(e -> {
-            completed.set(true);
-            Platform.runLater(progressStage::close);
-        });
-
-        // Start the service
-        checksumService.start();
-
-        // Show dialog and wait
-        progressStage.showAndWait();
-
-        return success.get();
     }
 
     /**

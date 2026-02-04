@@ -171,6 +171,10 @@ public class WizardController implements Initializable {
      */
     public void addStep(WizardStep step) {
         steps.add(step);
+        // Set wizard controller reference if step extends AbstractWizardStep
+        if (step instanceof AbstractWizardStep) {
+            ((AbstractWizardStep) step).setWizardController(this);
+        }
         logger.debug("Registered step: {} ({})", step.getId(), step.getTitle());
     }
 
@@ -423,5 +427,15 @@ public class WizardController implements Initializable {
         backButton.setDisable(!enabled || !canGoBack.get());
         nextButton.setDisable(!enabled);
         cancelButton.setDisable(!enabled);
+    }
+
+    /**
+     * Navigate to the next step (for programmatic navigation)
+     */
+    public void goToNextStep() {
+        int nextIndex = currentStepIndex.get() + 1;
+        if (nextIndex < steps.size()) {
+            goToStep(nextIndex);
+        }
     }
 }

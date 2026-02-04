@@ -107,8 +107,25 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
 
         @Override
         protected UploadResult call() throws Exception {
+            // Validate upload details
+            if (uploadDetail == null) {
+                throw new IllegalStateException("Upload detail is null");
+            }
+            if (uploadDetail.getHost() == null || uploadDetail.getHost().isEmpty()) {
+                throw new IllegalStateException("Aspera host is not configured");
+            }
+            if (uploadDetail.getDropBox() == null) {
+                throw new IllegalStateException("DropBox credentials are not configured");
+            }
+            if (uploadDetail.getFolder() == null || uploadDetail.getFolder().isEmpty()) {
+                throw new IllegalStateException("Upload folder is not configured");
+            }
+
             log("Starting Aspera upload of " + dataFiles.size() + " files");
             log("Target: " + uploadDetail.getHost());
+            log("Folder: " + uploadDetail.getFolder());
+            log("Username: " + (uploadDetail.getDropBox().getUserName() != null ?
+                uploadDetail.getDropBox().getUserName() : "(anonymous)"));
 
             try {
                 // Initialize Aspera
@@ -153,12 +170,22 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
             log("Initializing Aspera...");
             updateStatus("Initializing Aspera transfer manager...");
 
-            File ascpFile = new File(ascpPath);
-            if (!ascpFile.exists()) {
-                throw new IOException("Aspera binary not found: " + ascpPath);
+            // Validate ascp path
+            if (ascpPath == null || ascpPath.isEmpty()) {
+                throw new IOException("Aspera binary path is not configured");
             }
 
+            File ascpFile = new File(ascpPath);
+            if (!ascpFile.exists()) {
+                throw new IOException("Aspera binary not found at: " + ascpPath);
+            }
+            if (!ascpFile.canExecute()) {
+                throw new IOException("Aspera binary is not executable: " + ascpPath);
+            }
+
+            logger.info("Using Aspera binary: {}", ascpPath);
             Environment.setFasp2ScpPath(ascpPath);
+
             FaspManager faspManager = FaspManager.getSingleton();
             faspManager.addListener(this);
 
@@ -176,12 +203,24 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
             return files;
         }
 
-        private void startTransfer(List<File> files) throws FaspManagerException {
+        private void startTransfer(List<File> files) throws IOException, FaspManagerException {
+            if (files.isEmpty()) {
+                throw new IOException("No files to transfer");
+            }
+
             DropBoxDetail dropBox = uploadDetail.getDropBox();
 
             // Set up local files
             LocalLocation localFiles = new LocalLocation();
             for (File file : files) {
+                if (!file.exists()) {
+                    logger.warn("File does not exist, skipping: {}", file.getAbsolutePath());
+                    continue;
+                }
+                if (!file.canRead()) {
+                    logger.warn("File is not readable, skipping: {}", file.getAbsolutePath());
+                    continue;
+                }
                 localFiles.addPath(file.getAbsolutePath());
                 log("Adding file: " + file.getName() + " (" + formatSize(file.length()) + ")");
             }
@@ -189,6 +228,9 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
             // Set up remote location
             String username = dropBox.getUserName() != null ? dropBox.getUserName().trim() : null;
             String password = dropBox.getPassword() != null ? dropBox.getPassword().trim() : null;
+
+            logger.info("Setting up Aspera transfer - Host: {}, User: {}, Folder: {}",
+                uploadDetail.getHost(), username, uploadDetail.getFolder());
 
             RemoteLocation remoteLocation = new RemoteLocation(uploadDetail.getHost(), username, password);
             remoteLocation.addPath(uploadDetail.getFolder());

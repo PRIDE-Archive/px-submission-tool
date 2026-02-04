@@ -1,0 +1,30 @@
+MTD	project_title	asdfasdfasd;jfhalksjdfhlkjadhslkjfahlsdkjfhlakjsdfhlkjadhslkjfhalksjdfh
+MTD	project_description	kjshfaskjdfhlkjadhslfkjahsdlkjfhlaksjdfhlkjasdhflkjahsdlkjfhasdf
+MTD	keywords	dlskfj;alkjsdf;lkjasdf
+MTD	sample_processing_protocol	asdfasd;lfkja;lksdjf;lkajsd;lkfjasdf
+MTD	data_processing_protocol	lkj;alskdjf;laksdjf;lkjasd;lfkja;sdlkfj;lkajsdf;kljas;ldkjf
+MTD	submission_type	PRIDE
+MTD	species	[UNKNOWN, , Homo sapiens, ]
+MTD	instrument	[MS, MS:1003028, Orbitrap Exploris 480, ]
+MTD	modification	[MOD, UNIMOD:35, Oxidation, ]
+MTD	modification	[MOD, UNIMOD:4, Carbamidomethyl, ]
+
+FMH	file_id	file_type	file_path	file_mapping
+FME	0	RESULT	/Users/yperez/work/px-submission-tool/maxquant_complete_submission/maxquant_output/mzTab.mzTab
+FME	1	SEARCH	/Users/yperez/work/px-submission-tool/maxquant_complete_submission/maxquant_output/peptides.txt
+FME	2	SEARCH	/Users/yperez/work/px-submission-tool/maxquant_complete_submission/maxquant_output/evidence.txt
+FME	3	SEARCH	/Users/yperez/work/px-submission-tool/maxquant_complete_submission/maxquant_output/parameters.txt
+FME	4	SEARCH	/Users/yperez/work/px-submission-tool/maxquant_complete_submission/maxquant_output/summary.txt
+FME	5	SEARCH	/Users/yperez/work/px-submission-tool/maxquant_complete_submission/maxquant_output/msms.txt
+FME	6	SEARCH	/Users/yperez/work/px-submission-tool/maxquant_complete_submission/maxquant_output/README.txt
+FME	7	OTHER	/Users/yperez/work/px-submission-tool/maxquant_complete_submission/maxquant_output/mqpar.xml
+FME	8	SEARCH	/Users/yperez/work/px-submission-tool/maxquant_complete_submission/maxquant_output/proteinGroups.txt
+FME	9	RAW	/Users/yperez/work/px-submission-tool/maxquant_complete_submission/raw_files/sample3.raw
+FME	10	RAW	/Users/yperez/work/px-submission-tool/maxquant_complete_submission/raw_files/sample2.raw
+FME	11	RAW	/Users/yperez/work/px-submission-tool/maxquant_complete_submission/raw_files/sample1.raw
+FME	12	OTHER	/Users/yperez/work/px-submission-tool/maxquant_complete_submission/fasta/uniprot-human-reviewed-2024.fasta
+FME	13	OTHER	/Users/yperez/work/px-submission-tool/maxquant_complete_submission/maxquant_results.zip
+FME	14	EXPERIMENTAL_DESIGN	/Users/yperez/work/px-submission-tool/maxquant_complete_submission/metadata/sample.sdrf.tsv
+FME	15	OTHER	/Users/yperez/work/px-submission-tool/checksum.txt
+
+

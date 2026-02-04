@@ -162,25 +162,14 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
             }
 
             // Execute upload
-            try {
-                switch (method) {
-                    case ASPERA:
-                        return uploadWithAspera(filesToUpload);
-                    case FTP:
-                    default:
-                        return uploadWithFtp(filesToUpload);
-                }
-            } finally {
-                // Cleanup temp files
-                if (summaryFile != null && summaryFile.exists()) {
-                    try {
-                        Files.delete(summaryFile.toPath());
-                        Files.delete(summaryFile.getParentFile().toPath());
-                    } catch (IOException e) {
-                        logger.warn("Failed to cleanup temp files", e);
-                    }
-                }
+            switch (method) {
+                case ASPERA:
+                    return uploadWithAspera(filesToUpload);
+                case FTP:
+                default:
+                    return uploadWithFtp(filesToUpload);
             }
+            // Note: submission.px is kept in working directory for user reference
         }
 
         private UploadMethod determineUploadMethod() {
@@ -212,17 +201,17 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
                 log("Creating submission summary file...");
                 updateStatus("Creating submission summary...");
 
-                // Create temp directory
-                SecureRandom random = new SecureRandom();
-                Path tempDir = Files.createTempDirectory("px-submit-" + random.nextLong());
-                File summaryFile = tempDir.resolve(SUBMISSION_SUMMARY_FILE).toFile();
+                // Save submission.px in the current working directory
+                File workingDir = new File(System.getProperty("user.dir"));
+                File summaryFile = new File(workingDir, SUBMISSION_SUMMARY_FILE);
 
                 // Write submission
                 SubmissionFileWriter.write(submission, summaryFile);
                 log("Created: " + summaryFile.getAbsolutePath());
+                log("Submission summary saved to: " + workingDir.getAbsolutePath());
 
                 return summaryFile;
-            } catch (SubmissionFileException | IOException e) {
+            } catch (SubmissionFileException e) {
                 logger.error("Failed to create submission summary file", e);
                 log("ERROR: Failed to create submission summary: " + e.getMessage());
                 return null;
@@ -261,33 +250,63 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
                         }
                     });
 
-            // Run synchronously
-            ftpService.start();
+            // Start service on FX Application thread (required by JavaFX)
+            java.util.concurrent.CountDownLatch startLatch = new java.util.concurrent.CountDownLatch(1);
+            Platform.runLater(() -> {
+                ftpService.start();
+                startLatch.countDown();
+            });
+            startLatch.await(); // Wait for service to start
 
             // Wait for completion
             while (ftpService.isRunning()) {
                 if (isCancelled()) {
-                    ftpService.cancel();
+                    Platform.runLater(() -> ftpService.cancel());
                     break;
                 }
                 Thread.sleep(100);
             }
 
+            // Check if service completed successfully
+            if (ftpService.getState() == javafx.concurrent.Worker.State.FAILED) {
+                Throwable ex = ftpService.getException();
+                String errorMsg = "FTP service failed: " + (ex != null ? ex.getMessage() : "Unknown error");
+                logger.error(errorMsg, ex);
+                log("ERROR: " + errorMsg);
+                return new UploadResult(false, 0, files.size(), UploadMethod.FTP, errorMsg);
+            }
+
+            if (ftpService.getState() == javafx.concurrent.Worker.State.CANCELLED) {
+                log("FTP upload cancelled");
+                return new UploadResult(false, 0, files.size(), UploadMethod.FTP, "Upload cancelled");
+            }
+
             FtpUploadService.UploadResult ftpResult = ftpService.getValue();
 
-            if (ftpResult != null && ftpResult.isSuccess()) {
+            if (ftpResult == null) {
+                String errorMsg = "FTP service returned null result";
+                logger.error(errorMsg);
+                log("ERROR: " + errorMsg);
+                return new UploadResult(false, 0, files.size(), UploadMethod.FTP, errorMsg);
+            }
+
+            if (ftpResult.isSuccess()) {
                 summaryFileUploaded = true;
                 for (DataFile file : files) {
                     uploadedFileNames.add(file.getFileName());
                 }
+                log("FTP upload completed successfully");
+            } else {
+                log("FTP upload failed - Succeeded: " + ftpResult.getSuccessCount() +
+                    ", Failed: " + ftpResult.getFailureCount());
             }
 
             return new UploadResult(
-                    ftpResult != null && ftpResult.isSuccess(),
-                    ftpResult != null ? ftpResult.getSuccessCount() : 0,
-                    ftpResult != null ? ftpResult.getFailureCount() : files.size(),
+                    ftpResult.isSuccess(),
+                    ftpResult.getSuccessCount(),
+                    ftpResult.getFailureCount(),
                     UploadMethod.FTP,
-                    ftpResult != null && !ftpResult.isSuccess() ? "FTP upload failed" : null
+                    ftpResult.isSuccess() ? null : "FTP upload failed"
             );
         }
 
@@ -333,33 +352,64 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
                         }
                     });
 
-            // Run
-            asperaService.start();
+            // Start service on FX Application thread (required by JavaFX)
+            java.util.concurrent.CountDownLatch asperaStartLatch = new java.util.concurrent.CountDownLatch(1);
+            Platform.runLater(() -> {
+                asperaService.start();
+                asperaStartLatch.countDown();
+            });
+            asperaStartLatch.await(); // Wait for service to start
 
             // Wait for completion
             while (asperaService.isRunning()) {
                 if (isCancelled()) {
-                    asperaService.cancel();
+                    Platform.runLater(() -> asperaService.cancel());
                     break;
                 }
                 Thread.sleep(100);
             }
 
+            // Check if service completed successfully
+            if (asperaService.getState() == javafx.concurrent.Worker.State.FAILED) {
+                Throwable ex = asperaService.getException();
+                String errorMsg = "Aspera service failed: " + (ex != null ? ex.getMessage() : "Unknown error");
+                logger.error(errorMsg, ex);
+                log("ERROR: " + errorMsg);
+                return new UploadResult(false, 0, files.size(), UploadMethod.ASPERA, errorMsg);
+            }
+
+            if (asperaService.getState() == javafx.concurrent.Worker.State.CANCELLED) {
+                log("Aspera upload cancelled");
+                return new UploadResult(false, 0, files.size(), UploadMethod.ASPERA, "Upload cancelled");
+            }
+
             AsperaUploadService.UploadResult asperaResult = asperaService.getValue();
 
-            if (asperaResult != null && asperaResult.isSuccess()) {
+            if (asperaResult == null) {
+                String errorMsg = "Aspera service returned null result";
+                logger.error(errorMsg);
+                log("ERROR: " + errorMsg);
+                return new UploadResult(false, 0, files.size(), UploadMethod.ASPERA, errorMsg);
+            }
+
+            if (asperaResult.isSuccess()) {
                 summaryFileUploaded = true;
                 for (DataFile file : files) {
                     uploadedFileNames.add(file.getFileName());
                 }
+                log("Aspera upload completed successfully");
+            } else {
+                log("Aspera upload failed: " + asperaResult.getErrorMessage());
+                log("Succeeded: " + asperaResult.getSuccessCount() +
+                    ", Failed: " + asperaResult.getFailureCount());
             }
 
             return new UploadResult(
-                    asperaResult != null && asperaResult.isSuccess(),
-                    asperaResult != null ? asperaResult.getSuccessCount() : 0,
-                    asperaResult != null ? asperaResult.getFailureCount() : files.size(),
+                    asperaResult.isSuccess(),
+                    asperaResult.getSuccessCount(),
+                    asperaResult.getFailureCount(),
                     UploadMethod.ASPERA,
-                    asperaResult != null ? asperaResult.getErrorMessage() : "Aspera upload failed"
+                    asperaResult.getErrorMessage()
             );
         }
 

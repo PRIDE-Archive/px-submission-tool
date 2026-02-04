@@ -33,3 +33,9 @@ dependency-reduced-pom.xml
 jre-macos/
 jre-linux/
 jre/
+
+
+#Ignore cursor AI rules
+.cursor/rules/codacy.mdc
+
+maxquant_complete_submission/

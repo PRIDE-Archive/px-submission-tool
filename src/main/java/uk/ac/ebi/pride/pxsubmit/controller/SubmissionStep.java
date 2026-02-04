@@ -45,7 +45,6 @@ public class SubmissionStep extends AbstractWizardStep {
 
     // Services
     private ApiService apiService;
-    private ChecksumService checksumService;
     private UploadManager uploadManager;
 
     public SubmissionStep(SubmissionModel model) {
@@ -163,68 +162,24 @@ public class SubmissionStep extends AbstractWizardStep {
 
         addLog("Starting submission...");
 
-        // Step 1: Calculate checksums
-        calculateChecksums();
-    }
-
-    private void calculateChecksums() {
-        // Check if checksums were already calculated in SummaryStep
-        if (model.areChecksumsCalculated() && !model.getChecksums().isEmpty()) {
-            addLog("Using pre-computed checksums (" + model.getChecksums().size() + " files)");
-            DebugMode.log("CHECKSUM", "Using pre-computed checksums from SummaryStep");
-
-            // Write checksum.txt file for upload
-            writeChecksumFile(model.getChecksums());
-
-            Platform.runLater(() -> {
-                overallProgress.setProgress(0.2);
-                // Skip to getting upload details
-                getUploadDetails();
-            });
+        // Checksums should already be computed by ChecksumComputationStep
+        if (!model.areChecksumsCalculated() || model.getChecksums().isEmpty()) {
+            addLog("ERROR: Checksums not computed. Please go back and complete the checksum step.");
+            handleError("Checksums not computed");
             return;
         }
 
-        updateStatus("Calculating checksums...");
-        addLog("Calculating file checksums...");
-        DebugMode.log("CHECKSUM", "Starting checksum calculation for " + model.getFiles().size() + " files");
+        addLog("Using pre-computed checksums (" + model.getChecksums().size() + " files)");
+        DebugMode.log("CHECKSUM", "Using pre-computed checksums from ChecksumComputationStep");
 
-        checksumService = new ChecksumService(model.getFiles());
+        // Write checksum.txt file for upload
+        writeChecksumFile(model.getChecksums());
 
-        currentFileLabel.setVisible(true);
-        currentFileLabel.textProperty().bind(checksumService.currentFileNameProperty());
-        currentFileProgress.setVisible(true);
-        currentFileProgress.progressProperty().bind(checksumService.progressProperty());
-
-        checksumService.setOnSucceeded(e -> {
-            Map<DataFile, String> checksums = checksumService.getValue();
-            addLog("Checksums calculated for " + checksums.size() + " files");
-            DebugMode.log("CHECKSUM", "Checksums calculated: " + checksums.size());
-
-            // Store checksums in model
-            model.setChecksums(checksums);
-            DebugMode.log("CHECKSUM", "Checksums stored in model");
-
-            // Write checksum.txt file
-            writeChecksumFile(checksums);
-
-            Platform.runLater(() -> {
-                currentFileLabel.textProperty().unbind();
-                currentFileProgress.progressProperty().unbind();
-                overallProgress.setProgress(0.2);
-
-                // Step 2: Get upload details
-                getUploadDetails();
-            });
+        Platform.runLater(() -> {
+            overallProgress.setProgress(0.2);
+            // Get upload details
+            getUploadDetails();
         });
-
-        checksumService.setOnFailed(e -> {
-            Throwable ex = e.getSource().getException();
-            addLog("ERROR: Checksum calculation failed - " + ex.getMessage());
-            DebugMode.log("CHECKSUM", "FAILED: " + ex.getMessage());
-            handleError("Checksum calculation failed");
-        });
-
-        checksumService.start();
     }
 
     /**
@@ -232,10 +187,9 @@ public class SubmissionStep extends AbstractWizardStep {
      */
     private void writeChecksumFile(Map<DataFile, String> checksums) {
         try {
-            File tempDir = Files.createTempDirectory("px-submission-").toFile();
-            tempDir.deleteOnExit();
-            File checksumFile = ChecksumService.writeChecksumFile(checksums, tempDir);
-            checksumFile.deleteOnExit();
+            // Write checksum.txt to the current working directory
+            File workingDir = new File(System.getProperty("user.dir"));
+            File checksumFile = ChecksumService.writeChecksumFile(checksums, workingDir);
 
             // Check if checksum.txt is already in the file list
             boolean alreadyExists = model.getFiles().stream()
@@ -281,12 +235,21 @@ public class SubmissionStep extends AbstractWizardStep {
         UploadMethod method = model.getUploadMethod();
         if (method == null) {
             method = UploadMethod.FTP;
+            addLog("No upload method selected, defaulting to FTP");
         }
+
+        addLog("Requesting " + method + " upload credentials...");
+        final UploadMethod finalMethod = method;
 
         apiService.getUploadDetails(method)
             .thenAccept(uploadDetail -> {
+                addLog("Upload details received successfully");
+                addLog("Host: " + uploadDetail.getHost());
+                addLog("Port: " + uploadDetail.getPort());
+                addLog("Folder: " + uploadDetail.getFolder());
+                addLog("Method: " + uploadDetail.getMethod());
+
                 model.setUploadDetail(uploadDetail);
-                addLog("Upload details received. Target: " + uploadDetail.getFolder());
                 ticketId.set(uploadDetail.getFolder());
 
                 Platform.runLater(() -> {
@@ -295,15 +258,40 @@ public class SubmissionStep extends AbstractWizardStep {
                 });
             })
             .exceptionally(ex -> {
-                addLog("ERROR: Failed to get upload details - " + ex.getMessage());
-                handleError("Failed to get upload credentials");
+                logger.error("Failed to get upload details", ex);
+                addLog("ERROR: Failed to get upload details");
+                addLog("ERROR: " + ex.getMessage());
+                addLog("Please check your internet connection and try again.");
+                addLog("If the problem persists, contact pride-support@ebi.ac.uk");
+                handleError("Failed to get upload credentials: " + ex.getMessage());
                 return null;
             });
     }
 
     private void uploadFiles(UploadDetail uploadDetail) {
         updateStatus("Uploading files...");
-        addLog("Starting file upload via " + model.getUploadMethod() + "...");
+        UploadMethod method = model.getUploadMethod() != null ? model.getUploadMethod() : UploadMethod.FTP;
+        addLog("Starting file upload via " + method + "...");
+        addLog("Number of files to upload: " + model.getFiles().size());
+
+        // Validate upload details
+        if (uploadDetail == null) {
+            addLog("ERROR: Upload details are null");
+            handleError("Upload configuration error");
+            return;
+        }
+
+        if (uploadDetail.getHost() == null || uploadDetail.getHost().isEmpty()) {
+            addLog("ERROR: Upload host is not configured");
+            handleError("Upload configuration error: Missing host");
+            return;
+        }
+
+        if (uploadDetail.getFolder() == null || uploadDetail.getFolder().isEmpty()) {
+            addLog("ERROR: Upload folder is not configured");
+            handleError("Upload configuration error: Missing folder");
+            return;
+        }
 
         currentFileLabel.setVisible(true);
         currentFileProgress.setVisible(true);
@@ -312,7 +300,7 @@ public class SubmissionStep extends AbstractWizardStep {
         uploadManager = new UploadManager(
                 model.getSubmission(),
                 uploadDetail,
-                model.getUploadMethod(),
+                method,
                 model.isTrainingMode()
         );
 
@@ -489,9 +477,6 @@ public class SubmissionStep extends AbstractWizardStep {
 
     private void cancelUpload() {
         uploading.set(false);
-        if (checksumService != null && checksumService.isRunning()) {
-            checksumService.cancel();
-        }
         if (uploadManager != null && uploadManager.isRunning()) {
             uploadManager.cancel();
         }

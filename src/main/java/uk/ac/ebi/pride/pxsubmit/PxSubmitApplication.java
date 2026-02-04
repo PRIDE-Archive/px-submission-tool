@@ -151,7 +151,8 @@ public class PxSubmitApplication extends Application {
         // 6. Sample Metadata - Species, tissue, instrument, etc. (with SDRF parsing)
         // 7. Project Metadata - Title, description, keywords
         // 8. Summary - Review before upload
-        // 9. Submission - Upload and complete
+        // 9. Checksum Computation - Compute checksums for all files
+        // 10. Submission - Upload and complete
 
         wizardController.addStep(new WelcomeStep(model));
         wizardController.addStep(new LoginStep(model));
@@ -161,6 +162,7 @@ public class PxSubmitApplication extends Application {
         wizardController.addStep(new SampleMetadataStep(model));
         wizardController.addStep(new ProjectMetadataStep(model));
         wizardController.addStep(new SummaryStep(model));
+        wizardController.addStep(new ChecksumComputationStep(model));
         wizardController.addStep(new SubmissionStep(model));
 
         logger.info("Wizard configured with {} steps", wizardController.getStepCount());
@@ -334,8 +336,8 @@ public class PxSubmitApplication extends Application {
      * Load application icon for both window and macOS dock
      */
     private void loadAppIcon(Stage stage) {
-        // Use the upload icon (128x128 square) for proper dock display
-        String iconPath = "/icon/128x128/upload.png";
+        // Use the ProteomeXchange logo for proper dock display
+        String iconPath = "/icon/logo/logo.png";
 
         try {
             // Load icon for JavaFX window
