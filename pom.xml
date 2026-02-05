@@ -48,10 +48,8 @@
         <uk.ac.ebi.pride.web-pride-web-utils.version>1.3.13</uk.ac.ebi.pride.web-pride-web-utils.version>
         <uk.ac.ebi.pride.jaxb-pride-jaxb.version>1.0.18</uk.ac.ebi.pride.jaxb-pride-jaxb.version>
         <uk.ac.ebi.pride.utilities-pride-utilities.version>2.0.16</uk.ac.ebi.pride.utilities-pride-utilities.version>
-        <uk.ac.ebi.pride.toolsuite-inspector-swing-utils.version>2.0.3</uk.ac.ebi.pride.toolsuite-inspector-swing-utils.version>
         <uk.ac.ebi.pride-px-submission-core.version>21-0.0.1-SNAPSHOT</uk.ac.ebi.pride-px-submission-core.version>
         <uk.ac.ebi.pride.px-libpxreport.version>1.1</uk.ac.ebi.pride.px-libpxreport.version>
-        <uk.ac.ebi.pride.toolsuite-ols-dialog.version>3.4.22-SNAPSHOT</uk.ac.ebi.pride.toolsuite-ols-dialog.version>
         <uk.ac.ebi.jmzidml-jmzidentml.version>1.2.6</uk.ac.ebi.jmzidml-jmzidentml.version>
         <uk.ac.ebi.pride.archive-archive-submission-model.version>1.0.5-SNAPSHOT
         </uk.ac.ebi.pride.archive-archive-submission-model.version>
@@ -103,17 +101,6 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>uk.ac.ebi.pride.toolsuite</groupId>
-            <artifactId>inspector-swing-utils</artifactId>
-            <version>${uk.ac.ebi.pride.toolsuite-inspector-swing-utils.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>ch.qos.logback</groupId>
-                    <artifactId>logback-core</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
             <groupId>uk.ac.ebi.pride.sdrf</groupId>
             <artifactId>jsdrf</artifactId>
             <version>${uk.ac.ebi.pride.sdrf.jsdrf.version}</version>
@@ -140,17 +127,6 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
             <version>2.13.3</version>
-        </dependency>
-        <!-- swing related libraries-->
-        <dependency>
-            <groupId>org.swinglabs</groupId>
-            <artifactId>swingx</artifactId>
-            <version>1.6.1</version>
-        </dependency>
-        <dependency>
-            <groupId>net.java.balloontip</groupId>
-            <artifactId>balloontip</artifactId>
-            <version>1.2</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-exec -->
         <dependency>
@@ -187,12 +163,6 @@
             <artifactId>px-submission-core</artifactId>
             <version>${uk.ac.ebi.pride-px-submission-core.version}</version>
         </dependency>
-        <!-- ols -->
-        <dependency>
-            <groupId>uk.ac.ebi.pride.toolsuite</groupId>
-            <artifactId>ols-dialog</artifactId>
-            <version>${uk.ac.ebi.pride.toolsuite-ols-dialog.version}</version>
-        </dependency>
         <!--Aspera manager-->
         <dependency>
             <groupId>com.aspera</groupId>
@@ -204,11 +174,6 @@
             <groupId>uk.ac.ebi.pride.px</groupId>
             <artifactId>libpxreport</artifactId>
             <version>${uk.ac.ebi.pride.px-libpxreport.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.swinglabs.swingx</groupId>
-            <artifactId>swingx-all</artifactId>
-            <version>1.6.5-1</version>
         </dependency>
         <!-- TDD -->
         <dependency>
@@ -402,7 +367,7 @@
                     </excludes>
                     <archive>
                         <manifest>
-                            <mainClass>uk.ac.ebi.pride.AppBootstrap</mainClass>
+                            <mainClass>uk.ac.ebi.pride.pxsubmit.Launcher</mainClass>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib</classpathPrefix>
                             <useUniqueVersions>false</useUniqueVersions>
