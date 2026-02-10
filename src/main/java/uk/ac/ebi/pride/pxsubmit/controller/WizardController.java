@@ -149,6 +149,13 @@ public class WizardController implements Initializable {
                 // Rebind next button disable to new step's validProperty
                 nextButton.disableProperty().unbind();
                 nextButton.disableProperty().bind(newStep.validProperty().not());
+
+                // Rebind next button text (depends on step state, e.g. "Submit" -> "Finish")
+                nextButton.textProperty().unbind();
+                nextButton.textProperty().bind(Bindings.createStringBinding(
+                    newStep::getNextButtonText,
+                    newStep.validProperty()
+                ));
             }
         });
     }
@@ -421,12 +428,28 @@ public class WizardController implements Initializable {
     }
 
     /**
-     * Enable/disable navigation (e.g., during long operations)
+     * Enable/disable navigation (e.g., during long operations).
+     * Must unbind before setting because button disable properties are bound to step validity.
      */
     public void setNavigationEnabled(boolean enabled) {
-        backButton.setDisable(!enabled || !canGoBack.get());
-        nextButton.setDisable(!enabled);
-        cancelButton.setDisable(!enabled);
+        if (!enabled) {
+            // Unbind before disabling so we can override the bound values
+            nextButton.disableProperty().unbind();
+            nextButton.setDisable(true);
+            backButton.disableProperty().unbind();
+            backButton.setDisable(true);
+            cancelButton.setDisable(true);
+        } else {
+            // Re-bind to current step's valid property
+            WizardStep step = currentStep.get();
+            if (step != null) {
+                nextButton.disableProperty().bind(step.validProperty().not());
+            } else {
+                nextButton.setDisable(false);
+            }
+            backButton.disableProperty().bind(canGoBack.not());
+            cancelButton.setDisable(false);
+        }
     }
 
     /**

@@ -427,6 +427,8 @@ public class SubmissionStep extends AbstractWizardStep {
         updateStatus("Completing submission...");
         addLog("Finalizing submission...");
         overallProgress.setProgress(0.95);
+        startButton.setDisable(true);
+        cancelButton.setVisible(false);
 
         // In training mode, skip actual completion
         if (model.isTrainingMode()) {
@@ -435,10 +437,20 @@ public class SubmissionStep extends AbstractWizardStep {
             return;
         }
 
-        // TODO: Call API to complete submission
-        // For now, simulate completion
-        addLog("Submission completed successfully!");
-        finishSubmission(ticketId.get());
+        // Call the submission WS to complete and get the ticket/reference ID
+        addLog("Submitting to PRIDE server...");
+        apiService.completeSubmission(model.getUploadDetail())
+            .thenAccept(referenceDetail -> {
+                String reference = referenceDetail.getReference();
+                addLog("Submission reference received: " + reference);
+                finishSubmission(reference);
+            })
+            .exceptionally(ex -> {
+                logger.error("Failed to complete submission", ex);
+                addLog("ERROR: Failed to finalize submission: " + ex.getMessage());
+                handleError("Failed to finalize submission: " + ex.getMessage());
+                return null;
+            });
     }
 
     private void finishSubmission(String submissionId) {

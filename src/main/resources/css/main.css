@@ -165,7 +165,11 @@
     -fx-pref-height: 100;
 }
 
-.label {
+.content-pane .label {
+    -fx-text-fill: #333333;
+}
+
+.button-bar .label {
     -fx-text-fill: #333333;
 }
 

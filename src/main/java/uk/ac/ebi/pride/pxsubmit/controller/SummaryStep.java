@@ -1,7 +1,6 @@
 package uk.ac.ebi.pride.pxsubmit.controller;
 
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
@@ -120,10 +119,46 @@ public class SummaryStep extends AbstractWizardStep {
         addFileSummary(filesSection);
         contentBox.getChildren().add(filesSection);
 
-        // Upload Method
-        if (model.getUploadMethod() != null) {
-            addSection("Upload Method", model.getUploadMethod().getMethod());
+        // Upload method selection
+        VBox uploadSection = createSectionBox("Upload Method");
+
+        Label uploadInstructions = new Label("Choose how to upload your files to PRIDE:");
+        uploadInstructions.setWrapText(true);
+        uploadInstructions.setStyle("-fx-text-fill: #666;");
+
+        ToggleGroup uploadToggle = new ToggleGroup();
+
+        RadioButton ftpRadio = new RadioButton("FTP - Standard file transfer (recommended for most users)");
+        ftpRadio.setToggleGroup(uploadToggle);
+        ftpRadio.setUserData(uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod.FTP);
+
+        RadioButton asperaRadio = new RadioButton("Aspera - High-speed transfer (recommended for large datasets)");
+        asperaRadio.setToggleGroup(uploadToggle);
+        asperaRadio.setUserData(uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod.ASPERA);
+
+        // Set current selection
+        if (model.getUploadMethod() == uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod.ASPERA) {
+            asperaRadio.setSelected(true);
+        } else {
+            ftpRadio.setSelected(true);
+            if (model.getUploadMethod() == null) {
+                model.setUploadMethod(uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod.FTP);
+            }
         }
+
+        // Update model on selection change
+        uploadToggle.selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                model.setUploadMethod(
+                    (uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod) newVal.getUserData());
+            }
+        });
+
+        VBox radioBox = new VBox(8, ftpRadio, asperaRadio);
+        radioBox.setPadding(new Insets(5, 0, 0, 10));
+
+        uploadSection.getChildren().addAll(uploadInstructions, radioBox);
+        contentBox.getChildren().add(uploadSection);
     }
 
     private ValidationFeedback createValidationSummary() {

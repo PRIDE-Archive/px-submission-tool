@@ -250,38 +250,56 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
                         }
                     });
 
-            // Start service on FX Application thread (required by JavaFX)
-            java.util.concurrent.CountDownLatch startLatch = new java.util.concurrent.CountDownLatch(1);
-            Platform.runLater(() -> {
-                ftpService.start();
-                startLatch.countDown();
-            });
-            startLatch.await(); // Wait for service to start
+            // Capture results on FX thread via callbacks (Service methods require FX thread)
+            java.util.concurrent.CountDownLatch doneLatch = new java.util.concurrent.CountDownLatch(1);
+            java.util.concurrent.atomic.AtomicReference<FtpUploadService.UploadResult> ftpResultRef = new java.util.concurrent.atomic.AtomicReference<>();
+            java.util.concurrent.atomic.AtomicReference<Throwable> ftpErrorRef = new java.util.concurrent.atomic.AtomicReference<>();
+            java.util.concurrent.atomic.AtomicReference<javafx.concurrent.Worker.State> ftpStateRef = new java.util.concurrent.atomic.AtomicReference<>();
 
-            // Wait for completion
-            while (ftpService.isRunning()) {
+            Platform.runLater(() -> {
+                ftpService.setOnSucceeded(e -> {
+                    ftpStateRef.set(javafx.concurrent.Worker.State.SUCCEEDED);
+                    ftpResultRef.set(ftpService.getValue());
+                    doneLatch.countDown();
+                });
+                ftpService.setOnFailed(e -> {
+                    ftpStateRef.set(javafx.concurrent.Worker.State.FAILED);
+                    ftpErrorRef.set(ftpService.getException());
+                    doneLatch.countDown();
+                });
+                ftpService.setOnCancelled(e -> {
+                    ftpStateRef.set(javafx.concurrent.Worker.State.CANCELLED);
+                    doneLatch.countDown();
+                });
+                ftpService.start();
+            });
+
+            // Wait for completion, checking for cancellation
+            while (!doneLatch.await(500, java.util.concurrent.TimeUnit.MILLISECONDS)) {
                 if (isCancelled()) {
                     Platform.runLater(() -> ftpService.cancel());
+                    doneLatch.await();
                     break;
                 }
-                Thread.sleep(100);
             }
 
-            // Check if service completed successfully
-            if (ftpService.getState() == javafx.concurrent.Worker.State.FAILED) {
-                Throwable ex = ftpService.getException();
+            // Process results captured from FX thread callbacks
+            javafx.concurrent.Worker.State finalState = ftpStateRef.get();
+
+            if (finalState == javafx.concurrent.Worker.State.FAILED) {
+                Throwable ex = ftpErrorRef.get();
                 String errorMsg = "FTP service failed: " + (ex != null ? ex.getMessage() : "Unknown error");
                 logger.error(errorMsg, ex);
                 log("ERROR: " + errorMsg);
                 return new UploadResult(false, 0, files.size(), UploadMethod.FTP, errorMsg);
             }
 
-            if (ftpService.getState() == javafx.concurrent.Worker.State.CANCELLED) {
+            if (finalState == javafx.concurrent.Worker.State.CANCELLED) {
                 log("FTP upload cancelled");
                 return new UploadResult(false, 0, files.size(), UploadMethod.FTP, "Upload cancelled");
             }
 
-            FtpUploadService.UploadResult ftpResult = ftpService.getValue();
+            FtpUploadService.UploadResult ftpResult = ftpResultRef.get();
 
             if (ftpResult == null) {
                 String errorMsg = "FTP service returned null result";
@@ -352,38 +370,56 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
                         }
                     });
 
-            // Start service on FX Application thread (required by JavaFX)
-            java.util.concurrent.CountDownLatch asperaStartLatch = new java.util.concurrent.CountDownLatch(1);
-            Platform.runLater(() -> {
-                asperaService.start();
-                asperaStartLatch.countDown();
-            });
-            asperaStartLatch.await(); // Wait for service to start
+            // Capture results on FX thread via callbacks (Service methods require FX thread)
+            java.util.concurrent.CountDownLatch asperaDoneLatch = new java.util.concurrent.CountDownLatch(1);
+            java.util.concurrent.atomic.AtomicReference<AsperaUploadService.UploadResult> asperaResultRef = new java.util.concurrent.atomic.AtomicReference<>();
+            java.util.concurrent.atomic.AtomicReference<Throwable> asperaErrorRef = new java.util.concurrent.atomic.AtomicReference<>();
+            java.util.concurrent.atomic.AtomicReference<javafx.concurrent.Worker.State> asperaStateRef = new java.util.concurrent.atomic.AtomicReference<>();
 
-            // Wait for completion
-            while (asperaService.isRunning()) {
+            Platform.runLater(() -> {
+                asperaService.setOnSucceeded(e -> {
+                    asperaStateRef.set(javafx.concurrent.Worker.State.SUCCEEDED);
+                    asperaResultRef.set(asperaService.getValue());
+                    asperaDoneLatch.countDown();
+                });
+                asperaService.setOnFailed(e -> {
+                    asperaStateRef.set(javafx.concurrent.Worker.State.FAILED);
+                    asperaErrorRef.set(asperaService.getException());
+                    asperaDoneLatch.countDown();
+                });
+                asperaService.setOnCancelled(e -> {
+                    asperaStateRef.set(javafx.concurrent.Worker.State.CANCELLED);
+                    asperaDoneLatch.countDown();
+                });
+                asperaService.start();
+            });
+
+            // Wait for completion, checking for cancellation
+            while (!asperaDoneLatch.await(500, java.util.concurrent.TimeUnit.MILLISECONDS)) {
                 if (isCancelled()) {
                     Platform.runLater(() -> asperaService.cancel());
+                    asperaDoneLatch.await();
                     break;
                 }
-                Thread.sleep(100);
             }
 
-            // Check if service completed successfully
-            if (asperaService.getState() == javafx.concurrent.Worker.State.FAILED) {
-                Throwable ex = asperaService.getException();
+            // Process results captured from FX thread callbacks
+            javafx.concurrent.Worker.State asperaState = asperaStateRef.get();
+
+            if (asperaState == javafx.concurrent.Worker.State.FAILED) {
+                Throwable ex = asperaErrorRef.get();
                 String errorMsg = "Aspera service failed: " + (ex != null ? ex.getMessage() : "Unknown error");
                 logger.error(errorMsg, ex);
                 log("ERROR: " + errorMsg);
                 return new UploadResult(false, 0, files.size(), UploadMethod.ASPERA, errorMsg);
             }
 
-            if (asperaService.getState() == javafx.concurrent.Worker.State.CANCELLED) {
+            if (asperaState == javafx.concurrent.Worker.State.CANCELLED) {
                 log("Aspera upload cancelled");
                 return new UploadResult(false, 0, files.size(), UploadMethod.ASPERA, "Upload cancelled");
             }
 
-            AsperaUploadService.UploadResult asperaResult = asperaService.getValue();
+            AsperaUploadService.UploadResult asperaResult = asperaResultRef.get();
 
             if (asperaResult == null) {
                 String errorMsg = "Aspera service returned null result";

@@ -19,6 +19,8 @@ public class LoginStep extends AbstractWizardStep {
     private PasswordField passwordField;
     private CheckBox trainingModeCheckbox;
     private Label errorLabel;
+    private HBox progressBox;
+    private uk.ac.ebi.pride.pxsubmit.service.AuthService currentAuth;
 
     public LoginStep(SubmissionModel model) {
         super("login",
@@ -76,6 +78,17 @@ public class LoginStep extends AbstractWizardStep {
         errorLabel.setVisible(false);
         errorLabel.setManaged(false);
 
+        // Inline progress indicator (shown during authentication)
+        progressBox = new HBox(10);
+        progressBox.setAlignment(Pos.CENTER);
+        ProgressIndicator pi = new ProgressIndicator();
+        pi.setPrefSize(20, 20);
+        Label progressLabel = new Label("Authenticating...");
+        progressLabel.setStyle("-fx-text-fill: #666;");
+        progressBox.getChildren().addAll(pi, progressLabel);
+        progressBox.setVisible(false);
+        progressBox.setManaged(false);
+
         // Register link
         Hyperlink registerLink = new Hyperlink("Register for a PRIDE account");
         registerLink.setOnAction(e -> openRegistrationPage());
@@ -94,6 +107,7 @@ public class LoginStep extends AbstractWizardStep {
             form,
             trainingModeCheckbox,
             errorLabel,
+            progressBox,
             linksBox
         );
 
@@ -160,12 +174,71 @@ public class LoginStep extends AbstractWizardStep {
             return true;
         }
 
-        // TODO: Implement actual authentication via AuthService
-        // For now, simulate successful login
-        logger.info("Login attempt for user: {}", username);
-        model.setLoggedIn(true);
+        // Cancel any previous auth attempt
+        if (currentAuth != null && currentAuth.isRunning()) {
+            currentAuth.cancel();
+        }
 
-        return true;
+        // Disable navigation and show inline progress
+        hideError();
+        showProgress();
+        if (wizardController != null) {
+            wizardController.setNavigationEnabled(false);
+        }
+
+        currentAuth = new uk.ac.ebi.pride.pxsubmit.service.AuthService();
+        currentAuth.setCredentials(username, password);
+
+        currentAuth.setOnSucceeded(evt -> {
+            hideProgress();
+            try {
+                uk.ac.ebi.pride.archive.submission.model.user.ContactDetail contact = currentAuth.getValue();
+                model.setLoggedIn(true);
+                if (contact != null) {
+                    // Build submitter name from first + last name
+                    String submitterName = "";
+                    if (contact.getFirstName() != null) submitterName = contact.getFirstName();
+                    if (contact.getLastName() != null) submitterName += " " + contact.getLastName();
+                    submitterName = submitterName.trim();
+
+                    // Set submitter contact on the Submission object
+                    uk.ac.ebi.pride.data.model.Contact submitter =
+                        model.getSubmission().getProjectMetaData().getSubmitterContact();
+                    if (submitter == null) {
+                        submitter = new uk.ac.ebi.pride.data.model.Contact();
+                        model.getSubmission().getProjectMetaData().setSubmitterContact(submitter);
+                    }
+                    submitter.setName(submitterName);
+                    submitter.setEmail(contact.getEmail());
+                    submitter.setAffiliation(contact.getAffiliation());
+                    submitter.setUserName(username);
+                    submitter.setPassword(passwordField.getText().toCharArray());
+                }
+                logger.info("Authentication succeeded for user: {}", username);
+            } catch (Exception ex) {
+                logger.warn("Authentication succeeded but could not process contact details", ex);
+            } finally {
+                if (wizardController != null) {
+                    wizardController.setNavigationEnabled(true);
+                    wizardController.goToNextStep();
+                }
+            }
+        });
+
+        currentAuth.setOnFailed(evt -> {
+            hideProgress();
+            Throwable ex = currentAuth.getException();
+            String msg = ex != null ? ex.getMessage() : "Authentication failed";
+            showError(msg);
+            if (wizardController != null) {
+                wizardController.setNavigationEnabled(true);
+            }
+        });
+
+        currentAuth.start();
+
+        // Return false to prevent immediate navigation; navigation continues in the succeeded handler.
+        return false;
     }
 
     @Override
@@ -182,6 +255,16 @@ public class LoginStep extends AbstractWizardStep {
     private void hideError() {
         errorLabel.setVisible(false);
         errorLabel.setManaged(false);
+    }
+
+    private void showProgress() {
+        progressBox.setVisible(true);
+        progressBox.setManaged(true);
+    }
+
+    private void hideProgress() {
+        progressBox.setVisible(false);
+        progressBox.setManaged(false);
     }
 
     private void openRegistrationPage() {

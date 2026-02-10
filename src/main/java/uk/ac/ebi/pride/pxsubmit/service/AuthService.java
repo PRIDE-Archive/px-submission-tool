@@ -94,13 +94,12 @@ public class AuthService extends Service<ContactDetail> {
                 headers.setContentType(MediaType.APPLICATION_JSON);
                 headers.add("version", toolVersion);
 
-                // Prepare credentials payload
-                String payload = String.format(
-                    "{\"username\":\"%s\",\"password\":\"%s\"}",
-                    taskUsername, taskPassword
-                );
+                // Prepare credentials payload using a Map for proper JSON serialization
+                java.util.Map<String, String> credentials = new java.util.LinkedHashMap<>();
+                credentials.put("username", taskUsername);
+                credentials.put("password", taskPassword);
 
-                HttpEntity<String> entity = new HttpEntity<>(payload, headers);
+                HttpEntity<java.util.Map<String, String>> entity = new HttpEntity<>(credentials, headers);
 
                 updateMessage("Contacting PRIDE server...");
 
@@ -134,8 +133,27 @@ public class AuthService extends Service<ContactDetail> {
                 logger.error("HTTP error during authentication: {} - {}",
                     e.getStatusCode(), e.getMessage());
 
-                if (e.getStatusCode() == HttpStatus.UNAUTHORIZED ||
-                    e.getStatusCode() == HttpStatus.FORBIDDEN) {
+                // Extract the server's error message from the response body
+                String serverMessage = e.getResponseBodyAsString();
+                // Clean up quoted strings like "Invalid Password!" → Invalid Password!
+                if (serverMessage != null) {
+                    serverMessage = serverMessage.trim();
+                    if (serverMessage.startsWith("\"") && serverMessage.endsWith("\"")) {
+                        serverMessage = serverMessage.substring(1, serverMessage.length() - 1);
+                    }
+                    // Strip HTTP status prefix like "400 : " or "404 : "
+                    if (serverMessage.matches("^\\d{3}\\s*:\\s*.*")) {
+                        serverMessage = serverMessage.replaceFirst("^\\d{3}\\s*:\\s*", "").trim();
+                        if (serverMessage.startsWith("\"") && serverMessage.endsWith("\"")) {
+                            serverMessage = serverMessage.substring(1, serverMessage.length() - 1);
+                        }
+                    }
+                }
+
+                if (serverMessage != null && !serverMessage.isEmpty()) {
+                    throw new AuthenticationException(serverMessage, e);
+                } else if (e.getStatusCode() == HttpStatus.UNAUTHORIZED ||
+                           e.getStatusCode() == HttpStatus.FORBIDDEN) {
                     throw new AuthenticationException(
                         "Invalid credentials: Please check your email and password.", e);
                 } else {

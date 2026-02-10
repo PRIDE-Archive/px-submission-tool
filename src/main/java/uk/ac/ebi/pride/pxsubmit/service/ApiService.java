@@ -1,6 +1,5 @@
 package uk.ac.ebi.pride.pxsubmit.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import org.slf4j.Logger;
@@ -8,9 +7,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
+import uk.ac.ebi.pride.archive.submission.model.submission.SubmissionReferenceDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
-import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.pxsubmit.config.AppConfig;
 
 import java.net.InetSocketAddress;
@@ -53,7 +52,6 @@ public class ApiService {
     private final String password;
     private final String basicAuthHeader;
     private final ExecutorService executor;
-    private final ObjectMapper objectMapper;
 
     public ApiService(String username, String password) {
         this.config = AppConfig.getInstance();
@@ -65,7 +63,6 @@ public class ApiService {
             t.setDaemon(true);
             return t;
         });
-        this.objectMapper = new ObjectMapper();
     }
 
     /**
@@ -115,9 +112,10 @@ public class ApiService {
     }
 
     /**
-     * Complete submission by sending summary file
+     * Complete submission by posting upload details to the submission WS.
+     * Returns a SubmissionReferenceDetail containing the ticket/reference ID.
      */
-    public CompletableFuture<String> completeSubmission(Submission submission, String jwtToken) {
+    public CompletableFuture<SubmissionReferenceDetail> completeSubmission(UploadDetail uploadDetail) {
         return CompletableFuture.supplyAsync(() -> {
             logger.info("Completing submission...");
 
@@ -125,21 +123,18 @@ public class ApiService {
 
             try {
                 RestTemplate restTemplate = createRestTemplate();
+                HttpHeaders headers = createHeaders();
+                HttpEntity<UploadDetail> entity = new HttpEntity<>(uploadDetail, headers);
 
-                HttpHeaders headers = new HttpHeaders();
-                headers.setContentType(MediaType.APPLICATION_JSON);
-                headers.setAccept(Collections.singletonList(MediaType.ALL));
-                headers.set("Authorization", "Bearer " + jwtToken);
-                headers.add("version", config.getToolVersion());
+                ResponseEntity<SubmissionReferenceDetail> response = restTemplate.exchange(
+                    url, HttpMethod.POST, entity, SubmissionReferenceDetail.class);
 
-                String payload = objectMapper.writeValueAsString(submission);
-                HttpEntity<String> entity = new HttpEntity<>(payload, headers);
+                SubmissionReferenceDetail result = response.getBody();
+                if (result == null) {
+                    throw new ApiException("Server returned null response for submission completion");
+                }
 
-                ResponseEntity<String> response = restTemplate.exchange(
-                    url, HttpMethod.POST, entity, String.class);
-
-                String result = response.getBody();
-                logger.info("Submission completed successfully");
+                logger.info("Submission completed successfully. Reference: {}", result.getReference());
                 return result;
 
             } catch (Exception e) {

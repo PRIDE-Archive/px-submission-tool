@@ -39,3 +39,5 @@ jre/
 .cursor/rules/codacy.mdc
 
 maxquant_complete_submission/
+checksum.txt
+submission.px
