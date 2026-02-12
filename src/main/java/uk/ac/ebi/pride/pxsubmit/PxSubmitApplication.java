@@ -299,7 +299,7 @@ public class PxSubmitApplication extends Application {
                 }
                 case "--training", "-t" -> {
                     model.setTrainingMode(true);
-                    logger.info("Training mode enabled");
+                    logger.info("Test mode enabled");
                 }
                 case "--file", "-f" -> {
                     if (i + 1 < args.length) {
@@ -336,8 +336,8 @@ public class PxSubmitApplication extends Application {
      * Load application icon for both window and macOS dock
      */
     private void loadAppIcon(Stage stage) {
-        // Use the ProteomeXchange logo for proper dock display
-        String iconPath = "/icon/logo/logo.png";
+        // Use the PRIDE Archive logo for proper dock display
+        String iconPath = "/images/pride_logo.png";
 
         try {
             // Load icon for JavaFX window
@@ -374,7 +374,7 @@ public class PxSubmitApplication extends Application {
     private String getWindowTitle() {
         String title = APP_TITLE + " v" + APP_VERSION;
         if (model != null && model.isTrainingMode()) {
-            title += " [TRAINING MODE]";
+            title += " [TEST MODE]";
         }
         return title;
     }
