@@ -106,13 +106,12 @@ public class OlsAutocomplete extends VBox {
         // Search field
         searchField = new TextField();
         searchField.setStyle(
-            "-fx-background-color: transparent; " +
+            "-fx-background-color: white; " +
             "-fx-border-width: 0; " +
-            "-fx-padding: 0 4 0 4; " +
+            "-fx-padding: 4; " +
             "-fx-background-insets: 0; " +
             "-fx-background-radius: 0;");
         searchField.setMinWidth(150);
-        searchField.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
         HBox.setHgrow(searchField, Priority.ALWAYS);
 
         // Loading indicator
@@ -122,6 +121,9 @@ public class OlsAutocomplete extends VBox {
         loadingIndicator.managedProperty().bind(searching);
 
         inputArea.getChildren().addAll(chipContainer, searchField, loadingIndicator);
+
+        // Make entire input area clickable to focus the text field
+        inputArea.setOnMouseClicked(e -> searchField.requestFocus());
 
         // Suggestions dropdown
         suggestionsPopup = new VBox();
@@ -347,10 +349,15 @@ public class OlsAutocomplete extends VBox {
     }
 
     private void updateChips() {
-        chipContainer.getChildren().clear();
-        for (CvParam term : selectedTerms) {
-            chipContainer.getChildren().add(createChip(term));
+        if (chipContainer == null) {
+            return; // Guard against early listener calls
         }
+        Platform.runLater(() -> {
+            chipContainer.getChildren().clear();
+            for (CvParam term : selectedTerms) {
+                chipContainer.getChildren().add(createChip(term));
+            }
+        });
     }
 
     private HBox createChip(CvParam term) {
@@ -514,6 +521,13 @@ public class OlsAutocomplete extends VBox {
      */
     public boolean hasSelection() {
         return !selectedTerms.isEmpty();
+    }
+
+    /**
+     * Programmatically add a term (used by quick select buttons)
+     */
+    public void addTerm(CvParam term) {
+        selectTerm(term);
     }
 
     /**

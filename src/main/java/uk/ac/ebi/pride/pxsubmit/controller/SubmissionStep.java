@@ -89,6 +89,46 @@ public class SubmissionStep extends AbstractWizardStep {
         currentFileProgress.setPrefWidth(400);
         currentFileProgress.setVisible(false);
 
+        // Upload method selection
+        VBox uploadMethodBox = new VBox(8);
+        uploadMethodBox.setAlignment(Pos.CENTER_LEFT);
+        uploadMethodBox.setPadding(new Insets(10, 0, 10, 0));
+
+        Label uploadMethodLabel = new Label("Upload Method:");
+        uploadMethodLabel.setStyle("-fx-font-weight: bold;");
+
+        ToggleGroup uploadToggle = new ToggleGroup();
+
+        RadioButton ftpRadio = new RadioButton("FTP - Standard file transfer (recommended for most users)");
+        ftpRadio.setToggleGroup(uploadToggle);
+        ftpRadio.setUserData(UploadMethod.FTP);
+
+        RadioButton asperaRadio = new RadioButton("Aspera - High-speed transfer (recommended for large datasets)");
+        asperaRadio.setToggleGroup(uploadToggle);
+        asperaRadio.setUserData(UploadMethod.ASPERA);
+
+        // Set current selection
+        if (model.getUploadMethod() == UploadMethod.ASPERA) {
+            asperaRadio.setSelected(true);
+        } else {
+            ftpRadio.setSelected(true);
+            if (model.getUploadMethod() == null) {
+                model.setUploadMethod(UploadMethod.FTP);
+            }
+        }
+
+        // Update model on selection change
+        uploadToggle.selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                model.setUploadMethod((UploadMethod) newVal.getUserData());
+            }
+        });
+
+        VBox radioBox = new VBox(5, ftpRadio, asperaRadio);
+        radioBox.setPadding(new Insets(0, 0, 0, 10));
+
+        uploadMethodBox.getChildren().addAll(uploadMethodLabel, radioBox);
+
         // Buttons
         HBox buttonBox = new HBox(15);
         buttonBox.setAlignment(Pos.CENTER);
@@ -105,6 +145,7 @@ public class SubmissionStep extends AbstractWizardStep {
 
         statusBox.getChildren().addAll(
             titleLabel, overallStatus,
+            uploadMethodBox,
             overallProgress, currentFileLabel, currentFileProgress,
             buttonBox
         );
@@ -112,10 +153,11 @@ public class SubmissionStep extends AbstractWizardStep {
         // Log section
         TitledPane logPane = new TitledPane();
         logPane.setText("Upload Log");
-        logPane.setExpanded(false);
+        logPane.setExpanded(true);
 
         logListView = new ListView<>();
-        logListView.setPrefHeight(150);
+        logListView.setPrefHeight(300);
+        logListView.setMinHeight(200);
         logPane.setContent(logListView);
 
         root.getChildren().addAll(statusBox, logPane);
@@ -138,9 +180,9 @@ public class SubmissionStep extends AbstractWizardStep {
         currentFileProgress.setProgress(0);
         logListView.getItems().clear();
 
-        // Training mode message
+        // Test mode message
         if (model.isTrainingMode()) {
-            addLog("TRAINING MODE: Files will not actually be uploaded");
+            addLog("TEST MODE: Files will not actually be uploaded");
         }
 
         // Initialize API service
@@ -223,8 +265,8 @@ public class SubmissionStep extends AbstractWizardStep {
         addLog("Requesting upload details from server...");
 
         if (model.isTrainingMode()) {
-            // Simulate for training mode
-            addLog("Training mode: Simulating upload credentials");
+            // Simulate for test mode
+            addLog("Test mode: Simulating upload credentials");
             Platform.runLater(() -> {
                 overallProgress.setProgress(0.4);
                 simulateUpload();
@@ -369,18 +411,18 @@ public class SubmissionStep extends AbstractWizardStep {
     }
 
     private void simulateUpload() {
-        updateStatus("Simulating upload (Training Mode)...");
-        addLog("Training mode: Simulating file upload...");
+        updateStatus("Simulating upload (Test Mode)...");
+        addLog("Test mode: Simulating file upload...");
 
         currentFileLabel.setVisible(true);
         currentFileProgress.setVisible(true);
 
-        // Use UploadManager in training mode - it handles simulation internally
+        // Use UploadManager in test mode - it handles simulation internally
         uploadManager = new UploadManager(
                 model.getSubmission(),
-                null, // No upload detail needed for training mode
+                null, // No upload detail needed for test mode
                 UploadMethod.FTP,
-                true  // Training mode
+                true  // Test mode
         );
 
         // Bind progress
@@ -411,7 +453,7 @@ public class SubmissionStep extends AbstractWizardStep {
                 });
 
         uploadManager.setOnSucceeded(e -> {
-            addLog("Training mode: Simulation completed successfully");
+            addLog("Test mode: Simulation completed successfully");
             Platform.runLater(this::completeSubmission);
         });
 
@@ -430,27 +472,43 @@ public class SubmissionStep extends AbstractWizardStep {
         startButton.setDisable(true);
         cancelButton.setVisible(false);
 
-        // In training mode, skip actual completion
+        // In test mode, skip actual completion
         if (model.isTrainingMode()) {
-            addLog("Training mode: Submission simulated successfully");
-            finishSubmission("TRAINING-" + System.currentTimeMillis());
+            addLog("Test mode: Submission simulated successfully");
+            finishSubmission("TEST-" + System.currentTimeMillis());
             return;
         }
 
-        // Call the submission WS to complete and get the ticket/reference ID
-        addLog("Submitting to PRIDE server...");
-        apiService.completeSubmission(model.getUploadDetail())
-            .thenAccept(referenceDetail -> {
-                String reference = referenceDetail.getReference();
-                addLog("Submission reference received: " + reference);
-                finishSubmission(reference);
-            })
-            .exceptionally(ex -> {
-                logger.error("Failed to complete submission", ex);
-                addLog("ERROR: Failed to finalize submission: " + ex.getMessage());
-                handleError("Failed to finalize submission: " + ex.getMessage());
-                return null;
-            });
+        // Call the appropriate WS endpoint to complete and get the ticket/reference ID
+        if (model.isResubmissionMode()) {
+            addLog("Submitting resubmission to PRIDE server...");
+            apiService.completeResubmission(model.getUploadDetail())
+                .thenAccept(referenceDetail -> {
+                    String reference = referenceDetail.getReference();
+                    addLog("Resubmission reference received: " + reference);
+                    finishSubmission(reference);
+                })
+                .exceptionally(ex -> {
+                    logger.error("Failed to complete resubmission", ex);
+                    addLog("ERROR: Failed to finalize resubmission: " + ex.getMessage());
+                    handleError("Failed to finalize resubmission: " + ex.getMessage());
+                    return null;
+                });
+        } else {
+            addLog("Submitting to PRIDE server...");
+            apiService.completeSubmission(model.getUploadDetail())
+                .thenAccept(referenceDetail -> {
+                    String reference = referenceDetail.getReference();
+                    addLog("Submission reference received: " + reference);
+                    finishSubmission(reference);
+                })
+                .exceptionally(ex -> {
+                    logger.error("Failed to complete submission", ex);
+                    addLog("ERROR: Failed to finalize submission: " + ex.getMessage());
+                    handleError("Failed to finalize submission: " + ex.getMessage());
+                    return null;
+                });
+        }
     }
 
     private void finishSubmission(String submissionId) {

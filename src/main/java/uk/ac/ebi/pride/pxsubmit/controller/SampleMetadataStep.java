@@ -18,6 +18,7 @@ import uk.ac.ebi.pride.pxsubmit.service.SdrfParserService.SdrfData;
 import uk.ac.ebi.pride.pxsubmit.view.component.OlsAutocomplete;
 
 import java.io.File;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -43,6 +44,7 @@ public class SampleMetadataStep extends AbstractWizardStep {
     private OlsAutocomplete diseaseField;
     private OlsAutocomplete instrumentField;
     private OlsAutocomplete modificationField;
+    private OlsAutocomplete softwareField;
 
     // Status
     private Label validationLabel;
@@ -80,6 +82,7 @@ public class SampleMetadataStep extends AbstractWizardStep {
         speciesField.setOnTermSelected(term -> model.addSpecies(term));
         speciesField.setOnTermRemoved(term -> model.removeSpecies(term));
         speciesSection.getChildren().add(speciesField);
+        speciesSection.getChildren().add(createQuickSelectPane(OlsService.getCommonSpecies(), speciesField));
 
         // Tissue
         VBox tissueSection = createFieldSection(
@@ -88,9 +91,11 @@ public class SampleMetadataStep extends AbstractWizardStep {
                 false);
         tissueField = new OlsAutocomplete(OlsOntology.BTO);
         tissueField.setPromptText("Search tissue (e.g., liver, blood, brain)...");
+        tissueField.setCommonTerms(OlsService.getCommonTissues());
         tissueField.setOnTermSelected(term -> model.addTissue(term));
         tissueField.setOnTermRemoved(term -> model.removeTissue(term));
         tissueSection.getChildren().add(tissueField);
+        tissueSection.getChildren().add(createQuickSelectPane(OlsService.getCommonTissues(), tissueField));
 
         // Cell Type
         VBox cellTypeSection = createFieldSection(
@@ -99,9 +104,11 @@ public class SampleMetadataStep extends AbstractWizardStep {
                 false);
         cellTypeField = new OlsAutocomplete(OlsOntology.CL);
         cellTypeField.setPromptText("Search cell type (e.g., T cell, HeLa)...");
+        cellTypeField.setCommonTerms(OlsService.getCommonCellTypes());
         cellTypeField.setOnTermSelected(term -> model.addCellType(term));
         cellTypeField.setOnTermRemoved(term -> model.removeCellType(term));
         cellTypeSection.getChildren().add(cellTypeField);
+        cellTypeSection.getChildren().add(createQuickSelectPane(OlsService.getCommonCellTypes(), cellTypeField));
 
         // Disease
         VBox diseaseSection = createFieldSection(
@@ -110,9 +117,11 @@ public class SampleMetadataStep extends AbstractWizardStep {
                 false);
         diseaseField = new OlsAutocomplete(OlsOntology.DOID);
         diseaseField.setPromptText("Search disease (e.g., cancer, diabetes)...");
+        diseaseField.setCommonTerms(OlsService.getCommonDiseases());
         diseaseField.setOnTermSelected(term -> model.addDisease(term));
         diseaseField.setOnTermRemoved(term -> model.removeDisease(term));
         diseaseSection.getChildren().add(diseaseField);
+        diseaseSection.getChildren().add(createQuickSelectPane(OlsService.getCommonDiseases(), diseaseField));
 
         // Instrument (Mandatory)
         VBox instrumentSection = createFieldSection(
@@ -125,6 +134,7 @@ public class SampleMetadataStep extends AbstractWizardStep {
         instrumentField.setOnTermSelected(term -> model.addInstrument(term));
         instrumentField.setOnTermRemoved(term -> model.removeInstrument(term));
         instrumentSection.getChildren().add(instrumentField);
+        instrumentSection.getChildren().add(createQuickSelectPane(OlsService.getCommonInstruments(), instrumentField));
 
         // Modifications
         VBox modificationSection = createFieldSection(
@@ -137,6 +147,20 @@ public class SampleMetadataStep extends AbstractWizardStep {
         modificationField.setOnTermSelected(term -> model.addModification(term));
         modificationField.setOnTermRemoved(term -> model.removeModification(term));
         modificationSection.getChildren().add(modificationField);
+        modificationSection.getChildren().add(createQuickSelectPane(OlsService.getCommonModifications(), modificationField));
+
+        // Software/Tools
+        VBox softwareSection = createFieldSection(
+                "Software / Analysis Tools",
+                "Search for the software used for data analysis",
+                false);
+        softwareField = new OlsAutocomplete(OlsOntology.MS);
+        softwareField.setPromptText("Search software (e.g., MaxQuant, DIA-NN, FragPipe)...");
+        softwareField.setCommonTerms(OlsService.getCommonSoftware());
+        softwareField.setOnTermSelected(term -> model.addSoftware(term));
+        softwareField.setOnTermRemoved(term -> model.removeSoftware(term));
+        softwareSection.getChildren().add(softwareField);
+        softwareSection.getChildren().add(createQuickSelectPane(OlsService.getCommonSoftware(), softwareField));
 
         // Validation status
         validationLabel = new Label();
@@ -154,6 +178,7 @@ public class SampleMetadataStep extends AbstractWizardStep {
                 new Separator(),
                 instrumentSection,
                 modificationSection,
+                softwareSection,
                 new Separator(),
                 validationLabel,
                 requiredNote
@@ -207,6 +232,51 @@ public class SampleMetadataStep extends AbstractWizardStep {
 
         section.getChildren().addAll(titleBox, descLabel);
         return section;
+    }
+
+    /**
+     * Creates a pane with clickable quick-select buttons for common terms.
+     */
+    private FlowPane createQuickSelectPane(List<CvParam> terms, OlsAutocomplete targetField) {
+        FlowPane pane = new FlowPane();
+        pane.setHgap(6);
+        pane.setVgap(4);
+        pane.setPadding(new Insets(4, 0, 0, 0));
+
+        Label label = new Label("Examples:");
+        label.setStyle("-fx-text-fill: #888; -fx-font-size: 11px;");
+        pane.getChildren().add(label);
+
+        for (CvParam term : terms) {
+            Label chip = new Label(term.getName());
+            chip.setStyle(
+                "-fx-font-size: 11px; " +
+                "-fx-padding: 2 8; " +
+                "-fx-background-color: #e9ecef; " +
+                "-fx-background-radius: 10; " +
+                "-fx-cursor: hand;");
+            chip.setOnMouseEntered(e -> chip.setStyle(
+                "-fx-font-size: 11px; " +
+                "-fx-padding: 2 8; " +
+                "-fx-background-color: #0066cc; " +
+                "-fx-text-fill: white; " +
+                "-fx-background-radius: 10; " +
+                "-fx-cursor: hand;"));
+            chip.setOnMouseExited(e -> chip.setStyle(
+                "-fx-font-size: 11px; " +
+                "-fx-padding: 2 8; " +
+                "-fx-background-color: #e9ecef; " +
+                "-fx-background-radius: 10; " +
+                "-fx-cursor: hand;"));
+            chip.setOnMouseClicked(e -> {
+                if (!targetField.getSelectedTerms().contains(term)) {
+                    targetField.addTerm(term);
+                }
+            });
+            pane.getChildren().add(chip);
+        }
+
+        return pane;
     }
 
     @Override

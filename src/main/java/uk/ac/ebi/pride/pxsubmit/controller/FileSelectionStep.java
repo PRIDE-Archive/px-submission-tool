@@ -45,7 +45,6 @@ public class FileSelectionStep extends AbstractWizardStep {
     private Button addFilesButton;
     private Button addFolderButton;
     private Button removeSelectedButton;
-    private Button validateButton;
     private ProgressBar validationProgress;
     private Label validationStatus;
 
@@ -85,15 +84,8 @@ public class FileSelectionStep extends AbstractWizardStep {
         removeSelectedButton.setOnAction(e -> removeSelected());
         removeSelectedButton.setDisable(true);
 
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-
-        validateButton = new Button("Validate Files");
-        validateButton.setOnAction(e -> validateFiles());
-
         buttonBar.getChildren().addAll(
-            addFilesButton, addFolderButton, removeSelectedButton,
-            spacer, validateButton
+            addFilesButton, addFolderButton, removeSelectedButton
         );
 
         // File classification panel
@@ -276,70 +268,9 @@ public class FileSelectionStep extends AbstractWizardStep {
 
                     int duplicateCount = totalFiles - newFiles.size();
 
-                    // Analyze file types before adding
-                    Map<ProjectFileType, Integer> typeCount = new HashMap<>();
-                    for (File file : newFiles) {
-                        ProjectFileType type = detectFileType(file);
-                        typeCount.put(type, typeCount.getOrDefault(type, 0) + 1);
-                    }
-
-                    int otherCount = typeCount.getOrDefault(ProjectFileType.OTHER, 0);
-                    double otherPercentage = newFiles.isEmpty() ? 0 : (otherCount * 100.0 / newFiles.size());
-
-                    // Build confirmation message
-                    StringBuilder message = new StringBuilder();
-                    message.append("Found ").append(totalFiles).append(" file(s) in folder:\n");
-                    message.append(directory.getName()).append("\n\n");
-
-                    if (duplicateCount > 0) {
-                        message.append(duplicateCount).append(" file(s) already added (will be skipped)\n");
-                        message.append(newFiles.size()).append(" new file(s) to add\n\n");
-                    }
-
-                    message.append("File type breakdown:\n");
-                    for (Map.Entry<ProjectFileType, Integer> entry : typeCount.entrySet()) {
-                        message.append("• ").append(entry.getKey()).append(": ")
-                            .append(entry.getValue()).append(" file(s)\n");
-                    }
-
-                    // Warn about too many OTHER files
-                    if (otherCount > 0 && otherPercentage > 20) {
-                        message.append("\n⚠️  WARNING: ")
-                            .append(otherCount).append(" file(s) (")
-                            .append(String.format("%.1f%%", otherPercentage))
-                            .append(") could not be automatically classified.\n");
-                        message.append("These files are marked as 'OTHER' type.\n");
-                        message.append("Please review and reclassify them manually if needed.\n");
-                    }
-
-                    message.append("\nDo you want to add these files?");
-
-                    // Show confirmation dialog
-                    Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
-                    confirmAlert.setTitle("Confirm Add Files");
-                    confirmAlert.setHeaderText("Add " + newFiles.size() + " file(s)?");
-                    confirmAlert.setContentText(message.toString());
-
-                    ButtonType addButton = new ButtonType("Add Files", ButtonBar.ButtonData.OK_DONE);
-                    ButtonType cancelButton = new ButtonType("Cancel", ButtonBar.ButtonData.CANCEL_CLOSE);
-                    confirmAlert.getButtonTypes().setAll(addButton, cancelButton);
-
-                    confirmAlert.showAndWait().ifPresent(response -> {
-                        if (response == addButton) {
-                            // Add files
-                            addFilesToModel(newFiles);
-
-                            // Show summary
-                            String summaryMsg = "Added " + newFiles.size() + " file(s) from folder";
-                            if (otherCount > 0 && otherPercentage > 20) {
-                                summaryMsg += "\n\nNote: " + otherCount + " file(s) are marked as 'OTHER'.\n" +
-                                    "Please review the file list and reclassify if needed.";
-                                showWarning("Files Added", summaryMsg);
-                            } else {
-                                showInfo("Files Added", summaryMsg);
-                            }
-                        }
-                    });
+                    // Add files directly without confirmation
+                    addFilesToModel(newFiles);
+                    logger.info("Added {} files from folder {}", newFiles.size(), directory.getName());
                 });
 
             } catch (Exception e) {
@@ -549,15 +480,12 @@ public class FileSelectionStep extends AbstractWizardStep {
         validationProgress.progressProperty().bind(validationService.progressProperty());
         validationStatus.textProperty().bind(validationService.messageProperty());
 
-        validateButton.setDisable(true);
-
         validationService.setOnSucceeded(e -> {
             ValidationService.ValidationResult result = validationService.getValue();
             Platform.runLater(() -> {
                 validationProgress.setVisible(false);
                 validationProgress.progressProperty().unbind();
                 validationStatus.textProperty().unbind();
-                validateButton.setDisable(false);
 
                 if (result.isValid()) {
                     validationStatus.setText("Validation passed!");
@@ -585,7 +513,6 @@ public class FileSelectionStep extends AbstractWizardStep {
                 validationProgress.setVisible(false);
                 validationProgress.progressProperty().unbind();
                 validationStatus.textProperty().unbind();
-                validateButton.setDisable(false);
                 validationStatus.setText("Validation error: " + e.getSource().getException().getMessage());
                 validationStatus.setStyle("-fx-text-fill: #dc3545;");
             });

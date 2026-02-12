@@ -27,6 +27,7 @@ public class AppConfig {
     private String reuploadDetailUrl;
     private String uploadVerifyUrl;
     private String submissionCompleteUrl;
+    private String resubmissionCompleteUrl;
     private String submissionDetailUrl;
     private String submissionWsBaseUrl;
 
@@ -88,6 +89,8 @@ public class AppConfig {
             "http://www.proteomexchange.org/archive-submission-ws/submission/fileListAndSize");
         submissionCompleteUrl = getProperty("px.submission.complete.url",
             "http://www.proteomexchange.org/archive-submission-ws/submission/submit");
+        resubmissionCompleteUrl = getProperty("px.resubmission.complete.url",
+            "http://www.proteomexchange.org/archive-submission-ws/resubmission/resubmit");
         submissionDetailUrl = getProperty("px.submission.detail.url",
             "http://www.proteomexchange.org/archive-submission-ws/resubmission/projects");
         submissionWsBaseUrl = getProperty("px.submission.ws.base.url",
@@ -165,6 +168,10 @@ public class AppConfig {
 
     public String getSubmissionCompleteUrl() {
         return submissionCompleteUrl;
+    }
+
+    public String getResubmissionCompleteUrl() {
+        return resubmissionCompleteUrl;
     }
 
     public String getSubmissionDetailUrl() {

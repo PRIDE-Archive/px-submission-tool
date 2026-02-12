@@ -428,4 +428,106 @@ public class OlsService {
                 new CvParam("UNIMOD", "UNIMOD:21", "Phospho", null)
         );
     }
+
+    /**
+     * Get common tissues (for quick selection)
+     */
+    public static List<CvParam> getCommonTissues() {
+        return List.of(
+                new CvParam("BTO", "BTO:0000759", "liver", null),
+                new CvParam("BTO", "BTO:0000142", "brain", null),
+                new CvParam("BTO", "BTO:0000562", "heart", null),
+                new CvParam("BTO", "BTO:0000671", "kidney", null),
+                new CvParam("BTO", "BTO:0000763", "lung", null),
+                new CvParam("BTO", "BTO:0001103", "plasma", null),
+                new CvParam("BTO", "BTO:0000133", "blood", null),
+                new CvParam("BTO", "BTO:0001253", "serum", null),
+                new CvParam("BTO", "BTO:0001078", "pancreas", null),
+                new CvParam("BTO", "BTO:0000988", "muscle", null),
+                new CvParam("BTO", "BTO:0001418", "urine", null),
+                new CvParam("BTO", "BTO:0001175", "skin", null)
+        );
+    }
+
+    /**
+     * Get common diseases (for quick selection)
+     */
+    public static List<CvParam> getCommonDiseases() {
+        return List.of(
+                new CvParam("DOID", "DOID:162", "cancer", null),
+                new CvParam("DOID", "DOID:684", "hepatocellular carcinoma", null),
+                new CvParam("DOID", "DOID:1612", "breast cancer", null),
+                new CvParam("DOID", "DOID:9256", "colorectal cancer", null),
+                new CvParam("DOID", "DOID:1324", "lung cancer", null),
+                new CvParam("DOID", "DOID:10283", "prostate cancer", null),
+                new CvParam("DOID", "DOID:9351", "diabetes mellitus", null),
+                new CvParam("DOID", "DOID:10763", "hypertension", null),
+                new CvParam("DOID", "DOID:12858", "Huntington's disease", null),
+                new CvParam("DOID", "DOID:10652", "Alzheimer's disease", null),
+                new CvParam("DOID", "DOID:14330", "Parkinson's disease", null),
+                new CvParam("MONDO", "MONDO:0005015", "healthy", null)
+        );
+    }
+
+    /**
+     * Get common cell types (for quick selection)
+     */
+    public static List<CvParam> getCommonCellTypes() {
+        return List.of(
+                new CvParam("CL", "CL:0000057", "fibroblast", null),
+                new CvParam("CL", "CL:0000084", "T cell", null),
+                new CvParam("CL", "CL:0000236", "B cell", null),
+                new CvParam("CL", "CL:0000775", "neutrophil", null),
+                new CvParam("CL", "CL:0000235", "macrophage", null),
+                new CvParam("CL", "CL:0000182", "hepatocyte", null),
+                new CvParam("CL", "CL:0002322", "embryonic stem cell", null),
+                new CvParam("CL", "CL:0000034", "stem cell", null),
+                new CvParam("BTO", "BTO:0000567", "HeLa cell", null),
+                new CvParam("BTO", "BTO:0000017", "HEK293 cell", null),
+                new CvParam("BTO", "BTO:0000944", "MCF7 cell", null),
+                new CvParam("BTO", "BTO:0000093", "A549 cell", null)
+        );
+    }
+
+    /**
+     * Get common experiment types / MS methods (for quick selection)
+     */
+    public static List<CvParam> getCommonExperimentTypes() {
+        return List.of(
+                new CvParam("PRIDE", "PRIDE:0000428", "Bottom-up proteomics", null),
+                new CvParam("PRIDE", "PRIDE:0000427", "Top-down proteomics", null),
+                new CvParam("PRIDE", "PRIDE:0000627", "Data-dependent acquisition", null),
+                new CvParam("PRIDE", "PRIDE:0000450", "Data-independent acquisition", null),
+                new CvParam("PRIDE", "PRIDE:0000650", "diaPASEF", null),
+                new CvParam("PRIDE", "PRIDE:0000447", "SWATH MS", null),
+                new CvParam("PRIDE", "PRIDE:0000430", "Crosslinking MS", null),
+                new CvParam("PRIDE", "PRIDE:0000433", "Affinity purification (AP-MS)", null),
+                new CvParam("PRIDE", "PRIDE:0000311", "SRM/MRM", null),
+                new CvParam("PRIDE", "PRIDE:0000649", "Immunopeptidomics", null),
+                new CvParam("PRIDE", "PRIDE:0000648", "Metaproteomics", null),
+                new CvParam("PRIDE", "PRIDE:0000647", "Proteogenomics", null),
+                new CvParam("PRIDE", "PRIDE:0000665", "Glycoproteomics", null),
+                new CvParam("MS", "MS:1002521", "MS imaging", null)
+        );
+    }
+
+    /**
+     * Get common software/tools (for quick selection)
+     */
+    public static List<CvParam> getCommonSoftware() {
+        return List.of(
+                new CvParam("MS", "MS:1001583", "MaxQuant", null),
+                new CvParam("MS", "MS:1003253", "DIA-NN", null),
+                new CvParam("MS", "MS:1003429", "FragPipe", null),
+                new CvParam("MS", "MS:1001327", "Spectronaut", null),
+                new CvParam("MS", "MS:1001207", "Mascot", null),
+                new CvParam("MS", "MS:1000650", "Proteome Discoverer", null),
+                new CvParam("MS", "MS:1001476", "X!Tandem", null),
+                new CvParam("MS", "MS:1001585", "Andromeda", null),
+                new CvParam("MS", "MS:1001456", "Skyline", null),
+                new CvParam("MS", "MS:1002076", "MSFragger", null),
+                new CvParam("MS", "MS:1002038", "Proteome Discoverer Sequest HT", null),
+                new CvParam("MS", "MS:1001475", "OMSSA", null)
+        );
+    }
 }

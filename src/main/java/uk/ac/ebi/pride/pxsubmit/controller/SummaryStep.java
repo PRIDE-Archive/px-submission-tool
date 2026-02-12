@@ -1,15 +1,19 @@
 package uk.ac.ebi.pride.pxsubmit.controller;
 
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.stage.FileChooser;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.data.model.CvParam;
+import uk.ac.ebi.pride.data.io.SubmissionFileWriter;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 import uk.ac.ebi.pride.pxsubmit.util.FileTypeDetector;
 import uk.ac.ebi.pride.pxsubmit.view.component.ValidationFeedback;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,10 +25,11 @@ import java.util.stream.Collectors;
 public class SummaryStep extends AbstractWizardStep {
 
     private VBox contentBox;
+    private Label exportStatusLabel;
 
     public SummaryStep(SubmissionModel model) {
         super("summary",
-              "Review Submission",
+              "Summary",
               "Please review your submission details before uploading",
               model);
     }
@@ -56,10 +61,26 @@ public class SummaryStep extends AbstractWizardStep {
     private void buildSummary() {
         contentBox.getChildren().clear();
 
-        // Training mode warning (at top)
+        // Resubmission info banner
+        if (model.isResubmissionMode()) {
+            String accession = model.getSubmission().getProjectMetaData().getResubmissionPxAccession();
+            Label resubLabel = new Label(
+                "Resubmission to: " + (accession != null ? accession : "Unknown"));
+            resubLabel.setStyle(
+                "-fx-background-color: #d1ecf1; " +
+                "-fx-text-fill: #0c5460; " +
+                "-fx-padding: 12; " +
+                "-fx-background-radius: 5; " +
+                "-fx-font-weight: bold;");
+            resubLabel.setWrapText(true);
+            resubLabel.setMaxWidth(Double.MAX_VALUE);
+            contentBox.getChildren().add(resubLabel);
+        }
+
+        // Test mode warning (at top)
         if (model.isTrainingMode()) {
             Label warningLabel = new Label(
-                "\u26A0 TRAINING MODE: This submission will not be processed. " +
+                "\u26A0 TEST MODE: This submission will not be processed. " +
                 "No files will be uploaded to the production server.");
             warningLabel.setStyle(
                 "-fx-background-color: #fff3cd; " +
@@ -119,46 +140,60 @@ public class SummaryStep extends AbstractWizardStep {
         addFileSummary(filesSection);
         contentBox.getChildren().add(filesSection);
 
-        // Upload method selection
-        VBox uploadSection = createSectionBox("Upload Method");
+        // Export submission.px section
+        VBox exportSection = createSectionBox("Export Submission");
 
-        Label uploadInstructions = new Label("Choose how to upload your files to PRIDE:");
-        uploadInstructions.setWrapText(true);
-        uploadInstructions.setStyle("-fx-text-fill: #666;");
+        Label autoSaveNote = new Label("Note: Your submission.px file will be automatically saved before upload.");
+        autoSaveNote.setWrapText(true);
+        autoSaveNote.setStyle("-fx-text-fill: #28a745; -fx-font-style: italic;");
 
-        ToggleGroup uploadToggle = new ToggleGroup();
+        Label exportInstructions = new Label("You can also export a copy to a custom location:");
+        exportInstructions.setWrapText(true);
+        exportInstructions.setStyle("-fx-text-fill: #666;");
 
-        RadioButton ftpRadio = new RadioButton("FTP - Standard file transfer (recommended for most users)");
-        ftpRadio.setToggleGroup(uploadToggle);
-        ftpRadio.setUserData(uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod.FTP);
+        exportStatusLabel = new Label();
+        exportStatusLabel.setWrapText(true);
+        exportStatusLabel.setVisible(false);
+        exportStatusLabel.setManaged(false);
 
-        RadioButton asperaRadio = new RadioButton("Aspera - High-speed transfer (recommended for large datasets)");
-        asperaRadio.setToggleGroup(uploadToggle);
-        asperaRadio.setUserData(uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod.ASPERA);
+        Button exportButton = new Button("Export submission.px");
+        exportButton.setStyle("-fx-background-color: #6c757d; -fx-text-fill: white;");
+        exportButton.setOnAction(e -> exportSubmissionFile());
 
-        // Set current selection
-        if (model.getUploadMethod() == uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod.ASPERA) {
-            asperaRadio.setSelected(true);
-        } else {
-            ftpRadio.setSelected(true);
-            if (model.getUploadMethod() == null) {
-                model.setUploadMethod(uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod.FTP);
+        HBox exportButtonBox = new HBox(10);
+        exportButtonBox.setAlignment(Pos.CENTER_LEFT);
+        exportButtonBox.setPadding(new Insets(5, 0, 0, 0));
+        exportButtonBox.getChildren().addAll(exportButton, exportStatusLabel);
+
+        exportSection.getChildren().addAll(autoSaveNote, exportInstructions, exportButtonBox);
+        contentBox.getChildren().add(exportSection);
+    }
+
+    private void exportSubmissionFile() {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Save Submission File");
+        fileChooser.setInitialFileName("submission.px");
+        fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("PX Submission Files", "*.px")
+        );
+
+        File file = fileChooser.showSaveDialog(contentBox.getScene().getWindow());
+        if (file != null) {
+            try {
+                SubmissionFileWriter.write(model.getSubmission(), file);
+                exportStatusLabel.setText("Exported to: " + file.getAbsolutePath());
+                exportStatusLabel.setStyle("-fx-text-fill: #28a745; -fx-font-size: 11px;");
+                exportStatusLabel.setVisible(true);
+                exportStatusLabel.setManaged(true);
+                logger.info("Submission file exported to: {}", file.getAbsolutePath());
+            } catch (Exception ex) {
+                logger.error("Failed to export submission file", ex);
+                exportStatusLabel.setText("Export failed: " + ex.getMessage());
+                exportStatusLabel.setStyle("-fx-text-fill: #dc3545; -fx-font-size: 11px;");
+                exportStatusLabel.setVisible(true);
+                exportStatusLabel.setManaged(true);
             }
         }
-
-        // Update model on selection change
-        uploadToggle.selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal != null) {
-                model.setUploadMethod(
-                    (uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod) newVal.getUserData());
-            }
-        });
-
-        VBox radioBox = new VBox(8, ftpRadio, asperaRadio);
-        radioBox.setPadding(new Insets(5, 0, 0, 10));
-
-        uploadSection.getChildren().addAll(uploadInstructions, radioBox);
-        contentBox.getChildren().add(uploadSection);
     }
 
     private ValidationFeedback createValidationSummary() {
@@ -313,7 +348,7 @@ public class SummaryStep extends AbstractWizardStep {
 
     @Override
     public String getNextButtonText() {
-        return "Submit";
+        return "Next";
     }
 
     @Override

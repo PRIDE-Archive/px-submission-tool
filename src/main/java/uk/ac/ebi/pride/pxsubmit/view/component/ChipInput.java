@@ -85,7 +85,7 @@ public class ChipInput extends VBox {
 
         // Input field
         inputField = new TextField();
-        inputField.setStyle("-fx-background-color: transparent; -fx-border-width: 0;");
+        inputField.setStyle("-fx-background-color: white; -fx-border-width: 0; -fx-padding: 4;");
         inputField.setMinWidth(100);
         inputField.setPrefWidth(200);
         HBox.setHgrow(inputField, Priority.ALWAYS);

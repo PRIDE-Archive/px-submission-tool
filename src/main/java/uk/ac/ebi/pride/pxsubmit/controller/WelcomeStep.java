@@ -5,8 +5,6 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
-import javafx.scene.text.Text;
-import javafx.scene.text.TextFlow;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 
 /**
@@ -51,9 +49,6 @@ public class WelcomeStep extends AbstractWizardStep {
         // File Categories Guide
         VBox categoriesSection = createFileCategories();
 
-        // Submission Types
-        VBox typesSection = createSubmissionTypes();
-
         // Checklist
         VBox checklistSection = createChecklist();
 
@@ -67,8 +62,6 @@ public class WelcomeStep extends AbstractWizardStep {
             introSection,
             new Separator(),
             categoriesSection,
-            new Separator(),
-            typesSection,
             new Separator(),
             checklistSection,
             new Separator(),
@@ -119,31 +112,31 @@ public class WelcomeStep extends AbstractWizardStep {
             ".raw, .wiff, .d, .mzML, .mzXML"
         ), 0, 0);
 
-        // ANALYSIS Files
+        // ANALYSIS Files (with Standard files info)
         grid.add(createCategoryCard(
             "ANALYSIS Files",
             "MANDATORY",
             "#28a745",
-            "Search engine / analysis tool outputs",
-            "MaxQuant, DIA-NN, FragPipe, Mascot, etc."
+            "Search engine / analysis tool outputs. Standard formats (mzIdentML, mzTab) also accepted.",
+            "MaxQuant, DIA-NN, FragPipe, Mascot, .mzid, .mzTab"
         ), 1, 0);
 
-        // FASTA Database
+        // Reference Database
         grid.add(createCategoryCard(
-            "FASTA Database",
+            "Reference Database",
             "MANDATORY",
             "#17a2b8",
             "Protein sequence database used",
             ".fasta, .fa, .faa"
         ), 2, 0);
 
-        // STANDARD Files
+        // Other Files
         grid.add(createCategoryCard(
-            "STANDARD Files",
-            "RECOMMENDED",
+            "Other Files",
+            "OPTIONAL",
             "#6f42c1",
-            "Standard formats for COMPLETE submission",
-            ".mzid, .mzIdentML, .mzTab"
+            "Any additional supplementary files",
+            "Documentation, scripts, etc."
         ), 0, 1);
 
         // PEAK Lists
@@ -215,51 +208,6 @@ public class WelcomeStep extends AbstractWizardStep {
         return card;
     }
 
-    private VBox createSubmissionTypes() {
-        VBox section = new VBox(12);
-
-        Label titleLabel = new Label("Submission Types");
-        titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-
-        VBox typesBox = new VBox(8);
-
-        // COMPLETE
-        HBox completeBox = new HBox(10);
-        completeBox.setAlignment(Pos.CENTER_LEFT);
-        Label completeIcon = new Label("\u2713");
-        completeIcon.setStyle("-fx-text-fill: #28a745; -fx-font-weight: bold;");
-        Label completeLabel = new Label("COMPLETE: RAW + mzIdentML/mzTab (fully reprocessable)");
-        completeLabel.setStyle("-fx-font-weight: bold;");
-        completeBox.getChildren().addAll(completeIcon, completeLabel);
-
-        // PARTIAL
-        HBox partialBox = new HBox(10);
-        partialBox.setAlignment(Pos.CENTER_LEFT);
-        Label partialIcon = new Label("\u25CB");
-        partialIcon.setStyle("-fx-text-fill: #ffc107; -fx-font-weight: bold;");
-        Label partialLabel = new Label("PARTIAL: RAW + Search outputs (not in standard format)");
-        partialBox.getChildren().addAll(partialIcon, partialLabel);
-
-        // RAW
-        HBox rawBox = new HBox(10);
-        rawBox.setAlignment(Pos.CENTER_LEFT);
-        Label rawIcon = new Label("\u25CB");
-        rawIcon.setStyle("-fx-text-fill: #6c757d; -fx-font-weight: bold;");
-        Label rawLabel = new Label("RAW: Only raw files (no analysis results)");
-        rawBox.getChildren().addAll(rawIcon, rawLabel);
-
-        typesBox.getChildren().addAll(completeBox, partialBox, rawBox);
-
-        Label noteLabel = new Label(
-            "Note: COMPLETE submissions are preferred as they allow full data reanalysis. " +
-            "Convert your results to mzIdentML using tools like OpenMS or msconvert.");
-        noteLabel.setWrapText(true);
-        noteLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 12px; -fx-font-style: italic;");
-
-        section.getChildren().addAll(titleLabel, typesBox, noteLabel);
-        return section;
-    }
-
     private VBox createChecklist() {
         VBox section = new VBox(12);
 
@@ -273,19 +221,31 @@ public class WelcomeStep extends AbstractWizardStep {
             "I have all my RAW instrument files ready",
             "I have the FASTA database used for the search",
             "I have my analysis/search results (MaxQuant, DIA-NN, etc.)",
-            "I know the sample metadata (organism, tissue, instrument)",
-            "I have a PRIDE account (or will create one)"
+            "I know the sample metadata (organism, tissue, instrument)"
         };
 
         for (String item : items) {
             HBox itemBox = new HBox(8);
             itemBox.setAlignment(Pos.CENTER_LEFT);
-            Label checkIcon = new Label("\u2610"); // Empty checkbox
-            checkIcon.setStyle("-fx-font-size: 14px;");
+            Label checkIcon = new Label("\u2713"); // Checkmark
+            checkIcon.setStyle("-fx-font-size: 14px; -fx-text-fill: #28a745;");
             Label itemLabel = new Label(item);
             itemBox.getChildren().addAll(checkIcon, itemLabel);
             checklistBox.getChildren().add(itemBox);
         }
+
+        // Add PRIDE account item with registration link
+        HBox accountBox = new HBox(4);
+        accountBox.setAlignment(Pos.CENTER_LEFT);
+        Label accountCheckIcon = new Label("\u2713");
+        accountCheckIcon.setStyle("-fx-font-size: 14px; -fx-text-fill: #28a745;");
+        Label accountText = new Label("I have a PRIDE account -");
+        Hyperlink registerLink = new Hyperlink("register here");
+        registerLink.setPadding(new Insets(0));
+        registerLink.setOnAction(e -> openUrl("https://www.ebi.ac.uk/pride/register"));
+        Label accountTextEnd = new Label("if you don't have one");
+        accountBox.getChildren().addAll(accountCheckIcon, accountText, registerLink, accountTextEnd);
+        checklistBox.getChildren().add(accountBox);
 
         section.getChildren().addAll(titleLabel, checklistBox);
         return section;
@@ -294,17 +254,19 @@ public class WelcomeStep extends AbstractWizardStep {
     private VBox createTrainingSection() {
         VBox section = new VBox(10);
 
-        Label titleLabel = new Label("Training Mode");
+        Label titleLabel = new Label("Test Mode");
         titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
 
-        trainingModeCheckbox = new CheckBox("Enable Training Mode");
+        trainingModeCheckbox = new CheckBox("Enable Test Mode");
         trainingModeCheckbox.setStyle("-fx-font-weight: bold;");
 
-        Label trainingDesc = new Label(
-            "Training mode allows you to explore the submission process without actually " +
+        // Add tooltip with description instead of showing it directly
+        Tooltip testModeTooltip = new Tooltip(
+            "Test mode allows you to explore the submission process without actually " +
             "uploading files. Perfect for learning or testing. No data will be sent to PRIDE.");
-        trainingDesc.setWrapText(true);
-        trainingDesc.setStyle("-fx-text-fill: #666;");
+        testModeTooltip.setWrapText(true);
+        testModeTooltip.setMaxWidth(300);
+        trainingModeCheckbox.setTooltip(testModeTooltip);
 
         // Warning box
         HBox warningBox = new HBox(10);
@@ -315,14 +277,14 @@ public class WelcomeStep extends AbstractWizardStep {
         Label warningIcon = new Label("\u26A0");
         warningIcon.setStyle("-fx-text-fill: #856404; -fx-font-size: 16px;");
 
-        Label warningText = new Label("Training mode submissions will NOT be stored in PRIDE Archive.");
+        Label warningText = new Label("Test mode submissions will NOT be stored in PRIDE Archive.");
         warningText.setStyle("-fx-text-fill: #856404;");
 
         warningBox.getChildren().addAll(warningIcon, warningText);
         warningBox.visibleProperty().bind(trainingModeCheckbox.selectedProperty());
         warningBox.managedProperty().bind(trainingModeCheckbox.selectedProperty());
 
-        section.getChildren().addAll(titleLabel, trainingModeCheckbox, trainingDesc, warningBox);
+        section.getChildren().addAll(titleLabel, trainingModeCheckbox, warningBox);
         return section;
     }
 

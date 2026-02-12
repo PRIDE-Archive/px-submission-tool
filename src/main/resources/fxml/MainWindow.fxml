@@ -43,9 +43,9 @@
                 <!-- Spacer -->
                 <Region HBox.hgrow="ALWAYS"/>
 
-                <!-- Training Mode Indicator -->
+                <!-- Test Mode Indicator -->
                 <Label fx:id="trainingModeLabel"
-                       text="TRAINING MODE"
+                       text="TEST MODE"
                        styleClass="training-mode-badge"
                        visible="false"
                        managed="false"/>

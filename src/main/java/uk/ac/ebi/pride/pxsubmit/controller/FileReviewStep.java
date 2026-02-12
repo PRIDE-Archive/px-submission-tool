@@ -85,7 +85,7 @@ public class FileReviewStep extends AbstractWizardStep {
         Tab rawTab = createTab("RAW", createRawFilesPane(), rawFiles);
         Tab analysisTab = createTab("ANALYSIS", createAnalysisPane(), analysisFiles);
         Tab standardTab = createTab("STANDARD", createStandardPane(), standardFiles);
-        Tab databaseTab = createTab("Database", createDatabasePane(), databaseFiles);
+        Tab databaseTab = createTab("Reference Database", createDatabasePane(), databaseFiles);
         Tab otherTab = createTab("Other", createOtherPane(), otherFiles);
 
         tabPane.getTabs().addAll(rawTab, analysisTab, standardTab, databaseTab, otherTab);

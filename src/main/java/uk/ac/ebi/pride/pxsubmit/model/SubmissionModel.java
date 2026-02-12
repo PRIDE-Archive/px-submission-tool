@@ -80,6 +80,7 @@ public class SubmissionModel {
     private final ObservableList<CvParam> modifications = FXCollections.observableArrayList();
     private final ObservableList<CvParam> quantifications = FXCollections.observableArrayList();
     private final ObservableList<CvParam> experimentMethods = FXCollections.observableArrayList();
+    private final ObservableList<CvParam> software = FXCollections.observableArrayList();
 
     // ==================== Lab Head ====================
 
@@ -338,6 +339,18 @@ public class SubmissionModel {
         submission.get().getProjectMetaData().removeMassSpecExperimentMethods(param);
     }
 
+    public void addSoftware(CvParam param) {
+        if (!software.contains(param)) {
+            software.add(param);
+            submission.get().getProjectMetaData().addSoftwares(param);
+        }
+    }
+
+    public void removeSoftware(CvParam param) {
+        software.remove(param);
+        submission.get().getProjectMetaData().removeSoftwares(param);
+    }
+
     // ==================== State Management ====================
 
     /**
@@ -365,6 +378,7 @@ public class SubmissionModel {
         modifications.clear();
         quantifications.clear();
         experimentMethods.clear();
+        software.clear();
 
         projectTitle.set(null);
         projectDescription.set(null);
@@ -537,6 +551,7 @@ public class SubmissionModel {
     public ObservableList<CvParam> getModifications() { return modifications; }
     public ObservableList<CvParam> getQuantifications() { return quantifications; }
     public ObservableList<CvParam> getExperimentMethods() { return experimentMethods; }
+    public ObservableList<CvParam> getSoftware() { return software; }
 
     // Lab head
     public StringProperty labHeadNameProperty() { return labHeadName; }

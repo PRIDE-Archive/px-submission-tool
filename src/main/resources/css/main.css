@@ -23,7 +23,7 @@
 /* ==================== Header ==================== */
 
 .wizard-header {
-    -fx-background-color: linear-gradient(to right, #003366, #006699);
+    -fx-background-color: linear-gradient(to right, #1B5E20, #388E3C);
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 4, 0, 0, 2);
 }
 

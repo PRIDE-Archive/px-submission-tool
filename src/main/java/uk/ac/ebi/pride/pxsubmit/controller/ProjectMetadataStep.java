@@ -2,12 +2,19 @@ package uk.ac.ebi.pride.pxsubmit.controller;
 
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.util.Duration;
+import uk.ac.ebi.pride.data.model.CvParam;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
+import uk.ac.ebi.pride.pxsubmit.service.OlsService;
+
+import java.util.List;
+import uk.ac.ebi.pride.pxsubmit.service.OlsService.OlsOntology;
 import uk.ac.ebi.pride.pxsubmit.view.component.ChipInput;
+import uk.ac.ebi.pride.pxsubmit.view.component.OlsAutocomplete;
 import uk.ac.ebi.pride.pxsubmit.view.component.ValidationFeedback;
 
 /**
@@ -22,6 +29,7 @@ public class ProjectMetadataStep extends AbstractWizardStep {
     private ChipInput keywordsInput;
     private TextArea sampleProtocolArea;
     private TextArea dataProtocolArea;
+    private OlsAutocomplete experimentTypeField;
 
     // Character counters
     private Label titleCounter;
@@ -107,6 +115,17 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         keywordsHint.setStyle("-fx-text-fill: #999; -fx-font-size: 11px; -fx-font-style: italic;");
         keywordsSection.getChildren().addAll(keywordsInput, keywordsHint);
 
+        // Experiment Type
+        VBox experimentTypeSection = createFieldSection("Experiment Type *",
+            "Select the type of mass spectrometry experiment", true);
+        experimentTypeField = new OlsAutocomplete(OlsOntology.PRIDE);
+        experimentTypeField.setPromptText("Search experiment type (e.g., Bottom-up, DIA, DDA)...");
+        experimentTypeField.setCommonTerms(OlsService.getCommonExperimentTypes());
+        experimentTypeField.setOnTermSelected(term -> model.addExperimentMethod(term));
+        experimentTypeField.setOnTermRemoved(term -> model.removeExperimentMethod(term));
+        experimentTypeSection.getChildren().add(experimentTypeField);
+        experimentTypeSection.getChildren().add(createQuickSelectPane(OlsService.getCommonExperimentTypes(), experimentTypeField));
+
         // Sample Processing Protocol
         VBox sampleSection = createSection("Sample Processing Protocol *",
             "Describe how samples were prepared for analysis");
@@ -156,6 +175,7 @@ public class ProjectMetadataStep extends AbstractWizardStep {
             titleSection,
             descSection,
             keywordsSection,
+            experimentTypeSection,
             sampleSection,
             dataSection,
             validationFeedback,
@@ -177,6 +197,75 @@ public class ProjectMetadataStep extends AbstractWizardStep {
 
         section.getChildren().addAll(titleLabel, descLabel);
         return section;
+    }
+
+    private VBox createFieldSection(String title, String description, boolean required) {
+        VBox section = new VBox(5);
+
+        HBox titleBox = new HBox(5);
+        titleBox.setAlignment(Pos.CENTER_LEFT);
+
+        Label titleLabel = new Label(title);
+        titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+
+        if (required) {
+            Label reqLabel = new Label("REQUIRED");
+            reqLabel.setStyle("-fx-font-size: 9px; -fx-text-fill: white; -fx-background-color: #dc3545; -fx-padding: 2 4; -fx-background-radius: 4;");
+            titleBox.getChildren().addAll(titleLabel, reqLabel);
+        } else {
+            titleBox.getChildren().add(titleLabel);
+        }
+
+        Label descLabel = new Label(description);
+        descLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 12px;");
+
+        section.getChildren().addAll(titleBox, descLabel);
+        return section;
+    }
+
+    /**
+     * Creates a pane with clickable quick-select buttons for common terms.
+     */
+    private FlowPane createQuickSelectPane(List<CvParam> terms, OlsAutocomplete targetField) {
+        FlowPane pane = new FlowPane();
+        pane.setHgap(6);
+        pane.setVgap(4);
+        pane.setPadding(new Insets(4, 0, 0, 0));
+
+        Label label = new Label("Examples:");
+        label.setStyle("-fx-text-fill: #888; -fx-font-size: 11px;");
+        pane.getChildren().add(label);
+
+        for (CvParam term : terms) {
+            Label chip = new Label(term.getName());
+            chip.setStyle(
+                "-fx-font-size: 11px; " +
+                "-fx-padding: 2 8; " +
+                "-fx-background-color: #e9ecef; " +
+                "-fx-background-radius: 10; " +
+                "-fx-cursor: hand;");
+            chip.setOnMouseEntered(e -> chip.setStyle(
+                "-fx-font-size: 11px; " +
+                "-fx-padding: 2 8; " +
+                "-fx-background-color: #0066cc; " +
+                "-fx-text-fill: white; " +
+                "-fx-background-radius: 10; " +
+                "-fx-cursor: hand;"));
+            chip.setOnMouseExited(e -> chip.setStyle(
+                "-fx-font-size: 11px; " +
+                "-fx-padding: 2 8; " +
+                "-fx-background-color: #e9ecef; " +
+                "-fx-background-radius: 10; " +
+                "-fx-cursor: hand;"));
+            chip.setOnMouseClicked(e -> {
+                if (!targetField.getSelectedTerms().contains(term)) {
+                    targetField.addTerm(term);
+                }
+            });
+            pane.getChildren().add(chip);
+        }
+
+        return pane;
     }
 
     @Override
@@ -219,6 +308,12 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         keywordsInput.textProperty().addListener((obs, oldVal, newVal) -> updateValidationFeedback());
         sampleProtocolArea.textProperty().addListener((obs, oldVal, newVal) -> updateValidationFeedback());
         dataProtocolArea.textProperty().addListener((obs, oldVal, newVal) -> updateValidationFeedback());
+        experimentTypeField.getSelectedTerms().addListener((javafx.collections.ListChangeListener.Change<? extends CvParam> c) -> updateValidationFeedback());
+
+        // Load existing experiment methods from model
+        if (!model.getExperimentMethods().isEmpty()) {
+            experimentTypeField.setSelectedTerms(model.getExperimentMethods());
+        }
 
         // Validation binding
         valid.bind(Bindings.createBooleanBinding(() -> {
@@ -227,16 +322,19 @@ public class ProjectMetadataStep extends AbstractWizardStep {
             String keywords = keywordsInput.getText();
             String sampleProtocol = sampleProtocolArea.getText();
             String dataProtocol = dataProtocolArea.getText();
+            boolean hasExperimentType = experimentTypeField.hasSelection();
 
             return isValidTitle(title) &&
                    isValidDescription(desc) &&
                    isNotEmpty(keywords) &&
+                   hasExperimentType &&
                    isNotEmpty(sampleProtocol) &&
                    isNotEmpty(dataProtocol);
         },
         titleField.textProperty(),
         descriptionArea.textProperty(),
         keywordsInput.textProperty(),
+        experimentTypeField.getSelectedTerms(),
         sampleProtocolArea.textProperty(),
         dataProtocolArea.textProperty()));
     }
@@ -271,6 +369,12 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         if (keywordsInput.isEmpty()) {
             showError("Please enter at least one keyword");
             keywordsInput.requestFocus();
+            return false;
+        }
+
+        if (!experimentTypeField.hasSelection()) {
+            showError("Please select at least one experiment type");
+            experimentTypeField.requestFocus();
             return false;
         }
 
@@ -327,9 +431,10 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         String keywords = keywordsInput.getText();
         String sampleProtocol = sampleProtocolArea.getText();
         String dataProtocol = dataProtocolArea.getText();
+        boolean hasExperimentType = experimentTypeField != null && experimentTypeField.hasSelection();
 
         int completedFields = 0;
-        int totalFields = 5;
+        int totalFields = 6;
 
         // Title validation
         if (title == null || title.trim().length() < MIN_TITLE_LENGTH) {
@@ -352,6 +457,13 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         // Keywords validation
         if (isNullOrEmpty(keywords)) {
             validationFeedback.addWarning("Keywords: At least one keyword required");
+        } else {
+            completedFields++;
+        }
+
+        // Experiment type validation
+        if (!hasExperimentType) {
+            validationFeedback.addWarning("Experiment Type: At least one type required");
         } else {
             completedFields++;
         }

@@ -391,7 +391,7 @@ public class ChecksumComputationStep extends AbstractWizardStep {
 
     @Override
     public String getNextButtonText() {
-        return "Continue to Upload";
+        return "Next";
     }
 
     /**
