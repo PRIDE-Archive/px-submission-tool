@@ -79,11 +79,11 @@ public class PxSubmitApplication extends Application {
     public void init() throws Exception {
         instance = this;
 
+        // Initialize model first (needed by argument parsing)
+        model = new SubmissionModel();
+
         // Parse command line arguments
         parseArguments(getParameters().getRaw().toArray(new String[0]));
-
-        // Initialize model
-        model = new SubmissionModel();
 
         logger.info("Application initialized");
     }
@@ -146,21 +146,23 @@ public class PxSubmitApplication extends Application {
         // 1. Welcome - Introduction and guidelines
         // 2. Login - PRIDE authentication
         // 3. Submission Type - Choose submission type
-        // 4. File Selection - Add files (drag-drop)
-        // 5. File Review - Review and adjust classifications
-        // 6. Sample Metadata - Species, tissue, instrument, etc. (with SDRF parsing)
-        // 7. Project Metadata - Title, description, keywords
-        // 8. Summary - Review before upload
-        // 9. Checksum Computation - Compute checksums for all files
-        // 10. Submission - Upload and complete
+        // 4. Project Metadata - Title, description, keywords
+        // 5. Sample Information - SDRF templates and guidance
+        // 6. File Selection - Add files (drag-drop)
+        // 7. File Review - Review and adjust classifications
+        // 8. Sample Metadata - Species, tissue, instrument, etc. (with OLS autocomplete)
+        // 9. Summary - Review before upload
+        // 10. Checksum Computation - Compute checksums for all files
+        // 11. Submission - Upload and complete
 
         wizardController.addStep(new WelcomeStep(model));
         wizardController.addStep(new LoginStep(model));
         wizardController.addStep(new SubmissionTypeStep(model));
+        wizardController.addStep(new ProjectMetadataStep(model));
+        wizardController.addStep(new SampleInformationStep(model));
         wizardController.addStep(new FileSelectionStep(model));
         wizardController.addStep(new FileReviewStep(model));
         wizardController.addStep(new SampleMetadataStep(model));
-        wizardController.addStep(new ProjectMetadataStep(model));
         wizardController.addStep(new SummaryStep(model));
         wizardController.addStep(new ChecksumComputationStep(model));
         wizardController.addStep(new SubmissionStep(model));

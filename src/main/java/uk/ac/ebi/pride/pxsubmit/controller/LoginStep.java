@@ -249,11 +249,17 @@ public class LoginStep extends AbstractWizardStep {
 
     @Override
     protected void onStepEntering() {
-        // Focus username field
-        usernameField.requestFocus();
-
         // Clear any previous error
         hideError();
+
+        // Test mode - show notice that login is not required
+        if (model.isTrainingMode()) {
+            showTestModeNotice();
+            return;
+        }
+
+        // Focus username field
+        usernameField.requestFocus();
 
         // Reset auth state if coming back to this step
         if (!model.isLoggedIn()) {
@@ -263,8 +269,23 @@ public class LoginStep extends AbstractWizardStep {
         }
     }
 
+    private void showTestModeNotice() {
+        errorLabel.setText("Test Mode: Login not required. Click 'Next' to continue.");
+        errorLabel.setStyle("-fx-text-fill: #28a745; -fx-font-weight: bold;");
+        errorLabel.setVisible(true);
+        errorLabel.setManaged(true);
+    }
+
     @Override
     public boolean validate() {
+        // Test mode - skip login completely, no credentials needed
+        if (model.isTrainingMode()) {
+            logger.info("Test mode - skipping authentication, no login required");
+            model.setLoggedIn(true);
+            model.setResubmissionMode(false);
+            return true;
+        }
+
         // If already authenticated, handle resubmission selection and proceed
         if (authenticated) {
             if (resubmissionCheckbox.isSelected()) {
@@ -300,13 +321,6 @@ public class LoginStep extends AbstractWizardStep {
         if (password.isEmpty()) {
             showError("Please enter your password");
             return false;
-        }
-
-        // Test mode - skip actual authentication
-        if (model.isTrainingMode()) {
-            logger.info("Test mode - skipping authentication");
-            model.setLoggedIn(true);
-            return true;
         }
 
         // Cancel any previous auth attempt

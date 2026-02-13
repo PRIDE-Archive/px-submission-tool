@@ -397,7 +397,64 @@ public class ProjectMetadataStep extends AbstractWizardStep {
 
     @Override
     protected void onStepEntering() {
+        // In test mode, pre-fill with example data if fields are empty
+        if (model.isTrainingMode()) {
+            populateTestModeExamples();
+        }
         titleField.requestFocus();
+    }
+
+    /**
+     * Populate fields with example data for test mode
+     */
+    private void populateTestModeExamples() {
+        // Only populate if fields are empty (don't overwrite user data)
+        if (isNullOrEmpty(titleField.getText())) {
+            titleField.setText("Quantitative proteomics analysis of human liver cancer cells treated with sorafenib");
+        }
+
+        if (isNullOrEmpty(descriptionArea.getText())) {
+            descriptionArea.setText(
+                "This study investigates the proteomic changes in hepatocellular carcinoma (HCC) cell lines " +
+                "following treatment with sorafenib, a multi-kinase inhibitor used in cancer therapy. " +
+                "HepG2 cells were cultured and treated with 10 μM sorafenib for 24 hours. " +
+                "Control and treated samples were collected in biological triplicates. " +
+                "Proteins were extracted, digested with trypsin, and analyzed by LC-MS/MS. " +
+                "The data reveals significant changes in signaling pathways related to cell survival and apoptosis."
+            );
+        }
+
+        if (isNullOrEmpty(keywordsInput.getText())) {
+            keywordsInput.setText("liver cancer, hepatocellular carcinoma, sorafenib, proteomics, drug response");
+        }
+
+        if (isNullOrEmpty(sampleProtocolArea.getText())) {
+            sampleProtocolArea.setText(
+                "HepG2 cells were cultured in DMEM supplemented with 10% FBS at 37°C and 5% CO2. " +
+                "Cells were treated with 10 μM sorafenib or DMSO vehicle control for 24 hours. " +
+                "After treatment, cells were washed with PBS and lysed in 8M urea buffer. " +
+                "Proteins were reduced with DTT, alkylated with iodoacetamide, and digested with trypsin overnight. " +
+                "Peptides were desalted using C18 spin columns and dried by vacuum centrifugation."
+            );
+        }
+
+        if (isNullOrEmpty(dataProtocolArea.getText())) {
+            dataProtocolArea.setText(
+                "Peptides were analyzed on a Q Exactive HF mass spectrometer coupled to an Easy-nLC 1200 system. " +
+                "Raw files were processed using MaxQuant (v2.0.3) with the Andromeda search engine. " +
+                "Searches were performed against the UniProt human proteome database (UP000005640). " +
+                "Label-free quantification (LFQ) was enabled with match between runs. " +
+                "Statistical analysis was performed in Perseus using Student's t-test with FDR correction."
+            );
+        }
+
+        // Add example experiment type if none selected
+        if (!experimentTypeField.hasSelection()) {
+            List<CvParam> commonTypes = uk.ac.ebi.pride.pxsubmit.service.OlsService.getCommonExperimentTypes();
+            if (!commonTypes.isEmpty()) {
+                experimentTypeField.addTerm(commonTypes.get(0)); // Add first common type (e.g., Bottom-up)
+            }
+        }
     }
 
     private boolean isValidTitle(String text) {
