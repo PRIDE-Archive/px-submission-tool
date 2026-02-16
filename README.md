@@ -14,30 +14,44 @@ A JavaFX-based GUI application for submitting proteomics data to the PRIDE Archi
 
 ## Quick Start (End Users)
 
-### Download & Extract
-1. **Download**: Use one of these options:
-   - **Latest version**: [px-submission-tool-latest.zip](https://github.com/PRIDE-Archive/px-submission-tool/releases/latest/download/px-submission-tool-latest.zip)
-   - **Specific version**: Visit [GitHub Releases](https://github.com/PRIDE-Archive/px-submission-tool/releases)
+### Option 1: Native Installers (Recommended)
+
+Download and install like any other application - no Java installation required!
+
+| Platform | Download | Installation |
+|----------|----------|--------------|
+| **Windows** | [.exe installer](https://github.com/PRIDE-Archive/px-submission-tool/releases/latest) | Double-click to install |
+| **macOS** | [.dmg installer](https://github.com/PRIDE-Archive/px-submission-tool/releases/latest) | Drag to Applications |
+| **Linux (Debian/Ubuntu)** | [.deb package](https://github.com/PRIDE-Archive/px-submission-tool/releases/latest) | `sudo dpkg -i px-submission-tool-*.deb` |
+| **Linux (Fedora/RHEL)** | [.rpm package](https://github.com/PRIDE-Archive/px-submission-tool/releases/latest) | `sudo rpm -i px-submission-tool-*.rpm` |
+
+Native installers include bundled Java runtime - no separate Java installation needed.
+
+### Option 2: Portable ZIP Distribution
+
+For users who prefer a portable installation:
+
+1. **Download**: [px-submission-tool-latest.zip](https://github.com/PRIDE-Archive/px-submission-tool/releases/latest/download/px-submission-tool-latest.zip)
 2. **Extract**: Extract the zip file to a folder of your choice
 3. **Launch**: Follow the OS-specific launch instructions below
 
-### Smart JRE Management
+#### Smart JRE Management (ZIP version)
 - **Small Download**: The tool is only ~140MB (vs 400MB+ before)
 - **Auto-Download**: Java 21 JRE is downloaded automatically if needed
 - **Smart Detection**: Uses your system Java if it's version 21 or higher
 - **No Re-downloading**: Once downloaded, JRE stays in the tool directory
 
-### Windows Users
+#### Windows Users (ZIP)
 1. Extract the zip file completely
 2. Double-click `start.bat`
 3. First run will download Java 21 JRE if needed (~250MB)
 
-### macOS Users
+#### macOS Users (ZIP)
 1. Extract the zip file completely
 2. Run: `chmod +x start.sh && ./start.sh`
 3. First run will download Java 21 JRE if needed (~250MB)
 
-### Linux Users
+#### Linux Users (ZIP)
 1. Extract the zip file completely
 2. Run: `chmod +x start.sh && ./start.sh`
 3. First run will download Java 21 JRE if needed (~250MB)
@@ -100,6 +114,27 @@ java -jar target/px-submission-tool-<version>.jar --debug
 | `--training`, `-t` | Enable training mode (no actual upload) |
 | `--file`, `-f FILE` | Load submission from file |
 | `--help`, `-h` | Show help message |
+
+### Building Native Installers
+
+Build platform-specific installers (requires JDK 21+):
+
+#### macOS / Linux
+```bash
+./build-native.sh
+```
+
+#### Windows
+```batch
+build-native.bat
+```
+
+This creates native installers in the `jpackage-output/` directory:
+- **macOS**: `.dmg` and `.pkg` files
+- **Windows**: `.exe` and `.msi` files
+- **Linux**: `.deb` and `.rpm` files
+
+Note: Native installers can only be built for the current platform. Use GitHub Actions (automated on release tags) to build for all platforms.
 
 ### IDE Setup
 

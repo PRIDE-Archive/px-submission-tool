@@ -8,20 +8,27 @@ cd /d "%~dp0"
 echo 📁 Working directory: %CD%
 echo.
 
-REM Check if JAR file exists
-set JAR_FILE=px-submission-tool-${project.version}.jar
-if not exist "%JAR_FILE%" (
-    echo ❌ Error: Could not find %JAR_FILE%
-    echo Current directory: %CD%
-    echo Files found:
-    dir /b *.jar
-    echo.
-    echo Please make sure you extracted the zip file completely.
-    echo The JAR file should be in the same folder as this script.
-    echo.
-    pause
-    exit /b 1
+REM Find JAR file (using wildcard to avoid version mismatch issues)
+set JAR_FILE=
+for %%f in (px-submission-tool-*.jar) do (
+    if not "%%f"=="px-submission-tool-*.jar" (
+        set JAR_FILE=%%f
+        goto :jar_found
+    )
 )
+
+echo X Error: Could not find px-submission-tool-*.jar
+echo Current directory: %CD%
+echo Files found:
+dir /b *.jar 2>nul || echo No JAR files found
+echo.
+echo Please make sure you extracted the zip file completely.
+echo The JAR file should be in the same folder as this script.
+echo.
+pause
+exit /b 1
+
+:jar_found
 
 echo ✅ JAR file found: %JAR_FILE%
 echo.
@@ -38,18 +45,31 @@ if exist "jre-windows\bin\java.exe" (
 )
 
 REM If no JRE found, check system Java version first
-echo ⚠️ No JRE found, checking system Java version...
+echo No bundled JRE found, checking system Java version...
 
 java -version >nul 2>&1
 if %errorlevel% equ 0 (
-    echo 🔍 Checking system Java version...
+    echo Checking system Java version...
 
-    REM Simple approach: just check if java -version works and assume it's too old
-    echo System Java found but version checking is complex
-    echo Assuming system Java is too old (need 21+)
-    goto :download_jre
+    REM Extract Java version number using PowerShell
+    for /f "tokens=*" %%i in ('powershell -Command "(java -version 2>&1 | Select-String 'version').ToString() -replace '.*version \"(\d+).*','$1'"') do set JAVA_VERSION=%%i
+
+    if defined JAVA_VERSION (
+        if %JAVA_VERSION% GEQ 21 (
+            echo System Java %JAVA_VERSION% is compatible (21+)
+            set JAVA_CMD=java
+            goto :java_found
+        ) else (
+            echo System Java %JAVA_VERSION% is too old (need 21+)
+            goto :download_jre
+        )
+    ) else (
+        echo Could not determine Java version, attempting to use system Java...
+        set JAVA_CMD=java
+        goto :java_found
+    )
 ) else (
-    echo ⚠️ No system Java found, attempting to download JRE...
+    echo No system Java found, attempting to download JRE...
     goto :download_jre
 )
 
@@ -123,7 +143,7 @@ echo    - Download: OpenJDK 21 (JRE or JDK)
 echo    - Install and ensure 'java' command works
 echo 3. Use existing Java if you have version 21 or later:
 echo    - Set JAVA_HOME environment variable
-echo    - Or run: java -jar px-submission-tool-${project.version}.jar
+echo    - Or run: java -jar %JAR_FILE%
 echo.
 echo 📚 For more help, see: https://github.com/PRIDE-Archive/px-submission-tool/blob/main/README.md
 echo.
@@ -142,7 +162,8 @@ echo 🚀 Launching PX Submission Tool...
 echo.
 
 REM Launch the application (GUI mode with file logging)
-%JAVA_CMD% -jar "%JAR_FILE%"
+REM --enable-native-access=ALL-UNNAMED suppresses JavaFX native library warnings
+%JAVA_CMD% --enable-native-access=ALL-UNNAMED -jar "%JAR_FILE%"
 
 REM Application has exited
 echo.

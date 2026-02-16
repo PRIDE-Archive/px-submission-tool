@@ -32,7 +32,13 @@ dependency-reduced-pom.xml
 \!lib/*.jar
 jre-macos/
 jre-linux/
+jre-windows/
 jre/
+
+# Native installer build directories
+jpackage-input/
+jpackage-output/
+jpackage-resources/
 
 
 #Ignore cursor AI rules
