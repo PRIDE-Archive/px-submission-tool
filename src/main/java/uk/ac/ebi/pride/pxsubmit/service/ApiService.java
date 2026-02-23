@@ -9,6 +9,7 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 import uk.ac.ebi.pride.archive.submission.model.project.ProjectDetailList;
 import uk.ac.ebi.pride.archive.submission.model.submission.SubmissionReferenceDetail;
+import uk.ac.ebi.pride.pxsubmit.model.Credentials;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
 import uk.ac.ebi.pride.archive.submission.model.File.ProjectFile;
@@ -60,7 +61,7 @@ public class ApiService {
     public ApiService(String username, String password) {
         this.config = AppConfig.getInstance();
         this.username = username;
-        this.password = password;
+        this.password = password != null ? password : "";
         this.basicAuthHeader = createBasicAuthHeader(username, password);
         this.executor = Executors.newFixedThreadPool(2, r -> {
             Thread t = new Thread(r, "ApiService-Worker");

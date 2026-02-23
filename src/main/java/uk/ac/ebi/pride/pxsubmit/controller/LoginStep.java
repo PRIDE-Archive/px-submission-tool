@@ -8,6 +8,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+import java.util.concurrent.CompletionException;
 import java.util.regex.Pattern;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
@@ -106,6 +107,137 @@ public class LoginStep extends AbstractWizardStep {
 
         return root;
     }
+
+
+    private VBox createResubmissionSection() {
+        VBox section = new VBox(10);
+        section.setAlignment(Pos.CENTER_LEFT);
+        section.setMaxWidth(400);
+        section.setStyle(
+            "-fx-background-color: #f0f7ff; " +
+            "-fx-border-color: #b3d4fc; " +
+            "-fx-border-radius: 8; " +
+            "-fx-background-radius: 8; " +
+            "-fx-padding: 15;");
+
+        Label authSuccessLabel = new Label("Logged in successfully!");
+        authSuccessLabel.setStyle("-fx-text-fill: #28a745; -fx-font-weight: bold;");
+
+        resubmissionCheckbox = new CheckBox("Resubmit to an existing project");
+        resubmissionCheckbox.setStyle("-fx-font-weight: bold;");
+
+        // Project selection (hidden until checkbox checked)
+        VBox projectSelectionBox = new VBox(8);
+        projectSelectionBox.setPadding(new Insets(0, 0, 0, 25));
+
+        Label projectLabel = new Label("Select project:");
+        projectComboBox = new ComboBox<>();
+        projectComboBox.setPromptText("Loading projects...");
+        projectComboBox.setPrefWidth(300);
+        projectComboBox.setDisable(true);
+
+        projectLoadingBox = new HBox(8);
+        projectLoadingBox.setAlignment(Pos.CENTER_LEFT);
+        ProgressIndicator projectSpinner = new ProgressIndicator();
+        projectSpinner.setPrefSize(16, 16);
+        Label loadingLabel = new Label("Loading your projects...");
+        loadingLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 12px;");
+        projectLoadingBox.getChildren().addAll(projectSpinner, loadingLabel);
+        projectLoadingBox.setVisible(false);
+        projectLoadingBox.setManaged(false);
+
+        resubmissionErrorLabel = new Label();
+        resubmissionErrorLabel.setStyle("-fx-text-fill: #dc3545; -fx-font-size: 12px;");
+        resubmissionErrorLabel.setVisible(false);
+        resubmissionErrorLabel.setManaged(false);
+
+        projectSelectionBox.getChildren().addAll(projectLabel, projectComboBox, projectLoadingBox, resubmissionErrorLabel);
+        projectSelectionBox.setVisible(false);
+        projectSelectionBox.setManaged(false);
+
+        // Toggle project selection visibility when checkbox changes
+        resubmissionCheckbox.selectedProperty().addListener((obs, oldVal, selected) -> {
+            projectSelectionBox.setVisible(selected);
+            projectSelectionBox.setManaged(selected);
+            if (selected) {
+                loadProjects();
+            } else {
+                model.setResubmissionMode(false);
+                model.getSubmission().getProjectMetaData().setResubmissionPxAccession(null);
+                projectComboBox.getItems().clear();
+            }
+        });
+
+        Label hintLabel = new Label("Click 'Next' to continue");
+        hintLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 12px;");
+
+        section.getChildren().addAll(authSuccessLabel, resubmissionCheckbox, projectSelectionBox, hintLabel);
+        return section;
+    }
+
+    private void loadProjects() {
+        projectLoadingBox.setVisible(true);
+        projectLoadingBox.setManaged(true);
+        projectComboBox.setDisable(true);
+        projectComboBox.getItems().clear();
+        resubmissionErrorLabel.setVisible(false);
+        resubmissionErrorLabel.setManaged(false);
+
+        ApiService apiService = ServiceFactory.getInstance().createApiService(model.getUserName(), model.getPassword());
+        apiService.getSubmissionDetails()
+            .thenAccept(projectDetailList -> Platform.runLater(() -> {
+                projectLoadingBox.setVisible(false);
+                projectLoadingBox.setManaged(false);
+
+                if (projectDetailList.getProjectDetails().isEmpty()) {
+                    resubmissionErrorLabel.setText("No private projects found, or a resubmission is already pending.");
+                    resubmissionErrorLabel.setVisible(true);
+                    resubmissionErrorLabel.setManaged(true);
+                    projectComboBox.setPromptText("No projects available");
+                } else {
+                    for (ProjectDetail pd : projectDetailList.getProjectDetails()) {
+                        projectComboBox.getItems().add(pd.getAccession());
+                    }
+                    projectComboBox.setPromptText("Select a project...");
+                    projectComboBox.setDisable(false);
+                }
+                apiService.shutdown();
+            }))
+            .exceptionally(ex -> {
+                Platform.runLater(() -> {
+                    projectLoadingBox.setVisible(false);
+                    projectLoadingBox.setManaged(false);
+                    String message = buildResubmissionErrorMessage(ex);
+                    resubmissionErrorLabel.setText("Failed to load projects: " + message);
+                    resubmissionErrorLabel.setVisible(true);
+                    resubmissionErrorLabel.setManaged(true);
+                });
+                apiService.shutdown();
+                return null;
+            });
+    }
+
+    /**
+     * Build a user-friendly error message for resubmission load failure.
+     * Unwraps CompletionException and handles class-loading errors (e.g. NoClassDefFoundError).
+     */
+    private static String buildResubmissionErrorMessage(Throwable ex) {
+        Throwable cause = ex;
+        while (cause instanceof CompletionException && cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        String msg = cause != null ? cause.getMessage() : ex.getMessage();
+        if (msg == null || msg.isEmpty()) {
+            msg = cause != null ? cause.getClass().getSimpleName() : ex.getClass().getSimpleName();
+        }
+        // If the message looks like a class name (e.g. NoClassDefFoundError), show a clearer hint
+        if (cause instanceof NoClassDefFoundError || cause instanceof ClassNotFoundException
+                || (msg != null && msg.contains(".") && !msg.contains(" ") && msg.length() > 20)) {
+            return "A required component could not be loaded. Please run the application from the full distribution (extract the zip and use start.bat/start.sh). If the problem persists, check the log file.";
+        }
+        return msg;
+    }
+
 
     @Override
     protected void initializeStep() {
