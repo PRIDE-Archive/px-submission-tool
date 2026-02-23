@@ -120,6 +120,15 @@ public class SubmissionModel {
     }
 
     /**
+     * Get the next file ID and increment the counter
+     */
+    public int nextFileId() {
+        int id = fileIdCounter.get();
+        fileIdCounter.set(id + 1);
+        return id;
+    }
+
+    /**
      * Add a data file to the submission
      */
     public void addFile(DataFile dataFile) {
@@ -128,6 +137,9 @@ public class SubmissionModel {
                 dataFile.setFileId(fileIdCounter.get());
                 fileIdCounter.set(fileIdCounter.get() + 1);
             }
+
+            // Always add to submission (UploadManager reads submission.getDataFiles())
+            submission.get().addDataFile(dataFile);
 
             // Always add to submission (UploadManager reads submission.getDataFiles())
             submission.get().addDataFile(dataFile);
@@ -154,6 +166,10 @@ public class SubmissionModel {
 
         files.remove(dataFile);
 
+        // Always remove from submission (keeps upload pipeline consistent)
+        submission.get().removeDataFile(dataFile);
+
+        // Additionally clean up resubmission tracking
         // Always remove from submission (keeps upload pipeline consistent)
         submission.get().removeDataFile(dataFile);
 
