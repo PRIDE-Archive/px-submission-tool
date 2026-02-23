@@ -80,21 +80,21 @@ public class AppConfig {
     private void parseProperties() {
         // API URLs
         userLoginUrl = getProperty("px.user.login.url",
-            "http://www.proteomexchange.org/archive-submission-ws/user/login");
+            "https://www.proteomexchange.org/archive-submission-ws/user/login");
         uploadDetailUrl = getProperty("px.upload.detail.url",
-            "http://www.proteomexchange.org/archive-submission-ws/submission/upload/{method}");
+            "https://www.proteomexchange.org/archive-submission-ws/submission/upload/{method}");
         reuploadDetailUrl = getProperty("px.reupload.detail.url",
-            "http://www.proteomexchange.org/archive-submission-ws/resubmission/upload/{method}/{ticketId}");
+            "https://www.proteomexchange.org/archive-submission-ws/resubmission/upload/{method}/{ticketId}");
         uploadVerifyUrl = getProperty("px.upload.verify.url",
-            "http://www.proteomexchange.org/archive-submission-ws/submission/fileListAndSize");
+            "https://www.proteomexchange.org/archive-submission-ws/submission/fileListAndSize");
         submissionCompleteUrl = getProperty("px.submission.complete.url",
-            "http://www.proteomexchange.org/archive-submission-ws/submission/submit");
+            "https://www.proteomexchange.org/archive-submission-ws/submission/submit");
         resubmissionCompleteUrl = getProperty("px.resubmission.complete.url",
-            "http://www.proteomexchange.org/archive-submission-ws/resubmission/resubmit");
+            "https://www.proteomexchange.org/archive-submission-ws/resubmission/resubmit");
         submissionDetailUrl = getProperty("px.submission.detail.url",
-            "http://www.proteomexchange.org/archive-submission-ws/resubmission/projects");
+            "https://www.proteomexchange.org/archive-submission-ws/resubmission/projects");
         submissionWsBaseUrl = getProperty("px.submission.ws.base.url",
-            "http://www.proteomexchange.org/archive-submission-ws/");
+            "https://www.proteomexchange.org/archive-submission-ws/");
 
         // Tool info
         toolName = getProperty("px.submission.tool.name", "PX Submission Tool");
