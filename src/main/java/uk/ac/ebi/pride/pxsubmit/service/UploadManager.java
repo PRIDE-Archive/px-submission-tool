@@ -14,6 +14,7 @@ import uk.ac.ebi.pride.data.exception.SubmissionFileException;
 import uk.ac.ebi.pride.data.io.SubmissionFileWriter;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
+import uk.ac.ebi.pride.pxsubmit.model.TransferStatistics;
 
 import java.io.File;
 import java.io.IOException;
@@ -64,6 +65,9 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
     // Upload log
     private final ObservableList<String> uploadLog = FXCollections.observableArrayList();
 
+    // Aggregated transfer statistics from upload services
+    private volatile TransferStatistics aggregatedStats;
+
     public UploadManager(Submission submission, UploadDetail uploadDetail,
                          UploadMethod preferredMethod, boolean trainingMode) {
         this.submission = submission;
@@ -99,6 +103,12 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
     public DoubleProperty overallProgressProperty() { return overallProgress; }
     public ObjectProperty<UploadMethod> activeMethodProperty() { return activeMethod; }
     public ObservableList<String> getUploadLog() { return uploadLog; }
+
+    /**
+     * Get the aggregated transfer statistics from the most recent upload.
+     * @return TransferStatistics or null if no upload has been performed
+     */
+    public TransferStatistics getTransferStatistics() { return aggregatedStats; }
 
     /**
      * Mark a file as already uploaded (for resume support)
@@ -319,6 +329,9 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
                     ", Failed: " + ftpResult.getFailureCount());
             }
 
+            // Capture transfer statistics
+            aggregatedStats = ftpService.getTransferStatistics();
+
             return new UploadResult(
                     ftpResult.isSuccess(),
                     ftpResult.getSuccessCount(),
@@ -439,6 +452,9 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
                 log("Succeeded: " + asperaResult.getSuccessCount() +
                     ", Failed: " + asperaResult.getFailureCount());
             }
+
+            // Capture transfer statistics
+            aggregatedStats = asperaService.getTransferStatistics();
 
             return new UploadResult(
                     asperaResult.isSuccess(),

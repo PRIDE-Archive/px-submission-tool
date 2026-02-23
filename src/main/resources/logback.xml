@@ -19,6 +19,25 @@
         </encoder>
     </appender>
 
+    <!-- Dedicated Transfer Statistics Log File -->
+    <!-- Pipe-delimited format for easy parsing and analysis -->
+    <appender name="STATISTICS_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/transfer-statistics.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/transfer-statistics.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>90</maxHistory>
+        </rollingPolicy>
+        <encoder>
+            <!-- Minimal format: just timestamp and message (pipe-delimited data is in message) -->
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS}|%msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Transfer Statistics Logger - writes to dedicated statistics file -->
+    <logger name="TRANSFER_STATISTICS" level="INFO" additivity="false">
+        <appender-ref ref="STATISTICS_FILE" />
+    </logger>
+
     <!-- Root Logger - ALL logs go to the comprehensive file -->
     <!-- Console logging is disabled to keep terminal clean when running from command line -->
     <root level="INFO">

@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.data.model.DataFile;
+import uk.ac.ebi.pride.pxsubmit.model.TransferStatistics;
+import uk.ac.ebi.pride.pxsubmit.model.TransferStatistics.FileTransferStat;
 
 import java.io.*;
 import java.net.URL;
@@ -43,6 +45,8 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
     private static final long INITIAL_RETRY_DELAY_MS = 1000;
     private static final int CONNECTION_TIMEOUT_MS = 30000;
     private static final int DATA_TIMEOUT_MS = 300000;
+    private static final int SIZE_VERIFY_RETRIES = 3;
+    private static final long SIZE_VERIFY_DELAY_MS = 500;
 
     // Input properties
     private final List<DataFile> files;
@@ -64,6 +68,9 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
 
     // Thread pool for concurrent uploads
     private ExecutorService uploadExecutor;
+
+    // Transfer statistics tracking
+    private volatile TransferStatistics transferStatistics;
 
     public FtpUploadService(List<DataFile> files, UploadDetail uploadDetail) {
         this(files, uploadDetail, DEFAULT_CONCURRENT_UPLOADS);
@@ -109,6 +116,7 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
     public ObservableList<DataFile> getCompletedFiles() { return completedFiles; }
     public ObservableList<DataFile> getFailedFiles() { return failedFiles; }
     public ObservableList<String> getUploadLog() { return uploadLog; }
+    public TransferStatistics getTransferStatistics() { return transferStatistics; }
 
     /**
      * Main upload task that coordinates concurrent file uploads
@@ -144,6 +152,10 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
             log("Target: " + uploadDetail.getHost() + ":" + uploadDetail.getPort());
             log("Folder: " + uploadDetail.getFolder());
             log("Username: " + uploadDetail.getDropBox().getUserName());
+
+            // Initialize transfer statistics
+            transferStatistics = new TransferStatistics("FTP", files.size(), totalBytes.get());
+            StatisticsLogger.logSessionStart(transferStatistics);
 
             // Create FTP directory FIRST (before parallel uploads)
             createFtpDirectory();
@@ -213,6 +225,12 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
                     failedFiles.size(),
                     bytesUploaded.get()
             );
+
+            // Complete statistics and log summary
+            if (transferStatistics != null) {
+                transferStatistics.setSessionComplete();
+                StatisticsLogger.logSessionSummary(transferStatistics);
+            }
 
             if (result.isSuccess()) {
                 log("Upload completed successfully!");
@@ -321,13 +339,25 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
 
         private SingleFileResult uploadSingleFile(DataFile dataFile) {
             String fileName = dataFile.getFileName();
+            long fileSize = dataFile.getFile() != null ? dataFile.getFile().length() : 0;
             Platform.runLater(() -> currentFileName.set(fileName));
+
+            // Start file statistics tracking
+            FileTransferStat fileStat = null;
+            if (transferStatistics != null) {
+                fileStat = transferStatistics.startFile(fileName, fileSize);
+                StatisticsLogger.logFileStart(fileStat);
+            }
 
             FTPClient ftp = new FTPClient();
             int retryCount = 0;
 
             while (retryCount < MAX_RETRIES) {
                 if (isCancelled()) {
+                    if (fileStat != null) {
+                        transferStatistics.failFile(fileName, "Cancelled", retryCount);
+                        StatisticsLogger.logFileComplete(fileStat);
+                    }
                     return new SingleFileResult(dataFile, false, "Cancelled");
                 }
 
@@ -339,6 +369,7 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
                     ftp.setDefaultTimeout(DATA_TIMEOUT_MS);
 
                     // Connect
+                    long connectStart = System.currentTimeMillis();
                     logger.info("Connecting to FTP {}:{} for file: {}",
                         uploadDetail.getHost(), uploadDetail.getPort(), fileName);
                     ftp.connect(uploadDetail.getHost(), uploadDetail.getPort());
@@ -362,8 +393,31 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
                     logger.debug("FTP login successful");
                     System.out.println("FTP: Connected and logged in successfully as " + username);
 
+                    // Validate connection responsiveness with NOOP
+                    if (!ftp.sendNoOp()) {
+                        logger.warn("FTP NOOP check failed, connection may be unresponsive");
+                    }
+
+                    // Log connection success
+                    long connectDuration = System.currentTimeMillis() - connectStart;
+                    if (transferStatistics != null) {
+                        StatisticsLogger.logConnectionAttempt(
+                            transferStatistics.getSessionId(),
+                            uploadDetail.getHost(),
+                            uploadDetail.getPort(),
+                            true,
+                            connectDuration
+                        );
+                    }
+
                     // Configure transfer mode
                     ftp.enterLocalPassiveMode();
+
+                    // Validate passive mode is working
+                    if (ftp.getPassiveHost() == null) {
+                        logger.warn("Passive mode may not be properly configured");
+                    }
+
                     ftp.setFileType(FTP.BINARY_FILE_TYPE);
 
                     // Change to upload directory (use folder.getName() like master branch)
@@ -386,8 +440,6 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
                     }
 
                     // Upload file
-                    long fileSize = dataFile.getFile() != null ? dataFile.getFile().length() : 0;
-
                     try (InputStream input = createInputStream(dataFile)) {
                         // Use custom stream to track progress
                         ProgressInputStream progressStream = new ProgressInputStream(input, fileSize,
@@ -405,13 +457,34 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
                         }
                     }
 
-                    // Verify upload
+                    // Verify upload with retry loop for size verification
                     if (fileSize > 0) {
-                        long uploadedSize = getRemoteFileSize(ftp, fileName);
-                        if (uploadedSize != fileSize) {
-                            throw new IOException("Size mismatch: expected " + fileSize +
-                                    ", got " + uploadedSize);
+                        boolean sizeVerified = false;
+                        long uploadedSize = -1;
+
+                        for (int verifyAttempt = 0; verifyAttempt < SIZE_VERIFY_RETRIES && !sizeVerified; verifyAttempt++) {
+                            if (verifyAttempt > 0) {
+                                Thread.sleep(SIZE_VERIFY_DELAY_MS);
+                            }
+                            uploadedSize = getRemoteFileSize(ftp, fileName);
+                            if (uploadedSize == fileSize) {
+                                sizeVerified = true;
+                            } else {
+                                logger.debug("Size verification attempt {} for {}: expected {}, got {}",
+                                    verifyAttempt + 1, fileName, fileSize, uploadedSize);
+                            }
                         }
+
+                        if (!sizeVerified) {
+                            throw new IOException("Size mismatch after " + SIZE_VERIFY_RETRIES +
+                                    " verification attempts: expected " + fileSize + ", got " + uploadedSize);
+                        }
+                    }
+
+                    // Track successful upload in statistics
+                    if (transferStatistics != null && fileStat != null) {
+                        transferStatistics.completeFile(fileName, fileSize);
+                        StatisticsLogger.logFileComplete(fileStat);
                     }
 
                     filesUploaded.incrementAndGet();
@@ -425,12 +498,29 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
                     logger.warn(errorMsg);
                     System.err.println("FTP ERROR: " + errorMsg);
 
+                    // Log retry event
+                    if (transferStatistics != null && fileStat != null) {
+                        fileStat.incrementRetries();
+                        StatisticsLogger.logRetry(
+                            transferStatistics.getSessionId(),
+                            fileName,
+                            retryCount,
+                            e.getMessage()
+                        );
+                    }
+
                     if (retryCount < MAX_RETRIES) {
                         try {
                             long delay = INITIAL_RETRY_DELAY_MS * (long) Math.pow(2, retryCount - 1);
                             Thread.sleep(delay);
                         } catch (InterruptedException ie) {
                             Thread.currentThread().interrupt();
+                            if (transferStatistics != null) {
+                                transferStatistics.failFile(fileName, "Interrupted", retryCount);
+                                if (fileStat != null) {
+                                    StatisticsLogger.logFileComplete(fileStat);
+                                }
+                            }
                             return new SingleFileResult(dataFile, false, "Interrupted");
                         }
                     }
@@ -450,6 +540,15 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
             String errorMsg = "Failed after " + MAX_RETRIES + " attempts";
             logger.error("Upload failed for {}: {}", fileName, errorMsg);
             System.err.println("FTP ERROR: Upload failed for " + fileName + ": " + errorMsg);
+
+            // Track failed upload in statistics
+            if (transferStatistics != null) {
+                transferStatistics.failFile(fileName, errorMsg, retryCount);
+                if (fileStat != null) {
+                    StatisticsLogger.logFileComplete(fileStat);
+                }
+            }
+
             return new SingleFileResult(dataFile, false, errorMsg);
         }
 
