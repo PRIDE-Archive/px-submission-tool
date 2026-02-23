@@ -12,12 +12,15 @@ import uk.ac.ebi.pride.archive.submission.model.submission.SubmissionReferenceDe
 import uk.ac.ebi.pride.pxsubmit.model.Credentials;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
+import uk.ac.ebi.pride.archive.submission.model.File.ProjectFile;
 import uk.ac.ebi.pride.pxsubmit.config.AppConfig;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -176,7 +179,7 @@ public class ApiService {
 
     /**
      * Get user's private projects for resubmission.
-     * Calls POST /resubmission/projects which returns a ProjectDetailList.
+     * Calls POST /resubmission/projects with JSON credentials in the body.
      */
     public CompletableFuture<ProjectDetailList> getSubmissionDetails() {
         return CompletableFuture.supplyAsync(() -> {
@@ -186,11 +189,18 @@ public class ApiService {
 
             try {
                 RestTemplate restTemplate = createRestTemplate();
-                HttpHeaders headers = createHeaders();
-                Credentials credentials = new Credentials();
-                credentials.setUsername(username);
-                credentials.setPassword(password);
-                HttpEntity<Credentials> entity = new HttpEntity<>(credentials, headers);
+
+                // The resubmission/projects endpoint expects JSON credentials in the body
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.setAccept(Collections.singletonList(MediaType.ALL));
+                headers.add("version", config.getToolVersion());
+
+                java.util.Map<String, String> credentials = new java.util.LinkedHashMap<>();
+                credentials.put("username", username);
+                credentials.put("password", password);
+
+                HttpEntity<java.util.Map<String, String>> entity = new HttpEntity<>(credentials, headers);
 
                 ResponseEntity<ProjectDetailList> response = restTemplate.exchange(
                     url, HttpMethod.POST, entity, ProjectDetailList.class);
@@ -205,6 +215,39 @@ public class ApiService {
             } catch (Exception e) {
                 logger.error("Failed to get submission details: {}", e.getMessage(), e);
                 throw new ApiException("Failed to get submission details: " + e.getMessage(), e);
+            }
+        }, executor);
+    }
+
+    /**
+     * Get existing project files for resubmission.
+     * Calls GET /resubmission/files/{accession} which returns a list of ProjectFile.
+     */
+    public CompletableFuture<List<ProjectFile>> getProjectFiles(String accession) {
+        return CompletableFuture.supplyAsync(() -> {
+            logger.info("Getting project files for accession: {}", accession);
+
+            String url = config.getProjectFilesUrl(accession);
+
+            try {
+                RestTemplate restTemplate = createRestTemplate();
+                HttpHeaders headers = createHeaders();
+                HttpEntity<String> entity = new HttpEntity<>(headers);
+
+                ResponseEntity<ProjectFile[]> response = restTemplate.exchange(
+                    url, HttpMethod.GET, entity, ProjectFile[].class);
+
+                ProjectFile[] files = response.getBody();
+                if (files == null) {
+                    return Collections.<ProjectFile>emptyList();
+                }
+
+                logger.info("Retrieved {} project files for accession {}", files.length, accession);
+                return Arrays.asList(files);
+
+            } catch (Exception e) {
+                logger.error("Failed to get project files for {}: {}", accession, e.getMessage(), e);
+                throw new ApiException("Failed to get project files: " + e.getMessage(), e);
             }
         }, executor);
     }

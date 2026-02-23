@@ -1,6 +1,6 @@
 package uk.ac.ebi.pride;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,11 +13,11 @@ import org.slf4j.LoggerFactory;
  * All rights reserved.
  */
 
-public class AppTest {
-    private final static Logger logger = LoggerFactory.getLogger(AppTest.class);
+class AppTest {
+    private static final Logger logger = LoggerFactory.getLogger(AppTest.class);
 
     @Test
-    public void showUpTests() {
+    void showUpTests() {
         logger.debug("This test does nothing, really, just wiring testing subsystem");
     }
 }

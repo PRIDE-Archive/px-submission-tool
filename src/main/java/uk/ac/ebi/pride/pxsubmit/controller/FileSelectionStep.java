@@ -21,6 +21,9 @@ import uk.ac.ebi.pride.pxsubmit.util.FileTypeDetector;
 import uk.ac.ebi.pride.pxsubmit.view.component.FileClassificationPanel;
 import uk.ac.ebi.pride.pxsubmit.view.component.FileTableView;
 import uk.ac.ebi.pride.pxsubmit.view.component.ValidationFeedback;
+import uk.ac.ebi.pride.sdrf.validate.model.SDRFContent;
+import uk.ac.ebi.pride.sdrf.validate.model.SDRFColumn;
+import uk.ac.ebi.pride.sdrf.validate.validation.SDRFParser;
 
 import java.io.File;
 import java.io.IOException;
@@ -54,6 +57,12 @@ public class FileSelectionStep extends AbstractWizardStep {
               "Select Files",
               "Add the files you want to include in your submission",
               model);
+    }
+
+    @Override
+    public boolean canSkip() {
+        // Skip this step during resubmission - files are managed in FileResubmissionStep
+        return model.isResubmissionMode();
     }
 
     @Override
@@ -410,6 +419,10 @@ public class FileSelectionStep extends AbstractWizardStep {
                     model.addFile(dataFile);
                     logger.debug("Added file: {} (type: {})", file.getName(), dataFile.getFileType());
                     addedCount++;
+
+                    if (dataFile.getFileType() == ProjectFileType.EXPERIMENTAL_DESIGN) {
+                        validateSdrfFile(file);
+                    }
                 }
             }
         }
@@ -567,6 +580,12 @@ public class FileSelectionStep extends AbstractWizardStep {
             validationFeedback.addInfo("Recommended: Add a FASTA database for sequence validation");
         }
 
+        boolean hasSdrf = model.getFiles().stream()
+            .anyMatch(f -> f.getFileType() == ProjectFileType.EXPERIMENTAL_DESIGN);
+        if (hasSdrf) {
+            validationFeedback.addInfo("SDRF/experimental design file included - metadata will be auto-populated");
+        }
+
         // Success messages
         if (rawCount > 0) {
             validationFeedback.addInfo(rawCount + " RAW file(s) detected");
@@ -582,6 +601,66 @@ public class FileSelectionStep extends AbstractWizardStep {
         } else {
             summaryLabel.setText(total + " files added - missing mandatory files");
             summaryLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #ffc107;");
+        }
+    }
+
+    /** Required SDRF columns (case-insensitive). */
+    private static final List<String> REQUIRED_COLUMNS = List.of(
+            "source name", "characteristics[organism]"
+    );
+
+    /** Recommended SDRF columns (case-insensitive). */
+    private static final List<String> RECOMMENDED_COLUMNS = List.of(
+            "assay name", "characteristics[organism part]", "characteristics[disease]",
+            "comment[instrument]", "comment[data file]", "comment[label]",
+            "comment[fraction identifier]", "comment[technical replicate]"
+    );
+
+    /**
+     * Validate an SDRF file using the jsdrf parser and column checks.
+     * Displays results as non-blocking feedback.
+     */
+    private void validateSdrfFile(File file) {
+        try {
+            SDRFParser parser = new SDRFParser();
+            SDRFContent content = parser.getSDRFContent(file.getAbsolutePath());
+
+            // Check for data rows
+            if (content.getSdrfRows() == null || content.getSdrfRows().isEmpty()) {
+                validationFeedback.addWarning("SDRF: File has no data rows - " + file.getName());
+                return;
+            }
+
+            // Collect column names (lowercase for comparison)
+            List<String> columnNames = content.getSdrfColumns().stream()
+                    .map(col -> col.getName().toLowerCase().trim())
+                    .toList();
+
+            boolean hasIssues = false;
+
+            // Check required columns
+            for (String required : REQUIRED_COLUMNS) {
+                if (columnNames.stream().noneMatch(c -> c.contains(required))) {
+                    validationFeedback.addWarning("SDRF: Missing required column '" + required + "' in " + file.getName());
+                    hasIssues = true;
+                }
+            }
+
+            // Check recommended columns
+            for (String recommended : RECOMMENDED_COLUMNS) {
+                if (columnNames.stream().noneMatch(c -> c.contains(recommended))) {
+                    validationFeedback.addInfo("SDRF: Missing recommended column '" + recommended + "'");
+                    hasIssues = true;
+                }
+            }
+
+            if (!hasIssues) {
+                validationFeedback.addInfo("SDRF file validated successfully: " + file.getName() +
+                        " (" + content.getSdrfRows().size() + " samples)");
+            }
+        } catch (Exception e) {
+            logger.warn("Could not validate SDRF file: {}", file.getName(), e);
+            validationFeedback.addWarning("SDRF validation failed: " + e.getMessage());
         }
     }
 

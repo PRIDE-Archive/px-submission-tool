@@ -30,6 +30,7 @@ public class AppConfig {
     private String resubmissionCompleteUrl;
     private String submissionDetailUrl;
     private String submissionWsBaseUrl;
+    private String projectFilesUrl;
 
     // Tool info
     private String toolName;
@@ -95,6 +96,8 @@ public class AppConfig {
             "https://www.proteomexchange.org/archive-submission-ws/resubmission/projects");
         submissionWsBaseUrl = getProperty("px.submission.ws.base.url",
             "https://www.proteomexchange.org/archive-submission-ws/");
+        projectFilesUrl = getProperty("px.project.files.url",
+            "resubmission/files/{accession}");
 
         // Tool info
         toolName = getProperty("px.submission.tool.name", "PX Submission Tool");
@@ -213,5 +216,9 @@ public class AppConfig {
         return reuploadDetailUrl
             .replace("{method}", method)
             .replace("{ticketId}", ticketId);
+    }
+
+    public String getProjectFilesUrl(String accession) {
+        return submissionWsBaseUrl + projectFilesUrl.replace("{accession}", accession);
     }
 }

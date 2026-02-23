@@ -5,6 +5,7 @@ import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
 import uk.ac.ebi.pride.data.model.DataFile;
+import uk.ac.ebi.pride.data.model.Resubmission;
 import uk.ac.ebi.pride.data.model.Submission;
 
 import java.io.File;
@@ -48,6 +49,12 @@ public class ServiceFactory {
     public UploadManager createUploadManager(Submission submission, UploadDetail detail,
                                              UploadMethod method, boolean trainingMode) {
         return new UploadManager(submission, detail, method, trainingMode);
+    }
+
+    public UploadManager createUploadManager(Submission submission, Resubmission resubmission,
+                                             UploadDetail detail,
+                                             UploadMethod method, boolean trainingMode) {
+        return new UploadManager(submission, resubmission, detail, method, trainingMode);
     }
 
     public FtpUploadService createFtpUploadService(List<DataFile> files, UploadDetail detail) {

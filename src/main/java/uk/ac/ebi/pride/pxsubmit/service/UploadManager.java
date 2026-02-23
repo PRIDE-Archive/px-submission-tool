@@ -14,13 +14,20 @@ import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
 import uk.ac.ebi.pride.data.exception.SubmissionFileException;
 import uk.ac.ebi.pride.data.io.SubmissionFileWriter;
 import uk.ac.ebi.pride.data.model.DataFile;
+import uk.ac.ebi.pride.data.model.Resubmission;
+import uk.ac.ebi.pride.data.model.ResubmissionFileChangeState;
 import uk.ac.ebi.pride.data.model.Submission;
+import uk.ac.ebi.pride.pxsubmit.config.AppConfig;
 import uk.ac.ebi.pride.pxsubmit.model.TransferStatistics;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -44,6 +51,7 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
 
     // Configuration
     private final Submission submission;
+    private final Resubmission resubmission; // null for normal submissions
     private final UploadDetail uploadDetail;
     private final UploadMethod preferredMethod;
     private final boolean trainingMode;
@@ -73,7 +81,14 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
 
     public UploadManager(Submission submission, UploadDetail uploadDetail,
                          UploadMethod preferredMethod, boolean trainingMode) {
+        this(submission, null, uploadDetail, preferredMethod, trainingMode);
+    }
+
+    public UploadManager(Submission submission, Resubmission resubmission,
+                         UploadDetail uploadDetail,
+                         UploadMethod preferredMethod, boolean trainingMode) {
         this.submission = submission;
+        this.resubmission = resubmission;
         this.uploadDetail = uploadDetail;
         this.preferredMethod = preferredMethod;
         this.trainingMode = trainingMode;
@@ -244,16 +259,62 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
                 File workingDir = new File(System.getProperty("user.dir"));
                 File summaryFile = new File(workingDir, SUBMISSION_SUMMARY_FILE);
 
+                // For resubmission, clear comments before writing (matches old tool behavior)
+                if (resubmission != null) {
+                    submission.setComments(new ArrayList<>());
+                }
+
                 // Write submission
                 SubmissionFileWriter.write(submission, summaryFile);
+
+                // Append resubmission file change summary
+                if (resubmission != null) {
+                    appendResubmissionSummary(summaryFile);
+                }
+
+                // Append tool version metadata
+                appendToolMetadata(summaryFile);
+
                 log("Created: " + summaryFile.getAbsolutePath());
                 log("Submission summary saved to: " + workingDir.getAbsolutePath());
 
                 return summaryFile;
-            } catch (SubmissionFileException e) {
+            } catch (Exception e) {
                 logger.error("Failed to create submission summary file", e);
                 log("ERROR: Failed to create submission summary: " + e.getMessage());
                 return null;
+            }
+        }
+
+        private void appendResubmissionSummary(File file) {
+            try (BufferedWriter bw = new BufferedWriter(new FileWriter(file, true))) {
+                Map<DataFile, ResubmissionFileChangeState> resubMap = resubmission.getResubmission();
+                for (Map.Entry<DataFile, ResubmissionFileChangeState> entry : resubMap.entrySet()) {
+                    DataFile df = entry.getKey();
+                    ResubmissionFileChangeState state = entry.getValue();
+                    String typeName = df.getFileType() != null ? df.getFileType().getName() : "OTHER";
+                    bw.write("COM\tResubmission\t" + df.getFileName() + "\t" +
+                             typeName + "\t" + df.getFileSize() + "\t" + state);
+                    bw.newLine();
+                }
+                bw.newLine();
+            } catch (IOException e) {
+                logger.error("Failed to append resubmission summary to submission.px", e);
+            }
+        }
+
+        private void appendToolMetadata(File file) {
+            try (BufferedWriter bw = new BufferedWriter(new FileWriter(file, true))) {
+                AppConfig config = AppConfig.getInstance();
+                bw.write("COM\tVersion:" + config.getToolVersion());
+                bw.newLine();
+                String osName = System.getProperty("os.name");
+                String osVersion = System.getProperty("os.version");
+                String osArch = System.getProperty("os.arch");
+                bw.write("COM\tOperating System:" + osName + " " + osVersion + " (" + osArch + ")");
+                bw.newLine();
+            } catch (IOException e) {
+                logger.error("Failed to append tool metadata to submission.px", e);
             }
         }
 

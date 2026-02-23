@@ -111,6 +111,15 @@ public class SubmissionModel {
     // ==================== File Operations ====================
 
     /**
+     * Get the next file ID and increment the counter
+     */
+    public int nextFileId() {
+        int id = fileIdCounter.get();
+        fileIdCounter.set(id + 1);
+        return id;
+    }
+
+    /**
      * Add a data file to the submission
      */
     public void addFile(DataFile dataFile) {
@@ -119,15 +128,18 @@ public class SubmissionModel {
                 dataFile.setFileId(fileIdCounter.get());
                 fileIdCounter.set(fileIdCounter.get() + 1);
             }
-            files.add(dataFile);
 
-            // Also add to submission model
+            // Always add to submission (UploadManager reads submission.getDataFiles())
+            submission.get().addDataFile(dataFile);
+
+            // Set resubmission state BEFORE adding to files list, because
+            // the files list listener reads the resubmission map to filter by ADD state
             if (resubmissionMode.get()) {
                 resubmission.get().addDataFile(dataFile);
                 resubmission.get().getResubmission().put(dataFile, ResubmissionFileChangeState.ADD);
-            } else {
-                submission.get().addDataFile(dataFile);
             }
+
+            files.add(dataFile);
         }
     }
 
@@ -142,11 +154,13 @@ public class SubmissionModel {
 
         files.remove(dataFile);
 
+        // Always remove from submission (keeps upload pipeline consistent)
+        submission.get().removeDataFile(dataFile);
+
+        // Additionally clean up resubmission tracking
         if (resubmissionMode.get()) {
             resubmission.get().removeDataFile(dataFile);
             resubmission.get().getResubmission().remove(dataFile);
-        } else {
-            submission.get().removeDataFile(dataFile);
         }
     }
 

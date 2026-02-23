@@ -349,7 +349,9 @@ public class SubmissionStep extends AbstractWizardStep {
         addLog("Requesting " + method + " upload credentials...");
         final UploadMethod finalMethod = method;
 
-        apiService.getUploadDetails(method)
+        // Reuse existing ticketId for retries (avoids getting a new upload folder)
+        String existingTicketId = ticketId.get();
+        apiService.getUploadDetails(method, existingTicketId)
             .thenAccept(uploadDetail -> {
                 addLog("Upload details received successfully");
                 addLog("Host: " + uploadDetail.getHost());
@@ -407,6 +409,7 @@ public class SubmissionStep extends AbstractWizardStep {
         // Create UploadManager with real upload services
         uploadManager = ServiceFactory.getInstance().createUploadManager(
                 model.getSubmission(),
+                model.isResubmissionMode() ? model.getResubmission() : null,
                 uploadDetail,
                 method,
                 model.isTrainingMode()

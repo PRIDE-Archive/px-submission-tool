@@ -170,7 +170,7 @@
             <artifactId>px-submission-core</artifactId>
             <version>${uk.ac.ebi.pride-px-submission-core.version}</version>
         </dependency>
-        <!--Aspera manager-->
+        <!--Aspera manager (3.7.2.0 is the latest available version)-->
         <dependency>
             <groupId>com.aspera</groupId>
             <artifactId>faspmanager</artifactId>
@@ -335,6 +335,14 @@
                     <source>21</source>
                     <target>21</target>
                     <release>21</release>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+                <configuration>
+                    <failIfNoTests>true</failIfNoTests>
                 </configuration>
             </plugin>
             <plugin>

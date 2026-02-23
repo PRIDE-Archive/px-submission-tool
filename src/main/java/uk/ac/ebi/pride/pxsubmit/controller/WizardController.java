@@ -52,6 +52,8 @@ public class WizardController implements Initializable {
     @FXML private Label titleLabel;
     @FXML private Label descriptionLabel;
     @FXML private Label trainingModeLabel;
+    @FXML private Label userLabel;
+    @FXML private Button logoutButton;
     @FXML private HBox stepIndicatorContainer;
 
     @FXML private StackPane contentPane;
@@ -84,7 +86,7 @@ public class WizardController implements Initializable {
 
     // Short labels for the step indicator bar
     private static final String[] STEP_SHORT_LABELS = {
-        "Welcome", "Login", "Type", "Project", "Samples",
+        "Welcome", "Login", "Type", "Resub", "Project", "Samples",
         "Files", "Review", "Metadata", "Summary", "Checksum", "Upload"
     };
 
@@ -180,6 +182,25 @@ public class WizardController implements Initializable {
         if (trainingModeLabel != null) {
             trainingModeLabel.visibleProperty().bind(model.trainingModeProperty());
             trainingModeLabel.managedProperty().bind(model.trainingModeProperty());
+        }
+
+        // Bind logout button and user label visibility to logged-in state
+        if (logoutButton != null) {
+            logoutButton.visibleProperty().bind(model.loggedInProperty());
+            logoutButton.managedProperty().bind(model.loggedInProperty());
+            logoutButton.setOnAction(e -> handleLogout());
+        }
+        if (userLabel != null) {
+            userLabel.visibleProperty().bind(model.loggedInProperty());
+            userLabel.managedProperty().bind(model.loggedInProperty());
+            // Show username when logged in
+            model.loggedInProperty().addListener((obs, wasLoggedIn, isLoggedIn) -> {
+                if (isLoggedIn) {
+                    userLabel.setText(model.getUserName() != null ? model.getUserName() : "");
+                } else {
+                    userLabel.setText("");
+                }
+            });
         }
     }
 
@@ -317,6 +338,18 @@ public class WizardController implements Initializable {
             DebugMode.log("WIZARD", "Navigating to step index: " + nextIndex);
             goToStep(nextIndex);
         }
+    }
+
+    /**
+     * Handle Logout button - clear credentials and navigate back to login step
+     */
+    private void handleLogout() {
+        logger.info("Logout requested");
+        model.setLoggedIn(false);
+        model.setPassword((char[]) null);
+        model.setResubmissionMode(false);
+        model.getSubmission().getProjectMetaData().setResubmissionPxAccession(null);
+        goToStep("login");
     }
 
     /**

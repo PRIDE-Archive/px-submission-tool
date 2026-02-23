@@ -42,6 +42,21 @@
                 <!-- Spacer -->
                 <Region HBox.hgrow="ALWAYS"/>
 
+                <!-- Logged-in user label + Logout button -->
+                <Label fx:id="userLabel"
+                       styleClass="user-label"
+                       visible="false"
+                       managed="false"/>
+                <Button fx:id="logoutButton"
+                        text="&#x23FB;"
+                        styleClass="logout-button"
+                        visible="false"
+                        managed="false">
+                    <tooltip>
+                        <Tooltip text="Log out and return to the login screen"/>
+                    </tooltip>
+                </Button>
+
                 <!-- Test Mode Indicator -->
                 <Label fx:id="trainingModeLabel"
                        text="TEST MODE"

@@ -1,6 +1,5 @@
 package uk.ac.ebi.pride.pxsubmit.controller;
 
-import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -11,9 +10,7 @@ import javafx.scene.layout.VBox;
 
 import java.util.concurrent.CompletionException;
 import java.util.regex.Pattern;
-import uk.ac.ebi.pride.archive.submission.model.project.ProjectDetail;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
-import uk.ac.ebi.pride.pxsubmit.service.ApiService;
 import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
 
 /**
@@ -27,13 +24,6 @@ public class LoginStep extends AbstractWizardStep {
     private Label errorLabel;
     private HBox progressBox;
     private uk.ac.ebi.pride.pxsubmit.service.AuthService currentAuth;
-
-    // Resubmission UI (shown after successful authentication)
-    private VBox resubmissionSection;
-    private CheckBox resubmissionCheckbox;
-    private ComboBox<String> projectComboBox;
-    private HBox projectLoadingBox;
-    private Label resubmissionErrorLabel;
     private boolean authenticated = false;
 
     private static final Pattern EMAIL_PATTERN =
@@ -107,22 +97,17 @@ public class LoginStep extends AbstractWizardStep {
         linksBox.setAlignment(Pos.CENTER);
         linksBox.getChildren().addAll(registerLink, forgotLink);
 
-        // Resubmission section (hidden until auth succeeds)
-        resubmissionSection = createResubmissionSection();
-        resubmissionSection.setVisible(false);
-        resubmissionSection.setManaged(false);
-
         root.getChildren().addAll(
             welcomeLabel,
             form,
             errorLabel,
             progressBox,
-            linksBox,
-            resubmissionSection
+            linksBox
         );
 
         return root;
     }
+
 
     private VBox createResubmissionSection() {
         VBox section = new VBox(10);
@@ -253,6 +238,7 @@ public class LoginStep extends AbstractWizardStep {
         return msg;
     }
 
+
     @Override
     protected void initializeStep() {
         // Bind validation - valid when both fields have content
@@ -290,11 +276,10 @@ public class LoginStep extends AbstractWizardStep {
         // Focus username field
         usernameField.requestFocus();
 
-        // Reset auth state if coming back to this step
+        // Reset auth state if coming back to this step (e.g. after logout)
         if (!model.isLoggedIn()) {
             authenticated = false;
-            resubmissionSection.setVisible(false);
-            resubmissionSection.setManaged(false);
+            passwordField.clear();
         }
     }
 
@@ -315,21 +300,8 @@ public class LoginStep extends AbstractWizardStep {
             return true;
         }
 
-        // If already authenticated, handle resubmission selection and proceed
+        // If already authenticated, proceed
         if (authenticated) {
-            if (resubmissionCheckbox.isSelected()) {
-                String selectedAccession = projectComboBox.getValue();
-                if (selectedAccession == null || selectedAccession.isEmpty()) {
-                    showError("Please select a project for resubmission");
-                    return false;
-                }
-                model.setResubmissionMode(true);
-                model.getSubmission().getProjectMetaData().setResubmissionPxAccession(selectedAccession);
-                logger.info("Resubmission mode enabled for project: {}", selectedAccession);
-            } else {
-                model.setResubmissionMode(false);
-                model.getSubmission().getProjectMetaData().setResubmissionPxAccession(null);
-            }
             return true;
         }
 
@@ -395,15 +367,17 @@ public class LoginStep extends AbstractWizardStep {
                 logger.info("Authentication succeeded for user: {}", username);
                 authenticated = true;
 
-                // Show resubmission section and let user choose before proceeding
-                resubmissionSection.setVisible(true);
-                resubmissionSection.setManaged(true);
+                // Auto-advance to next step
+                if (wizardController != null) {
+                    wizardController.setNavigationEnabled(true);
+                    wizardController.goToNextStep();
+                }
             } catch (Exception ex) {
                 logger.warn("Authentication succeeded but could not process contact details", ex);
                 authenticated = true;
-            } finally {
                 if (wizardController != null) {
                     wizardController.setNavigationEnabled(true);
+                    wizardController.goToNextStep();
                 }
             }
         });

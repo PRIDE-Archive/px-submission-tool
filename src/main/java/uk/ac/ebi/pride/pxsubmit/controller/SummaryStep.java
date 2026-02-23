@@ -8,14 +8,24 @@ import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.data.model.CvParam;
+import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.io.SubmissionFileWriter;
+import uk.ac.ebi.pride.data.model.Resubmission;
+import uk.ac.ebi.pride.data.model.ResubmissionFileChangeState;
+import uk.ac.ebi.pride.pxsubmit.config.AppConfig;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 import uk.ac.ebi.pride.pxsubmit.util.FileTypeDetector;
 import uk.ac.ebi.pride.pxsubmit.view.component.ValidationFeedback;
 
+import org.slf4j.LoggerFactory;
+
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -54,6 +64,11 @@ public class SummaryStep extends AbstractWizardStep {
 
     @Override
     protected void onStepEntering() {
+        // Sync model properties to the Submission object before building summary.
+        // This is critical for resubmission mode where ProjectMetadataStep and
+        // SampleMetadataStep are skipped (they normally call syncMetadataToSubmission).
+        model.syncMetadataToSubmission();
+
         // Rebuild summary each time we enter
         buildSummary();
     }
@@ -98,41 +113,49 @@ public class SummaryStep extends AbstractWizardStep {
         contentBox.getChildren().add(validation);
 
         // Submission type
-        addSection("Submission Type", model.getSubmissionType() != null ?
-            model.getSubmissionType().toString() : "Not specified");
+        String typeDisplay = model.isResubmissionMode() ? "Resubmission" :
+            (model.getSubmissionType() != null ? model.getSubmissionType().toString() : "Not specified");
+        addSection("Submission Type", typeDisplay);
 
-        // Project Information
-        VBox projectSection = createSectionBox("Project Information");
-        addField(projectSection, "Title", model.getProjectTitle());
-        addField(projectSection, "Description", model.getProjectDescription());
-        addField(projectSection, "Keywords", model.getKeywords());
-        contentBox.getChildren().add(projectSection);
+        // Project Information, Protocols, Metadata, Lab Head — skip for resubmission
+        // (metadata is already on the server for the existing project)
+        if (!model.isResubmissionMode()) {
+            VBox projectSection = createSectionBox("Project Information");
+            addField(projectSection, "Title", model.getProjectTitle());
+            addField(projectSection, "Description", model.getProjectDescription());
+            addField(projectSection, "Keywords", model.getKeywords());
+            contentBox.getChildren().add(projectSection);
 
-        // Protocols
-        VBox protocolSection = createSectionBox("Protocols");
-        addField(protocolSection, "Sample Processing", model.getSampleProcessingProtocol());
-        addField(protocolSection, "Data Processing", model.getDataProcessingProtocol());
-        contentBox.getChildren().add(protocolSection);
+            VBox protocolSection = createSectionBox("Protocols");
+            addField(protocolSection, "Sample Processing", model.getSampleProcessingProtocol());
+            addField(protocolSection, "Data Processing", model.getDataProcessingProtocol());
+            contentBox.getChildren().add(protocolSection);
 
-        // Metadata
-        VBox metadataSection = createSectionBox("Metadata");
-        addListField(metadataSection, "Species",
-            model.getSpecies().stream().map(CvParam::getName).collect(Collectors.toList()));
-        addListField(metadataSection, "Instruments",
-            model.getInstruments().stream().map(CvParam::getName).collect(Collectors.toList()));
-        addListField(metadataSection, "Modifications",
-            model.getModifications().stream().map(CvParam::getName).collect(Collectors.toList()));
-        addListField(metadataSection, "Quantification",
-            model.getQuantifications().stream().map(CvParam::getName).collect(Collectors.toList()));
-        contentBox.getChildren().add(metadataSection);
+            VBox metadataSection = createSectionBox("Metadata");
+            addListField(metadataSection, "Species",
+                model.getSpecies().stream().map(CvParam::getName).collect(Collectors.toList()));
+            addListField(metadataSection, "Instruments",
+                model.getInstruments().stream().map(CvParam::getName).collect(Collectors.toList()));
+            addListField(metadataSection, "Modifications",
+                model.getModifications().stream().map(CvParam::getName).collect(Collectors.toList()));
+            addListField(metadataSection, "Quantification",
+                model.getQuantifications().stream().map(CvParam::getName).collect(Collectors.toList()));
+            contentBox.getChildren().add(metadataSection);
 
-        // Lab Head
-        if (model.getLabHeadName() != null && !model.getLabHeadName().isEmpty()) {
-            VBox labHeadSection = createSectionBox("Lab Head");
-            addField(labHeadSection, "Name", model.getLabHeadName());
-            addField(labHeadSection, "Email", model.getLabHeadEmail());
-            addField(labHeadSection, "Affiliation", model.getLabHeadAffiliation());
-            contentBox.getChildren().add(labHeadSection);
+            if (model.getLabHeadName() != null && !model.getLabHeadName().isEmpty()) {
+                VBox labHeadSection = createSectionBox("Lab Head");
+                addField(labHeadSection, "Name", model.getLabHeadName());
+                addField(labHeadSection, "Email", model.getLabHeadEmail());
+                addField(labHeadSection, "Affiliation", model.getLabHeadAffiliation());
+                contentBox.getChildren().add(labHeadSection);
+            }
+        }
+
+        // Resubmission file changes (only in resubmission mode)
+        if (model.isResubmissionMode()) {
+            VBox resubFilesSection = createSectionBox("Resubmission File Changes");
+            addResubmissionFileSummary(resubFilesSection);
+            contentBox.getChildren().add(resubFilesSection);
         }
 
         // Files
@@ -180,7 +203,7 @@ public class SummaryStep extends AbstractWizardStep {
         File file = fileChooser.showSaveDialog(contentBox.getScene().getWindow());
         if (file != null) {
             try {
-                SubmissionFileWriter.write(model.getSubmission(), file);
+                writeSubmissionPxFile(model, file);
                 exportStatusLabel.setText("Exported to: " + file.getAbsolutePath());
                 exportStatusLabel.setStyle("-fx-text-fill: #28a745; -fx-font-size: 11px;");
                 exportStatusLabel.setVisible(true);
@@ -199,54 +222,77 @@ public class SummaryStep extends AbstractWizardStep {
     private ValidationFeedback createValidationSummary() {
         ValidationFeedback feedback = new ValidationFeedback();
 
-        // Check files
-        long rawCount = model.getFiles().stream()
-            .filter(f -> f.getFileType() == ProjectFileType.RAW).count();
-        long analysisCount = model.getFiles().stream()
-            .filter(f -> f.getFileType() == ProjectFileType.SEARCH).count();
-        long standardCount = model.getFiles().stream()
-            .filter(f -> f.getFileType() == ProjectFileType.RESULT).count();
-        boolean hasFasta = model.getFiles().stream()
-            .anyMatch(f -> FileTypeDetector.isFastaFile(f.getFile()));
+        if (model.isResubmissionMode()) {
+            // Resubmission: validate file changes only (metadata is already on server)
+            Resubmission resub = model.getResubmission();
+            java.util.Map<DataFile, ResubmissionFileChangeState> resubMap = resub.getResubmission();
 
-        // File validation
-        if (rawCount == 0) {
-            feedback.addError("No RAW files - at least one RAW file is required");
-        }
-        if (analysisCount == 0 && standardCount == 0) {
-            feedback.addWarning("No analysis or standard result files included");
-        }
-        if (!hasFasta) {
-            feedback.addInfo("Recommended: Add a FASTA database file for sequence validation");
-        }
+            boolean hasChanges = resubMap.values().stream()
+                .anyMatch(state -> state != ResubmissionFileChangeState.NONE);
 
-        // Check for SDRF
-        boolean hasSdrf = model.getFiles().stream()
-            .anyMatch(f -> f.getFileType() == ProjectFileType.EXPERIMENTAL_DESIGN ||
-                          (f.getFile() != null && f.getFile().getName().toLowerCase().contains("sdrf")));
-        if (!hasSdrf) {
-            feedback.addInfo("Recommended: Add an SDRF file for sample metadata");
-        }
+            if (!hasChanges) {
+                feedback.addWarning("No file changes specified - consider adding, modifying, or deleting files");
+            }
 
-        // Metadata validation
-        if (model.getSpecies().isEmpty()) {
-            feedback.addError("No species/organism specified");
-        }
-        if (model.getInstruments().isEmpty()) {
-            feedback.addError("No instrument specified");
-        }
-        if (model.getProjectTitle() == null || model.getProjectTitle().trim().isEmpty()) {
-            feedback.addError("Project title is missing");
-        }
-        if (model.getProjectDescription() == null || model.getProjectDescription().trim().isEmpty()) {
-            feedback.addError("Project description is missing");
-        }
+            long addCount = resubMap.values().stream()
+                .filter(s -> s == ResubmissionFileChangeState.ADD).count();
+            if (addCount > 0) {
+                feedback.addInfo(addCount + " new file(s) will be uploaded");
+            }
 
-        // Success message if all OK
-        if (!feedback.hasErrors() && !feedback.hasWarnings()) {
-            feedback.setSuccess("All validation checks passed - ready for submission!");
-        } else if (!feedback.hasErrors()) {
-            feedback.addInfo("Submission can proceed with warnings");
+            if (!feedback.hasErrors() && !feedback.hasWarnings()) {
+                feedback.setSuccess("Resubmission ready - file changes will be applied");
+            }
+        } else {
+            // Normal submission: full validation
+            long rawCount = model.getFiles().stream()
+                .filter(f -> f.getFileType() == ProjectFileType.RAW).count();
+            long analysisCount = model.getFiles().stream()
+                .filter(f -> f.getFileType() == ProjectFileType.SEARCH).count();
+            long standardCount = model.getFiles().stream()
+                .filter(f -> f.getFileType() == ProjectFileType.RESULT).count();
+            boolean hasFasta = model.getFiles().stream()
+                .anyMatch(f -> FileTypeDetector.isFastaFile(f.getFile()));
+
+            // File validation
+            if (rawCount == 0) {
+                feedback.addError("No RAW files - at least one RAW file is required");
+            }
+            if (analysisCount == 0 && standardCount == 0) {
+                feedback.addWarning("No analysis or standard result files included");
+            }
+            if (!hasFasta) {
+                feedback.addInfo("Recommended: Add a FASTA database file for sequence validation");
+            }
+
+            // Check for SDRF
+            boolean hasSdrf = model.getFiles().stream()
+                .anyMatch(f -> f.getFileType() == ProjectFileType.EXPERIMENTAL_DESIGN ||
+                              (f.getFile() != null && f.getFile().getName().toLowerCase().contains("sdrf")));
+            if (!hasSdrf) {
+                feedback.addInfo("Recommended: Add an SDRF file for sample metadata");
+            }
+
+            // Metadata validation
+            if (model.getSpecies().isEmpty()) {
+                feedback.addError("No species/organism specified");
+            }
+            if (model.getInstruments().isEmpty()) {
+                feedback.addError("No instrument specified");
+            }
+            if (model.getProjectTitle() == null || model.getProjectTitle().trim().isEmpty()) {
+                feedback.addError("Project title is missing");
+            }
+            if (model.getProjectDescription() == null || model.getProjectDescription().trim().isEmpty()) {
+                feedback.addError("Project description is missing");
+            }
+
+            // Success message if all OK
+            if (!feedback.hasErrors() && !feedback.hasWarnings()) {
+                feedback.setSuccess("All validation checks passed - ready for submission!");
+            } else if (!feedback.hasErrors()) {
+                feedback.addInfo("Submission can proceed with warnings");
+            }
         }
 
         return feedback;
@@ -333,6 +379,63 @@ public class SummaryStep extends AbstractWizardStep {
         if (otherCount > 0) addField(container, "Other Files", String.valueOf(otherCount));
     }
 
+    private void addResubmissionFileSummary(VBox container) {
+        Resubmission resub = model.getResubmission();
+        java.util.Map<DataFile, ResubmissionFileChangeState> resubMap = resub.getResubmission();
+
+        int addCount = 0;
+        int modifyCount = 0;
+        int deleteCount = 0;
+        int unchangedCount = 0;
+
+        for (ResubmissionFileChangeState state : resubMap.values()) {
+            switch (state) {
+                case ADD -> addCount++;
+                case MODIFY -> modifyCount++;
+                case DELETE -> deleteCount++;
+                case NONE -> unchangedCount++;
+            }
+        }
+
+        addField(container, "New Files", String.valueOf(addCount));
+        addField(container, "Modified Files", String.valueOf(modifyCount));
+        addField(container, "Deleted Files", String.valueOf(deleteCount));
+        addField(container, "Unchanged Files", String.valueOf(unchangedCount));
+
+        // List individual file changes
+        if (!resubMap.isEmpty()) {
+            VBox fileList = new VBox(2);
+            fileList.setPadding(new Insets(5, 0, 0, 10));
+
+            for (java.util.Map.Entry<DataFile, ResubmissionFileChangeState> entry : resubMap.entrySet()) {
+                ResubmissionFileChangeState state = entry.getValue();
+                if (state == ResubmissionFileChangeState.NONE) continue;
+
+                DataFile df = entry.getKey();
+                String icon = switch (state) {
+                    case ADD -> "+";
+                    case MODIFY -> "~";
+                    case DELETE -> "-";
+                    default -> " ";
+                };
+                String color = switch (state) {
+                    case ADD -> "#28a745";
+                    case MODIFY -> "#cc7a00";
+                    case DELETE -> "#dc3545";
+                    default -> "#666";
+                };
+
+                Label fileLabel = new Label(icon + " " + df.getFileName() + " (" + state.name() + ")");
+                fileLabel.setStyle("-fx-text-fill: " + color + "; -fx-font-family: monospace;");
+                fileList.getChildren().add(fileLabel);
+            }
+
+            if (!fileList.getChildren().isEmpty()) {
+                container.getChildren().add(fileList);
+            }
+        }
+    }
+
     private String truncate(String text, int maxLength) {
         if (text == null) return "-";
         if (text.length() <= maxLength) return text;
@@ -353,6 +456,11 @@ public class SummaryStep extends AbstractWizardStep {
 
     @Override
     public boolean validate() {
+        // Skip recommended file checks for resubmission (existing project already has them)
+        if (model.isResubmissionMode()) {
+            return true;
+        }
+
         // Check for missing recommended files
         List<String> missingRecommended = getMissingRecommendedFiles();
 
@@ -408,5 +516,70 @@ public class SummaryStep extends AbstractWizardStep {
         }
 
         return missing;
+    }
+
+    // ==================== Submission.px Writing ====================
+
+    /**
+     * Write submission.px file with resubmission data and tool metadata appended.
+     * Matches the format used by the old Swing tool on master branch.
+     */
+    public static void writeSubmissionPxFile(SubmissionModel model, File file) throws Exception {
+        // For resubmission, clear comments before writing (matches old tool behavior)
+        if (model.isResubmissionMode()) {
+            model.getSubmission().setComments(new java.util.ArrayList<>());
+        }
+
+        SubmissionFileWriter.write(model.getSubmission(), file);
+
+        // Append resubmission file change summary as COM lines
+        if (model.isResubmissionMode()) {
+            appendResubmissionSummary(file, model);
+        }
+
+        // Append tool version and metadata
+        appendToolMetadata(file);
+    }
+
+    /**
+     * Append resubmission file change states to submission.px.
+     * Format: COM\tResubmission\tfilename\tfileType\tfileSize\tchangeState
+     */
+    private static void appendResubmissionSummary(File file, SubmissionModel model) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(file, true))) {
+            Map<DataFile, ResubmissionFileChangeState> resubMap =
+                model.getResubmission().getResubmission();
+            for (Map.Entry<DataFile, ResubmissionFileChangeState> entry : resubMap.entrySet()) {
+                DataFile df = entry.getKey();
+                ResubmissionFileChangeState state = entry.getValue();
+                String typeName = df.getFileType() != null ? df.getFileType().getName() : "OTHER";
+                bw.write("COM\tResubmission\t" + df.getFileName() + "\t" +
+                         typeName + "\t" + df.getFileSize() + "\t" + state);
+                bw.newLine();
+            }
+            bw.newLine();
+        } catch (IOException e) {
+            LoggerFactory.getLogger(SummaryStep.class)
+                .error("Failed to append resubmission summary to submission.px", e);
+        }
+    }
+
+    /**
+     * Append tool version and OS metadata to submission.px.
+     */
+    private static void appendToolMetadata(File file) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(file, true))) {
+            AppConfig config = AppConfig.getInstance();
+            bw.write("COM\tVersion:" + config.getToolVersion());
+            bw.newLine();
+            String osName = System.getProperty("os.name");
+            String osVersion = System.getProperty("os.version");
+            String osArch = System.getProperty("os.arch");
+            bw.write("COM\tOperating System:" + osName + " " + osVersion + " (" + osArch + ")");
+            bw.newLine();
+        } catch (IOException e) {
+            LoggerFactory.getLogger(SummaryStep.class)
+                .error("Failed to append tool metadata to submission.px", e);
+        }
     }
 }

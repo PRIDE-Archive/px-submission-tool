@@ -58,6 +58,12 @@ public class SampleMetadataStep extends AbstractWizardStep {
     }
 
     @Override
+    public boolean canSkip() {
+        // Skip this step during resubmission - sample metadata already exists on the server
+        return model.isResubmissionMode();
+    }
+
+    @Override
     protected Parent createContent() {
         ScrollPane scrollPane = new ScrollPane();
         scrollPane.setFitToWidth(true);

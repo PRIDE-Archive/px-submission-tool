@@ -47,6 +47,32 @@
     -fx-background-radius: 4;
 }
 
+/* User label and Logout button */
+.user-label {
+    -fx-text-fill: rgba(255, 255, 255, 0.85);
+    -fx-font-size: 12px;
+}
+
+.logout-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: rgba(255, 255, 255, 0.7);
+    -fx-border-color: rgba(255, 255, 255, 0.4);
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-font-size: 14px;
+    -fx-padding: 2 8 2 8;
+    -fx-cursor: hand;
+    -fx-min-width: 28;
+    -fx-min-height: 28;
+}
+
+.logout-button:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.15);
+    -fx-text-fill: white;
+    -fx-border-color: rgba(255, 255, 255, 0.7);
+}
+
 /* Step Indicator Bar */
 .step-indicator-bar {
     -fx-alignment: center;
