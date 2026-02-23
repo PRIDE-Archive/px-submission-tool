@@ -53,12 +53,14 @@ public class ApiService {
 
     private final AppConfig config;
     private final String username;
+    private final String password;
     private final String basicAuthHeader;
     private final ExecutorService executor;
 
     public ApiService(String username, String password) {
         this.config = AppConfig.getInstance();
         this.username = username;
+        this.password = password;
         this.basicAuthHeader = createBasicAuthHeader(username, password);
         this.executor = Executors.newFixedThreadPool(2, r -> {
             Thread t = new Thread(r, "ApiService-Worker");
@@ -176,7 +178,7 @@ public class ApiService {
 
     /**
      * Get user's private projects for resubmission.
-     * Calls POST /resubmission/projects which returns a ProjectDetailList.
+     * Calls POST /resubmission/projects with JSON credentials in the body.
      */
     public CompletableFuture<ProjectDetailList> getSubmissionDetails() {
         return CompletableFuture.supplyAsync(() -> {
@@ -186,8 +188,18 @@ public class ApiService {
 
             try {
                 RestTemplate restTemplate = createRestTemplate();
-                HttpHeaders headers = createHeaders();
-                HttpEntity<String> entity = new HttpEntity<>(headers);
+
+                // The resubmission/projects endpoint expects JSON credentials in the body
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.setAccept(Collections.singletonList(MediaType.ALL));
+                headers.add("version", config.getToolVersion());
+
+                java.util.Map<String, String> credentials = new java.util.LinkedHashMap<>();
+                credentials.put("username", username);
+                credentials.put("password", password);
+
+                HttpEntity<java.util.Map<String, String>> entity = new HttpEntity<>(credentials, headers);
 
                 ResponseEntity<ProjectDetailList> response = restTemplate.exchange(
                     url, HttpMethod.POST, entity, ProjectDetailList.class);

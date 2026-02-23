@@ -409,6 +409,7 @@ public class SubmissionStep extends AbstractWizardStep {
         // Create UploadManager with real upload services
         uploadManager = ServiceFactory.getInstance().createUploadManager(
                 model.getSubmission(),
+                model.isResubmissionMode() ? model.getResubmission() : null,
                 uploadDetail,
                 method,
                 model.isTrainingMode()

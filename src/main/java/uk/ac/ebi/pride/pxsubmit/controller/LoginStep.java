@@ -1,6 +1,5 @@
 package uk.ac.ebi.pride.pxsubmit.controller;
 
-import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -10,9 +9,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 import java.util.regex.Pattern;
-import uk.ac.ebi.pride.archive.submission.model.project.ProjectDetail;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
-import uk.ac.ebi.pride.pxsubmit.service.ApiService;
 import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
 
 /**
@@ -26,13 +23,6 @@ public class LoginStep extends AbstractWizardStep {
     private Label errorLabel;
     private HBox progressBox;
     private uk.ac.ebi.pride.pxsubmit.service.AuthService currentAuth;
-
-    // Resubmission UI (shown after successful authentication)
-    private VBox resubmissionSection;
-    private CheckBox resubmissionCheckbox;
-    private ComboBox<String> projectComboBox;
-    private HBox projectLoadingBox;
-    private Label resubmissionErrorLabel;
     private boolean authenticated = false;
 
     private static final Pattern EMAIL_PATTERN =
@@ -106,128 +96,15 @@ public class LoginStep extends AbstractWizardStep {
         linksBox.setAlignment(Pos.CENTER);
         linksBox.getChildren().addAll(registerLink, forgotLink);
 
-        // Resubmission section (hidden until auth succeeds)
-        resubmissionSection = createResubmissionSection();
-        resubmissionSection.setVisible(false);
-        resubmissionSection.setManaged(false);
-
         root.getChildren().addAll(
             welcomeLabel,
             form,
             errorLabel,
             progressBox,
-            linksBox,
-            resubmissionSection
+            linksBox
         );
 
         return root;
-    }
-
-    private VBox createResubmissionSection() {
-        VBox section = new VBox(10);
-        section.setAlignment(Pos.CENTER_LEFT);
-        section.setMaxWidth(400);
-        section.setStyle(
-            "-fx-background-color: #f0f7ff; " +
-            "-fx-border-color: #b3d4fc; " +
-            "-fx-border-radius: 8; " +
-            "-fx-background-radius: 8; " +
-            "-fx-padding: 15;");
-
-        Label authSuccessLabel = new Label("Logged in successfully!");
-        authSuccessLabel.setStyle("-fx-text-fill: #28a745; -fx-font-weight: bold;");
-
-        resubmissionCheckbox = new CheckBox("Resubmit to an existing project");
-        resubmissionCheckbox.setStyle("-fx-font-weight: bold;");
-
-        // Project selection (hidden until checkbox checked)
-        VBox projectSelectionBox = new VBox(8);
-        projectSelectionBox.setPadding(new Insets(0, 0, 0, 25));
-
-        Label projectLabel = new Label("Select project:");
-        projectComboBox = new ComboBox<>();
-        projectComboBox.setPromptText("Loading projects...");
-        projectComboBox.setPrefWidth(300);
-        projectComboBox.setDisable(true);
-
-        projectLoadingBox = new HBox(8);
-        projectLoadingBox.setAlignment(Pos.CENTER_LEFT);
-        ProgressIndicator projectSpinner = new ProgressIndicator();
-        projectSpinner.setPrefSize(16, 16);
-        Label loadingLabel = new Label("Loading your projects...");
-        loadingLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 12px;");
-        projectLoadingBox.getChildren().addAll(projectSpinner, loadingLabel);
-        projectLoadingBox.setVisible(false);
-        projectLoadingBox.setManaged(false);
-
-        resubmissionErrorLabel = new Label();
-        resubmissionErrorLabel.setStyle("-fx-text-fill: #dc3545; -fx-font-size: 12px;");
-        resubmissionErrorLabel.setVisible(false);
-        resubmissionErrorLabel.setManaged(false);
-
-        projectSelectionBox.getChildren().addAll(projectLabel, projectComboBox, projectLoadingBox, resubmissionErrorLabel);
-        projectSelectionBox.setVisible(false);
-        projectSelectionBox.setManaged(false);
-
-        // Toggle project selection visibility when checkbox changes
-        resubmissionCheckbox.selectedProperty().addListener((obs, oldVal, selected) -> {
-            projectSelectionBox.setVisible(selected);
-            projectSelectionBox.setManaged(selected);
-            if (selected) {
-                loadProjects();
-            } else {
-                model.setResubmissionMode(false);
-                model.getSubmission().getProjectMetaData().setResubmissionPxAccession(null);
-                projectComboBox.getItems().clear();
-            }
-        });
-
-        Label hintLabel = new Label("Click 'Next' to continue");
-        hintLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 12px;");
-
-        section.getChildren().addAll(authSuccessLabel, resubmissionCheckbox, projectSelectionBox, hintLabel);
-        return section;
-    }
-
-    private void loadProjects() {
-        projectLoadingBox.setVisible(true);
-        projectLoadingBox.setManaged(true);
-        projectComboBox.setDisable(true);
-        projectComboBox.getItems().clear();
-        resubmissionErrorLabel.setVisible(false);
-        resubmissionErrorLabel.setManaged(false);
-
-        ApiService apiService = ServiceFactory.getInstance().createApiService(model.getUserName(), model.getPassword());
-        apiService.getSubmissionDetails()
-            .thenAccept(projectDetailList -> Platform.runLater(() -> {
-                projectLoadingBox.setVisible(false);
-                projectLoadingBox.setManaged(false);
-
-                if (projectDetailList.getProjectDetails().isEmpty()) {
-                    resubmissionErrorLabel.setText("No private projects found, or a resubmission is already pending.");
-                    resubmissionErrorLabel.setVisible(true);
-                    resubmissionErrorLabel.setManaged(true);
-                    projectComboBox.setPromptText("No projects available");
-                } else {
-                    for (ProjectDetail pd : projectDetailList.getProjectDetails()) {
-                        projectComboBox.getItems().add(pd.getAccession());
-                    }
-                    projectComboBox.setPromptText("Select a project...");
-                    projectComboBox.setDisable(false);
-                }
-                apiService.shutdown();
-            }))
-            .exceptionally(ex -> {
-                Platform.runLater(() -> {
-                    projectLoadingBox.setVisible(false);
-                    projectLoadingBox.setManaged(false);
-                    resubmissionErrorLabel.setText("Failed to load projects: " + ex.getMessage());
-                    resubmissionErrorLabel.setVisible(true);
-                    resubmissionErrorLabel.setManaged(true);
-                });
-                apiService.shutdown();
-                return null;
-            });
     }
 
     @Override
@@ -267,11 +144,10 @@ public class LoginStep extends AbstractWizardStep {
         // Focus username field
         usernameField.requestFocus();
 
-        // Reset auth state if coming back to this step
+        // Reset auth state if coming back to this step (e.g. after logout)
         if (!model.isLoggedIn()) {
             authenticated = false;
-            resubmissionSection.setVisible(false);
-            resubmissionSection.setManaged(false);
+            passwordField.clear();
         }
     }
 
@@ -292,21 +168,8 @@ public class LoginStep extends AbstractWizardStep {
             return true;
         }
 
-        // If already authenticated, handle resubmission selection and proceed
+        // If already authenticated, proceed
         if (authenticated) {
-            if (resubmissionCheckbox.isSelected()) {
-                String selectedAccession = projectComboBox.getValue();
-                if (selectedAccession == null || selectedAccession.isEmpty()) {
-                    showError("Please select a project for resubmission");
-                    return false;
-                }
-                model.setResubmissionMode(true);
-                model.getSubmission().getProjectMetaData().setResubmissionPxAccession(selectedAccession);
-                logger.info("Resubmission mode enabled for project: {}", selectedAccession);
-            } else {
-                model.setResubmissionMode(false);
-                model.getSubmission().getProjectMetaData().setResubmissionPxAccession(null);
-            }
             return true;
         }
 
@@ -372,15 +235,17 @@ public class LoginStep extends AbstractWizardStep {
                 logger.info("Authentication succeeded for user: {}", username);
                 authenticated = true;
 
-                // Show resubmission section and let user choose before proceeding
-                resubmissionSection.setVisible(true);
-                resubmissionSection.setManaged(true);
+                // Auto-advance to next step
+                if (wizardController != null) {
+                    wizardController.setNavigationEnabled(true);
+                    wizardController.goToNextStep();
+                }
             } catch (Exception ex) {
                 logger.warn("Authentication succeeded but could not process contact details", ex);
                 authenticated = true;
-            } finally {
                 if (wizardController != null) {
                     wizardController.setNavigationEnabled(true);
+                    wizardController.goToNextStep();
                 }
             }
         });

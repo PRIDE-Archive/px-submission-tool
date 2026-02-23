@@ -128,16 +128,18 @@ public class SubmissionModel {
                 dataFile.setFileId(fileIdCounter.get());
                 fileIdCounter.set(fileIdCounter.get() + 1);
             }
-            files.add(dataFile);
 
             // Always add to submission (UploadManager reads submission.getDataFiles())
             submission.get().addDataFile(dataFile);
 
-            // Additionally track in resubmission for change-state management
+            // Set resubmission state BEFORE adding to files list, because
+            // the files list listener reads the resubmission map to filter by ADD state
             if (resubmissionMode.get()) {
                 resubmission.get().addDataFile(dataFile);
                 resubmission.get().getResubmission().put(dataFile, ResubmissionFileChangeState.ADD);
             }
+
+            files.add(dataFile);
         }
     }
 
