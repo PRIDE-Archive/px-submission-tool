@@ -18,6 +18,7 @@ import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 import uk.ac.ebi.pride.pxsubmit.model.TransferStatistics;
 import uk.ac.ebi.pride.pxsubmit.service.ApiService;
 import uk.ac.ebi.pride.pxsubmit.service.ChecksumService;
+import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
 import uk.ac.ebi.pride.pxsubmit.service.UploadManager;
 import uk.ac.ebi.pride.pxsubmit.util.DebugMode;
 
@@ -237,7 +238,7 @@ public class SubmissionStep extends AbstractWizardStep {
         }
 
         // Initialize API service
-        apiService = new ApiService(model.getUserName(), model.getPassword());
+        apiService = ServiceFactory.getInstance().createApiService(model.getUserName(), model.getPassword());
     }
 
     @Override
@@ -404,7 +405,7 @@ public class SubmissionStep extends AbstractWizardStep {
         currentFileProgress.setVisible(true);
 
         // Create UploadManager with real upload services
-        uploadManager = new UploadManager(
+        uploadManager = ServiceFactory.getInstance().createUploadManager(
                 model.getSubmission(),
                 uploadDetail,
                 method,
@@ -483,7 +484,7 @@ public class SubmissionStep extends AbstractWizardStep {
         currentFileProgress.setVisible(true);
 
         // Use UploadManager in test mode - it handles simulation internally
-        uploadManager = new UploadManager(
+        uploadManager = ServiceFactory.getInstance().createUploadManager(
                 model.getSubmission(),
                 null, // No upload detail needed for test mode
                 UploadMethod.FTP,

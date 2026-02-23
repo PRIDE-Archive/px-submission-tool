@@ -13,6 +13,7 @@ import java.util.regex.Pattern;
 import uk.ac.ebi.pride.archive.submission.model.project.ProjectDetail;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 import uk.ac.ebi.pride.pxsubmit.service.ApiService;
+import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
 
 /**
  * Login step - First step in the submission wizard.
@@ -196,7 +197,7 @@ public class LoginStep extends AbstractWizardStep {
         resubmissionErrorLabel.setVisible(false);
         resubmissionErrorLabel.setManaged(false);
 
-        ApiService apiService = new ApiService(model.getUserName(), model.getPassword());
+        ApiService apiService = ServiceFactory.getInstance().createApiService(model.getUserName(), model.getPassword());
         apiService.getSubmissionDetails()
             .thenAccept(projectDetailList -> Platform.runLater(() -> {
                 projectLoadingBox.setVisible(false);
@@ -340,7 +341,7 @@ public class LoginStep extends AbstractWizardStep {
             wizardController.setNavigationEnabled(false);
         }
 
-        currentAuth = new uk.ac.ebi.pride.pxsubmit.service.AuthService();
+        currentAuth = ServiceFactory.getInstance().createAuthService();
         currentAuth.setCredentials(username, password);
 
         currentAuth.setOnSucceeded(evt -> {

@@ -15,6 +15,7 @@ import javafx.stage.Stage;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
+import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
 import uk.ac.ebi.pride.pxsubmit.service.ValidationService;
 import uk.ac.ebi.pride.pxsubmit.util.FileTypeDetector;
 import uk.ac.ebi.pride.pxsubmit.view.component.FileClassificationPanel;
@@ -477,7 +478,7 @@ public class FileSelectionStep extends AbstractWizardStep {
             return;
         }
 
-        ValidationService validationService = new ValidationService(
+        ValidationService validationService = ServiceFactory.getInstance().createValidationService(
             model.getFiles(), model.getSubmissionType());
 
         validationProgress.setVisible(true);

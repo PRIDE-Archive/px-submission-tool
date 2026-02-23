@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 import uk.ac.ebi.pride.pxsubmit.service.ChecksumService;
+import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -245,7 +246,7 @@ public class ChecksumComputationStep extends AbstractWizardStep {
         statusLabel.setText("Computing checksums...");
         logger.info("Starting checksum computation for {} files", model.getFiles().size());
 
-        checksumService = new ChecksumService(model.getFiles());
+        checksumService = ServiceFactory.getInstance().createChecksumService(model.getFiles());
 
         // Monitor current file
         checksumService.currentFileNameProperty().addListener((obs, oldVal, newVal) -> {
