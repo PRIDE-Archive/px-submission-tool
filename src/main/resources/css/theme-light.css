@@ -138,13 +138,17 @@
 }
 
 .step-connector {
-    -fx-background-color: -px-border-primary;
-    -fx-pref-height: 2;
-    -fx-min-height: 2;
+    -fx-border-color: -px-border-primary;
+    -fx-border-width: 1 0 0 0;
+    -fx-border-style: solid;
+    -fx-background-color: transparent;
+    -fx-pref-height: 1;
+    -fx-min-height: 1;
+    -fx-max-height: 1;
 }
 
 .step-connector.completed {
-    -fx-background-color: -px-success;
+    -fx-border-color: -px-success;
 }
 
 /* ==================== Content Area ==================== */

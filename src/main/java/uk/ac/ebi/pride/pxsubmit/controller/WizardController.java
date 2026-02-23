@@ -7,19 +7,24 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.shape.Rectangle;
 import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 import uk.ac.ebi.pride.pxsubmit.util.DebugMode;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import java.net.URL;
 import java.util.Optional;
@@ -47,8 +52,7 @@ public class WizardController implements Initializable {
     @FXML private Label titleLabel;
     @FXML private Label descriptionLabel;
     @FXML private Label trainingModeLabel;
-    @FXML private Label stepIndicatorLabel;
-    @FXML private ProgressBar stepProgressBar;
+    @FXML private HBox stepIndicatorContainer;
 
     @FXML private StackPane contentPane;
 
@@ -73,6 +77,17 @@ public class WizardController implements Initializable {
     private final BooleanProperty canGoNext = new SimpleBooleanProperty(false);
     private final BooleanProperty isFinished = new SimpleBooleanProperty(false);
 
+    // Step indicator UI elements
+    private final List<StackPane> stepDots = new ArrayList<>();
+    private final List<Label> stepLabels = new ArrayList<>();
+    private final List<Region> stepConnectors = new ArrayList<>();
+
+    // Short labels for the step indicator bar
+    private static final String[] STEP_SHORT_LABELS = {
+        "Welcome", "Login", "Type", "Project", "Samples",
+        "Files", "Review", "Metadata", "Summary", "Checksum", "Upload"
+    };
+
     // Animation duration
     private static final Duration TRANSITION_DURATION = Duration.millis(200);
 
@@ -87,6 +102,12 @@ public class WizardController implements Initializable {
             return null;
         }, currentStepIndex, steps));
 
+        // Clip content pane to prevent overflow during resize
+        Rectangle clip = new Rectangle();
+        clip.widthProperty().bind(contentPane.widthProperty());
+        clip.heightProperty().bind(contentPane.heightProperty());
+        contentPane.setClip(clip);
+
         // Bind header labels to current step
         titleLabel.textProperty().bind(Bindings.createStringBinding(() -> {
             WizardStep step = currentStep.get();
@@ -98,21 +119,10 @@ public class WizardController implements Initializable {
             return step != null ? step.getDescription() : "";
         }, currentStep));
 
-        // Bind step progress indicator
-        if (stepIndicatorLabel != null) {
-            stepIndicatorLabel.textProperty().bind(Bindings.createStringBinding(() -> {
-                int current = currentStepIndex.get() + 1;
-                int total = steps.size();
-                return String.format("Step %d of %d", current, total);
-            }, currentStepIndex, steps));
-        }
-
-        if (stepProgressBar != null) {
-            stepProgressBar.progressProperty().bind(Bindings.createDoubleBinding(() -> {
-                if (steps.isEmpty()) return 0.0;
-                return (double) (currentStepIndex.get() + 1) / steps.size();
-            }, currentStepIndex, steps));
-        }
+        // Update step indicator on step change
+        currentStepIndex.addListener((obs, oldVal, newVal) -> {
+            updateStepIndicator(newVal.intValue());
+        });
 
         // Bind button states
         canGoBack.bind(Bindings.createBooleanBinding(() -> {
@@ -193,6 +203,7 @@ public class WizardController implements Initializable {
             logger.error("No steps registered!");
             return;
         }
+        buildStepIndicator();
         goToStep(0);
     }
 
@@ -357,6 +368,109 @@ public class WizardController implements Initializable {
             fadeIn.play();
         });
         fadeOut.play();
+    }
+
+    // ==================== Step Indicator ====================
+
+    /**
+     * Build the visual step indicator bar with numbered dots, labels, and connectors.
+     * Called after all steps have been registered.
+     */
+    private void buildStepIndicator() {
+        if (stepIndicatorContainer == null) return;
+
+        stepIndicatorContainer.getChildren().clear();
+        stepDots.clear();
+        stepLabels.clear();
+        stepConnectors.clear();
+
+        for (int i = 0; i < steps.size(); i++) {
+            // Add connector line before each step (except the first)
+            if (i > 0) {
+                Region connector = new Region();
+                connector.getStyleClass().add("step-connector");
+                connector.setMinHeight(1);
+                connector.setPrefHeight(1);
+                connector.setMaxHeight(1);
+                connector.setMinWidth(12);
+                connector.setPrefWidth(20);
+                HBox.setHgrow(connector, javafx.scene.layout.Priority.SOMETIMES);
+                stepConnectors.add(connector);
+
+                // Wrap connector in a VBox to vertically center it at dot level
+                VBox connectorWrapper = new VBox(connector);
+                connectorWrapper.setAlignment(Pos.TOP_CENTER);
+                // Offset to align with center of the 26px dot + 3px gap above label
+                connectorWrapper.setPadding(new javafx.geometry.Insets(12, 0, 0, 0));
+                stepIndicatorContainer.getChildren().add(connectorWrapper);
+            }
+
+            // Step item: a VBox with dot on top, label below
+            VBox stepItem = new VBox(3);
+            stepItem.setAlignment(Pos.CENTER);
+
+            // Circle dot with step number
+            Label numberLabel = new Label(String.valueOf(i + 1));
+            numberLabel.getStyleClass().add("step-number");
+
+            StackPane dot = new StackPane(numberLabel);
+            dot.getStyleClass().add("step-dot");
+            dot.setMinSize(26, 26);
+            dot.setPrefSize(26, 26);
+            dot.setMaxSize(26, 26);
+            stepDots.add(dot);
+
+            // Short label
+            String shortLabel = i < STEP_SHORT_LABELS.length ? STEP_SHORT_LABELS[i] : steps.get(i).getTitle();
+            Label label = new Label(shortLabel);
+            label.getStyleClass().add("step-label");
+            stepLabels.add(label);
+
+            stepItem.getChildren().addAll(dot, label);
+            stepIndicatorContainer.getChildren().add(stepItem);
+        }
+    }
+
+    /**
+     * Update the visual step indicator to reflect the current step.
+     * Completed steps get a checkmark, current step is highlighted, future steps are dimmed.
+     */
+    private void updateStepIndicator(int currentIndex) {
+        for (int i = 0; i < stepDots.size(); i++) {
+            StackPane dot = stepDots.get(i);
+            Label label = stepLabels.get(i);
+
+            // Remove previous state classes
+            dot.getStyleClass().removeAll("active", "completed");
+            label.getStyleClass().removeAll("active", "completed");
+
+            // Get the number label inside the dot
+            Label numberLabel = (Label) dot.getChildren().get(0);
+
+            if (i < currentIndex) {
+                // Completed step
+                dot.getStyleClass().add("completed");
+                label.getStyleClass().add("completed");
+                numberLabel.setText("\u2713"); // checkmark
+            } else if (i == currentIndex) {
+                // Current step
+                dot.getStyleClass().add("active");
+                label.getStyleClass().add("active");
+                numberLabel.setText(String.valueOf(i + 1));
+            } else {
+                // Future step
+                numberLabel.setText(String.valueOf(i + 1));
+            }
+        }
+
+        // Update connectors
+        for (int i = 0; i < stepConnectors.size(); i++) {
+            Region connector = stepConnectors.get(i);
+            connector.getStyleClass().removeAll("completed");
+            if (i < currentIndex) {
+                connector.getStyleClass().add("completed");
+            }
+        }
     }
 
     // ==================== Event Handlers ====================

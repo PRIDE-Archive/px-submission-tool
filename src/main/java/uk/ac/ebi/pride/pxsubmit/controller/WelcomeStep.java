@@ -34,10 +34,12 @@ public class WelcomeStep extends AbstractWizardStep {
     protected Parent createContent() {
         ScrollPane scrollPane = new ScrollPane();
         scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         scrollPane.setStyle("-fx-background-color: transparent;");
 
-        VBox content = new VBox(20);
-        content.setPadding(new Insets(20));
+        VBox content = new VBox(12);
+        content.setPadding(new Insets(10, 15, 10, 15));
         content.setAlignment(Pos.TOP_CENTER);
 
         // Introduction
@@ -52,22 +54,20 @@ public class WelcomeStep extends AbstractWizardStep {
         // Checklist
         VBox checklistSection = createChecklist();
 
-        // Training Mode
+        // Training Mode + Help links side by side
+        HBox bottomRow = new HBox(20);
         VBox trainingSection = createTrainingSection();
-
-        // Help links
         VBox helpSection = createHelpSection();
+        HBox.setHgrow(trainingSection, Priority.ALWAYS);
+        HBox.setHgrow(helpSection, Priority.ALWAYS);
+        bottomRow.getChildren().addAll(trainingSection, helpSection);
 
         content.getChildren().addAll(
             introSection,
-            new Separator(),
             categoriesSection,
-            new Separator(),
             checklistSection,
             new Separator(),
-            trainingSection,
-            new Separator(),
-            helpSection
+            bottomRow
         );
 
         scrollPane.setContent(content);
@@ -75,33 +75,33 @@ public class WelcomeStep extends AbstractWizardStep {
     }
 
     private VBox createSection(String title, String description) {
-        VBox section = new VBox(8);
+        VBox section = new VBox(4);
 
         Label titleLabel = new Label(title);
-        titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        titleLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
 
         Label descLabel = new Label(description);
         descLabel.setWrapText(true);
-        descLabel.setStyle("-fx-text-fill: #666;");
+        descLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 12px;");
 
         section.getChildren().addAll(titleLabel, descLabel);
         return section;
     }
 
     private VBox createFileCategories() {
-        VBox section = new VBox(15);
+        VBox section = new VBox(6);
 
         Label titleLabel = new Label("File Categories");
-        titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        titleLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
 
         Label descLabel = new Label("Your submission should include the following types of files:");
-        descLabel.setStyle("-fx-text-fill: #666;");
+        descLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 12px;");
 
         // Grid of file categories
         GridPane grid = new GridPane();
-        grid.setHgap(15);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(10));
+        grid.setHgap(10);
+        grid.setVgap(8);
+        grid.setPadding(new Insets(4, 0, 0, 0));
 
         // RAW Files
         grid.add(createCategoryCard(
@@ -162,10 +162,10 @@ public class WelcomeStep extends AbstractWizardStep {
     }
 
     private VBox createCategoryCard(String name, String status, String color, String description, String examples) {
-        VBox card = new VBox(5);
-        card.setPadding(new Insets(12));
-        card.setMinWidth(200);
-        card.setMaxWidth(250);
+        VBox card = new VBox(3);
+        card.setPadding(new Insets(8));
+        card.setMinWidth(180);
+        card.setMaxWidth(260);
 
         String bgColor = status.equals("MANDATORY") ? "#fff3cd" :
                         status.equals("RECOMMENDED") ? "#e7f3ff" : "#f8f9fa";
@@ -209,12 +209,12 @@ public class WelcomeStep extends AbstractWizardStep {
     }
 
     private VBox createChecklist() {
-        VBox section = new VBox(12);
+        VBox section = new VBox(4);
 
         Label titleLabel = new Label("Before You Begin");
-        titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        titleLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
 
-        VBox checklistBox = new VBox(6);
+        VBox checklistBox = new VBox(3);
         checklistBox.setPadding(new Insets(0, 0, 0, 10));
 
         String[] items = {
@@ -252,10 +252,10 @@ public class WelcomeStep extends AbstractWizardStep {
     }
 
     private VBox createTrainingSection() {
-        VBox section = new VBox(10);
+        VBox section = new VBox(6);
 
         Label titleLabel = new Label("Test Mode");
-        titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        titleLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
 
         trainingModeCheckbox = new CheckBox("Enable Test Mode");
         trainingModeCheckbox.setStyle("-fx-font-weight: bold;");
@@ -269,8 +269,8 @@ public class WelcomeStep extends AbstractWizardStep {
         trainingModeCheckbox.setTooltip(testModeTooltip);
 
         // Warning box
-        HBox warningBox = new HBox(10);
-        warningBox.setPadding(new Insets(10));
+        HBox warningBox = new HBox(8);
+        warningBox.setPadding(new Insets(6, 10, 6, 10));
         warningBox.setStyle("-fx-background-color: #fff3cd; -fx-border-color: #ffc107; -fx-border-radius: 4; -fx-background-radius: 4;");
         warningBox.setAlignment(Pos.CENTER_LEFT);
 
@@ -278,7 +278,7 @@ public class WelcomeStep extends AbstractWizardStep {
         warningIcon.setStyle("-fx-text-fill: #856404; -fx-font-size: 16px;");
 
         Label warningText = new Label("Test mode submissions will NOT be stored in PRIDE Archive.");
-        warningText.setStyle("-fx-text-fill: #856404;");
+        warningText.setStyle("-fx-text-fill: #856404; -fx-font-size: 12px;");
 
         warningBox.getChildren().addAll(warningIcon, warningText);
         warningBox.visibleProperty().bind(trainingModeCheckbox.selectedProperty());
@@ -289,12 +289,12 @@ public class WelcomeStep extends AbstractWizardStep {
     }
 
     private VBox createHelpSection() {
-        VBox section = new VBox(10);
+        VBox section = new VBox(6);
 
         Label titleLabel = new Label("Need Help?");
-        titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        titleLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
 
-        VBox linksBox = new VBox(5);
+        VBox linksBox = new VBox(2);
 
         Hyperlink guidelinesLink = new Hyperlink("PRIDE Submission Guidelines");
         guidelinesLink.setOnAction(e -> openUrl("https://www.ebi.ac.uk/pride/markdownpage/submitdatapage"));

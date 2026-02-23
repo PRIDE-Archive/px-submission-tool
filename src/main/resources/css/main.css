@@ -47,27 +47,72 @@
     -fx-background-radius: 4;
 }
 
-/* Step Progress Indicator */
-.step-indicator {
-    -fx-text-fill: rgba(255, 255, 255, 0.85);
-    -fx-font-size: 12px;
+/* Step Indicator Bar */
+.step-indicator-bar {
+    -fx-alignment: center;
+}
+
+.step-dot {
+    -fx-background-color: rgba(255, 255, 255, 0.3);
+    -fx-background-radius: 13;
+    -fx-min-width: 26;
+    -fx-min-height: 26;
+    -fx-pref-width: 26;
+    -fx-pref-height: 26;
+    -fx-max-width: 26;
+    -fx-max-height: 26;
+    -fx-alignment: center;
+}
+
+.step-dot.active {
+    -fx-background-color: white;
+}
+
+.step-dot.completed {
+    -fx-background-color: #81C784;
+}
+
+.step-number {
+    -fx-text-fill: rgba(255, 255, 255, 0.7);
+    -fx-font-size: 11px;
     -fx-font-weight: bold;
 }
 
-.step-progress {
-    -fx-accent: #4CAF50;
-    -fx-background-color: rgba(255, 255, 255, 0.3);
-    -fx-background-radius: 3;
+.step-dot.active .step-number {
+    -fx-text-fill: #1B5E20;
 }
 
-.step-progress .bar {
-    -fx-background-color: #4CAF50;
-    -fx-background-radius: 3;
+.step-dot.completed .step-number {
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
 }
 
-.step-progress .track {
-    -fx-background-color: rgba(255, 255, 255, 0.3);
-    -fx-background-radius: 3;
+.step-label {
+    -fx-text-fill: rgba(255, 255, 255, 0.5);
+    -fx-font-size: 10px;
+}
+
+.step-label.active {
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+}
+
+.step-label.completed {
+    -fx-text-fill: rgba(255, 255, 255, 0.75);
+}
+
+.step-connector {
+    -fx-border-color: rgba(255, 255, 255, 0.25);
+    -fx-border-width: 1 0 0 0;
+    -fx-border-style: solid;
+    -fx-background-color: transparent;
+    -fx-pref-height: 1;
+    -fx-min-height: 1;
+    -fx-max-height: 1;
+}
+
+.step-connector.completed {
+    -fx-border-color: #81C784;
 }
 
 /* ==================== Content Area ==================== */

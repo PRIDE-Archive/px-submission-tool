@@ -10,7 +10,6 @@
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
-<?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.control.Tooltip?>
 
 <!--
@@ -51,26 +50,6 @@
                        managed="false"/>
             </HBox>
 
-            <!-- Step Progress Indicator -->
-            <HBox alignment="CENTER_LEFT" spacing="10">
-                <padding>
-                    <Insets top="10"/>
-                </padding>
-
-                <Label fx:id="stepIndicatorLabel"
-                       text="Step 1 of 9"
-                       styleClass="step-indicator"/>
-
-                <ProgressBar fx:id="stepProgressBar"
-                             progress="0.0"
-                             prefWidth="200"
-                             maxHeight="6"
-                             styleClass="step-progress"/>
-
-                <!-- Spacer -->
-                <Region HBox.hgrow="ALWAYS"/>
-            </HBox>
-
             <!-- Title and Description -->
             <VBox spacing="5">
                 <padding>
@@ -83,12 +62,19 @@
                        text="Start your proteomics data submission"
                        styleClass="wizard-description"/>
             </VBox>
+
+            <!-- Step Progress Indicator (built dynamically) -->
+            <HBox fx:id="stepIndicatorContainer" alignment="CENTER" styleClass="step-indicator-bar">
+                <padding>
+                    <Insets top="12" bottom="2"/>
+                </padding>
+            </HBox>
         </VBox>
     </top>
 
     <!-- Content Area -->
     <center>
-        <StackPane fx:id="contentPane" styleClass="content-pane">
+        <StackPane fx:id="contentPane" styleClass="content-pane" minHeight="0" minWidth="0">
             <padding>
                 <Insets top="20" right="20" bottom="20" left="20"/>
             </padding>
