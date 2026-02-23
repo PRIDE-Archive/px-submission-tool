@@ -111,8 +111,8 @@ public class FileResubmissionStep extends AbstractWizardStep {
 
         // New files table
         newFilesTable = createNewFilesTable();
-        newFilesTable.setPrefHeight(200);
-        newFilesTable.setMinHeight(150);
+        newFilesTable.setPrefHeight(150);
+        newFilesTable.setMinHeight(100);
         VBox.setVgrow(newFilesTable, Priority.SOMETIMES);
 
         // Enable remove button when selection exists
@@ -146,23 +146,22 @@ public class FileResubmissionStep extends AbstractWizardStep {
         // Existing files table
         existingFilesTable = createExistingFilesTable();
         existingFilesTable.setPrefHeight(250);
-        existingFilesTable.setMinHeight(150);
+        existingFilesTable.setMinHeight(100);
         VBox.setVgrow(existingFilesTable, Priority.ALWAYS);
 
+        VBox.setVgrow(existingFilesTable, Priority.ALWAYS);
         existingFilesContent.getChildren().addAll(loadingBox);
         existingFilesPane.setContent(existingFilesContent);
 
-        // Layout
+        // Make the content VBox grow inside the TitledPane
+        VBox.setVgrow(newFilesTable, Priority.ALWAYS);
+
+        // Layout - no ScrollPane so tables resize with window
         VBox.setVgrow(newFilesPane, Priority.SOMETIMES);
         VBox.setVgrow(existingFilesPane, Priority.ALWAYS);
         root.getChildren().addAll(summaryLabel, newFilesPane, existingFilesPane);
 
-        ScrollPane scrollPane = new ScrollPane(root);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setFitToHeight(true);
-        scrollPane.setStyle("-fx-background-color: transparent;");
-
-        return scrollPane;
+        return root;
     }
 
     @SuppressWarnings("unchecked")
@@ -442,11 +441,27 @@ public class FileResubmissionStep extends AbstractWizardStep {
     }
 
     /**
-     * Update the state of an existing file in the resubmission map
+     * Update the state of an existing file in the resubmission map.
+     * When set to MODIFY, checks if a matching new file (same name) exists.
      */
     private void updateExistingFileState(DataFile dataFile, ResubmissionFileChangeState newState) {
         Resubmission resub = model.getResubmission();
         resub.getResubmission().put(dataFile, newState);
+
+        if (newState == ResubmissionFileChangeState.MODIFY) {
+            String existingName = dataFile.getFileName();
+            boolean hasMatch = newFiles.stream()
+                .anyMatch(nf -> nf.getFileName() != null && nf.getFileName().equals(existingName));
+            if (!hasMatch) {
+                Alert alert = new Alert(Alert.AlertType.WARNING);
+                alert.setTitle("Missing Replacement File");
+                alert.setHeaderText("No replacement file found for: " + existingName);
+                alert.setContentText(
+                    "You marked this file as MODIFY but haven't added a new file with the same name.\n\n" +
+                    "Please add a file named '" + existingName + "' in the 'New Files' section above.");
+                alert.showAndWait();
+            }
+        }
     }
 
     // ==================== File Add/Remove Operations ====================
@@ -561,12 +576,35 @@ public class FileResubmissionStep extends AbstractWizardStep {
             }
         }
 
-        summaryLabel.setText(String.format(
-            "New: %d  |  Modified: %d  |  Deleted: %d  |  Unchanged: %d",
-            addCount, modifyCount, deleteCount, unchangedCount));
+        // Check for MODIFY files without matching new files
+        int missingModifyCount = 0;
+        StringBuilder missingNames = new StringBuilder();
+        for (Map.Entry<DataFile, ResubmissionFileChangeState> entry : resubMap.entrySet()) {
+            if (entry.getValue() == ResubmissionFileChangeState.MODIFY) {
+                String name = entry.getKey().getFileName();
+                boolean hasMatch = newFiles.stream()
+                    .anyMatch(nf -> nf.getFileName() != null && nf.getFileName().equals(name));
+                if (!hasMatch) {
+                    missingModifyCount++;
+                    if (missingNames.length() > 0) missingNames.append(", ");
+                    missingNames.append(name);
+                }
+            }
+        }
 
-        // Color based on changes
-        if (addCount > 0 || modifyCount > 0 || deleteCount > 0) {
+        String summaryText = String.format(
+            "New: %d  |  Modified: %d  |  Deleted: %d  |  Unchanged: %d",
+            addCount, modifyCount, deleteCount, unchangedCount);
+
+        if (missingModifyCount > 0) {
+            summaryText += String.format("\nMissing replacement file(s): %s", missingNames);
+        }
+        summaryLabel.setText(summaryText);
+
+        // Color based on changes and warnings
+        if (missingModifyCount > 0) {
+            summaryLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #cc7a00;");
+        } else if (addCount > 0 || modifyCount > 0 || deleteCount > 0) {
             summaryLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #28a745;");
         } else {
             summaryLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #666;");
@@ -577,6 +615,32 @@ public class FileResubmissionStep extends AbstractWizardStep {
     public boolean validate() {
         Resubmission resub = model.getResubmission();
         Map<DataFile, ResubmissionFileChangeState> resubMap = resub.getResubmission();
+
+        // Check that all MODIFY files have a matching new file with the same name
+        List<String> missingReplacements = new java.util.ArrayList<>();
+        for (Map.Entry<DataFile, ResubmissionFileChangeState> entry : resubMap.entrySet()) {
+            if (entry.getValue() == ResubmissionFileChangeState.MODIFY) {
+                String name = entry.getKey().getFileName();
+                boolean hasMatch = newFiles.stream()
+                    .anyMatch(nf -> nf.getFileName() != null && nf.getFileName().equals(name));
+                if (!hasMatch) {
+                    missingReplacements.add(name);
+                }
+            }
+        }
+
+        if (!missingReplacements.isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Missing Replacement Files");
+            alert.setHeaderText("Cannot proceed - replacement files are missing");
+            alert.setContentText(
+                "The following files are marked as MODIFY but no replacement file " +
+                "with the same name has been added:\n\n" +
+                String.join("\n", missingReplacements) +
+                "\n\nPlease add the replacement files or change the action to NONE.");
+            alert.showAndWait();
+            return false;
+        }
 
         boolean hasChanges = resubMap.values().stream()
             .anyMatch(state -> state != ResubmissionFileChangeState.NONE);
