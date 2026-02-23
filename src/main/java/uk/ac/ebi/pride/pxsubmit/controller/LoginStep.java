@@ -1,5 +1,6 @@
 package uk.ac.ebi.pride.pxsubmit.controller;
 
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -10,7 +11,9 @@ import javafx.scene.layout.VBox;
 
 import java.util.concurrent.CompletionException;
 import java.util.regex.Pattern;
+import uk.ac.ebi.pride.archive.submission.model.project.ProjectDetail;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
+import uk.ac.ebi.pride.pxsubmit.service.ApiService;
 import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
 
 /**
@@ -23,6 +26,11 @@ public class LoginStep extends AbstractWizardStep {
     private PasswordField passwordField;
     private Label errorLabel;
     private HBox progressBox;
+    private VBox resubmissionSection;
+    private CheckBox resubmissionCheckbox;
+    private ComboBox<String> projectComboBox;
+    private HBox projectLoadingBox;
+    private Label resubmissionErrorLabel;
     private uk.ac.ebi.pride.pxsubmit.service.AuthService currentAuth;
     private boolean authenticated = false;
 
@@ -97,12 +105,18 @@ public class LoginStep extends AbstractWizardStep {
         linksBox.setAlignment(Pos.CENTER);
         linksBox.getChildren().addAll(registerLink, forgotLink);
 
+        // Resubmission section (hidden until authentication succeeds)
+        resubmissionSection = createResubmissionSection();
+        resubmissionSection.setVisible(false);
+        resubmissionSection.setManaged(false);
+
         root.getChildren().addAll(
             welcomeLabel,
             form,
             errorLabel,
             progressBox,
-            linksBox
+            linksBox,
+            resubmissionSection
         );
 
         return root;
@@ -165,6 +179,14 @@ public class LoginStep extends AbstractWizardStep {
                 model.setResubmissionMode(false);
                 model.getSubmission().getProjectMetaData().setResubmissionPxAccession(null);
                 projectComboBox.getItems().clear();
+            }
+        });
+
+        // When a project is selected, set resubmission mode and accession on model
+        projectComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null && !newVal.isEmpty()) {
+                model.setResubmissionMode(true);
+                model.getSubmission().getProjectMetaData().setResubmissionPxAccession(newVal);
             }
         });
 
@@ -280,6 +302,12 @@ public class LoginStep extends AbstractWizardStep {
         if (!model.isLoggedIn()) {
             authenticated = false;
             passwordField.clear();
+            resubmissionSection.setVisible(false);
+            resubmissionSection.setManaged(false);
+        } else {
+            // Already authenticated, show the resubmission section
+            resubmissionSection.setVisible(true);
+            resubmissionSection.setManaged(true);
         }
     }
 
@@ -367,17 +395,19 @@ public class LoginStep extends AbstractWizardStep {
                 logger.info("Authentication succeeded for user: {}", username);
                 authenticated = true;
 
-                // Auto-advance to next step
+                // Show resubmission section and re-enable navigation
+                resubmissionSection.setVisible(true);
+                resubmissionSection.setManaged(true);
                 if (wizardController != null) {
                     wizardController.setNavigationEnabled(true);
-                    wizardController.goToNextStep();
                 }
             } catch (Exception ex) {
                 logger.warn("Authentication succeeded but could not process contact details", ex);
                 authenticated = true;
+                resubmissionSection.setVisible(true);
+                resubmissionSection.setManaged(true);
                 if (wizardController != null) {
                     wizardController.setNavigationEnabled(true);
-                    wizardController.goToNextStep();
                 }
             }
         });
