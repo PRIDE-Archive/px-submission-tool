@@ -14,8 +14,8 @@
         </encoder>
     </appender>
 
-    <logger name="uk.ac.ebi.pride" level="INFO"/>
     <logger name="com.asperasoft" level="DEBUG"/>
+    <logger name="uk.ac.ebi.pride" level="INFO"/>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>

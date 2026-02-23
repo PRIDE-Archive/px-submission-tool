@@ -43,6 +43,9 @@ jobs:
             echo "version=$VERSION" >> $GITHUB_OUTPUT
           fi
 
+      - name: Run Tests
+        run: mvn clean test
+
       - name: Build fat JAR
         run: mvn clean package -DskipTests
 
