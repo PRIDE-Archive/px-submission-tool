@@ -346,11 +346,18 @@ public class SubmissionTypeStep extends AbstractWizardStep {
                 projectLoadingBox.setManaged(false);
 
                 if (projectDetailList.getProjectDetails().isEmpty()) {
-                    resubmissionErrorLabel.setText("No private projects found, or a resubmission is already pending.");
+                    resubmissionErrorLabel.setText(
+                        "You do not have any private datasets available for resubmission, " +
+                        "or you already have a pending resubmission ticket.");
+                    resubmissionErrorLabel.setStyle("-fx-text-fill: #856404; -fx-font-size: 12px; " +
+                        "-fx-background-color: #fff3cd; -fx-padding: 8 12; -fx-background-radius: 4;");
                     resubmissionErrorLabel.setVisible(true);
                     resubmissionErrorLabel.setManaged(true);
-                    projectComboBox.setPromptText("No projects available");
+                    projectComboBox.setVisible(false);
+                    projectComboBox.setManaged(false);
                 } else {
+                    projectComboBox.setVisible(true);
+                    projectComboBox.setManaged(true);
                     for (ProjectDetail pd : projectDetailList.getProjectDetails()) {
                         projectComboBox.getItems().add(pd.getAccession());
                     }
@@ -411,9 +418,14 @@ public class SubmissionTypeStep extends AbstractWizardStep {
 
         String optionId = (String) selected.getUserData();
         if ("resubmission".equals(optionId)) {
+            // Block if no projects are available (combo is hidden)
+            if (!projectComboBox.isVisible()) {
+                return false;
+            }
             String selectedAccession = projectComboBox.getValue();
             if (selectedAccession == null || selectedAccession.isEmpty()) {
                 resubmissionErrorLabel.setText("Please select a project for resubmission");
+                resubmissionErrorLabel.setStyle("-fx-text-fill: #dc3545; -fx-font-size: 12px;");
                 resubmissionErrorLabel.setVisible(true);
                 resubmissionErrorLabel.setManaged(true);
                 return false;
