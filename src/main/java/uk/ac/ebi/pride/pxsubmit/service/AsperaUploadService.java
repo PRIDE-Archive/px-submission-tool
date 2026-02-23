@@ -3,12 +3,7 @@ package uk.ac.ebi.pride.pxsubmit.service;
 import com.asperasoft.faspmanager.*;
 import javafx.application.Platform;
 import javafx.beans.property.*;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.concurrent.Service;
 import javafx.concurrent.Task;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.archive.submission.model.submission.DropBoxDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.data.model.DataFile;
@@ -35,9 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * - Timeout monitoring and automatic error recovery
  * - Event-driven transfer tracking
  */
-public class AsperaUploadService extends Service<AsperaUploadService.UploadResult> {
-
-    private static final Logger logger = LoggerFactory.getLogger(AsperaUploadService.class);
+public class AsperaUploadService extends AbstractUploadService {
 
     // Configuration constants
     private static final long TRANSFER_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
@@ -46,44 +39,16 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
     private static final int UDP_PORT = 33001;
     private static final int TARGET_RATE_KBPS = 100000; // 100 Mbps
     private static final int MIN_RATE_KBPS = 100;
-    // Note: Retry timeout and HTTP fallback are configured at the SDK/server level
-    // These settings are documented here for reference but not all SDK versions support them
 
-    // Input properties
-    private final List<DataFile> dataFiles;
-    private final UploadDetail uploadDetail;
+    // Aspera-specific properties
     private final String ascpPath;
-
-    // Progress properties (observable from UI)
-    private final IntegerProperty totalFiles = new SimpleIntegerProperty(0);
-    private final IntegerProperty uploadedFiles = new SimpleIntegerProperty(0);
-    private final LongProperty totalBytes = new SimpleLongProperty(0);
-    private final LongProperty uploadedBytes = new SimpleLongProperty(0);
-    private final StringProperty currentFileName = new SimpleStringProperty("");
     private final StringProperty statusMessage = new SimpleStringProperty("");
     private final DoubleProperty overallProgress = new SimpleDoubleProperty(0);
-
-    // Status tracking
-    private final ObservableList<String> uploadLog = FXCollections.observableArrayList();
-
-    // Transfer statistics tracking
-    private volatile TransferStatistics transferStatistics;
     private final Map<String, FileTransferStat> activeFileStats = new ConcurrentHashMap<>();
 
-    public AsperaUploadService(List<DataFile> dataFiles, UploadDetail uploadDetail, String ascpPath) {
-        this.dataFiles = dataFiles;
-        this.uploadDetail = uploadDetail;
+    public AsperaUploadService(List<DataFile> files, UploadDetail uploadDetail, String ascpPath) {
+        super(files, uploadDetail);
         this.ascpPath = ascpPath;
-
-        this.totalFiles.set(dataFiles.size());
-        this.totalBytes.set(calculateTotalSize(dataFiles));
-    }
-
-    private long calculateTotalSize(List<DataFile> files) {
-        return files.stream()
-                .filter(f -> f.getFile() != null)
-                .mapToLong(f -> f.getFile().length())
-                .sum();
     }
 
     @Override
@@ -91,16 +56,9 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
         return new AsperaUploadTask();
     }
 
-    // Property accessors for UI binding
-    public IntegerProperty totalFilesProperty() { return totalFiles; }
-    public IntegerProperty uploadedFilesProperty() { return uploadedFiles; }
-    public LongProperty totalBytesProperty() { return totalBytes; }
-    public LongProperty uploadedBytesProperty() { return uploadedBytes; }
-    public StringProperty currentFileNameProperty() { return currentFileName; }
+    // Aspera-specific property accessors
     public StringProperty statusMessageProperty() { return statusMessage; }
     public DoubleProperty overallProgressProperty() { return overallProgress; }
-    public ObservableList<String> getUploadLog() { return uploadLog; }
-    public TransferStatistics getTransferStatistics() { return transferStatistics; }
 
     /**
      * Main upload task using Aspera FASP
@@ -132,14 +90,14 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
                 throw new IllegalStateException("Upload folder is not configured");
             }
 
-            log("Starting Aspera upload of " + dataFiles.size() + " files");
-            log("Target: " + uploadDetail.getHost());
-            log("Folder: " + uploadDetail.getFolder());
-            log("Username: " + (uploadDetail.getDropBox().getUserName() != null ?
+            AsperaUploadService.this.log("Starting Aspera upload of " + files.size() + " files");
+            AsperaUploadService.this.log("Target: " + uploadDetail.getHost());
+            AsperaUploadService.this.log("Folder: " + uploadDetail.getFolder());
+            AsperaUploadService.this.log("Username: " + (uploadDetail.getDropBox().getUserName() != null ?
                 uploadDetail.getDropBox().getUserName() : "(anonymous)"));
 
             // Initialize transfer statistics
-            transferStatistics = new TransferStatistics("ASPERA", dataFiles.size(), totalBytes.get());
+            transferStatistics = new TransferStatistics("ASPERA", files.size(), totalBytesProperty().get());
             StatisticsLogger.logSessionStart(transferStatistics);
 
             try {
@@ -160,15 +118,15 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
 
                 UploadResult result;
                 if (!completed || transferTimedOut.get()) {
-                    log("Transfer timed out");
-                    result = new UploadResult(false, finishedFileCount, dataFiles.size() - finishedFileCount,
+                    AsperaUploadService.this.log("Transfer timed out");
+                    result = UploadResult.asperaResult(false, finishedFileCount, files.size() - finishedFileCount,
                             "Transfer timed out");
                 } else if (transferSuccess.get()) {
-                    log("Aspera upload completed successfully!");
-                    result = new UploadResult(true, dataFiles.size(), 0, null);
+                    AsperaUploadService.this.log("Aspera upload completed successfully!");
+                    result = UploadResult.asperaResult(true, files.size(), 0, null);
                 } else {
-                    log("Aspera upload failed: " + errorMessage);
-                    result = new UploadResult(false, finishedFileCount, dataFiles.size() - finishedFileCount,
+                    AsperaUploadService.this.log("Aspera upload failed: " + errorMessage);
+                    result = UploadResult.asperaResult(false, finishedFileCount, files.size() - finishedFileCount,
                             errorMessage);
                 }
 
@@ -182,7 +140,7 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
 
             } catch (Exception e) {
                 logger.error("Aspera upload failed", e);
-                log("Error: " + e.getMessage());
+                AsperaUploadService.this.log("Error: " + e.getMessage());
 
                 // Complete statistics and log summary
                 if (transferStatistics != null) {
@@ -190,13 +148,13 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
                     StatisticsLogger.logSessionSummary(transferStatistics);
                 }
 
-                return new UploadResult(false, finishedFileCount, dataFiles.size() - finishedFileCount,
+                return UploadResult.asperaResult(false, finishedFileCount, files.size() - finishedFileCount,
                         e.getMessage());
             }
         }
 
         private void initializeAspera() throws FaspManagerException, IOException {
-            log("Initializing Aspera...");
+            AsperaUploadService.this.log("Initializing Aspera...");
             updateStatus("Initializing Aspera transfer manager...");
 
             // Validate ascp path
@@ -218,15 +176,15 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
             FaspManager faspManager = FaspManager.getSingleton();
             faspManager.addListener(this);
 
-            log("Aspera initialized successfully");
+            AsperaUploadService.this.log("Aspera initialized successfully");
         }
 
         private List<File> prepareFiles() {
-            List<File> files = new ArrayList<>();
-            for (DataFile dataFile : dataFiles) {
+            List<File> preparedFiles = new ArrayList<>();
+            for (DataFile dataFile : files) {
                 if (dataFile.getFile() != null && dataFile.getFile().exists()) {
                     File file = dataFile.getFile();
-                    files.add(file);
+                    preparedFiles.add(file);
 
                     // Start tracking this file in statistics
                     if (transferStatistics != null) {
@@ -236,12 +194,12 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
                     }
                 }
             }
-            log("Prepared " + files.size() + " files for upload");
-            return files;
+            AsperaUploadService.this.log("Prepared " + preparedFiles.size() + " files for upload");
+            return preparedFiles;
         }
 
-        private void startTransfer(List<File> files) throws IOException, FaspManagerException {
-            if (files.isEmpty()) {
+        private void startTransfer(List<File> transferFiles) throws IOException, FaspManagerException {
+            if (transferFiles.isEmpty()) {
                 throw new IOException("No files to transfer");
             }
 
@@ -249,7 +207,7 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
 
             // Set up local files
             LocalLocation localFiles = new LocalLocation();
-            for (File file : files) {
+            for (File file : transferFiles) {
                 if (!file.exists()) {
                     logger.warn("File does not exist, skipping: {}", file.getAbsolutePath());
                     continue;
@@ -259,7 +217,7 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
                     continue;
                 }
                 localFiles.addPath(file.getAbsolutePath());
-                log("Adding file: " + file.getName() + " (" + formatSize(file.length()) + ")");
+                AsperaUploadService.this.log("Adding file: " + file.getName() + " (" + formatSize(file.length()) + ")");
             }
 
             // Set up remote location
@@ -279,13 +237,13 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
             TransferOrder order = new TransferOrder(localFiles, remoteLocation, params);
 
             // Start transfer
-            log("Starting Aspera transfer to: " + uploadDetail.getFolder());
+            AsperaUploadService.this.log("Starting Aspera transfer to: " + uploadDetail.getFolder());
             updateStatus("Connecting to server...");
             transferStartTime.set(System.currentTimeMillis());
             lastProgressTime.set(System.currentTimeMillis());
 
             String transferId = FaspManager.getSingleton().startTransfer(order);
-            log("Transfer started with ID: " + transferId);
+            AsperaUploadService.this.log("Transfer started with ID: " + transferId);
         }
 
         private XferParams createTransferParams() {
@@ -301,9 +259,6 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
             params.resumeCheck = Resume.FILE_ATTRIBUTES;
             params.preCalculateJobSize = false;
             params.createPath = true;
-
-            // Reliability improvements: Retry and fallback behavior is configured server-side
-            // or via Aspera Connect settings. The SDK will automatically retry on failures.
 
             return params;
         }
@@ -351,13 +306,13 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
 
             switch (event) {
                 case CONNECTING:
-                    log("Connecting to server...");
+                    AsperaUploadService.this.log("Connecting to server...");
                     updateStatus("Connecting...");
                     lastProgressTime.set(System.currentTimeMillis());
                     break;
 
                 case SESSION_START:
-                    log("Transfer session started");
+                    AsperaUploadService.this.log("Transfer session started");
                     updateStatus("Transfer in progress...");
                     lastProgressTime.set(System.currentTimeMillis());
                     break;
@@ -369,16 +324,16 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
                         long transferred = stats.getTotalTransferredBytes();
 
                         Platform.runLater(() -> {
-                            uploadedFiles.set(completed);
-                            uploadedBytes.set(transferred);
+                            uploadedFilesProperty().set(completed);
+                            uploadedBytesProperty().set(transferred);
 
-                            double progress = totalFiles.get() > 0 ?
-                                    (double) completed / totalFiles.get() : 0;
+                            double progress = totalFilesProperty().get() > 0 ?
+                                    (double) completed / totalFilesProperty().get() : 0;
                             overallProgress.set(progress);
                         });
 
                         updateStatus(String.format("Uploading: %d/%d files (%.1f%%)",
-                                completed, totalFiles.get(), (double) completed / totalFiles.get() * 100));
+                                completed, totalFilesProperty().get(), (double) completed / totalFilesProperty().get() * 100));
                     }
                     break;
 
@@ -386,7 +341,7 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
                     if (fileInfo != null && fileInfo.getState() == FileState.FINISHED) {
                         finishedFileCount++;
                         String fileName = extractFileName(fileInfo.getName());
-                        log("Completed: " + fileName);
+                        AsperaUploadService.this.log("Completed: " + fileName);
 
                         // Track file completion in statistics
                         FileTransferStat fileStat = activeFileStats.get(fileName);
@@ -398,15 +353,15 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
                         }
 
                         Platform.runLater(() -> {
-                            uploadedFiles.set(finishedFileCount);
-                            currentFileName.set(fileName);
+                            uploadedFilesProperty().set(finishedFileCount);
+                            currentFileNameProperty().set(fileName);
 
-                            double progress = (double) finishedFileCount / totalFiles.get();
+                            double progress = (double) finishedFileCount / totalFilesProperty().get();
                             overallProgress.set(progress);
                         });
 
                         // Check if all files complete
-                        if (finishedFileCount >= dataFiles.size()) {
+                        if (finishedFileCount >= files.size()) {
                             transferSuccess.set(true);
                             transferComplete.countDown();
                         }
@@ -414,7 +369,7 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
                     break;
 
                 case SESSION_STOP:
-                    log("Transfer session completed");
+                    AsperaUploadService.this.log("Transfer session completed");
 
                     // Log session stop event
                     if (transferStatistics != null) {
@@ -433,7 +388,7 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
                     if (fileInfo != null) {
                         String errorFile = extractFileName(fileInfo.getName());
                         String error = fileInfo.getErrDescription();
-                        log("File error: " + errorFile + " - " + error);
+                        AsperaUploadService.this.log("File error: " + errorFile + " - " + error);
                         errorMessage = "Failed to upload " + errorFile + ": " + error;
 
                         // Track file failure in statistics
@@ -449,7 +404,7 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
                     break;
 
                 case SESSION_ERROR:
-                    log("Session error: " + event.getDescription());
+                    AsperaUploadService.this.log("Session error: " + event.getDescription());
                     errorMessage = "Aspera session error: " + event.getDescription();
 
                     // Log session error event
@@ -480,41 +435,12 @@ public class AsperaUploadService extends Service<AsperaUploadService.UploadResul
             updateMessage(status);
         }
 
-        private void log(String message) {
-            String timestamp = java.time.LocalTime.now().toString().substring(0, 8);
-            String logMessage = "[" + timestamp + "] " + message;
-            Platform.runLater(() -> uploadLog.add(logMessage));
-            logger.info(message);
-        }
-
         private String formatSize(long size) {
             if (size < 1024) return size + " B";
             if (size < 1024 * 1024) return String.format("%.1f KB", size / 1024.0);
             if (size < 1024L * 1024 * 1024) return String.format("%.1f MB", size / (1024.0 * 1024));
             return String.format("%.2f GB", size / (1024.0 * 1024 * 1024));
         }
-    }
-
-    /**
-     * Upload result
-     */
-    public static class UploadResult {
-        private final boolean success;
-        private final int successCount;
-        private final int failureCount;
-        private final String errorMessage;
-
-        public UploadResult(boolean success, int successCount, int failureCount, String errorMessage) {
-            this.success = success;
-            this.successCount = successCount;
-            this.failureCount = failureCount;
-            this.errorMessage = errorMessage;
-        }
-
-        public boolean isSuccess() { return success; }
-        public int getSuccessCount() { return successCount; }
-        public int getFailureCount() { return failureCount; }
-        public String getErrorMessage() { return errorMessage; }
     }
 
     /**

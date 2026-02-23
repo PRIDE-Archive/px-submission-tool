@@ -4,13 +4,10 @@ import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPReply;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.pxsubmit.model.TransferStatistics;
@@ -34,9 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * - Cancellation support
  * - Resume capability for interrupted uploads
  */
-public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
-
-    private static final Logger logger = LoggerFactory.getLogger(FtpUploadService.class);
+public class FtpUploadService extends AbstractUploadService {
 
     // Configuration constants
     private static final int DEFAULT_CONCURRENT_UPLOADS = 3;
@@ -48,23 +43,13 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
     private static final int SIZE_VERIFY_RETRIES = 3;
     private static final long SIZE_VERIFY_DELAY_MS = 500;
 
-    // Input properties
-    private final List<DataFile> files;
-    private final UploadDetail uploadDetail;
+    // FTP-specific properties
     private final int concurrentUploads;
-
-    // Progress properties (observable from UI)
-    private final LongProperty totalBytes = new SimpleLongProperty(0);
-    private final LongProperty uploadedBytes = new SimpleLongProperty(0);
-    private final IntegerProperty totalFiles = new SimpleIntegerProperty(0);
-    private final IntegerProperty uploadedFiles = new SimpleIntegerProperty(0);
-    private final StringProperty currentFileName = new SimpleStringProperty("");
     private final DoubleProperty currentFileProgress = new SimpleDoubleProperty(0);
 
     // Status tracking
     private final ObservableList<DataFile> completedFiles = FXCollections.observableArrayList();
     private final ObservableList<DataFile> failedFiles = FXCollections.observableArrayList();
-    private final ObservableList<String> uploadLog = FXCollections.observableArrayList();
 
     // Thread pool for concurrent uploads
     private ExecutorService uploadExecutor;
@@ -73,28 +58,13 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
     private volatile boolean paused = false;
     private final Object pauseLock = new Object();
 
-    // Transfer statistics tracking
-    private volatile TransferStatistics transferStatistics;
-
     public FtpUploadService(List<DataFile> files, UploadDetail uploadDetail) {
         this(files, uploadDetail, DEFAULT_CONCURRENT_UPLOADS);
     }
 
     public FtpUploadService(List<DataFile> files, UploadDetail uploadDetail, int concurrentUploads) {
-        this.files = files;
-        this.uploadDetail = uploadDetail;
+        super(files, uploadDetail);
         this.concurrentUploads = concurrentUploads;
-
-        // Calculate totals
-        this.totalFiles.set(files.size());
-        this.totalBytes.set(calculateTotalSize(files));
-    }
-
-    private long calculateTotalSize(List<DataFile> files) {
-        return files.stream()
-                .filter(f -> f.getFile() != null)
-                .mapToLong(f -> f.getFile().length())
-                .sum();
     }
 
     @Override
@@ -130,17 +100,10 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
         return paused;
     }
 
-    // Property accessors for UI binding
-    public LongProperty totalBytesProperty() { return totalBytes; }
-    public LongProperty uploadedBytesProperty() { return uploadedBytes; }
-    public IntegerProperty totalFilesProperty() { return totalFiles; }
-    public IntegerProperty uploadedFilesProperty() { return uploadedFiles; }
-    public StringProperty currentFileNameProperty() { return currentFileName; }
+    // FTP-specific property accessors
     public DoubleProperty currentFileProgressProperty() { return currentFileProgress; }
     public ObservableList<DataFile> getCompletedFiles() { return completedFiles; }
     public ObservableList<DataFile> getFailedFiles() { return failedFiles; }
-    public ObservableList<String> getUploadLog() { return uploadLog; }
-    public TransferStatistics getTransferStatistics() { return transferStatistics; }
 
     /**
      * Main upload task that coordinates concurrent file uploads
@@ -172,13 +135,13 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
                 throw new IllegalStateException("FTP password is not configured");
             }
 
-            log("Starting FTP upload of " + files.size() + " files");
-            log("Target: " + uploadDetail.getHost() + ":" + uploadDetail.getPort());
-            log("Folder: " + uploadDetail.getFolder());
-            log("Username: " + uploadDetail.getDropBox().getUserName());
+            FtpUploadService.this.log("Starting FTP upload of " + files.size() + " files");
+            FtpUploadService.this.log("Target: " + uploadDetail.getHost() + ":" + uploadDetail.getPort());
+            FtpUploadService.this.log("Folder: " + uploadDetail.getFolder());
+            FtpUploadService.this.log("Username: " + uploadDetail.getDropBox().getUserName());
 
             // Initialize transfer statistics
-            transferStatistics = new TransferStatistics("FTP", files.size(), totalBytes.get());
+            transferStatistics = new TransferStatistics("FTP", files.size(), totalBytesProperty().get());
             StatisticsLogger.logSessionStart(transferStatistics);
 
             // Create FTP directory FIRST (before parallel uploads)
@@ -210,16 +173,16 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
             // Process results and submit more files as uploads complete
             while (submittedTasks > 0 || (!fileQueue.isEmpty() && !isCancelled())) {
                 if (isCancelled()) {
-                    log("Upload cancelled by user");
+                    FtpUploadService.this.log("Upload cancelled by user");
                     break;
                 }
 
                 // If paused with no in-flight tasks, wait for resume
                 if (paused && submittedTasks == 0 && !fileQueue.isEmpty()) {
-                    log("Upload paused");
+                    FtpUploadService.this.log("Upload paused");
                     waitWhilePaused();
                     if (isCancelled()) break;
-                    log("Upload resumed");
+                    FtpUploadService.this.log("Upload resumed");
                     for (int i = 0; i < Math.min(concurrentUploads, fileQueue.size()); i++) {
                         DataFile file = fileQueue.poll();
                         if (file != null) {
@@ -263,7 +226,7 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
             }
 
             // Build result
-            UploadResult result = new UploadResult(
+            UploadResult result = UploadResult.ftpResult(
                     completedFiles.size() == files.size(),
                     completedFiles.size(),
                     failedFiles.size(),
@@ -277,9 +240,9 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
             }
 
             if (result.isSuccess()) {
-                log("Upload completed successfully!");
+                FtpUploadService.this.log("Upload completed successfully!");
             } else {
-                log("Upload completed with " + failedFiles.size() + " failed files");
+                FtpUploadService.this.log("Upload completed with " + failedFiles.size() + " failed files");
             }
 
             return result;
@@ -302,11 +265,11 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
             Platform.runLater(() -> {
                 if (result.success) {
                     completedFiles.add(result.file);
-                    uploadedFiles.set(completedFiles.size());
-                    log("Uploaded: " + result.file.getFileName());
+                    uploadedFilesProperty().set(completedFiles.size());
+                    FtpUploadService.this.log("Uploaded: " + result.file.getFileName());
                 } else {
                     failedFiles.add(result.file);
-                    log("Failed: " + result.file.getFileName() + " - " + result.errorMessage);
+                    FtpUploadService.this.log("Failed: " + result.file.getFileName() + " - " + result.errorMessage);
                 }
             });
         }
@@ -319,7 +282,7 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
             ftp.setControlKeepAliveTimeout(Duration.ofSeconds(300));
 
             try {
-                log("Creating FTP directory...");
+                FtpUploadService.this.log("Creating FTP directory...");
                 System.out.println("FTP: Creating upload directory...");
 
                 ftp.connect(uploadDetail.getHost(), uploadDetail.getPort());
@@ -356,14 +319,14 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
                 // Check if successful (mkd returns 257 on success)
                 int mkdReply = ftp.getReplyCode();
                 if (mkdReply == 257) {
-                    log("Directory created successfully: " + folderName);
+                    FtpUploadService.this.log("Directory created successfully: " + folderName);
                     System.out.println("FTP: Directory created successfully: " + folderName);
                 } else if (mkdReply == 550) {
                     // Directory might already exist, which is OK
-                    log("Directory may already exist: " + folderName);
+                    FtpUploadService.this.log("Directory may already exist: " + folderName);
                     System.out.println("FTP: Directory may already exist (continuing): " + folderName);
                 } else {
-                    log("Directory creation returned: " + ftp.getReplyString());
+                    FtpUploadService.this.log("Directory creation returned: " + ftp.getReplyString());
                     System.out.println("FTP: Directory creation reply: " + ftp.getReplyString());
                 }
 
@@ -381,12 +344,12 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
 
         private void updateOverallProgress() {
             long uploaded = bytesUploaded.get();
-            long total = totalBytes.get();
+            long total = totalBytesProperty().get();
             double progress = total > 0 ? (double) uploaded / total : 0;
 
             Platform.runLater(() -> {
-                uploadedBytes.set(uploaded);
-                uploadedFiles.set(filesUploaded.get());
+                uploadedBytesProperty().set(uploaded);
+                uploadedFilesProperty().set(filesUploaded.get());
             });
 
             updateProgress(uploaded, total);
@@ -397,7 +360,7 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
         private SingleFileResult uploadSingleFile(DataFile dataFile) {
             String fileName = dataFile.getFileName();
             long fileSize = dataFile.getFile() != null ? dataFile.getFile().length() : 0;
-            Platform.runLater(() -> currentFileName.set(fileName));
+            Platform.runLater(() -> currentFileNameProperty().set(fileName));
 
             // Start file statistics tracking
             FileTransferStat fileStat = null;
@@ -653,13 +616,6 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
             }
             return -1;
         }
-
-        private void log(String message) {
-            String timestamp = java.time.LocalTime.now().toString().substring(0, 8);
-            String logMessage = "[" + timestamp + "] " + message;
-            Platform.runLater(() -> uploadLog.add(logMessage));
-            logger.info(message);
-        }
     }
 
     /**
@@ -675,28 +631,6 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
             this.success = success;
             this.errorMessage = errorMessage;
         }
-    }
-
-    /**
-     * Overall upload result
-     */
-    public static class UploadResult {
-        private final boolean success;
-        private final int successCount;
-        private final int failureCount;
-        private final long bytesUploaded;
-
-        public UploadResult(boolean success, int successCount, int failureCount, long bytesUploaded) {
-            this.success = success;
-            this.successCount = successCount;
-            this.failureCount = failureCount;
-            this.bytesUploaded = bytesUploaded;
-        }
-
-        public boolean isSuccess() { return success; }
-        public int getSuccessCount() { return successCount; }
-        public int getFailureCount() { return failureCount; }
-        public long getBytesUploaded() { return bytesUploaded; }
     }
 
     /**

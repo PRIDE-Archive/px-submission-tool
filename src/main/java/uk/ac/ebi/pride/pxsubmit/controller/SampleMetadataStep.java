@@ -14,6 +14,7 @@ import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 import uk.ac.ebi.pride.pxsubmit.service.OlsService;
 import uk.ac.ebi.pride.pxsubmit.service.OlsService.OlsOntology;
 import uk.ac.ebi.pride.pxsubmit.service.SdrfParserService;
+import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
 import uk.ac.ebi.pride.pxsubmit.service.SdrfParserService.SdrfData;
 import uk.ac.ebi.pride.pxsubmit.view.component.OlsAutocomplete;
 
@@ -323,7 +324,7 @@ public class SampleMetadataStep extends AbstractWizardStep {
             sdrfInfoBox.setStyle("-fx-background-color: #d4edda; -fx-border-color: #28a745; -fx-border-radius: 4; -fx-background-radius: 4;");
 
             // Parse SDRF asynchronously
-            SdrfParserService parser = new SdrfParserService(file);
+            SdrfParserService parser = ServiceFactory.getInstance().createSdrfParserService(file);
             parser.setOnSucceeded(e -> {
                 parsedSdrfData = parser.getValue();
                 Platform.runLater(() -> {
