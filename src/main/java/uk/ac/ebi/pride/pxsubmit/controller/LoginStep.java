@@ -9,6 +9,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+import java.util.concurrent.CompletionException;
 import java.util.regex.Pattern;
 import uk.ac.ebi.pride.archive.submission.model.project.ProjectDetail;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
@@ -220,13 +221,35 @@ public class LoginStep extends AbstractWizardStep {
                 Platform.runLater(() -> {
                     projectLoadingBox.setVisible(false);
                     projectLoadingBox.setManaged(false);
-                    resubmissionErrorLabel.setText("Failed to load projects: " + ex.getMessage());
+                    String message = buildResubmissionErrorMessage(ex);
+                    resubmissionErrorLabel.setText("Failed to load projects: " + message);
                     resubmissionErrorLabel.setVisible(true);
                     resubmissionErrorLabel.setManaged(true);
                 });
                 apiService.shutdown();
                 return null;
             });
+    }
+
+    /**
+     * Build a user-friendly error message for resubmission load failure.
+     * Unwraps CompletionException and handles class-loading errors (e.g. NoClassDefFoundError).
+     */
+    private static String buildResubmissionErrorMessage(Throwable ex) {
+        Throwable cause = ex;
+        while (cause instanceof CompletionException && cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        String msg = cause != null ? cause.getMessage() : ex.getMessage();
+        if (msg == null || msg.isEmpty()) {
+            msg = cause != null ? cause.getClass().getSimpleName() : ex.getClass().getSimpleName();
+        }
+        // If the message looks like a class name (e.g. NoClassDefFoundError), show a clearer hint
+        if (cause instanceof NoClassDefFoundError || cause instanceof ClassNotFoundException
+                || (msg != null && msg.contains(".") && !msg.contains(" ") && msg.length() > 20)) {
+            return "A required component could not be loaded. Please run the application from the full distribution (extract the zip and use start.bat/start.sh). If the problem persists, check the log file.";
+        }
+        return msg;
     }
 
     @Override

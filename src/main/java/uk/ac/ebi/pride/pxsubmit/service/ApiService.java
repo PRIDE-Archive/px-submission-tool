@@ -9,6 +9,7 @@ import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 import uk.ac.ebi.pride.archive.submission.model.project.ProjectDetailList;
 import uk.ac.ebi.pride.archive.submission.model.submission.SubmissionReferenceDetail;
+import uk.ac.ebi.pride.pxsubmit.model.Credentials;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
 import uk.ac.ebi.pride.pxsubmit.config.AppConfig;
@@ -50,12 +51,14 @@ public class ApiService {
 
     private final AppConfig config;
     private final String username;
+    private final String password;
     private final String basicAuthHeader;
     private final ExecutorService executor;
 
     public ApiService(String username, String password) {
         this.config = AppConfig.getInstance();
         this.username = username;
+        this.password = password != null ? password : "";
         this.basicAuthHeader = createBasicAuthHeader(username, password);
         this.executor = Executors.newFixedThreadPool(2, r -> {
             Thread t = new Thread(r, "ApiService-Worker");
@@ -184,7 +187,10 @@ public class ApiService {
             try {
                 RestTemplate restTemplate = createRestTemplate();
                 HttpHeaders headers = createHeaders();
-                HttpEntity<String> entity = new HttpEntity<>(headers);
+                Credentials credentials = new Credentials();
+                credentials.setUsername(username);
+                credentials.setPassword(password);
+                HttpEntity<Credentials> entity = new HttpEntity<>(credentials, headers);
 
                 ResponseEntity<ProjectDetailList> response = restTemplate.exchange(
                     url, HttpMethod.POST, entity, ProjectDetailList.class);
