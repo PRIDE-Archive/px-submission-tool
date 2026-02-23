@@ -8,7 +8,10 @@ import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.data.model.CvParam;
+import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.io.SubmissionFileWriter;
+import uk.ac.ebi.pride.data.model.Resubmission;
+import uk.ac.ebi.pride.data.model.ResubmissionFileChangeState;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 import uk.ac.ebi.pride.pxsubmit.util.FileTypeDetector;
 import uk.ac.ebi.pride.pxsubmit.view.component.ValidationFeedback;
@@ -135,6 +138,13 @@ public class SummaryStep extends AbstractWizardStep {
             contentBox.getChildren().add(labHeadSection);
         }
 
+        // Resubmission file changes (only in resubmission mode)
+        if (model.isResubmissionMode()) {
+            VBox resubFilesSection = createSectionBox("Resubmission File Changes");
+            addResubmissionFileSummary(resubFilesSection);
+            contentBox.getChildren().add(resubFilesSection);
+        }
+
         // Files
         VBox filesSection = createSectionBox("Files");
         addFileSummary(filesSection);
@@ -199,54 +209,77 @@ public class SummaryStep extends AbstractWizardStep {
     private ValidationFeedback createValidationSummary() {
         ValidationFeedback feedback = new ValidationFeedback();
 
-        // Check files
-        long rawCount = model.getFiles().stream()
-            .filter(f -> f.getFileType() == ProjectFileType.RAW).count();
-        long analysisCount = model.getFiles().stream()
-            .filter(f -> f.getFileType() == ProjectFileType.SEARCH).count();
-        long standardCount = model.getFiles().stream()
-            .filter(f -> f.getFileType() == ProjectFileType.RESULT).count();
-        boolean hasFasta = model.getFiles().stream()
-            .anyMatch(f -> FileTypeDetector.isFastaFile(f.getFile()));
+        if (model.isResubmissionMode()) {
+            // Resubmission: validate file changes only (metadata is already on server)
+            Resubmission resub = model.getResubmission();
+            java.util.Map<DataFile, ResubmissionFileChangeState> resubMap = resub.getResubmission();
 
-        // File validation
-        if (rawCount == 0) {
-            feedback.addError("No RAW files - at least one RAW file is required");
-        }
-        if (analysisCount == 0 && standardCount == 0) {
-            feedback.addWarning("No analysis or standard result files included");
-        }
-        if (!hasFasta) {
-            feedback.addInfo("Recommended: Add a FASTA database file for sequence validation");
-        }
+            boolean hasChanges = resubMap.values().stream()
+                .anyMatch(state -> state != ResubmissionFileChangeState.NONE);
 
-        // Check for SDRF
-        boolean hasSdrf = model.getFiles().stream()
-            .anyMatch(f -> f.getFileType() == ProjectFileType.EXPERIMENTAL_DESIGN ||
-                          (f.getFile() != null && f.getFile().getName().toLowerCase().contains("sdrf")));
-        if (!hasSdrf) {
-            feedback.addInfo("Recommended: Add an SDRF file for sample metadata");
-        }
+            if (!hasChanges) {
+                feedback.addWarning("No file changes specified - consider adding, modifying, or deleting files");
+            }
 
-        // Metadata validation
-        if (model.getSpecies().isEmpty()) {
-            feedback.addError("No species/organism specified");
-        }
-        if (model.getInstruments().isEmpty()) {
-            feedback.addError("No instrument specified");
-        }
-        if (model.getProjectTitle() == null || model.getProjectTitle().trim().isEmpty()) {
-            feedback.addError("Project title is missing");
-        }
-        if (model.getProjectDescription() == null || model.getProjectDescription().trim().isEmpty()) {
-            feedback.addError("Project description is missing");
-        }
+            long addCount = resubMap.values().stream()
+                .filter(s -> s == ResubmissionFileChangeState.ADD).count();
+            if (addCount > 0) {
+                feedback.addInfo(addCount + " new file(s) will be uploaded");
+            }
 
-        // Success message if all OK
-        if (!feedback.hasErrors() && !feedback.hasWarnings()) {
-            feedback.setSuccess("All validation checks passed - ready for submission!");
-        } else if (!feedback.hasErrors()) {
-            feedback.addInfo("Submission can proceed with warnings");
+            if (!feedback.hasErrors() && !feedback.hasWarnings()) {
+                feedback.setSuccess("Resubmission ready - file changes will be applied");
+            }
+        } else {
+            // Normal submission: full validation
+            long rawCount = model.getFiles().stream()
+                .filter(f -> f.getFileType() == ProjectFileType.RAW).count();
+            long analysisCount = model.getFiles().stream()
+                .filter(f -> f.getFileType() == ProjectFileType.SEARCH).count();
+            long standardCount = model.getFiles().stream()
+                .filter(f -> f.getFileType() == ProjectFileType.RESULT).count();
+            boolean hasFasta = model.getFiles().stream()
+                .anyMatch(f -> FileTypeDetector.isFastaFile(f.getFile()));
+
+            // File validation
+            if (rawCount == 0) {
+                feedback.addError("No RAW files - at least one RAW file is required");
+            }
+            if (analysisCount == 0 && standardCount == 0) {
+                feedback.addWarning("No analysis or standard result files included");
+            }
+            if (!hasFasta) {
+                feedback.addInfo("Recommended: Add a FASTA database file for sequence validation");
+            }
+
+            // Check for SDRF
+            boolean hasSdrf = model.getFiles().stream()
+                .anyMatch(f -> f.getFileType() == ProjectFileType.EXPERIMENTAL_DESIGN ||
+                              (f.getFile() != null && f.getFile().getName().toLowerCase().contains("sdrf")));
+            if (!hasSdrf) {
+                feedback.addInfo("Recommended: Add an SDRF file for sample metadata");
+            }
+
+            // Metadata validation
+            if (model.getSpecies().isEmpty()) {
+                feedback.addError("No species/organism specified");
+            }
+            if (model.getInstruments().isEmpty()) {
+                feedback.addError("No instrument specified");
+            }
+            if (model.getProjectTitle() == null || model.getProjectTitle().trim().isEmpty()) {
+                feedback.addError("Project title is missing");
+            }
+            if (model.getProjectDescription() == null || model.getProjectDescription().trim().isEmpty()) {
+                feedback.addError("Project description is missing");
+            }
+
+            // Success message if all OK
+            if (!feedback.hasErrors() && !feedback.hasWarnings()) {
+                feedback.setSuccess("All validation checks passed - ready for submission!");
+            } else if (!feedback.hasErrors()) {
+                feedback.addInfo("Submission can proceed with warnings");
+            }
         }
 
         return feedback;
@@ -333,6 +366,63 @@ public class SummaryStep extends AbstractWizardStep {
         if (otherCount > 0) addField(container, "Other Files", String.valueOf(otherCount));
     }
 
+    private void addResubmissionFileSummary(VBox container) {
+        Resubmission resub = model.getResubmission();
+        java.util.Map<DataFile, ResubmissionFileChangeState> resubMap = resub.getResubmission();
+
+        int addCount = 0;
+        int modifyCount = 0;
+        int deleteCount = 0;
+        int unchangedCount = 0;
+
+        for (ResubmissionFileChangeState state : resubMap.values()) {
+            switch (state) {
+                case ADD -> addCount++;
+                case MODIFY -> modifyCount++;
+                case DELETE -> deleteCount++;
+                case NONE -> unchangedCount++;
+            }
+        }
+
+        addField(container, "New Files", String.valueOf(addCount));
+        addField(container, "Modified Files", String.valueOf(modifyCount));
+        addField(container, "Deleted Files", String.valueOf(deleteCount));
+        addField(container, "Unchanged Files", String.valueOf(unchangedCount));
+
+        // List individual file changes
+        if (!resubMap.isEmpty()) {
+            VBox fileList = new VBox(2);
+            fileList.setPadding(new Insets(5, 0, 0, 10));
+
+            for (java.util.Map.Entry<DataFile, ResubmissionFileChangeState> entry : resubMap.entrySet()) {
+                ResubmissionFileChangeState state = entry.getValue();
+                if (state == ResubmissionFileChangeState.NONE) continue;
+
+                DataFile df = entry.getKey();
+                String icon = switch (state) {
+                    case ADD -> "+";
+                    case MODIFY -> "~";
+                    case DELETE -> "-";
+                    default -> " ";
+                };
+                String color = switch (state) {
+                    case ADD -> "#28a745";
+                    case MODIFY -> "#ffc107";
+                    case DELETE -> "#dc3545";
+                    default -> "#666";
+                };
+
+                Label fileLabel = new Label(icon + " " + df.getFileName() + " (" + state.name() + ")");
+                fileLabel.setStyle("-fx-text-fill: " + color + "; -fx-font-family: monospace;");
+                fileList.getChildren().add(fileLabel);
+            }
+
+            if (!fileList.getChildren().isEmpty()) {
+                container.getChildren().add(fileList);
+            }
+        }
+    }
+
     private String truncate(String text, int maxLength) {
         if (text == null) return "-";
         if (text.length() <= maxLength) return text;
@@ -353,6 +443,11 @@ public class SummaryStep extends AbstractWizardStep {
 
     @Override
     public boolean validate() {
+        // Skip recommended file checks for resubmission (existing project already has them)
+        if (model.isResubmissionMode()) {
+            return true;
+        }
+
         // Check for missing recommended files
         List<String> missingRecommended = getMissingRecommendedFiles();
 

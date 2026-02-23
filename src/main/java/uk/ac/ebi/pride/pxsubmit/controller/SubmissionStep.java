@@ -349,7 +349,9 @@ public class SubmissionStep extends AbstractWizardStep {
         addLog("Requesting " + method + " upload credentials...");
         final UploadMethod finalMethod = method;
 
-        apiService.getUploadDetails(method)
+        // Reuse existing ticketId for retries (avoids getting a new upload folder)
+        String existingTicketId = ticketId.get();
+        apiService.getUploadDetails(method, existingTicketId)
             .thenAccept(uploadDetail -> {
                 addLog("Upload details received successfully");
                 addLog("Host: " + uploadDetail.getHost());

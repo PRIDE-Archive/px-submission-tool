@@ -146,18 +146,20 @@ public class PxSubmitApplication extends Application {
         // 1. Welcome - Introduction and guidelines
         // 2. Login - PRIDE authentication
         // 3. Submission Type - Choose submission type
-        // 4. Project Metadata - Title, description, keywords
-        // 5. Sample Information - SDRF templates and guidance
-        // 6. File Selection - Add files (drag-drop)
-        // 7. File Review - Review and adjust classifications
-        // 8. Sample Metadata - Species, tissue, instrument, etc. (with OLS autocomplete)
-        // 9. Summary - Review before upload
-        // 10. Checksum Computation - Compute checksums for all files
-        // 11. Submission - Upload and complete
+        // 4. File Resubmission - Manage existing/new files (skipped for normal submissions)
+        // 5. Project Metadata - Title, description, keywords (skipped for resubmission)
+        // 6. Sample Information - SDRF templates and guidance (skipped for resubmission)
+        // 7. File Selection - Add files (drag-drop) (skipped for resubmission)
+        // 8. File Review - Review and adjust classifications (skipped for resubmission)
+        // 9. Sample Metadata - Species, tissue, instrument, etc. (skipped for resubmission)
+        // 10. Summary - Review before upload
+        // 11. Checksum Computation - Compute checksums for all files
+        // 12. Submission - Upload and complete
 
         wizardController.addStep(new WelcomeStep(model));
         wizardController.addStep(new LoginStep(model));
         wizardController.addStep(new SubmissionTypeStep(model));
+        wizardController.addStep(new FileResubmissionStep(model));  // Resubmission file management (skipped for normal)
         wizardController.addStep(new ProjectMetadataStep(model));
         wizardController.addStep(new SampleInformationStep(model));
         wizardController.addStep(new FileSelectionStep(model));

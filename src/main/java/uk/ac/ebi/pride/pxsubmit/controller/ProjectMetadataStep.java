@@ -52,6 +52,12 @@ public class ProjectMetadataStep extends AbstractWizardStep {
     }
 
     @Override
+    public boolean canSkip() {
+        // Skip this step during resubmission - project metadata already exists on the server
+        return model.isResubmissionMode();
+    }
+
+    @Override
     protected Parent createContent() {
         ScrollPane scrollPane = new ScrollPane();
         scrollPane.setFitToWidth(true);
