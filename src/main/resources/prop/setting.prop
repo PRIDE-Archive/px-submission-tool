@@ -7,43 +7,43 @@ px.submission.tool.width = 800
 px.submission.tool.height = 750
 
 # url for retrieving pride user details
-px.user.login.url=http://www.proteomexchange.org/archive-submission-ws/user/login
+px.user.login.url=https://www.proteomexchange.org/archive-submission-ws/user/login
 
 # url for retrieving pride Project Files details
-px.submission.ws.base.url=http://www.proteomexchange.org/archive-submission-ws/
+px.submission.ws.base.url=https://www.proteomexchange.org/archive-submission-ws/
 px.project.files.url=resubmission/files/{accession}
 
 # url for retrieving px ftp upload details
-px.upload.detail.url = http://www.proteomexchange.org/archive-submission-ws/submission/upload/{method}
-px.reupload.detail.url = http://www.proteomexchange.org/archive-submission-ws/submission/reupload/{method}/{ticketId}
-px.upload.verify.url = http://www.proteomexchange.org/archive-submission-ws/submission/fileListAndSize
+px.upload.detail.url = https://www.proteomexchange.org/archive-submission-ws/submission/upload/{method}
+px.reupload.detail.url = https://www.proteomexchange.org/archive-submission-ws/submission/reupload/{method}/{ticketId}
+px.upload.verify.url = https://www.proteomexchange.org/archive-submission-ws/submission/fileListAndSize
 
 # url for completing px submission
-px.submission.complete.url = http://www.proteomexchange.org/archive-submission-ws/submission/submit
+px.submission.complete.url = https://www.proteomexchange.org/archive-submission-ws/submission/submit
 
 # url for proteomexchange
-px.web.url = http://www.proteomexchange.org/
+px.web.url = https://www.proteomexchange.org/
 
 # url for proteomexchange guideline
-px.submission.guideline.web.url = http://www.proteomexchange.org/submission/index.html
+px.submission.guideline.web.url = https://www.proteomexchange.org/submission/index.html
 
 # url for pride new account
 pride.new.account.url = https://www.ebi.ac.uk/pride/register
 
 # Checksum
 checksum.filename = checksum.txt
-px.submission.complete.url = http://www.proteomexchange.org/archive-submission-ws/submission/submit
-px.resubmission.complete.url = http://www.proteomexchange.org/archive-submission-ws/resubmission/resubmit
+px.submission.complete.url = https://www.proteomexchange.org/archive-submission-ws/submission/submit
+px.resubmission.complete.url = https://www.proteomexchange.org/archive-submission-ws/resubmission/resubmit
 
 # urls for px submission tool
 # GitHub releases for automated updates
 px.submission.tool.update.url = https://api.github.com/repos/PRIDE-Archive/px-submission-tool/releases/latest
 px.submission.tool.download.url = https://github.com/PRIDE-Archive/px-submission-tool/releases/latest/download/px-submission-tool-${version}.zip
-px.submission.tool.url = http://www.proteomexchange.org/submission/index.html
-px.submission.summary.file.format.url = http://www.proteomexchange.org/docs/Submission_Summary_File_Format.pdf
+px.submission.tool.url = https://www.proteomexchange.org/submission/index.html
+px.submission.summary.file.format.url = https://www.proteomexchange.org/docs/Submission_Summary_File_Format.pdf
 
 # url for resubmission
-px.submission.detail.url = http://www.proteomexchange.org/archive-submission-ws/resubmission/projects
+px.submission.detail.url = https://www.proteomexchange.org/archive-submission-ws/resubmission/projects
 
 # aspera client binary (using ascp)
 aspera.client.mac.binary = aspera/bin/mac-intel/ascp
