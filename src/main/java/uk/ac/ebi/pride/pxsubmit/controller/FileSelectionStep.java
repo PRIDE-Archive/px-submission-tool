@@ -114,9 +114,13 @@ public class FileSelectionStep extends AbstractWizardStep {
 
         root.setCenter(fileTable);
 
-        // Bottom: Summary, validation feedback, and validation status
+        // Bottom: Summary, pagination, validation feedback, and validation status
         VBox bottomBox = new VBox(10);
         bottomBox.setPadding(new Insets(10, 0, 0, 0));
+
+        // Pagination controls (auto-hidden when < 1000 files)
+        javafx.scene.layout.HBox paginationControls = fileTable.createPaginationControls();
+        bottomBox.getChildren().add(paginationControls);
 
         summaryLabel = new Label("No files added");
         summaryLabel.setStyle("-fx-font-weight: bold;");

@@ -11,7 +11,7 @@ import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.data.model.DataFile;
 
 import java.io.*;
-import java.util.HashMap;
+import java.util.*;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -51,8 +51,15 @@ public class ChecksumService extends Service<Map<DataFile, String>> {
     private static final int DEFAULT_THREAD_COUNT = Math.max(2,
         Runtime.getRuntime().availableProcessors() / 2);
 
-    // Cache of already calculated checksums (file path -> checksum)
-    private static final Map<String, String> checksumCache = new ConcurrentHashMap<>();
+    // Bounded LRU cache of already calculated checksums (file path -> checksum)
+    private static final int MAX_CACHE_SIZE = 500;
+    private static final Map<String, String> checksumCache = Collections.synchronizedMap(
+        new LinkedHashMap<String, String>(16, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<String, String> eldest) {
+                return size() > MAX_CACHE_SIZE;
+            }
+        });
 
     private final ObservableList<DataFile> files;
     private final int threadCount;

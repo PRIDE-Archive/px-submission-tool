@@ -50,14 +50,12 @@ public class ApiService {
 
     private final AppConfig config;
     private final String username;
-    private final String password;
     private final String basicAuthHeader;
     private final ExecutorService executor;
 
     public ApiService(String username, String password) {
         this.config = AppConfig.getInstance();
         this.username = username;
-        this.password = password;
         this.basicAuthHeader = createBasicAuthHeader(username, password);
         this.executor = Executors.newFixedThreadPool(2, r -> {
             Thread t = new Thread(r, "ApiService-Worker");
@@ -179,7 +177,7 @@ public class ApiService {
      */
     public CompletableFuture<ProjectDetailList> getSubmissionDetails() {
         return CompletableFuture.supplyAsync(() -> {
-            logger.info("Getting submission details for user: {}", username);
+            logger.debug("Getting submission details for user: {}", username);
 
             String url = config.getSubmissionDetailUrl();
 

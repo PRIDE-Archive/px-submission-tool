@@ -69,6 +69,10 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
     // Thread pool for concurrent uploads
     private ExecutorService uploadExecutor;
 
+    // Pause/resume support
+    private volatile boolean paused = false;
+    private final Object pauseLock = new Object();
+
     // Transfer statistics tracking
     private volatile TransferStatistics transferStatistics;
 
@@ -103,7 +107,27 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
         if (uploadExecutor != null) {
             uploadExecutor.shutdownNow();
         }
+        // Wake up any paused thread so it can observe the cancellation
+        synchronized (pauseLock) {
+            paused = false;
+            pauseLock.notifyAll();
+        }
         return super.cancel();
+    }
+
+    public void pause() {
+        paused = true;
+    }
+
+    public void resume() {
+        synchronized (pauseLock) {
+            paused = false;
+            pauseLock.notifyAll();
+        }
+    }
+
+    public boolean isPaused() {
+        return paused;
     }
 
     // Property accessors for UI binding
@@ -184,11 +208,29 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
             }
 
             // Process results and submit more files as uploads complete
-            while (submittedTasks > 0) {
+            while (submittedTasks > 0 || (!fileQueue.isEmpty() && !isCancelled())) {
                 if (isCancelled()) {
                     log("Upload cancelled by user");
                     break;
                 }
+
+                // If paused with no in-flight tasks, wait for resume
+                if (paused && submittedTasks == 0 && !fileQueue.isEmpty()) {
+                    log("Upload paused");
+                    waitWhilePaused();
+                    if (isCancelled()) break;
+                    log("Upload resumed");
+                    for (int i = 0; i < Math.min(concurrentUploads, fileQueue.size()); i++) {
+                        DataFile file = fileQueue.poll();
+                        if (file != null) {
+                            completionService.submit(() -> uploadSingleFile(file));
+                            submittedTasks++;
+                        }
+                    }
+                    continue;
+                }
+
+                if (submittedTasks == 0) break;
 
                 Future<SingleFileResult> future = completionService.poll(1, TimeUnit.SECONDS);
                 if (future != null) {
@@ -197,11 +239,13 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
                         SingleFileResult result = future.get();
                         handleFileResult(result);
 
-                        // Submit next file if available
-                        DataFile nextFile = fileQueue.poll();
-                        if (nextFile != null && !isCancelled()) {
-                            completionService.submit(() -> uploadSingleFile(nextFile));
-                            submittedTasks++;
+                        // Submit next file if available and not paused
+                        if (!paused) {
+                            DataFile nextFile = fileQueue.poll();
+                            if (nextFile != null && !isCancelled()) {
+                                completionService.submit(() -> uploadSingleFile(nextFile));
+                                submittedTasks++;
+                            }
                         }
                     } catch (ExecutionException e) {
                         logger.error("Upload task failed", e.getCause());
@@ -239,6 +283,19 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
             }
 
             return result;
+        }
+
+        private void waitWhilePaused() {
+            synchronized (pauseLock) {
+                while (paused && !isCancelled()) {
+                    try {
+                        pauseLock.wait(500);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
+            }
         }
 
         private void handleFileResult(SingleFileResult result) {
@@ -439,14 +496,39 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
                         System.out.println("FTP: Successfully in directory: " + folderName);
                     }
 
-                    // Upload file
+                    // Upload file (with resume support on retry)
                     try (InputStream input = createInputStream(dataFile)) {
+                        long resumeOffset = 0;
+
+                        // On retry, attempt to resume from partial upload
+                        if (retryCount > 0 && fileSize > 0) {
+                            try {
+                                long remoteSize = getRemoteFileSize(ftp, fileName);
+                                if (remoteSize > 0 && remoteSize < fileSize) {
+                                    long skipped = input.skip(remoteSize);
+                                    if (skipped == remoteSize) {
+                                        ftp.setRestartOffset(remoteSize);
+                                        resumeOffset = remoteSize;
+                                        bytesUploaded.addAndGet(remoteSize);
+                                        logger.info("Resuming upload of {} from offset {}", fileName, remoteSize);
+                                    } else {
+                                        // Skip failed, fall back to full upload
+                                        logger.warn("Skip failed for resume (expected {}, got {}), uploading from start", remoteSize, skipped);
+                                    }
+                                }
+                            } catch (Exception resumeEx) {
+                                // Resume not supported or failed, fall back to full upload
+                                logger.debug("Resume not available for {}: {}", fileName, resumeEx.getMessage());
+                            }
+                        }
+
+                        final long effectiveOffset = resumeOffset;
                         // Use custom stream to track progress
-                        ProgressInputStream progressStream = new ProgressInputStream(input, fileSize,
+                        ProgressInputStream progressStream = new ProgressInputStream(input, fileSize - effectiveOffset,
                                 (bytesRead, total) -> {
                                     bytesUploaded.addAndGet(bytesRead);
-                                    if (total > 0) {
-                                        double fileProgress = (double) bytesRead / total;
+                                    if (fileSize > 0) {
+                                        double fileProgress = (double) (effectiveOffset + bytesRead) / fileSize;
                                         Platform.runLater(() -> currentFileProgress.set(fileProgress));
                                     }
                                 });
@@ -625,7 +707,9 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
         private final ProgressCallback callback;
         private long bytesRead = 0;
         private long lastReported = 0;
-        private static final long REPORT_INTERVAL = 65536; // Report every 64KB
+        private long lastReportTime = System.currentTimeMillis();
+        private static final long REPORT_INTERVAL = 1048576; // Report every 1MB
+        private static final long REPORT_MIN_INTERVAL_MS = 200; // At most every 200ms
 
         public interface ProgressCallback {
             void onProgress(long bytesRead, long total);
@@ -658,9 +742,14 @@ public class FtpUploadService extends Service<FtpUploadService.UploadResult> {
         }
 
         private void reportProgress() {
-            if (bytesRead - lastReported >= REPORT_INTERVAL || bytesRead == totalSize) {
+            boolean isComplete = bytesRead == totalSize;
+            boolean sizeThreshold = bytesRead - lastReported >= REPORT_INTERVAL;
+            boolean timeThreshold = System.currentTimeMillis() - lastReportTime >= REPORT_MIN_INTERVAL_MS;
+
+            if (isComplete || (sizeThreshold && timeThreshold)) {
                 callback.onProgress(bytesRead - lastReported, totalSize);
                 lastReported = bytesRead;
+                lastReportTime = System.currentTimeMillis();
             }
         }
     }

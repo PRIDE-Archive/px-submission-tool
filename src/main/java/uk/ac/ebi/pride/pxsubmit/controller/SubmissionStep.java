@@ -1,5 +1,7 @@
 package uk.ac.ebi.pride.pxsubmit.controller;
 
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.geometry.Insets;
@@ -7,11 +9,13 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.util.Duration;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
+import uk.ac.ebi.pride.pxsubmit.model.TransferStatistics;
 import uk.ac.ebi.pride.pxsubmit.service.ApiService;
 import uk.ac.ebi.pride.pxsubmit.service.ChecksumService;
 import uk.ac.ebi.pride.pxsubmit.service.UploadManager;
@@ -37,6 +41,16 @@ public class SubmissionStep extends AbstractWizardStep {
     private ListView<String> logListView;
     private Button startButton;
     private Button cancelButton;
+    private Button retryButton;
+    private Button pauseButton;
+
+    // Live statistics labels
+    private Label elapsedTimeLabel;
+    private Label transferRateLabel;
+    private Label uploadedBytesLabel;
+    private Label etaLabel;
+    private HBox liveStatsBox;
+    private Timeline statsTimeline;
 
     // State
     private final BooleanProperty uploading = new SimpleBooleanProperty(false);
@@ -46,6 +60,7 @@ public class SubmissionStep extends AbstractWizardStep {
     // Services
     private ApiService apiService;
     private UploadManager uploadManager;
+    private TransferStatistics lastTransferStatistics;
 
     public SubmissionStep(SubmissionModel model) {
         super("submission",
@@ -119,7 +134,7 @@ public class SubmissionStep extends AbstractWizardStep {
 
         // Update model on selection change
         uploadToggle.selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal != null) {
+            if (newVal != null && newVal.getUserData() instanceof UploadMethod) {
                 model.setUploadMethod((UploadMethod) newVal.getUserData());
             }
         });
@@ -141,12 +156,38 @@ public class SubmissionStep extends AbstractWizardStep {
         cancelButton.setOnAction(e -> cancelUpload());
         cancelButton.setVisible(false);
 
-        buttonBox.getChildren().addAll(startButton, cancelButton);
+        retryButton = new Button("Retry Upload");
+        retryButton.setStyle("-fx-background-color: #ffc107; -fx-text-fill: #333;");
+        retryButton.setOnAction(e -> startUpload());
+        retryButton.setVisible(false);
+
+        pauseButton = new Button("Pause");
+        pauseButton.setOnAction(e -> togglePause());
+        pauseButton.setVisible(false);
+
+        buttonBox.getChildren().addAll(startButton, pauseButton, cancelButton, retryButton);
+
+        // Live statistics during upload
+        elapsedTimeLabel = new Label("Elapsed: --");
+        transferRateLabel = new Label("Rate: --");
+        uploadedBytesLabel = new Label("Transferred: --");
+        String statsStyle = "-fx-text-fill: #555; -fx-font-size: 11px;";
+        elapsedTimeLabel.setStyle(statsStyle);
+        transferRateLabel.setStyle(statsStyle);
+        uploadedBytesLabel.setStyle(statsStyle);
+
+        etaLabel = new Label("ETA: --");
+        etaLabel.setStyle(statsStyle);
+
+        liveStatsBox = new HBox(20, elapsedTimeLabel, transferRateLabel, uploadedBytesLabel, etaLabel);
+        liveStatsBox.setAlignment(Pos.CENTER);
+        liveStatsBox.setVisible(false);
 
         statusBox.getChildren().addAll(
             titleLabel, overallStatus,
             uploadMethodBox,
             overallProgress, currentFileLabel, currentFileProgress,
+            liveStatsBox,
             buttonBox
         );
 
@@ -179,10 +220,20 @@ public class SubmissionStep extends AbstractWizardStep {
         overallProgress.setProgress(0);
         currentFileProgress.setProgress(0);
         logListView.getItems().clear();
+        retryButton.setVisible(false);
+        pauseButton.setVisible(false);
+        liveStatsBox.setVisible(false);
+        lastTransferStatistics = null;
+        stopStatsTimeline();
 
         // Test mode message
         if (model.isTrainingMode()) {
             addLog("TEST MODE: Files will not actually be uploaded");
+        }
+
+        // Shut down any previous ApiService before creating a new one
+        if (apiService != null) {
+            apiService.shutdown();
         }
 
         // Initialize API service
@@ -191,8 +242,17 @@ public class SubmissionStep extends AbstractWizardStep {
 
     @Override
     protected void onStepLeaving() {
+        stopStatsTimeline();
+
+        // Cancel any running upload
+        if (uploadManager != null && uploadManager.isRunning()) {
+            uploadManager.cancel();
+        }
+        uploadManager = null;
+
         if (apiService != null) {
             apiService.shutdown();
+            apiService = null;
         }
     }
 
@@ -200,7 +260,12 @@ public class SubmissionStep extends AbstractWizardStep {
         uploading.set(true);
         startButton.setDisable(true);
         cancelButton.setVisible(true);
+        retryButton.setVisible(false);
+        pauseButton.setVisible(true);
+        pauseButton.setText("Pause");
         overallProgress.setVisible(true);
+        liveStatsBox.setVisible(true);
+        startStatsTimeline();
 
         addLog("Starting submission...");
 
@@ -466,6 +531,12 @@ public class SubmissionStep extends AbstractWizardStep {
     }
 
     private void completeSubmission() {
+        stopStatsTimeline();
+        // Capture transfer statistics before nulling uploadManager
+        if (uploadManager != null) {
+            lastTransferStatistics = uploadManager.getTransferStatistics();
+        }
+
         updateStatus("Completing submission...");
         addLog("Finalizing submission...");
         overallProgress.setProgress(0.95);
@@ -517,6 +588,8 @@ public class SubmissionStep extends AbstractWizardStep {
             currentFileLabel.setVisible(false);
             currentFileProgress.setVisible(false);
             cancelButton.setVisible(false);
+            pauseButton.setVisible(false);
+            liveStatsBox.setVisible(false);
 
             completed.set(true);
             uploading.set(false);
@@ -524,6 +597,17 @@ public class SubmissionStep extends AbstractWizardStep {
             updateStatus("Submission Complete!");
             addLog("=".repeat(40));
             addLog("Submission ID: " + submissionId);
+
+            // Log transfer statistics
+            if (lastTransferStatistics != null) {
+                long durationMs = lastTransferStatistics.getTotalDurationMs();
+                addLog(String.format("Duration: %s", formatDuration(durationMs)));
+                addLog(String.format("Files: %d succeeded, %d failed",
+                    lastTransferStatistics.getFilesCompleted(), lastTransferStatistics.getFilesFailed()));
+                addLog(String.format("Transferred: %s at %.2f MB/s",
+                    formatBytes(lastTransferStatistics.getBytesTransferred()),
+                    lastTransferStatistics.getAverageRateMBps()));
+            }
             addLog("=".repeat(40));
 
             // Update UI
@@ -539,7 +623,16 @@ public class SubmissionStep extends AbstractWizardStep {
                     setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #28a745;");
                 }},
                 successLabel,
-                idLabel,
+                idLabel
+            );
+
+            // Add statistics summary panel
+            if (lastTransferStatistics != null) {
+                VBox statsPanel = createStatsSummaryPanel(lastTransferStatistics);
+                statusBox.getChildren().add(statsPanel);
+            }
+
+            statusBox.getChildren().add(
                 new Label("You will receive a confirmation email shortly.")
             );
         });
@@ -550,18 +643,40 @@ public class SubmissionStep extends AbstractWizardStep {
         if (uploadManager != null && uploadManager.isRunning()) {
             uploadManager.cancel();
         }
+        uploadManager = null;
         addLog("Upload cancelled by user");
         handleError("Upload cancelled");
     }
 
+    private void togglePause() {
+        if (uploadManager == null) return;
+        if (uploadManager.isUploadPaused()) {
+            uploadManager.resumeUpload();
+            pauseButton.setText("Pause");
+            addLog("Upload resumed by user");
+        } else {
+            uploadManager.pauseUpload();
+            pauseButton.setText("Resume");
+            addLog("Upload paused by user");
+        }
+    }
+
     private void handleError(String message) {
+        stopStatsTimeline();
+        // Capture stats on failure too
+        if (uploadManager != null && lastTransferStatistics == null) {
+            lastTransferStatistics = uploadManager.getTransferStatistics();
+        }
         Platform.runLater(() -> {
             uploading.set(false);
             startButton.setDisable(false);
             cancelButton.setVisible(false);
+            pauseButton.setVisible(false);
+            retryButton.setVisible(true);
             overallProgress.setVisible(false);
             currentFileLabel.setVisible(false);
             currentFileProgress.setVisible(false);
+            liveStatsBox.setVisible(false);
 
             updateStatus("Error: " + message);
             overallStatus.setStyle("-fx-text-fill: #dc3545;");
@@ -597,5 +712,100 @@ public class SubmissionStep extends AbstractWizardStep {
     @Override
     public boolean isFinalStep() {
         return true;
+    }
+
+    // ==================== Live Statistics ====================
+
+    private void startStatsTimeline() {
+        stopStatsTimeline();
+        statsTimeline = new Timeline(new KeyFrame(Duration.seconds(1), e -> updateLiveStats()));
+        statsTimeline.setCycleCount(Timeline.INDEFINITE);
+        statsTimeline.play();
+    }
+
+    private void stopStatsTimeline() {
+        if (statsTimeline != null) {
+            statsTimeline.stop();
+            statsTimeline = null;
+        }
+    }
+
+    private void updateLiveStats() {
+        if (uploadManager == null) return;
+        TransferStatistics stats = uploadManager.getTransferStatistics();
+        if (stats == null) return;
+
+        long elapsed = stats.getTotalDurationMs();
+        // Use real-time bytes from UploadManager for accurate progress
+        long transferred = uploadManager.uploadedBytesProperty().get();
+        long total = uploadManager.totalBytesProperty().get();
+        double rateMBps = elapsed > 0
+                ? (transferred / (1024.0 * 1024.0)) / (elapsed / 1000.0)
+                : 0;
+
+        elapsedTimeLabel.setText("Elapsed: " + formatDuration(elapsed));
+        transferRateLabel.setText(String.format("Rate: %.2f MB/s", rateMBps));
+        uploadedBytesLabel.setText("Transferred: " + formatBytes(transferred));
+
+        // ETA calculation
+        if (uploadManager.isUploadPaused()) {
+            etaLabel.setText("ETA: Paused");
+        } else if (rateMBps > 0 && transferred > 0 && transferred < total) {
+            long remainingBytes = total - transferred;
+            double bytesPerMs = rateMBps * 1024.0 * 1024.0 / 1000.0;
+            long etaMs = (long) (remainingBytes / bytesPerMs);
+            etaLabel.setText("ETA: " + formatDuration(etaMs));
+        } else if (transferred >= total && total > 0) {
+            etaLabel.setText("ETA: Complete");
+        } else {
+            etaLabel.setText("ETA: Calculating...");
+        }
+    }
+
+    private VBox createStatsSummaryPanel(TransferStatistics stats) {
+        VBox panel = new VBox(4);
+        panel.setAlignment(Pos.CENTER);
+        panel.setPadding(new Insets(10, 0, 10, 0));
+        panel.setStyle("-fx-background-color: #e8f5e9; -fx-background-radius: 6; -fx-padding: 10;");
+
+        Label header = new Label("Transfer Summary");
+        header.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
+
+        Label durationLabel = new Label("Duration: " + formatDuration(stats.getTotalDurationMs()));
+        Label filesLabel = new Label(String.format("Files: %d succeeded, %d failed",
+            stats.getFilesCompleted(), stats.getFilesFailed()));
+        Label bytesLabel = new Label(String.format("Data transferred: %s",
+            formatBytes(stats.getBytesTransferred())));
+        Label rateLabel = new Label(String.format("Average rate: %.2f MB/s",
+            stats.getAverageRateMBps()));
+
+        String labelStyle = "-fx-text-fill: #333; -fx-font-size: 12px;";
+        durationLabel.setStyle(labelStyle);
+        filesLabel.setStyle(labelStyle);
+        bytesLabel.setStyle(labelStyle);
+        rateLabel.setStyle(labelStyle);
+
+        panel.getChildren().addAll(header, durationLabel, filesLabel, bytesLabel, rateLabel);
+        return panel;
+    }
+
+    private static String formatDuration(long millis) {
+        long seconds = millis / 1000;
+        long minutes = seconds / 60;
+        long hours = minutes / 60;
+        if (hours > 0) {
+            return String.format("%dh %dm %ds", hours, minutes % 60, seconds % 60);
+        } else if (minutes > 0) {
+            return String.format("%dm %ds", minutes, seconds % 60);
+        } else {
+            return String.format("%ds", seconds);
+        }
+    }
+
+    private static String formatBytes(long bytes) {
+        if (bytes < 1024) return bytes + " B";
+        if (bytes < 1024 * 1024) return String.format("%.1f KB", bytes / 1024.0);
+        if (bytes < 1024L * 1024 * 1024) return String.format("%.1f MB", bytes / (1024.0 * 1024));
+        return String.format("%.2f GB", bytes / (1024.0 * 1024 * 1024));
     }
 }

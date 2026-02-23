@@ -175,9 +175,9 @@ public class ProjectMetadataStep extends AbstractWizardStep {
             titleSection,
             descSection,
             keywordsSection,
-            experimentTypeSection,
             sampleSection,
             dataSection,
+            experimentTypeSection,
             validationFeedback,
             requiredNote
         );

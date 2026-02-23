@@ -12,6 +12,7 @@ import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
 import uk.ac.ebi.pride.data.model.*;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -37,7 +38,7 @@ public class SubmissionModel {
     private final ObservableSet<DataFile> uploadedFiles = FXCollections.observableSet();
 
     // Checksums - map from DataFile to checksum string
-    private final ObservableMap<DataFile, String> checksums = FXCollections.observableHashMap();
+    private final ObservableMap<DataFile, String> checksums = FXCollections.synchronizedObservableMap(FXCollections.observableHashMap());
     private final BooleanProperty checksumsCalculated = new SimpleBooleanProperty(false);
 
     // File ID counter
@@ -46,7 +47,7 @@ public class SubmissionModel {
     // ==================== Credentials & Upload ====================
 
     private final StringProperty userName = new SimpleStringProperty();
-    private final StringProperty password = new SimpleStringProperty();
+    private final ObjectProperty<char[]> password = new SimpleObjectProperty<>();
     private final ObjectProperty<UploadDetail> uploadDetail = new SimpleObjectProperty<>();
     private final ObjectProperty<UploadMethod> uploadMethod = new SimpleObjectProperty<>();
     private final BooleanProperty summaryFileUploaded = new SimpleBooleanProperty(false);
@@ -357,6 +358,12 @@ public class SubmissionModel {
      * Reset the model for a new submission
      */
     public void reset() {
+        // Zero the Contact submitter password before replacing Submission
+        try {
+            Contact submitter = submission.get().getProjectMetaData().getSubmitterContact();
+            if (submitter != null) { submitter.setPassword(new char[0]); }
+        } catch (Exception ignored) {}
+
         submission.set(new Submission());
         resubmission.set(new Resubmission());
         files.clear();
@@ -366,6 +373,7 @@ public class SubmissionModel {
         fileIdCounter.set(0);
 
         userName.set(null);
+        clearPasswordArray();
         password.set(null);
         uploadDetail.set(null);
         summaryFileUploaded.set(false);
@@ -478,9 +486,23 @@ public class SubmissionModel {
     public String getUserName() { return userName.get(); }
     public void setUserName(String value) { userName.set(value); }
 
-    public StringProperty passwordProperty() { return password; }
-    public String getPassword() { return password.get(); }
-    public void setPassword(String value) { password.set(value); }
+    public ObjectProperty<char[]> passwordProperty() { return password; }
+    public String getPassword() {
+        char[] pw = password.get();
+        return pw != null ? new String(pw) : null;
+    }
+    public void setPassword(String value) {
+        clearPasswordArray();
+        password.set(value != null ? value.toCharArray() : null);
+    }
+    public void setPassword(char[] value) {
+        clearPasswordArray();
+        password.set(value);
+    }
+    private void clearPasswordArray() {
+        char[] old = password.get();
+        if (old != null) { Arrays.fill(old, '\0'); }
+    }
 
     // Upload
     public ObjectProperty<UploadDetail> uploadDetailProperty() { return uploadDetail; }

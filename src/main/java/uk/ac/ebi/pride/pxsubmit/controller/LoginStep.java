@@ -8,6 +8,8 @@ import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+
+import java.util.regex.Pattern;
 import uk.ac.ebi.pride.archive.submission.model.project.ProjectDetail;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 import uk.ac.ebi.pride.pxsubmit.service.ApiService;
@@ -31,6 +33,9 @@ public class LoginStep extends AbstractWizardStep {
     private HBox projectLoadingBox;
     private Label resubmissionErrorLabel;
     private boolean authenticated = false;
+
+    private static final Pattern EMAIL_PATTERN =
+        Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
 
     public LoginStep(SubmissionModel model) {
         super("login",
@@ -313,7 +318,7 @@ public class LoginStep extends AbstractWizardStep {
             return false;
         }
 
-        if (!username.contains("@")) {
+        if (!EMAIL_PATTERN.matcher(username).matches()) {
             showError("Please enter a valid email address");
             return false;
         }

@@ -68,6 +68,9 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
     // Aggregated transfer statistics from upload services
     private volatile TransferStatistics aggregatedStats;
 
+    // Current FTP service reference for pause/resume
+    private volatile FtpUploadService currentFtpService;
+
     public UploadManager(Submission submission, UploadDetail uploadDetail,
                          UploadMethod preferredMethod, boolean trainingMode) {
         this.submission = submission;
@@ -109,6 +112,32 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
      * @return TransferStatistics or null if no upload has been performed
      */
     public TransferStatistics getTransferStatistics() { return aggregatedStats; }
+
+    /**
+     * Pause the current upload. In-flight file transfers will complete,
+     * but no new files will be started until resumed.
+     */
+    public void pauseUpload() {
+        if (currentFtpService != null) {
+            currentFtpService.pause();
+        }
+    }
+
+    /**
+     * Resume a paused upload.
+     */
+    public void resumeUpload() {
+        if (currentFtpService != null) {
+            currentFtpService.resume();
+        }
+    }
+
+    /**
+     * Check if the upload is currently paused.
+     */
+    public boolean isUploadPaused() {
+        return currentFtpService != null && currentFtpService.isPaused();
+    }
 
     /**
      * Mark a file as already uploaded (for resume support)
@@ -233,6 +262,7 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
             updateStatus("Uploading via FTP...");
 
             FtpUploadService ftpService = new FtpUploadService(files, uploadDetail);
+            currentFtpService = ftpService;
 
             // Bind progress
             ftpService.uploadedFilesProperty().addListener((obs, oldVal, newVal) -> {

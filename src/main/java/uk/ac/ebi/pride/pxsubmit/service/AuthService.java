@@ -83,7 +83,7 @@ public class AuthService extends Service<ContactDetail> {
             String loginUrl = config.getUserLoginUrl();
             String toolVersion = config.getToolVersion();
 
-            logger.info("Starting authentication for user: {}", taskUsername);
+            logger.debug("Starting authentication for user: {}", taskUsername);
             logger.debug("Login URL: {}", loginUrl);
 
             try {
@@ -118,7 +118,7 @@ public class AuthService extends Service<ContactDetail> {
                     throw new AuthenticationException("Login failed: Invalid server response");
                 }
 
-                logger.info("Authentication successful for user: {}", taskUsername);
+                logger.debug("Authentication successful for user: {}", taskUsername);
                 updateMessage("Login successful");
 
                 return contactDetail;
