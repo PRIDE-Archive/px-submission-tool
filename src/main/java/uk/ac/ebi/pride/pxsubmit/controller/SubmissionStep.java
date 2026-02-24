@@ -70,10 +70,7 @@ public class SubmissionStep extends AbstractWizardStep {
     private long pausedDurationMs;
     private long pauseStartTimeMs;
 
-    // File progress bar chart
-    private HBox fileProgressBar;
-    private Region completedSegment;
-    private Region remainingSegment;
+    // File count label
     private Label fileProgressLabel;
 
     public SubmissionStep(SubmissionModel model) {
@@ -203,33 +200,16 @@ public class SubmissionStep extends AbstractWizardStep {
         liveStatsBox.setAlignment(Pos.CENTER);
         liveStatsBox.setVisible(false);
 
-        // File progress bar chart
+        // File count label
         fileProgressLabel = new Label("Uploading 0/0 (0%)");
         fileProgressLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
         fileProgressLabel.setVisible(false);
 
-        completedSegment = new Region();
-        completedSegment.setStyle("-fx-background-color: #28a745; -fx-background-radius: 4 0 0 4;");
-        completedSegment.setMinHeight(24);
-
-        remainingSegment = new Region();
-        remainingSegment.setStyle("-fx-background-color: #e9ecef; -fx-background-radius: 0 4 4 0;");
-        remainingSegment.setMinHeight(24);
-
-        fileProgressBar = new HBox();
-        fileProgressBar.setMaxWidth(400);
-        fileProgressBar.setPrefWidth(400);
-        fileProgressBar.setStyle("-fx-background-radius: 4;");
-        fileProgressBar.setVisible(false);
-        HBox.setHgrow(completedSegment, Priority.NEVER);
-        HBox.setHgrow(remainingSegment, Priority.NEVER);
-        fileProgressBar.getChildren().addAll(completedSegment, remainingSegment);
-
         statusBox.getChildren().addAll(
             titleLabel, overallStatus,
             uploadMethodBox,
+            fileProgressLabel,
             overallProgress, currentFileLabel, currentFileProgress,
-            fileProgressLabel, fileProgressBar,
             liveStatsBox,
             buttonBox
         );
@@ -268,7 +248,6 @@ public class SubmissionStep extends AbstractWizardStep {
         pauseButton.setVisible(false);
         liveStatsBox.setVisible(false);
         fileProgressLabel.setVisible(false);
-        fileProgressBar.setVisible(false);
         lastTransferStatistics = null;
         pausedDurationMs = 0;
         pauseStartTimeMs = 0;
@@ -327,7 +306,6 @@ public class SubmissionStep extends AbstractWizardStep {
         pausedDurationMs = 0;
         pauseStartTimeMs = 0;
         fileProgressLabel.setVisible(true);
-        fileProgressBar.setVisible(true);
 
         // Checksums should already be computed by ChecksumComputationStep
         if (!model.areChecksumsCalculated() || model.getChecksums().isEmpty()) {
@@ -839,7 +817,6 @@ public class SubmissionStep extends AbstractWizardStep {
             currentFileProgress.setVisible(false);
             liveStatsBox.setVisible(false);
             fileProgressLabel.setVisible(false);
-            fileProgressBar.setVisible(false);
 
             updateStatus("Error: " + message);
             overallStatus.setStyle("-fx-text-fill: #dc3545;");
@@ -934,16 +911,12 @@ public class SubmissionStep extends AbstractWizardStep {
         }
 
         // Update file progress label and bar
+        // Update file count label
         int uploaded = uploadManager.uploadedFilesProperty().get();
         int totalFiles = uploadManager.totalFilesProperty().get();
         if (totalFiles > 0) {
             int pct = (int) Math.round(100.0 * uploaded / totalFiles);
             fileProgressLabel.setText(String.format("Uploading %d/%d (%d%%)", uploaded, totalFiles, pct));
-
-            double fraction = (double) uploaded / totalFiles;
-            double barWidth = fileProgressBar.getPrefWidth();
-            completedSegment.setPrefWidth(barWidth * fraction);
-            remainingSegment.setPrefWidth(barWidth * (1.0 - fraction));
         }
     }
 
