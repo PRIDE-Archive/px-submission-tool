@@ -14,7 +14,7 @@ import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
  * Based on PRIDE Submission Guidelines:
  * - RAW files (Mandatory): Instrument raw data
  * - ANALYSIS files (Mandatory): Search engine outputs
- * - FASTA database (Mandatory): Protein sequence database
+ * - FASTA database (Optional): Protein sequence database
  * - STANDARD files (Recommended): mzIdentML, mzTab for COMPLETE submission
  * - PEAK lists (Optional): MGF, DTA files
  * - SDRF (Recommended): Sample metadata
@@ -22,6 +22,7 @@ import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 public class WelcomeStep extends AbstractWizardStep {
 
     private CheckBox trainingModeCheckbox;
+    private CheckBox licenseCheckBox;
 
     public WelcomeStep(SubmissionModel model) {
         super("welcome",
@@ -54,6 +55,9 @@ public class WelcomeStep extends AbstractWizardStep {
         // Checklist
         VBox checklistSection = createChecklist();
 
+        // License acceptance
+        VBox licenseSection = createLicenseSection();
+
         // Training Mode + Help links side by side
         HBox bottomRow = new HBox(20);
         VBox trainingSection = createTrainingSection();
@@ -66,6 +70,8 @@ public class WelcomeStep extends AbstractWizardStep {
             introSection,
             categoriesSection,
             checklistSection,
+            new Separator(),
+            licenseSection,
             new Separator(),
             bottomRow
         );
@@ -124,7 +130,7 @@ public class WelcomeStep extends AbstractWizardStep {
         // Reference Database
         grid.add(createCategoryCard(
             "Reference Database",
-            "MANDATORY",
+            "OPTIONAL",
             "#17a2b8",
             "Protein sequence database used",
             ".fasta, .fa, .faa"
@@ -251,6 +257,46 @@ public class WelcomeStep extends AbstractWizardStep {
         return section;
     }
 
+    private VBox createLicenseSection() {
+        VBox box = new VBox(8);
+        box.setPadding(new Insets(10, 15, 10, 15));
+        box.setStyle(
+            "-fx-background-color: #f0f7ff; " +
+            "-fx-border-color: #b3d4fc; " +
+            "-fx-border-radius: 6; " +
+            "-fx-background-radius: 6;");
+
+        Label titleLabel = new Label("Dataset License Agreement");
+        titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+
+        HBox checkboxRow = new HBox(4);
+        checkboxRow.setAlignment(Pos.CENTER_LEFT);
+
+        licenseCheckBox = new CheckBox("I accept the");
+        licenseCheckBox.setStyle("-fx-font-size: 12px;");
+
+        Hyperlink licenseLink = new Hyperlink("PRIDE Archive dataset license (CC0)");
+        licenseLink.setStyle("-fx-font-size: 12px;");
+        licenseLink.setPadding(new Insets(0));
+        licenseLink.setOnAction(e -> openUrl("https://www.ebi.ac.uk/pride/markdownpage/usagepolicy"));
+
+        Label andLabel = new Label("and have read the");
+        andLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #333;");
+
+        Hyperlink policyLink = new Hyperlink("PRIDE data policy");
+        policyLink.setStyle("-fx-font-size: 12px;");
+        policyLink.setPadding(new Insets(0));
+        policyLink.setOnAction(e -> openUrl("https://www.ebi.ac.uk/pride/markdownpage/datapolicy"));
+
+        checkboxRow.getChildren().addAll(licenseCheckBox, licenseLink, andLabel, policyLink);
+
+        Label requiredLabel = new Label("You must accept the license to proceed with your submission.");
+        requiredLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 11px; -fx-font-style: italic;");
+
+        box.getChildren().addAll(titleLabel, checkboxRow, requiredLabel);
+        return box;
+    }
+
     private VBox createTrainingSection() {
         VBox section = new VBox(6);
 
@@ -327,8 +373,8 @@ public class WelcomeStep extends AbstractWizardStep {
         // Bind training mode checkbox to model
         trainingModeCheckbox.selectedProperty().bindBidirectional(model.trainingModeProperty());
 
-        // This step is always valid
-        valid.set(true);
+        // Valid only when license is accepted
+        valid.bind(licenseCheckBox.selectedProperty());
     }
 
     @Override
