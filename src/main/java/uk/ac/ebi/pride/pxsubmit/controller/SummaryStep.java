@@ -117,19 +117,16 @@ public class SummaryStep extends AbstractWizardStep {
             (model.getSubmissionType() != null ? model.getSubmissionType().toString() : "Not specified");
         addSection("Submission Type", typeDisplay);
 
-        // Project Information, Protocols, Metadata, Lab Head — skip for resubmission
+        // Project Information, Metadata, Lab Head — skip for resubmission
         // (metadata is already on the server for the existing project)
         if (!model.isResubmissionMode()) {
             VBox projectSection = createSectionBox("Project Information");
             addField(projectSection, "Title", model.getProjectTitle());
             addField(projectSection, "Description", model.getProjectDescription());
             addField(projectSection, "Keywords", model.getKeywords());
+            addField(projectSection, "Sample Processing", model.getSampleProcessingProtocol());
+            addField(projectSection, "Data Processing", model.getDataProcessingProtocol());
             contentBox.getChildren().add(projectSection);
-
-            VBox protocolSection = createSectionBox("Protocols");
-            addField(protocolSection, "Sample Processing", model.getSampleProcessingProtocol());
-            addField(protocolSection, "Data Processing", model.getDataProcessingProtocol());
-            contentBox.getChildren().add(protocolSection);
 
             VBox metadataSection = createSectionBox("Metadata");
             addListField(metadataSection, "Species",

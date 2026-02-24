@@ -37,7 +37,7 @@ public class SubmissionTypeStep extends AbstractWizardStep {
 
     public SubmissionTypeStep(SubmissionModel model) {
         super("submission-type",
-              "Select Submission Type",
+              "Submission Type",
               "Choose the type of proteomics data you want to submit",
               model);
     }
@@ -47,11 +47,6 @@ public class SubmissionTypeStep extends AbstractWizardStep {
         VBox root = new VBox(20);
         root.setPadding(new Insets(20));
         root.setAlignment(Pos.TOP_CENTER);
-
-        // Title
-        Label introLabel = new Label("What type of proteomics data are you submitting?");
-        introLabel.setStyle("-fx-font-size: 14px;");
-        introLabel.setWrapText(true);
 
         // Radio button group
         submissionTypeGroup = new ToggleGroup();
@@ -97,7 +92,7 @@ public class SubmissionTypeStep extends AbstractWizardStep {
 
         linksBox.getChildren().addAll(guidelinesLink, prideLink);
 
-        root.getChildren().addAll(introLabel, prideBox, affinityBox, resubmissionBox, linksBox);
+        root.getChildren().addAll(prideBox, affinityBox, resubmissionBox, linksBox);
 
         return root;
     }

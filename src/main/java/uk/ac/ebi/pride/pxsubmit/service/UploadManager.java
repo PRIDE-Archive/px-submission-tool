@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 /**
  * Unified upload manager that coordinates FTP and Aspera uploads.
@@ -76,8 +77,12 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
     // Aggregated transfer statistics from upload services
     private volatile TransferStatistics aggregatedStats;
 
-    // Current FTP service reference for pause/resume
+    // Current service references for pause/resume
     private volatile FtpUploadService currentFtpService;
+    private volatile AsperaUploadService currentAsperaService;
+
+    // Per-file upload completion callback for checkpoint updates
+    private Consumer<String> fileUploadedCallback;
 
     public UploadManager(Submission submission, UploadDetail uploadDetail,
                          UploadMethod preferredMethod, boolean trainingMode) {
@@ -129,12 +134,14 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
     public TransferStatistics getTransferStatistics() { return aggregatedStats; }
 
     /**
-     * Pause the current upload. In-flight file transfers will complete,
-     * but no new files will be started until resumed.
+     * Pause the current upload.
      */
     public void pauseUpload() {
         if (currentFtpService != null) {
             currentFtpService.pause();
+        }
+        if (currentAsperaService != null) {
+            currentAsperaService.pause();
         }
     }
 
@@ -145,13 +152,18 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
         if (currentFtpService != null) {
             currentFtpService.resume();
         }
+        if (currentAsperaService != null) {
+            currentAsperaService.resume();
+        }
     }
 
     /**
      * Check if the upload is currently paused.
      */
     public boolean isUploadPaused() {
-        return currentFtpService != null && currentFtpService.isPaused();
+        if (currentFtpService != null) return currentFtpService.isPaused();
+        if (currentAsperaService != null) return currentAsperaService.isPaused();
+        return false;
     }
 
     /**
@@ -173,6 +185,14 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
      */
     public void markSummaryFileUploaded() {
         summaryFileUploaded = true;
+    }
+
+    /**
+     * Set a callback that fires when each file is successfully uploaded.
+     * Used by SubmissionStep to update the checkpoint file per-file.
+     */
+    public void setFileUploadedCallback(Consumer<String> callback) {
+        this.fileUploadedCallback = callback;
     }
 
     /**
@@ -331,6 +351,17 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
                     uploadedFiles.set(newVal.intValue());
                     overallProgress.set((double) newVal.intValue() / totalFiles.get());
                 });
+                // Per-file callback: file at oldVal index just completed
+                int completedIndex = oldVal.intValue();
+                if (completedIndex >= 0 && completedIndex < files.size()) {
+                    String completedFileName = files.get(completedIndex).getFileName();
+                    if (completedFileName != null) {
+                        uploadedFileNames.add(completedFileName);
+                        if (fileUploadedCallback != null) {
+                            fileUploadedCallback.accept(completedFileName);
+                        }
+                    }
+                }
             });
 
             service.uploadedBytesProperty().addListener((obs, oldVal, newVal) -> {
@@ -457,6 +488,7 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
 
             AsperaUploadService asperaService = ServiceFactory.getInstance().createAsperaUploadService(
                     files, uploadDetail, ascpPath);
+            currentAsperaService = asperaService;
 
             // Bind Aspera-specific status message
             asperaService.statusMessageProperty().addListener((obs, oldVal, newVal) -> {

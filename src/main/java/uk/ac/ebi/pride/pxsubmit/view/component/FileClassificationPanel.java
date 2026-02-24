@@ -53,8 +53,8 @@ public class FileClassificationPanel extends VBox {
     private final ObjectProperty<FileTypeDetector.ToolDetectionResult> detectedTool = new SimpleObjectProperty<>();
 
     public FileClassificationPanel() {
-        setSpacing(10);
-        setPadding(new Insets(10));
+        setSpacing(5);
+        setPadding(new Insets(6));
         setStyle("-fx-background-color: #f8f9fa; -fx-border-color: #e9ecef; -fx-border-radius: 8; -fx-background-radius: 8;");
 
         // Title

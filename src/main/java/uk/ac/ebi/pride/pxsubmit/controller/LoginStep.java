@@ -235,17 +235,26 @@ public class LoginStep extends AbstractWizardStep {
                 logger.info("Authentication succeeded for user: {}", username);
                 authenticated = true;
 
-                // Auto-advance to next step
+                // Auto-advance: skip to upload step if resuming from checkpoint
                 if (wizardController != null) {
                     wizardController.setNavigationEnabled(true);
-                    wizardController.goToNextStep();
+                    if (model.getPendingCheckpoint() != null) {
+                        logger.info("Resuming from checkpoint - skipping to submission step");
+                        wizardController.goToStep("submission");
+                    } else {
+                        wizardController.goToNextStep();
+                    }
                 }
             } catch (Exception ex) {
                 logger.warn("Authentication succeeded but could not process contact details", ex);
                 authenticated = true;
                 if (wizardController != null) {
                     wizardController.setNavigationEnabled(true);
-                    wizardController.goToNextStep();
+                    if (model.getPendingCheckpoint() != null) {
+                        wizardController.goToStep("submission");
+                    } else {
+                        wizardController.goToNextStep();
+                    }
                 }
             }
         });

@@ -20,11 +20,15 @@ import uk.ac.ebi.pride.pxsubmit.service.ApiService;
 import uk.ac.ebi.pride.pxsubmit.service.ChecksumService;
 import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
 import uk.ac.ebi.pride.pxsubmit.service.UploadManager;
+import uk.ac.ebi.pride.pxsubmit.model.UploadCheckpoint;
 import uk.ac.ebi.pride.pxsubmit.util.DebugMode;
+import uk.ac.ebi.pride.pxsubmit.util.UploadCheckpointManager;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -62,6 +66,15 @@ public class SubmissionStep extends AbstractWizardStep {
     private ApiService apiService;
     private UploadManager uploadManager;
     private TransferStatistics lastTransferStatistics;
+    private long uploadStartTimeMs;
+    private long pausedDurationMs;
+    private long pauseStartTimeMs;
+
+    // File progress bar chart
+    private HBox fileProgressBar;
+    private Region completedSegment;
+    private Region remainingSegment;
+    private Label fileProgressLabel;
 
     public SubmissionStep(SubmissionModel model) {
         super("submission",
@@ -184,10 +197,33 @@ public class SubmissionStep extends AbstractWizardStep {
         liveStatsBox.setAlignment(Pos.CENTER);
         liveStatsBox.setVisible(false);
 
+        // File progress bar chart
+        fileProgressLabel = new Label("Uploading 0/0 (0%)");
+        fileProgressLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
+        fileProgressLabel.setVisible(false);
+
+        completedSegment = new Region();
+        completedSegment.setStyle("-fx-background-color: #28a745; -fx-background-radius: 4 0 0 4;");
+        completedSegment.setMinHeight(24);
+
+        remainingSegment = new Region();
+        remainingSegment.setStyle("-fx-background-color: #e9ecef; -fx-background-radius: 0 4 4 0;");
+        remainingSegment.setMinHeight(24);
+
+        fileProgressBar = new HBox();
+        fileProgressBar.setMaxWidth(400);
+        fileProgressBar.setPrefWidth(400);
+        fileProgressBar.setStyle("-fx-background-radius: 4;");
+        fileProgressBar.setVisible(false);
+        HBox.setHgrow(completedSegment, Priority.NEVER);
+        HBox.setHgrow(remainingSegment, Priority.NEVER);
+        fileProgressBar.getChildren().addAll(completedSegment, remainingSegment);
+
         statusBox.getChildren().addAll(
             titleLabel, overallStatus,
             uploadMethodBox,
             overallProgress, currentFileLabel, currentFileProgress,
+            fileProgressLabel, fileProgressBar,
             liveStatsBox,
             buttonBox
         );
@@ -224,7 +260,11 @@ public class SubmissionStep extends AbstractWizardStep {
         retryButton.setVisible(false);
         pauseButton.setVisible(false);
         liveStatsBox.setVisible(false);
+        fileProgressLabel.setVisible(false);
+        fileProgressBar.setVisible(false);
         lastTransferStatistics = null;
+        pausedDurationMs = 0;
+        pauseStartTimeMs = 0;
         stopStatsTimeline();
 
         // Test mode message
@@ -239,6 +279,13 @@ public class SubmissionStep extends AbstractWizardStep {
 
         // Initialize API service
         apiService = ServiceFactory.getInstance().createApiService(model.getUserName(), model.getPassword());
+
+        // Resume from checkpoint: pre-set ticketId so we reuse the same upload folder
+        UploadCheckpoint pending = model.getPendingCheckpoint();
+        if (pending != null && pending.getUploadFolder() != null) {
+            ticketId.set(pending.getUploadFolder());
+            addLog("Resuming interrupted upload (folder: " + pending.getUploadFolder() + ")");
+        }
     }
 
     @Override
@@ -269,6 +316,11 @@ public class SubmissionStep extends AbstractWizardStep {
         startStatsTimeline();
 
         addLog("Starting submission...");
+        uploadStartTimeMs = System.currentTimeMillis();
+        pausedDurationMs = 0;
+        pauseStartTimeMs = 0;
+        fileProgressLabel.setVisible(true);
+        fileProgressBar.setVisible(true);
 
         // Checksums should already be computed by ChecksumComputationStep
         if (!model.areChecksumsCalculated() || model.getChecksums().isEmpty()) {
@@ -282,6 +334,9 @@ public class SubmissionStep extends AbstractWizardStep {
 
         // Write checksum.txt file for upload
         writeChecksumFile(model.getChecksums());
+
+        // Save checkpoint before starting upload
+        saveCheckpoint();
 
         Platform.runLater(() -> {
             overallProgress.setProgress(0.2);
@@ -414,6 +469,24 @@ public class SubmissionStep extends AbstractWizardStep {
                 method,
                 model.isTrainingMode()
         );
+
+        // Pre-seed already uploaded files from checkpoint (resume scenario)
+        UploadCheckpoint pending = model.getPendingCheckpoint();
+        if (pending != null && pending.getUploadedFileNames() != null) {
+            for (String fileName : pending.getUploadedFileNames()) {
+                uploadManager.markFileUploaded(fileName);
+            }
+            addLog("Resuming upload: " + pending.getUploadedFileNames().size() + " files already uploaded");
+        }
+
+        // Wire per-file checkpoint callback
+        uploadManager.setFileUploadedCallback(fileName -> {
+            UploadCheckpointManager.markFileUploaded(fileName);
+            logger.debug("Checkpoint updated: {} marked as uploaded", fileName);
+        });
+
+        // Update checkpoint with upload details (host/folder now known)
+        updateCheckpointWithUploadDetails(uploadDetail);
 
         // Bind progress to UI
         uploadManager.overallProgressProperty().addListener((obs, oldVal, newVal) -> {
@@ -587,6 +660,11 @@ public class SubmissionStep extends AbstractWizardStep {
     }
 
     private void finishSubmission(String submissionId) {
+        // Delete checkpoint on successful submission
+        UploadCheckpointManager.delete();
+        model.setPendingCheckpoint(null);
+        logger.info("Upload checkpoint removed after successful submission");
+
         Platform.runLater(() -> {
             overallProgress.setProgress(1.0);
             currentFileLabel.setVisible(false);
@@ -655,13 +733,82 @@ public class SubmissionStep extends AbstractWizardStep {
     private void togglePause() {
         if (uploadManager == null) return;
         if (uploadManager.isUploadPaused()) {
+            // Resume: accumulate paused duration
+            if (pauseStartTimeMs > 0) {
+                pausedDurationMs += System.currentTimeMillis() - pauseStartTimeMs;
+                pauseStartTimeMs = 0;
+            }
             uploadManager.resumeUpload();
             pauseButton.setText("Pause");
             addLog("Upload resumed by user");
         } else {
+            // Pause: record when pause started
+            pauseStartTimeMs = System.currentTimeMillis();
             uploadManager.pauseUpload();
             pauseButton.setText("Resume");
             addLog("Upload paused by user");
+        }
+    }
+
+    /**
+     * Save checkpoint before upload starts. Captures all model state needed to resume.
+     */
+    private void saveCheckpoint() {
+        try {
+            UploadCheckpoint checkpoint = new UploadCheckpoint();
+            checkpoint.setUserName(model.getUserName());
+            checkpoint.setTimestamp(System.currentTimeMillis());
+            checkpoint.setResubmissionMode(model.isResubmissionMode());
+
+            // Upload method
+            UploadMethod method = model.getUploadMethod();
+            checkpoint.setUploadMethod(method != null ? method.name() : "FTP");
+
+            // Files
+            java.util.List<UploadCheckpoint.FileEntry> fileEntries = new ArrayList<>();
+            for (DataFile df : model.getFiles()) {
+                String filePath = df.getFile() != null ? df.getFile().getAbsolutePath() : "";
+                String fileName = df.getFileName();
+                String fileType = df.getFileType() != null ? df.getFileType().name() : "OTHER";
+                fileEntries.add(new UploadCheckpoint.FileEntry(filePath, fileName, fileType));
+            }
+            checkpoint.setFiles(fileEntries);
+
+            // Checksums (fileName -> checksum)
+            Map<String, String> checksumMap = new HashMap<>();
+            for (Map.Entry<DataFile, String> entry : model.getChecksums().entrySet()) {
+                checksumMap.put(entry.getKey().getFileName(), entry.getValue());
+            }
+            checkpoint.setChecksums(checksumMap);
+
+            // submission.px path
+            File workingDir = new File(System.getProperty("user.dir"));
+            File submissionPx = new File(workingDir, "submission.px");
+            if (submissionPx.exists()) {
+                checkpoint.setSubmissionPxPath(submissionPx.getAbsolutePath());
+            }
+
+            UploadCheckpointManager.save(checkpoint);
+            addLog("Upload checkpoint saved");
+        } catch (Exception e) {
+            logger.warn("Could not save upload checkpoint", e);
+        }
+    }
+
+    /**
+     * Update existing checkpoint with upload details once they're received from server.
+     */
+    private void updateCheckpointWithUploadDetails(UploadDetail uploadDetail) {
+        try {
+            UploadCheckpoint checkpoint = UploadCheckpointManager.load();
+            if (checkpoint != null) {
+                checkpoint.setUploadHost(uploadDetail.getHost());
+                checkpoint.setUploadPort(uploadDetail.getPort());
+                checkpoint.setUploadFolder(uploadDetail.getFolder());
+                UploadCheckpointManager.save(checkpoint);
+            }
+        } catch (Exception e) {
+            logger.warn("Could not update checkpoint with upload details", e);
         }
     }
 
@@ -681,6 +828,8 @@ public class SubmissionStep extends AbstractWizardStep {
             currentFileLabel.setVisible(false);
             currentFileProgress.setVisible(false);
             liveStatsBox.setVisible(false);
+            fileProgressLabel.setVisible(false);
+            fileProgressBar.setVisible(false);
 
             updateStatus("Error: " + message);
             overallStatus.setStyle("-fx-text-fill: #dc3545;");
@@ -736,33 +885,55 @@ public class SubmissionStep extends AbstractWizardStep {
 
     private void updateLiveStats() {
         if (uploadManager == null) return;
-        TransferStatistics stats = uploadManager.getTransferStatistics();
-        if (stats == null) return;
 
-        long elapsed = stats.getTotalDurationMs();
-        // Use real-time bytes from UploadManager for accurate progress
+        boolean paused = uploadManager.isUploadPaused();
+
+        // Calculate active (non-paused) elapsed time
+        long now = System.currentTimeMillis();
+        long totalElapsed = now - uploadStartTimeMs;
+        long currentPauseDuration = (paused && pauseStartTimeMs > 0)
+                ? (now - pauseStartTimeMs) : 0;
+        long activeElapsed = totalElapsed - pausedDurationMs - currentPauseDuration;
+        if (activeElapsed < 0) activeElapsed = 0;
+
         long transferred = uploadManager.uploadedBytesProperty().get();
         long total = uploadManager.totalBytesProperty().get();
-        double rateMBps = elapsed > 0
-                ? (transferred / (1024.0 * 1024.0)) / (elapsed / 1000.0)
+        double rateMBps = activeElapsed > 0
+                ? (transferred / (1024.0 * 1024.0)) / (activeElapsed / 1000.0)
                 : 0;
 
-        elapsedTimeLabel.setText("Elapsed: " + formatDuration(elapsed));
-        transferRateLabel.setText(String.format("Rate: %.2f MB/s", rateMBps));
+        elapsedTimeLabel.setText("Elapsed: " + formatDuration(activeElapsed));
         uploadedBytesLabel.setText("Transferred: " + formatBytes(transferred));
 
-        // ETA calculation
-        if (uploadManager.isUploadPaused()) {
+        if (paused) {
+            transferRateLabel.setText("Rate: Paused");
             etaLabel.setText("ETA: Paused");
-        } else if (rateMBps > 0 && transferred > 0 && transferred < total) {
-            long remainingBytes = total - transferred;
-            double bytesPerMs = rateMBps * 1024.0 * 1024.0 / 1000.0;
-            long etaMs = (long) (remainingBytes / bytesPerMs);
-            etaLabel.setText("ETA: " + formatDuration(etaMs));
-        } else if (transferred >= total && total > 0) {
-            etaLabel.setText("ETA: Complete");
         } else {
-            etaLabel.setText("ETA: Calculating...");
+            transferRateLabel.setText(String.format("Rate: %.2f MB/s", rateMBps));
+            // ETA calculation
+            if (rateMBps > 0 && transferred > 0 && transferred < total) {
+                long remainingBytes = total - transferred;
+                double bytesPerMs = rateMBps * 1024.0 * 1024.0 / 1000.0;
+                long etaMs = (long) (remainingBytes / bytesPerMs);
+                etaLabel.setText("ETA: " + formatDuration(etaMs));
+            } else if (transferred >= total && total > 0) {
+                etaLabel.setText("ETA: Complete");
+            } else {
+                etaLabel.setText("ETA: Calculating...");
+            }
+        }
+
+        // Update file progress label and bar
+        int uploaded = uploadManager.uploadedFilesProperty().get();
+        int totalFiles = uploadManager.totalFilesProperty().get();
+        if (totalFiles > 0) {
+            int pct = (int) Math.round(100.0 * uploaded / totalFiles);
+            fileProgressLabel.setText(String.format("Uploading %d/%d (%d%%)", uploaded, totalFiles, pct));
+
+            double fraction = (double) uploaded / totalFiles;
+            double barWidth = fileProgressBar.getPrefWidth();
+            completedSegment.setPrefWidth(barWidth * fraction);
+            remainingSegment.setPrefWidth(barWidth * (1.0 - fraction));
         }
     }
 
