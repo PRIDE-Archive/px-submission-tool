@@ -45,7 +45,6 @@ public class SampleMetadataStep extends AbstractWizardStep {
     private OlsAutocomplete diseaseField;
     private OlsAutocomplete instrumentField;
     private OlsAutocomplete modificationField;
-    private OlsAutocomplete softwareField;
 
     // Status
     private Label validationLabel;
@@ -91,11 +90,11 @@ public class SampleMetadataStep extends AbstractWizardStep {
         speciesSection.getChildren().add(speciesField);
         speciesSection.getChildren().add(createQuickSelectPane(OlsService.getCommonSpecies(), speciesField));
 
-        // Tissue
+        // Tissue (Mandatory)
         VBox tissueSection = createFieldSection(
-                "Tissue / Organism Part",
+                "Tissue / Organism Part *",
                 "Search for the tissue(s) or body part(s) analyzed. You can add more after SDRF loading.",
-                false);
+                true);
         tissueField = new OlsAutocomplete(OlsOntology.BTO);
         tissueField.setPromptText("Search tissue (e.g., liver, blood, brain)...");
         tissueField.setCommonTerms(OlsService.getCommonTissues());
@@ -104,11 +103,11 @@ public class SampleMetadataStep extends AbstractWizardStep {
         tissueSection.getChildren().add(tissueField);
         tissueSection.getChildren().add(createQuickSelectPane(OlsService.getCommonTissues(), tissueField));
 
-        // Cell Type
+        // Cell Type (Mandatory)
         VBox cellTypeSection = createFieldSection(
-                "Cell Type / Cell Line",
+                "Cell Type / Cell Line *",
                 "Search for cell type or cell line if applicable. You can add more after SDRF loading.",
-                false);
+                true);
         cellTypeField = new OlsAutocomplete(OlsOntology.CL);
         cellTypeField.setPromptText("Search cell type (e.g., T cell, HeLa)...");
         cellTypeField.setCommonTerms(OlsService.getCommonCellTypes());
@@ -117,11 +116,11 @@ public class SampleMetadataStep extends AbstractWizardStep {
         cellTypeSection.getChildren().add(cellTypeField);
         cellTypeSection.getChildren().add(createQuickSelectPane(OlsService.getCommonCellTypes(), cellTypeField));
 
-        // Disease
+        // Disease (Mandatory)
         VBox diseaseSection = createFieldSection(
-                "Disease",
+                "Disease *",
                 "Search for disease if studying a pathological condition. You can add more after SDRF loading.",
-                false);
+                true);
         diseaseField = new OlsAutocomplete(OlsOntology.DOID);
         diseaseField.setPromptText("Search disease (e.g., cancer, diabetes)...");
         diseaseField.setCommonTerms(OlsService.getCommonDiseases());
@@ -143,11 +142,11 @@ public class SampleMetadataStep extends AbstractWizardStep {
         instrumentSection.getChildren().add(instrumentField);
         instrumentSection.getChildren().add(createQuickSelectPane(OlsService.getCommonInstruments(), instrumentField));
 
-        // Modifications
+        // Modifications (Mandatory)
         VBox modificationSection = createFieldSection(
-                "Modifications",
+                "Modifications *",
                 "Search for post-translational modifications studied",
-                false);
+                true);
         modificationField = new OlsAutocomplete(OlsOntology.MOD);
         modificationField.setPromptText("Search modification (e.g., phosphorylation, acetylation)...");
         modificationField.setCommonTerms(OlsService.getCommonModifications());
@@ -155,19 +154,6 @@ public class SampleMetadataStep extends AbstractWizardStep {
         modificationField.setOnTermRemoved(term -> model.removeModification(term));
         modificationSection.getChildren().add(modificationField);
         modificationSection.getChildren().add(createQuickSelectPane(OlsService.getCommonModifications(), modificationField));
-
-        // Software/Tools
-        VBox softwareSection = createFieldSection(
-                "Software / Analysis Tools",
-                "Search for the software used for data analysis",
-                false);
-        softwareField = new OlsAutocomplete(OlsOntology.MS);
-        softwareField.setPromptText("Search software (e.g., MaxQuant, DIA-NN, FragPipe)...");
-        softwareField.setCommonTerms(OlsService.getCommonSoftware());
-        softwareField.setOnTermSelected(term -> model.addSoftware(term));
-        softwareField.setOnTermRemoved(term -> model.removeSoftware(term));
-        softwareSection.getChildren().add(softwareField);
-        softwareSection.getChildren().add(createQuickSelectPane(OlsService.getCommonSoftware(), softwareField));
 
         // Validation status
         validationLabel = new Label();
@@ -185,7 +171,6 @@ public class SampleMetadataStep extends AbstractWizardStep {
                 new Separator(),
                 instrumentSection,
                 modificationSection,
-                softwareSection,
                 new Separator(),
                 validationLabel,
                 requiredNote
@@ -288,11 +273,20 @@ public class SampleMetadataStep extends AbstractWizardStep {
 
     @Override
     protected void initializeStep() {
-        // Validation: species and instrument required
+        // Validation: all fields are mandatory
         valid.bind(Bindings.createBooleanBinding(() ->
-            speciesField.hasSelection() && instrumentField.hasSelection(),
+            speciesField.hasSelection() &&
+            tissueField.hasSelection() &&
+            cellTypeField.hasSelection() &&
+            diseaseField.hasSelection() &&
+            instrumentField.hasSelection() &&
+            modificationField.hasSelection(),
             speciesField.getSelectedTerms(),
-            instrumentField.getSelectedTerms()
+            tissueField.getSelectedTerms(),
+            cellTypeField.getSelectedTerms(),
+            diseaseField.getSelectedTerms(),
+            instrumentField.getSelectedTerms(),
+            modificationField.getSelectedTerms()
         ));
 
         // Update validation label
@@ -426,16 +420,26 @@ public class SampleMetadataStep extends AbstractWizardStep {
 
     private void updateValidationLabel() {
         boolean hasSpecies = speciesField.hasSelection();
+        boolean hasTissue = tissueField.hasSelection();
+        boolean hasCellType = cellTypeField.hasSelection();
+        boolean hasDisease = diseaseField.hasSelection();
         boolean hasInstrument = instrumentField.hasSelection();
+        boolean hasModification = modificationField.hasSelection();
 
-        if (hasSpecies && hasInstrument) {
+        if (hasSpecies && hasTissue && hasCellType && hasDisease && hasInstrument && hasModification) {
             validationLabel.setText("\u2714 All required fields completed");
             validationLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #28a745;");
         } else {
             StringBuilder missing = new StringBuilder("Missing: ");
-            if (!hasSpecies) missing.append("Species ");
-            if (!hasInstrument) missing.append("Instrument ");
-            validationLabel.setText("\u26A0 " + missing.toString().trim());
+            if (!hasSpecies) missing.append("Species, ");
+            if (!hasTissue) missing.append("Tissue, ");
+            if (!hasCellType) missing.append("Cell Type, ");
+            if (!hasDisease) missing.append("Disease, ");
+            if (!hasInstrument) missing.append("Instrument, ");
+            if (!hasModification) missing.append("Modifications, ");
+            // Remove trailing comma and space
+            String missingStr = missing.substring(0, missing.length() - 2);
+            validationLabel.setText("\u26A0 " + missingStr);
             validationLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #dc3545;");
         }
     }
@@ -448,9 +452,33 @@ public class SampleMetadataStep extends AbstractWizardStep {
             return false;
         }
 
+        if (!tissueField.hasSelection()) {
+            showError("Please select at least one tissue/organism part");
+            tissueField.requestFocus();
+            return false;
+        }
+
+        if (!cellTypeField.hasSelection()) {
+            showError("Please select at least one cell type/cell line");
+            cellTypeField.requestFocus();
+            return false;
+        }
+
+        if (!diseaseField.hasSelection()) {
+            showError("Please select at least one disease (use 'healthy' if not applicable)");
+            diseaseField.requestFocus();
+            return false;
+        }
+
         if (!instrumentField.hasSelection()) {
             showError("Please select at least one mass spectrometry instrument");
             instrumentField.requestFocus();
+            return false;
+        }
+
+        if (!modificationField.hasSelection()) {
+            showError("Please select at least one modification");
+            modificationField.requestFocus();
             return false;
         }
 

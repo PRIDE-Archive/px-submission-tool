@@ -144,6 +144,9 @@ public class SummaryStep extends AbstractWizardStep {
                 addField(labHeadSection, "Name", model.getLabHeadName());
                 addField(labHeadSection, "Email", model.getLabHeadEmail());
                 addField(labHeadSection, "Affiliation", model.getLabHeadAffiliation());
+                if (model.getLabHeadOrcid() != null && !model.getLabHeadOrcid().isEmpty()) {
+                    addField(labHeadSection, "ORCID iD", model.getLabHeadOrcid());
+                }
                 contentBox.getChildren().add(labHeadSection);
             }
         }
@@ -282,6 +285,9 @@ public class SummaryStep extends AbstractWizardStep {
             }
             if (model.getProjectDescription() == null || model.getProjectDescription().trim().isEmpty()) {
                 feedback.addError("Project description is missing");
+            }
+            if (model.getLabHeadName() == null || model.getLabHeadName().trim().isEmpty()) {
+                feedback.addError("Lab head information is missing");
             }
 
             // Success message if all OK
@@ -529,6 +535,9 @@ public class SummaryStep extends AbstractWizardStep {
 
         SubmissionFileWriter.write(model.getSubmission(), file);
 
+        // Append lab head ORCID (not supported by Contact model, so we add as COM line)
+        appendLabHeadOrcid(file, model);
+
         // Append resubmission file change summary as COM lines
         if (model.isResubmissionMode()) {
             appendResubmissionSummary(file, model);
@@ -536,6 +545,23 @@ public class SummaryStep extends AbstractWizardStep {
 
         // Append tool version and metadata
         appendToolMetadata(file);
+    }
+
+    /**
+     * Append lab head ORCID to submission.px as a COM line.
+     * The Contact model doesn't support ORCID, so we write it as metadata.
+     */
+    private static void appendLabHeadOrcid(File file, SubmissionModel model) {
+        String orcid = model.getLabHeadOrcid();
+        if (orcid != null && !orcid.trim().isEmpty()) {
+            try (BufferedWriter bw = new BufferedWriter(new FileWriter(file, true))) {
+                bw.write("COM\tlab_head_orcid\t" + orcid.trim());
+                bw.newLine();
+            } catch (IOException e) {
+                LoggerFactory.getLogger(SummaryStep.class)
+                    .error("Failed to append lab head ORCID to submission.px", e);
+            }
+        }
     }
 
     /**

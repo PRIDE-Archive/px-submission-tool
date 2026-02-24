@@ -168,9 +168,10 @@ public class PxSubmitApplication extends Application {
         // 7. File Selection - Add files (drag-drop) (skipped for resubmission)
         // 8. File Review - Review and adjust classifications (skipped for resubmission)
         // 9. Sample Metadata - Species, tissue, instrument, etc. (skipped for resubmission)
-        // 10. Summary - Review before upload
-        // 11. Checksum Computation - Compute checksums for all files
-        // 12. Submission - Upload and complete
+        // 10. Lab Head - PI contact details (skipped for resubmission)
+        // 11. Summary - Review before upload
+        // 12. Checksum Computation - Compute checksums for all files
+        // 13. Submission - Upload and complete
 
         wizardController.addStep(new WelcomeStep(model));
         wizardController.addStep(new LoginStep(model));
@@ -181,6 +182,7 @@ public class PxSubmitApplication extends Application {
         wizardController.addStep(new FileSelectionStep(model));
         wizardController.addStep(new FileReviewStep(model));
         wizardController.addStep(new SampleMetadataStep(model));
+        wizardController.addStep(new LabHeadStep(model));
         wizardController.addStep(new SummaryStep(model));
         wizardController.addStep(new ChecksumComputationStep(model));
         wizardController.addStep(new SubmissionStep(model));

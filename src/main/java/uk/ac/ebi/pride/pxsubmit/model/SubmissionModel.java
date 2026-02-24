@@ -91,6 +91,7 @@ public class SubmissionModel {
     private final StringProperty labHeadName = new SimpleStringProperty();
     private final StringProperty labHeadEmail = new SimpleStringProperty();
     private final StringProperty labHeadAffiliation = new SimpleStringProperty();
+    private final StringProperty labHeadOrcid = new SimpleStringProperty();
 
     // ==================== Computed Properties ====================
 
@@ -414,6 +415,7 @@ public class SubmissionModel {
         labHeadName.set(null);
         labHeadEmail.set(null);
         labHeadAffiliation.set(null);
+        labHeadOrcid.set(null);
 
         submissionType.set(null);
         resubmissionMode.set(false);
@@ -609,6 +611,10 @@ public class SubmissionModel {
     public StringProperty labHeadAffiliationProperty() { return labHeadAffiliation; }
     public String getLabHeadAffiliation() { return labHeadAffiliation.get(); }
     public void setLabHeadAffiliation(String value) { labHeadAffiliation.set(value); }
+
+    public StringProperty labHeadOrcidProperty() { return labHeadOrcid; }
+    public String getLabHeadOrcid() { return labHeadOrcid.get(); }
+    public void setLabHeadOrcid(String value) { labHeadOrcid.set(value); }
 
     // Computed read-only properties
     public ReadOnlyLongProperty totalFileSizeProperty() { return totalFileSize.getReadOnlyProperty(); }

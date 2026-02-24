@@ -131,21 +131,21 @@ public class SubmissionStep extends AbstractWizardStep {
 
         ToggleGroup uploadToggle = new ToggleGroup();
 
-        RadioButton ftpRadio = new RadioButton("FTP - Standard file transfer (recommended for most users)");
-        ftpRadio.setToggleGroup(uploadToggle);
-        ftpRadio.setUserData(UploadMethod.FTP);
-
-        RadioButton asperaRadio = new RadioButton("Aspera - High-speed transfer (recommended for large datasets)");
+        RadioButton asperaRadio = new RadioButton("Aspera - High-speed transfer (recommended)");
         asperaRadio.setToggleGroup(uploadToggle);
         asperaRadio.setUserData(UploadMethod.ASPERA);
 
-        // Set current selection
-        if (model.getUploadMethod() == UploadMethod.ASPERA) {
-            asperaRadio.setSelected(true);
-        } else {
+        RadioButton ftpRadio = new RadioButton("FTP - Standard file transfer");
+        ftpRadio.setToggleGroup(uploadToggle);
+        ftpRadio.setUserData(UploadMethod.FTP);
+
+        // Set current selection (Aspera is default)
+        if (model.getUploadMethod() == UploadMethod.FTP) {
             ftpRadio.setSelected(true);
+        } else {
+            asperaRadio.setSelected(true);
             if (model.getUploadMethod() == null) {
-                model.setUploadMethod(UploadMethod.FTP);
+                model.setUploadMethod(UploadMethod.ASPERA);
             }
         }
 
@@ -156,7 +156,7 @@ public class SubmissionStep extends AbstractWizardStep {
             }
         });
 
-        VBox radioBox = new VBox(5, ftpRadio, asperaRadio);
+        VBox radioBox = new VBox(5, asperaRadio, ftpRadio);
         radioBox.setPadding(new Insets(0, 0, 0, 10));
 
         uploadMethodBox.getChildren().addAll(uploadMethodLabel, radioBox);
@@ -382,8 +382,8 @@ public class SubmissionStep extends AbstractWizardStep {
 
         UploadMethod method = model.getUploadMethod();
         if (method == null) {
-            method = UploadMethod.FTP;
-            addLog("No upload method selected, defaulting to FTP");
+            method = UploadMethod.ASPERA;
+            addLog("No upload method selected, defaulting to Aspera");
         }
 
         addLog("Requesting " + method + " upload credentials...");
@@ -420,7 +420,7 @@ public class SubmissionStep extends AbstractWizardStep {
 
     private void uploadFiles(UploadDetail uploadDetail) {
         updateStatus("Uploading files...");
-        UploadMethod method = model.getUploadMethod() != null ? model.getUploadMethod() : UploadMethod.FTP;
+        UploadMethod method = model.getUploadMethod() != null ? model.getUploadMethod() : UploadMethod.ASPERA;
         addLog("Starting file upload via " + method + "...");
         addLog("Number of files to upload: " + model.getFiles().size());
 

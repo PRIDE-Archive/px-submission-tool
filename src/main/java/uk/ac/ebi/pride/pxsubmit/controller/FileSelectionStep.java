@@ -87,15 +87,28 @@ public class FileSelectionStep extends AbstractWizardStep {
         addFilesButton = new Button("Add Files...");
         addFilesButton.setOnAction(e -> addFiles());
 
-        addFolderButton = new Button("Add Folder...");
+        addFolderButton = new Button("Select From Folder");
         addFolderButton.setOnAction(e -> addFolder());
 
         removeSelectedButton = new Button("Remove Selected");
         removeSelectedButton.setOnAction(e -> removeSelected());
         removeSelectedButton.setDisable(true);
 
+        // Search field to filter the file table
+        TextField searchField = new TextField();
+        searchField.setPromptText("Search files...");
+        searchField.setPrefWidth(180);
+        searchField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (fileTable != null) {
+                fileTable.filterByName(newVal);
+            }
+        });
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+
         buttonBar.getChildren().addAll(
-            addFilesButton, addFolderButton, removeSelectedButton
+            addFilesButton, addFolderButton, removeSelectedButton, spacer, searchField
         );
 
         // File classification panel
@@ -116,6 +129,7 @@ public class FileSelectionStep extends AbstractWizardStep {
         fileTable.setOnFilesDropped(this::addFilesFromDrop);
         fileTable.setOnFileRemoved(this::removeFile);
         fileTable.setOnFileTypeChanged(this::onFileTypeChanged);
+        fileTable.setChecksumLookup(df -> model.getChecksum(df));
 
         // Enable remove button when selection changes
         fileTable.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {

@@ -51,10 +51,10 @@ public class SubmissionTypeStep extends AbstractWizardStep {
         // Radio button group
         submissionTypeGroup = new ToggleGroup();
 
-        // PRIDE Submission (Mass Spectrometry)
+        // Mass Spectrometry Submission
         VBox prideBox = createSubmissionOption(
             "Mass Spectrometry Proteomics",
-            "PRIDE",
+            "MS",
             "Submit mass spectrometry-based proteomics data:\n\n" +
             "  \u2022 RAW files from your mass spectrometer\n" +
             "  \u2022 Analysis outputs (MaxQuant, DIA-NN, FragPipe, Spectronaut, etc.)\n" +
@@ -67,7 +67,7 @@ public class SubmissionTypeStep extends AbstractWizardStep {
         // Affinity Proteomics Submission
         VBox affinityBox = createSubmissionOption(
             "Affinity Proteomics",
-            "Non-MS",
+            "Affinity",
             "Submit affinity-based proteomics data:\n\n" +
             "  \u2022 SomaScan (ADAT files)\n" +
             "  \u2022 Olink (NPX or Parquet files)\n" +
@@ -267,7 +267,7 @@ public class SubmissionTypeStep extends AbstractWizardStep {
         // Always valid since one option is pre-selected
         valid.set(true);
 
-        // Listen for selection changes
+        // Listen for selection changes to update model
         submissionTypeGroup.selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
                 String optionId = (String) newVal.getUserData();
@@ -385,8 +385,13 @@ public class SubmissionTypeStep extends AbstractWizardStep {
 
     @Override
     protected void onStepEntering() {
+        // Block resubmission in test mode
+        if (model.isTrainingMode()) {
+            resubmissionRadio.setDisable(true);
+        }
+
         // Restore previous selection if any
-        if (model.isResubmissionMode()) {
+        if (model.isResubmissionMode() && !model.isTrainingMode()) {
             resubmissionRadio.setSelected(true);
         } else {
             SubmissionTypeConstants currentType = model.getSubmissionType();
