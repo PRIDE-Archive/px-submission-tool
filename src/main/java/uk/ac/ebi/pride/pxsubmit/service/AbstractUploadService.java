@@ -30,6 +30,7 @@ public abstract class AbstractUploadService extends Service<UploadResult> {
     private final IntegerProperty totalFiles = new SimpleIntegerProperty(0);
     private final IntegerProperty uploadedFiles = new SimpleIntegerProperty(0);
     private final StringProperty currentFileName = new SimpleStringProperty("");
+    private final DoubleProperty currentFileProgress = new SimpleDoubleProperty(0);
 
     // Status tracking
     private final ObservableList<String> uploadLog = FXCollections.observableArrayList();
@@ -58,6 +59,7 @@ public abstract class AbstractUploadService extends Service<UploadResult> {
     public IntegerProperty totalFilesProperty() { return totalFiles; }
     public IntegerProperty uploadedFilesProperty() { return uploadedFiles; }
     public StringProperty currentFileNameProperty() { return currentFileName; }
+    public DoubleProperty currentFileProgressProperty() { return currentFileProgress; }
     public ObservableList<String> getUploadLog() { return uploadLog; }
     public TransferStatistics getTransferStatistics() { return transferStatistics; }
 

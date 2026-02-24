@@ -67,6 +67,7 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
     private final LongProperty totalBytes = new SimpleLongProperty(0);
     private final LongProperty uploadedBytes = new SimpleLongProperty(0);
     private final StringProperty currentFileName = new SimpleStringProperty("");
+    private final DoubleProperty currentFileProgress = new SimpleDoubleProperty(0);
     private final StringProperty statusMessage = new SimpleStringProperty("Ready");
     private final DoubleProperty overallProgress = new SimpleDoubleProperty(0);
     private final ObjectProperty<UploadMethod> activeMethod = new SimpleObjectProperty<>();
@@ -122,6 +123,7 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
     public LongProperty totalBytesProperty() { return totalBytes; }
     public LongProperty uploadedBytesProperty() { return uploadedBytes; }
     public StringProperty currentFileNameProperty() { return currentFileName; }
+    public DoubleProperty currentFileProgressProperty() { return currentFileProgress; }
     public StringProperty statusMessageProperty() { return statusMessage; }
     public DoubleProperty overallProgressProperty() { return overallProgress; }
     public ObjectProperty<UploadMethod> activeMethodProperty() { return activeMethod; }
@@ -370,6 +372,10 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
 
             service.currentFileNameProperty().addListener((obs, oldVal, newVal) -> {
                 Platform.runLater(() -> currentFileName.set(newVal));
+            });
+
+            service.currentFileProgressProperty().addListener((obs, oldVal, newVal) -> {
+                Platform.runLater(() -> currentFileProgress.set(newVal.doubleValue()));
             });
 
             // Forward logs
