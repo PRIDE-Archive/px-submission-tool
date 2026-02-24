@@ -37,6 +37,7 @@ public class ChecksumComputationStep extends AbstractWizardStep {
     private ProgressBar overallProgress;
     private Label statusLabel;
     private Label progressLabel;
+    private Label etaLabel;
     private Button startButton;
     private Button cancelButton;
 
@@ -45,6 +46,7 @@ public class ChecksumComputationStep extends AbstractWizardStep {
     private final BooleanProperty completed = new SimpleBooleanProperty(false);
     private ChecksumService checksumService;
     private final Map<String, FileChecksumRow> fileRowMap = new ConcurrentHashMap<>();
+    private long computationStartTime;
 
     public ChecksumComputationStep(SubmissionModel model) {
         super("checksum-computation",
@@ -121,6 +123,11 @@ public class ChecksumComputationStep extends AbstractWizardStep {
         progressLabel = new Label("0 / 0 files processed");
         progressLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 12px;");
 
+        etaLabel = new Label("");
+        etaLabel.setStyle("-fx-text-fill: #555; -fx-font-size: 12px;");
+        etaLabel.setVisible(false);
+        etaLabel.setManaged(false);
+
         overallProgress = new ProgressBar(0);
         overallProgress.setPrefWidth(Double.MAX_VALUE);
         overallProgress.setPrefHeight(25);
@@ -147,6 +154,7 @@ public class ChecksumComputationStep extends AbstractWizardStep {
         progressSection.getChildren().addAll(
             statusLabel,
             progressLabel,
+            etaLabel,
             overallProgress,
             buttonBox
         );
@@ -179,14 +187,24 @@ public class ChecksumComputationStep extends AbstractWizardStep {
         populateFileTable();
         logger.info("Files added to table: {}", fileTable.getItems().size());
 
-        // Check if checksums are already computed
+        // Check if checksums are already computed and still valid
         if (model.areChecksumsCalculated() && !model.getChecksums().isEmpty()) {
-            logger.info("Checksums already computed, marking all as completed");
-            // Mark as completed and proceed
-            markAllAsCompleted();
-            completed.set(true);
-            logger.info("Step marked as completed, but NOT auto-advancing");
-            return;
+            // Count actual files (excluding checksum.txt)
+            long fileCount = model.getFiles().stream()
+                .filter(f -> !"checksum.txt".equals(f.getFileName()))
+                .count();
+            long checksumCount = model.getChecksums().size();
+
+            if (fileCount == checksumCount) {
+                logger.info("Checksums already computed and valid, marking all as completed");
+                markAllAsCompleted();
+                completed.set(true);
+                logger.info("Step marked as completed, but NOT auto-advancing");
+                return;
+            } else {
+                logger.info("File count changed ({} files vs {} checksums), recomputing", fileCount, checksumCount);
+                model.clearChecksums();
+            }
         }
 
         // Auto-start computation
@@ -242,6 +260,10 @@ public class ChecksumComputationStep extends AbstractWizardStep {
         startButton.setDisable(true);
         startButton.setVisible(false);
         cancelButton.setVisible(true);
+        etaLabel.setVisible(true);
+        etaLabel.setManaged(true);
+        etaLabel.setText("Estimated time: calculating...");
+        computationStartTime = System.currentTimeMillis();
 
         statusLabel.setText("Computing checksums...");
         logger.info("Starting checksum computation for {} files", model.getFiles().size());
@@ -270,6 +292,17 @@ public class ChecksumComputationStep extends AbstractWizardStep {
                 int processed = newVal.intValue();
                 int total = checksumService.getTotalFiles();
                 progressLabel.setText(processed + " / " + total + " files processed");
+
+                // Calculate ETA
+                if (processed > 0 && processed < total) {
+                    long elapsed = System.currentTimeMillis() - computationStartTime;
+                    long estimatedTotal = (elapsed * total) / processed;
+                    long remaining = estimatedTotal - elapsed;
+                    etaLabel.setText("Estimated time remaining: " + formatDuration(remaining));
+                } else if (processed >= total) {
+                    long elapsed = System.currentTimeMillis() - computationStartTime;
+                    etaLabel.setText("Completed in " + formatDuration(elapsed));
+                }
             });
         });
 
@@ -382,6 +415,19 @@ public class ChecksumComputationStep extends AbstractWizardStep {
             }
         } catch (IOException ex) {
             logger.warn("Could not write checksum file", ex);
+        }
+    }
+
+    private static String formatDuration(long millis) {
+        long seconds = millis / 1000;
+        long minutes = seconds / 60;
+        long hours = minutes / 60;
+        if (hours > 0) {
+            return String.format("%dh %dm %ds", hours, minutes % 60, seconds % 60);
+        } else if (minutes > 0) {
+            return String.format("%dm %ds", minutes, seconds % 60);
+        } else {
+            return String.format("%ds", Math.max(1, seconds));
         }
     }
 

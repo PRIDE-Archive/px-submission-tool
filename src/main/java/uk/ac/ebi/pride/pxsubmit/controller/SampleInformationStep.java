@@ -124,12 +124,23 @@ public class SampleInformationStep extends AbstractWizardStep {
         sectionTitle.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
         box.getChildren().add(sectionTitle);
 
-        // Create template cards
-        for (String[] template : SDRF_TEMPLATES) {
-            HBox card = createTemplateCard(template[0], template[1], template[2]);
-            box.getChildren().add(card);
+        // Arrange template cards in two columns
+        GridPane grid = new GridPane();
+        grid.setHgap(12);
+        grid.setVgap(12);
+        ColumnConstraints col1 = new ColumnConstraints();
+        col1.setPercentWidth(50);
+        ColumnConstraints col2 = new ColumnConstraints();
+        col2.setPercentWidth(50);
+        grid.getColumnConstraints().addAll(col1, col2);
+
+        for (int i = 0; i < SDRF_TEMPLATES.length; i++) {
+            HBox card = createTemplateCard(SDRF_TEMPLATES[i][0], SDRF_TEMPLATES[i][1], SDRF_TEMPLATES[i][2]);
+            HBox.setHgrow(card, Priority.ALWAYS);
+            grid.add(card, i % 2, i / 2);
         }
 
+        box.getChildren().add(grid);
         return box;
     }
 
@@ -156,11 +167,17 @@ public class SampleInformationStep extends AbstractWizardStep {
 
         infoBox.getChildren().addAll(nameLabel, descLabel);
 
-        // Download button
-        Button downloadBtn = new Button("Download");
+        // Download button (arrow-down icon)
+        Button downloadBtn = new Button("\u2B07");
+        downloadBtn.setTooltip(new Tooltip("Download " + name + " template"));
         downloadBtn.setStyle(
             "-fx-background-color: #0066cc; " +
             "-fx-text-fill: white; " +
+            "-fx-font-size: 16px; " +
+            "-fx-min-width: 36; -fx-min-height: 36; " +
+            "-fx-max-width: 36; -fx-max-height: 36; " +
+            "-fx-padding: 0; " +
+            "-fx-background-radius: 18; " +
             "-fx-cursor: hand;");
         downloadBtn.setOnAction(e -> downloadTemplate(name, type));
 

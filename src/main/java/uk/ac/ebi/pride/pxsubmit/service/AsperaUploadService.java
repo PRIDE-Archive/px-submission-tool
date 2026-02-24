@@ -46,6 +46,10 @@ public class AsperaUploadService extends AbstractUploadService {
     private final DoubleProperty overallProgress = new SimpleDoubleProperty(0);
     private final Map<String, FileTransferStat> activeFileStats = new ConcurrentHashMap<>();
 
+    // Pause/resume support
+    private volatile String currentTransferId;
+    private volatile boolean paused = false;
+
     public AsperaUploadService(List<DataFile> files, UploadDetail uploadDetail, String ascpPath) {
         super(files, uploadDetail);
         this.ascpPath = ascpPath;
@@ -59,6 +63,40 @@ public class AsperaUploadService extends AbstractUploadService {
     // Aspera-specific property accessors
     public StringProperty statusMessageProperty() { return statusMessage; }
     public DoubleProperty overallProgressProperty() { return overallProgress; }
+
+    /**
+     * Pause the Aspera transfer by setting the target rate to 0.
+     */
+    public void pause() {
+        if (currentTransferId != null && !paused) {
+            try {
+                FaspManager.getSingleton().setRate(currentTransferId, 0, 0, Policy.FIXED);
+                paused = true;
+                logger.info("Aspera transfer paused");
+            } catch (Exception e) {
+                logger.warn("Failed to pause Aspera transfer: {}", e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * Resume a paused Aspera transfer by restoring the target rate.
+     */
+    public void resume() {
+        if (currentTransferId != null && paused) {
+            try {
+                FaspManager.getSingleton().setRate(currentTransferId, TARGET_RATE_KBPS, MIN_RATE_KBPS, Policy.FAIR);
+                paused = false;
+                logger.info("Aspera transfer resumed");
+            } catch (Exception e) {
+                logger.warn("Failed to resume Aspera transfer: {}", e.getMessage());
+            }
+        }
+    }
+
+    public boolean isPaused() {
+        return paused;
+    }
 
     /**
      * Main upload task using Aspera FASP
@@ -243,6 +281,7 @@ public class AsperaUploadService extends AbstractUploadService {
             lastProgressTime.set(System.currentTimeMillis());
 
             String transferId = FaspManager.getSingleton().startTransfer(order);
+            currentTransferId = transferId;
             AsperaUploadService.this.log("Transfer started with ID: " + transferId);
         }
 

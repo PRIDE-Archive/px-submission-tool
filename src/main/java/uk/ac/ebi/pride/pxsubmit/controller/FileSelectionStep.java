@@ -71,14 +71,14 @@ public class FileSelectionStep extends AbstractWizardStep {
         root.setPadding(new Insets(10));
 
         // Top: Instructions and buttons
-        VBox topBox = new VBox(10);
-        topBox.setPadding(new Insets(0, 0, 10, 0));
+        VBox topBox = new VBox(5);
+        topBox.setPadding(new Insets(0, 0, 5, 0));
 
         Label instructionLabel = new Label(
             "Add files using the buttons below or drag and drop files into the table. " +
             "File types will be automatically detected but you can change them manually.");
         instructionLabel.setWrapText(true);
-        instructionLabel.setStyle("-fx-text-fill: #666;");
+        instructionLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 11px;");
 
         // Button bar
         HBox buttonBar = new HBox(10);
@@ -125,8 +125,8 @@ public class FileSelectionStep extends AbstractWizardStep {
         root.setCenter(fileTable);
 
         // Bottom: Summary, pagination, validation feedback, and validation status
-        VBox bottomBox = new VBox(10);
-        bottomBox.setPadding(new Insets(10, 0, 0, 0));
+        VBox bottomBox = new VBox(5);
+        bottomBox.setPadding(new Insets(5, 0, 0, 0));
 
         // Pagination controls (auto-hidden when < 1000 files)
         javafx.scene.layout.HBox paginationControls = fileTable.createPaginationControls();

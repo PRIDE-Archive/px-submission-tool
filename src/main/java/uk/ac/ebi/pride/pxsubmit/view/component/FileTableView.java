@@ -107,6 +107,10 @@ public class FileTableView extends TableView<DataFile> {
         // Editable for type column
         setEditable(true);
 
+        // Fill available width
+        setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        setMaxWidth(Double.MAX_VALUE);
+
         // Placeholder
         setPlaceholder(createPlaceholder());
 

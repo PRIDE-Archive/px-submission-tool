@@ -84,20 +84,33 @@ public class ApiService {
         return CompletableFuture.supplyAsync(() -> {
             logger.info("Getting upload details for method: {}", method.getMethod());
 
-            String url;
+            RestTemplate restTemplate = createRestTemplate();
+            HttpHeaders headers = createHeaders();
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            // If ticketId provided, try reupload endpoint first (for resume scenarios)
             if (ticketId != null && !ticketId.isEmpty()) {
-                url = config.getReuploadDetailUrl(method.getMethod(), ticketId);
-                logger.debug("Using reupload URL: {}", url);
-            } else {
-                url = config.getUploadDetailUrl(method.getMethod());
-                logger.debug("Using upload URL: {}", url);
+                String reuploadUrl = config.getReuploadDetailUrl(method.getMethod(), ticketId);
+                logger.debug("Trying reupload URL: {}", reuploadUrl);
+                try {
+                    ResponseEntity<UploadDetail> response = restTemplate.exchange(
+                        reuploadUrl, HttpMethod.GET, entity, UploadDetail.class);
+                    UploadDetail detail = response.getBody();
+                    if (detail != null && detail.getDropBox() != null) {
+                        logger.info("Reupload details retrieved successfully");
+                        return detail;
+                    }
+                    logger.warn("Reupload endpoint returned incomplete details (missing dropBox), falling back to new upload");
+                } catch (Exception e) {
+                    logger.warn("Reupload endpoint failed, falling back to new upload: {}", e.getMessage());
+                }
             }
 
-            try {
-                RestTemplate restTemplate = createRestTemplate();
-                HttpHeaders headers = createHeaders();
-                HttpEntity<String> entity = new HttpEntity<>(headers);
+            // Regular upload endpoint (or fallback from reupload)
+            String url = config.getUploadDetailUrl(method.getMethod());
+            logger.debug("Using upload URL: {}", url);
 
+            try {
                 ResponseEntity<UploadDetail> response = restTemplate.exchange(
                     url, HttpMethod.GET, entity, UploadDetail.class);
 

@@ -12,13 +12,20 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
+import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
+import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.pxsubmit.controller.*;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
+import uk.ac.ebi.pride.pxsubmit.model.UploadCheckpoint;
 import uk.ac.ebi.pride.pxsubmit.util.DebugMode;
+import uk.ac.ebi.pride.pxsubmit.util.UploadCheckpointManager;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -124,7 +131,16 @@ public class PxSubmitApplication extends Application {
             stage.show();
             logger.info("Application window displayed");
 
-            // Start wizard
+            // Check for upload checkpoint (crash recovery)
+            if (UploadCheckpointManager.exists()) {
+                UploadCheckpoint checkpoint = UploadCheckpointManager.load();
+                if (checkpoint != null) {
+                    showResumeDialog(checkpoint);
+                    return;
+                }
+            }
+
+            // Start wizard normally
             wizardController.start();
 
         } catch (IOException e) {
@@ -170,6 +186,110 @@ public class PxSubmitApplication extends Application {
         wizardController.addStep(new SubmissionStep(model));
 
         logger.info("Wizard configured with {} steps", wizardController.getStepCount());
+    }
+
+    /**
+     * Show dialog asking user to resume interrupted upload or start fresh.
+     */
+    private void showResumeDialog(UploadCheckpoint checkpoint) {
+        int totalFiles = checkpoint.getFiles() != null ? checkpoint.getFiles().size() : 0;
+        int uploadedCount = checkpoint.getUploadedFileNames() != null ? checkpoint.getUploadedFileNames().size() : 0;
+        String timeStr = java.time.Instant.ofEpochMilli(checkpoint.getTimestamp())
+                .atZone(java.time.ZoneId.systemDefault())
+                .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Resume Upload");
+        alert.setHeaderText("A previous upload was interrupted");
+        alert.setContentText(String.format(
+                "An upload started on %s was not completed.\n" +
+                "Progress: %d of %d files uploaded.\n" +
+                "User: %s\n\n" +
+                "Would you like to resume or start a new submission?",
+                timeStr, uploadedCount, totalFiles, checkpoint.getUserName()));
+        alert.initOwner(primaryStage);
+
+        ButtonType resumeBtn = new ButtonType("Resume Upload");
+        ButtonType freshBtn = new ButtonType("Start Fresh");
+        ButtonType cancelBtn = new ButtonType("Cancel", javafx.scene.control.ButtonBar.ButtonData.CANCEL_CLOSE);
+        alert.getButtonTypes().setAll(resumeBtn, freshBtn, cancelBtn);
+
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == resumeBtn) {
+            restoreFromCheckpoint(checkpoint);
+        } else if (result.isPresent() && result.get() == freshBtn) {
+            UploadCheckpointManager.delete();
+            wizardController.start();
+        } else {
+            // Cancel - start normally anyway
+            wizardController.start();
+        }
+    }
+
+    /**
+     * Restore model state from checkpoint and start wizard at login step.
+     * After login succeeds, LoginStep will skip directly to the upload step.
+     */
+    private void restoreFromCheckpoint(UploadCheckpoint checkpoint) {
+        logger.info("Restoring from upload checkpoint");
+
+        // Set username (user will need to re-enter password)
+        model.setUserName(checkpoint.getUserName());
+
+        // Restore resubmission mode
+        model.setResubmissionMode(checkpoint.isResubmissionMode());
+
+        // Restore upload method
+        if (checkpoint.getUploadMethod() != null) {
+            try {
+                model.setUploadMethod(UploadMethod.valueOf(checkpoint.getUploadMethod()));
+            } catch (IllegalArgumentException e) {
+                model.setUploadMethod(UploadMethod.FTP);
+            }
+        }
+
+        // Restore files from checkpoint
+        if (checkpoint.getFiles() != null) {
+            for (UploadCheckpoint.FileEntry entry : checkpoint.getFiles()) {
+                File file = new File(entry.getFilePath());
+                if (file.exists()) {
+                    DataFile dataFile = new DataFile();
+                    dataFile.setFile(file);
+                    try {
+                        dataFile.setFileType(ProjectFileType.valueOf(entry.getFileType()));
+                    } catch (IllegalArgumentException e) {
+                        dataFile.setFileType(ProjectFileType.OTHER);
+                    }
+                    model.addFile(dataFile);
+                } else {
+                    logger.warn("Checkpoint file not found, skipping: {}", entry.getFilePath());
+                }
+            }
+        }
+
+        // Restore checksums
+        if (checkpoint.getChecksums() != null && !checkpoint.getChecksums().isEmpty()) {
+            java.util.Map<DataFile, String> checksumMap = new java.util.HashMap<>();
+            for (DataFile df : model.getFiles()) {
+                String checksum = checkpoint.getChecksums().get(df.getFileName());
+                if (checksum != null) {
+                    checksumMap.put(df, checksum);
+                }
+            }
+            model.setChecksums(checksumMap);
+        }
+
+        // Store checkpoint on model for SubmissionStep to use
+        model.setPendingCheckpoint(checkpoint);
+
+        // Start wizard at login step (user must re-authenticate)
+        // LoginStep will detect pendingCheckpoint and skip to submission after auth
+        wizardController.start();
+        wizardController.goToStep("login");
+
+        logger.info("Checkpoint restored: {} files, {} already uploaded",
+                checkpoint.getFiles() != null ? checkpoint.getFiles().size() : 0,
+                checkpoint.getUploadedFileNames() != null ? checkpoint.getUploadedFileNames().size() : 0);
     }
 
     /**

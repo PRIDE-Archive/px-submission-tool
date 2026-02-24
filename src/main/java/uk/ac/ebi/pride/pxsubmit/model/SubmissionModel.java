@@ -60,6 +60,9 @@ public class SubmissionModel {
     private final BooleanProperty loggedIn = new SimpleBooleanProperty(false);
     private final BooleanProperty bulkMode = new SimpleBooleanProperty(false);
 
+    // Upload resume support
+    private UploadCheckpoint pendingCheckpoint;
+
     // ==================== Submission Type ====================
 
     private final ObjectProperty<SubmissionTypeConstants> submissionType = new SimpleObjectProperty<>();
@@ -415,6 +418,7 @@ public class SubmissionModel {
         submissionType.set(null);
         resubmissionMode.set(false);
         bulkMode.set(false);
+        pendingCheckpoint = null;
     }
 
     /**
@@ -551,6 +555,10 @@ public class SubmissionModel {
     public BooleanProperty bulkModeProperty() { return bulkMode; }
     public boolean isBulkMode() { return bulkMode.get(); }
     public void setBulkMode(boolean value) { bulkMode.set(value); }
+
+    // Upload resume checkpoint
+    public UploadCheckpoint getPendingCheckpoint() { return pendingCheckpoint; }
+    public void setPendingCheckpoint(UploadCheckpoint value) { pendingCheckpoint = value; }
 
     // Submission type
     public ObjectProperty<SubmissionTypeConstants> submissionTypeProperty() { return submissionType; }

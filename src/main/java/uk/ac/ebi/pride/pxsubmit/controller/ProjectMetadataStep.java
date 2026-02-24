@@ -67,8 +67,8 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         form.setPadding(new Insets(20));
 
         // Project Title
-        VBox titleSection = createSection("Project Title *",
-            "A short descriptive title for your project (5-500 characters)");
+        VBox titleSection = createFieldSection("Project Title",
+            "A short descriptive title for your project (5-500 characters)", true);
         titleField = new TextField();
         titleField.setPromptText("e.g., Proteome analysis of human liver cancer cells");
         Tooltip titleTooltip = new Tooltip(
@@ -86,8 +86,8 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         titleSection.getChildren().add(titleBox);
 
         // Project Description
-        VBox descSection = createSection("Project Description *",
-            "Detailed description of your project (20-5000 characters)");
+        VBox descSection = createFieldSection("Project Description",
+            "Detailed description of your project (20-5000 characters)", true);
         descriptionArea = new TextArea();
         descriptionArea.setPromptText(
             "Describe your project, including:\n" +
@@ -107,8 +107,8 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         descSection.getChildren().addAll(descriptionArea, descriptionCounter);
 
         // Keywords
-        VBox keywordsSection = createSection("Keywords *",
-            "Type a keyword and press Enter to add it. Click \u2715 to remove.");
+        VBox keywordsSection = createFieldSection("Keywords",
+            "Type a keyword and press Enter to add it. Click \u2715 to remove.", true);
         keywordsInput = new ChipInput();
         keywordsInput.setPromptText("Type keyword and press Enter...");
         Tooltip keywordsTooltip = new Tooltip(
@@ -122,7 +122,7 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         keywordsSection.getChildren().addAll(keywordsInput, keywordsHint);
 
         // Experiment Type
-        VBox experimentTypeSection = createFieldSection("Experiment Type *",
+        VBox experimentTypeSection = createFieldSection("Experiment Type",
             "Select the type of mass spectrometry experiment", true);
         experimentTypeField = new OlsAutocomplete(OlsOntology.PRIDE);
         experimentTypeField.setPromptText("Search experiment type (e.g., Bottom-up, DIA, DDA)...");
@@ -133,8 +133,8 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         experimentTypeSection.getChildren().add(createQuickSelectPane(OlsService.getCommonExperimentTypes(), experimentTypeField));
 
         // Sample Processing Protocol
-        VBox sampleSection = createSection("Sample Processing Protocol *",
-            "Describe how samples were prepared for analysis");
+        VBox sampleSection = createFieldSection("Sample Processing Protocol",
+            "Describe how samples were prepared for analysis", true);
         sampleProtocolArea = new TextArea();
         sampleProtocolArea.setPromptText(
             "Describe sample processing steps:\n" +
@@ -152,8 +152,8 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         sampleSection.getChildren().add(sampleProtocolArea);
 
         // Data Processing Protocol
-        VBox dataSection = createSection("Data Processing Protocol *",
-            "Describe how data was analyzed");
+        VBox dataSection = createFieldSection("Data Processing Protocol",
+            "Describe how data was analyzed", true);
         dataProtocolArea = new TextArea();
         dataProtocolArea.setPromptText(
             "Describe data processing:\n" +
@@ -173,10 +173,6 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         // Validation feedback
         validationFeedback = new ValidationFeedback();
 
-        // Required fields note
-        Label requiredNote = new Label("* Required fields");
-        requiredNote.setStyle("-fx-text-fill: #666; -fx-font-style: italic;");
-
         form.getChildren().addAll(
             titleSection,
             descSection,
@@ -184,8 +180,7 @@ public class ProjectMetadataStep extends AbstractWizardStep {
             sampleSection,
             dataSection,
             experimentTypeSection,
-            validationFeedback,
-            requiredNote
+            validationFeedback
         );
 
         scrollPane.setContent(form);
