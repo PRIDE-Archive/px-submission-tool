@@ -85,19 +85,25 @@ public class SubmissionStep extends AbstractWizardStep {
 
     @Override
     protected Parent createContent() {
-        VBox root = new VBox(20);
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setStyle("-fx-background-color: transparent;");
+
+        VBox root = new VBox(15);
         root.setPadding(new Insets(20));
         root.setAlignment(Pos.TOP_CENTER);
 
         // Status section
-        statusBox = new VBox(15);
+        statusBox = new VBox(12);
         statusBox.setAlignment(Pos.CENTER);
         statusBox.setStyle(
             "-fx-background-color: #f8f9fa; " +
             "-fx-border-color: #e9ecef; " +
             "-fx-border-radius: 8; " +
             "-fx-background-radius: 8; " +
-            "-fx-padding: 30;");
+            "-fx-padding: 20;");
         statusBox.setMaxWidth(600);
 
         Label titleLabel = new Label("Ready to Upload");
@@ -234,13 +240,14 @@ public class SubmissionStep extends AbstractWizardStep {
         logPane.setExpanded(true);
 
         logListView = new ListView<>();
-        logListView.setPrefHeight(300);
-        logListView.setMinHeight(200);
+        logListView.setPrefHeight(180);
+        logListView.setMinHeight(100);
         logPane.setContent(logListView);
 
         root.getChildren().addAll(statusBox, logPane);
 
-        return root;
+        scrollPane.setContent(root);
+        return scrollPane;
     }
 
     @Override
@@ -488,17 +495,20 @@ public class SubmissionStep extends AbstractWizardStep {
         // Update checkpoint with upload details (host/folder now known)
         updateCheckpointWithUploadDetails(uploadDetail);
 
-        // Bind progress to UI
-        uploadManager.overallProgressProperty().addListener((obs, oldVal, newVal) -> {
-            Platform.runLater(() -> {
-                double baseProgress = 0.4; // Progress after checksums
-                double uploadProgress = newVal.doubleValue() * 0.5; // Upload is 50% of remaining
-                overallProgress.setProgress(baseProgress + uploadProgress);
-            });
+        // Bind overall progress bar to bytes transferred
+        uploadManager.uploadedBytesProperty().addListener((obs, oldVal, newVal) -> {
+            long total = uploadManager.totalBytesProperty().get();
+            double progress = total > 0 ? (double) newVal.longValue() / total : 0;
+            Platform.runLater(() -> overallProgress.setProgress(progress));
         });
 
         uploadManager.currentFileNameProperty().addListener((obs, oldVal, newVal) -> {
             Platform.runLater(() -> currentFileLabel.setText("Uploading: " + newVal));
+        });
+
+        // Bind current file progress bar
+        uploadManager.currentFileProgressProperty().addListener((obs, oldVal, newVal) -> {
+            Platform.runLater(() -> currentFileProgress.setProgress(newVal.doubleValue()));
         });
 
         uploadManager.statusMessageProperty().addListener((obs, oldVal, newVal) -> {

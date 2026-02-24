@@ -362,9 +362,24 @@ public class AsperaUploadService extends AbstractUploadService {
                         int completed = (int) stats.getFilesComplete();
                         long transferred = stats.getTotalTransferredBytes();
 
+                        // Estimate per-file progress from byte data
+                        long completedFilesBytes = 0;
+                        for (int i = 0; i < Math.min(completed, files.size()); i++) {
+                            if (files.get(i).getFile() != null) {
+                                completedFilesBytes += files.get(i).getFile().length();
+                            }
+                        }
+                        long currentFileTransferred = transferred - completedFilesBytes;
+                        long currentFileSize = (completed < files.size() && files.get(completed).getFile() != null)
+                                ? files.get(completed).getFile().length() : 0;
+                        double fileProg = (currentFileSize > 0)
+                                ? Math.min(1.0, (double) currentFileTransferred / currentFileSize) : 0;
+                        double finalFileProg = fileProg;
+
                         Platform.runLater(() -> {
                             uploadedFilesProperty().set(completed);
                             uploadedBytesProperty().set(transferred);
+                            currentFileProgressProperty().set(finalFileProg);
 
                             double progress = totalFilesProperty().get() > 0 ?
                                     (double) completed / totalFilesProperty().get() : 0;

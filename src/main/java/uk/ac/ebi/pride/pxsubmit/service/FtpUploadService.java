@@ -45,7 +45,6 @@ public class FtpUploadService extends AbstractUploadService {
 
     // FTP-specific properties
     private final int concurrentUploads;
-    private final DoubleProperty currentFileProgress = new SimpleDoubleProperty(0);
 
     // Status tracking
     private final ObservableList<DataFile> completedFiles = FXCollections.observableArrayList();
@@ -101,7 +100,6 @@ public class FtpUploadService extends AbstractUploadService {
     }
 
     // FTP-specific property accessors
-    public DoubleProperty currentFileProgressProperty() { return currentFileProgress; }
     public ObservableList<DataFile> getCompletedFiles() { return completedFiles; }
     public ObservableList<DataFile> getFailedFiles() { return failedFiles; }
 
@@ -492,7 +490,7 @@ public class FtpUploadService extends AbstractUploadService {
                                     bytesUploaded.addAndGet(bytesRead);
                                     if (fileSize > 0) {
                                         double fileProgress = (double) (effectiveOffset + bytesRead) / fileSize;
-                                        Platform.runLater(() -> currentFileProgress.set(fileProgress));
+                                        Platform.runLater(() -> currentFileProgressProperty().set(fileProgress));
                                     }
                                 });
 
