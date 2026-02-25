@@ -109,6 +109,12 @@ public class FileClassificationPanel extends VBox {
 
         // Update badges
         badgeContainer.getChildren().clear();
+
+        // "All" badge at the start
+        if (!files.isEmpty()) {
+            badgeContainer.getChildren().add(createAllBadge());
+        }
+
         for (ProjectFileType type : getDisplayOrder()) {
             List<DataFile> typeFiles = filesByType.get(type);
             if (!typeFiles.isEmpty() || (showWarnings.get() && FileTypeDetector.isMandatory(type))) {
@@ -199,6 +205,47 @@ public class FileClassificationPanel extends VBox {
         });
 
         // Hover effect
+        badge.setOnMouseEntered(e -> badge.setStyle(badge.getStyle() + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 4, 0, 0, 1);"));
+        badge.setOnMouseExited(e -> badge.setStyle(badge.getStyle().replace("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 4, 0, 0, 1);", "")));
+
+        return badge;
+    }
+
+    /**
+     * Create the "All" badge that shows/filters all files
+     */
+    private HBox createAllBadge() {
+        HBox badge = new HBox(6);
+        badge.setAlignment(Pos.CENTER_LEFT);
+        badge.setPadding(new Insets(6, 12, 6, 12));
+        badge.setStyle(
+                "-fx-background-color: white; " +
+                "-fx-border-color: #6c757d; " +
+                "-fx-border-radius: 16; " +
+                "-fx-background-radius: 16; " +
+                "-fx-cursor: hand;");
+
+        Label icon = new Label("\u2630"); // hamburger icon
+        icon.setStyle("-fx-text-fill: #6c757d;");
+
+        Label typeLabel = new Label("All");
+        typeLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #6c757d;");
+
+        Label countLabel = new Label(String.valueOf(files.size()));
+        countLabel.setStyle("-fx-text-fill: #666;");
+
+        badge.getChildren().addAll(icon, typeLabel, countLabel);
+
+        Tooltip tooltip = new Tooltip("Show all files");
+        tooltip.setShowDelay(Duration.millis(300));
+        Tooltip.install(badge, tooltip);
+
+        badge.setOnMouseClicked(e -> {
+            if (selectionHandler != null) {
+                selectionHandler.onTypeSelected(null, new ArrayList<>(files));
+            }
+        });
+
         badge.setOnMouseEntered(e -> badge.setStyle(badge.getStyle() + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 4, 0, 0, 1);"));
         badge.setOnMouseExited(e -> badge.setStyle(badge.getStyle().replace("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 4, 0, 0, 1);", "")));
 

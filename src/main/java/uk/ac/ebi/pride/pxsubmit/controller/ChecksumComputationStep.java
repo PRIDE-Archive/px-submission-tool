@@ -267,6 +267,7 @@ public class ChecksumComputationStep extends AbstractWizardStep {
 
         statusLabel.setText("Computing checksums...");
         logger.info("Starting checksum computation for {} files", model.getFiles().size());
+        if (wizardController != null) wizardController.showGlobalProgress();
 
         checksumService = ServiceFactory.getInstance().createChecksumService(model.getFiles());
 
@@ -334,6 +335,7 @@ public class ChecksumComputationStep extends AbstractWizardStep {
                 cancelButton.setVisible(false);
                 computing.set(false);
                 completed.set(true);
+                if (wizardController != null) wizardController.hideGlobalProgress();
 
                 logger.info("Checksum computation completed successfully");
 
@@ -354,6 +356,7 @@ public class ChecksumComputationStep extends AbstractWizardStep {
                 startButton.setDisable(false);
                 startButton.setVisible(true);
                 cancelButton.setVisible(false);
+                if (wizardController != null) wizardController.hideGlobalProgress();
 
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setTitle("Checksum Error");
@@ -374,6 +377,7 @@ public class ChecksumComputationStep extends AbstractWizardStep {
                 startButton.setDisable(false);
                 startButton.setVisible(true);
                 cancelButton.setVisible(false);
+                if (wizardController != null) wizardController.hideGlobalProgress();
 
                 // Reset all rows to pending
                 for (FileChecksumRow row : fileTable.getItems()) {

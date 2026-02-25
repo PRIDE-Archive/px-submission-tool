@@ -115,6 +115,9 @@ public class PxSubmitApplication extends Application {
                     Objects.requireNonNull(getClass().getResource("/css/main.css")).toExternalForm()
             );
 
+            // Initialize theme manager with scene (applies saved theme + color style)
+            uk.ac.ebi.pride.pxsubmit.view.ThemeManager.getInstance().initialize(scene);
+
             // Configure stage
             stage.setTitle(getWindowTitle());
             stage.setScene(scene);

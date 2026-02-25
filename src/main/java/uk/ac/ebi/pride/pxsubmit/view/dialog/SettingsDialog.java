@@ -8,7 +8,6 @@ import javafx.stage.Window;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
-import uk.ac.ebi.pride.pxsubmit.view.ThemeManager;
 
 import java.util.prefs.Preferences;
 
@@ -36,7 +35,6 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
     private final Preferences preferences;
 
     // UI Controls
-    private ComboBox<ThemeManager.Theme> themeCombo;
     private ComboBox<UploadMethod> uploadMethodCombo;
     private Spinner<Integer> concurrentUploadsSpinner;
     private Spinner<Integer> connectionTimeoutSpinner;
@@ -73,7 +71,6 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
             if (buttonType == ButtonType.OK) {
                 saveSettings();
                 return new Settings(
-                        themeCombo.getValue(),
                         uploadMethodCombo.getValue(),
                         concurrentUploadsSpinner.getValue(),
                         connectionTimeoutSpinner.getValue(),
@@ -90,9 +87,6 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
         VBox content = new VBox(20);
         content.setPadding(new Insets(20));
 
-        // Appearance section
-        TitledPane appearancePane = createAppearanceSection();
-
         // Upload section
         TitledPane uploadPane = createUploadSection();
 
@@ -102,31 +96,9 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
         // Advanced section
         TitledPane advancedPane = createAdvancedSection();
 
-        content.getChildren().addAll(appearancePane, uploadPane, connectionPane, advancedPane);
+        content.getChildren().addAll(uploadPane, connectionPane, advancedPane);
 
         return content;
-    }
-
-    private TitledPane createAppearanceSection() {
-        GridPane grid = createFormGrid();
-
-        // Theme
-        Label themeLabel = new Label("Theme:");
-        themeCombo = new ComboBox<>();
-        themeCombo.getItems().addAll(ThemeManager.Theme.values());
-        themeCombo.setValue(ThemeManager.getInstance().getCurrentTheme());
-
-        // Apply theme immediately on change
-        themeCombo.setOnAction(e -> {
-            ThemeManager.getInstance().setTheme(themeCombo.getValue());
-        });
-
-        grid.add(themeLabel, 0, 0);
-        grid.add(themeCombo, 1, 0);
-
-        TitledPane pane = new TitledPane("Appearance", grid);
-        pane.setCollapsible(false);
-        return pane;
     }
 
     private TitledPane createUploadSection() {
@@ -241,14 +213,6 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
 
     private void loadSettings() {
         try {
-            // Theme
-            String themeName = preferences.get("theme", ThemeManager.Theme.LIGHT.name());
-            try {
-                themeCombo.setValue(ThemeManager.Theme.valueOf(themeName));
-            } catch (IllegalArgumentException e) {
-                themeCombo.setValue(ThemeManager.Theme.LIGHT);
-            }
-
             // Upload method
             String methodName = preferences.get(PREF_UPLOAD_METHOD, UploadMethod.FTP.name());
             try {
@@ -284,9 +248,6 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
 
     private void saveSettings() {
         try {
-            // Theme
-            preferences.put("theme", themeCombo.getValue().name());
-
             // Upload method
             preferences.put(PREF_UPLOAD_METHOD, uploadMethodCombo.getValue().name());
 
@@ -315,23 +276,18 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
     }
 
     private void resetToDefaults() {
-        themeCombo.setValue(ThemeManager.Theme.LIGHT);
         uploadMethodCombo.setValue(UploadMethod.FTP);
         concurrentUploadsSpinner.getValueFactory().setValue(3);
         connectionTimeoutSpinner.getValueFactory().setValue(30);
         maxRetriesSpinner.getValueFactory().setValue(3);
         autoValidateCheck.setSelected(true);
         showAdvancedCheck.setSelected(false);
-
-        // Apply theme immediately
-        ThemeManager.getInstance().setTheme(ThemeManager.Theme.LIGHT);
     }
 
     /**
      * Settings data class
      */
     public record Settings(
-            ThemeManager.Theme theme,
             UploadMethod defaultUploadMethod,
             int concurrentUploads,
             int connectionTimeout,

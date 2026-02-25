@@ -12,6 +12,7 @@ import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
+import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -54,7 +55,9 @@ public class WizardController implements Initializable {
     @FXML private Label trainingModeLabel;
     @FXML private Label userLabel;
     @FXML private Button logoutButton;
+    @FXML private Button settingsButton;
     @FXML private HBox stepIndicatorContainer;
+    @FXML private ProgressBar globalProgressBar;
 
     @FXML private StackPane contentPane;
 
@@ -106,6 +109,13 @@ public class WizardController implements Initializable {
             }
             return null;
         }, currentStepIndex, steps));
+
+        // Settings button
+        if (settingsButton != null) {
+            settingsButton.setOnAction(e ->
+                uk.ac.ebi.pride.pxsubmit.view.dialog.SettingsDialog.show(
+                    settingsButton.getScene().getWindow()));
+        }
 
         // Clip content pane to prevent overflow during resize
         Rectangle clip = new Rectangle();
@@ -643,6 +653,29 @@ public class WizardController implements Initializable {
             }
             backButton.disableProperty().bind(canGoBack.not());
             cancelButton.setDisable(false);
+        }
+    }
+
+    /**
+     * Show the global activity progress bar (indeterminate).
+     * Call this when a background task starts (SDRF validation, checksum, upload).
+     */
+    public void showGlobalProgress() {
+        if (globalProgressBar != null) {
+            globalProgressBar.setProgress(-1);
+            globalProgressBar.setVisible(true);
+            globalProgressBar.setManaged(true);
+        }
+    }
+
+    /**
+     * Hide the global activity progress bar.
+     * Call this when a background task completes or fails.
+     */
+    public void hideGlobalProgress() {
+        if (globalProgressBar != null) {
+            globalProgressBar.setVisible(false);
+            globalProgressBar.setManaged(false);
         }
     }
 

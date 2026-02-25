@@ -523,6 +523,7 @@ public class FileSelectionStep extends AbstractWizardStep {
         validationProgress.setVisible(true);
         validationProgress.progressProperty().bind(validationService.progressProperty());
         validationStatus.textProperty().bind(validationService.messageProperty());
+        if (wizardController != null) wizardController.showGlobalProgress();
 
         validationService.setOnSucceeded(e -> {
             ValidationService.ValidationResult result = validationService.getValue();
@@ -530,6 +531,7 @@ public class FileSelectionStep extends AbstractWizardStep {
                 validationProgress.setVisible(false);
                 validationProgress.progressProperty().unbind();
                 validationStatus.textProperty().unbind();
+                if (wizardController != null) wizardController.hideGlobalProgress();
 
                 if (result.isValid()) {
                     validationStatus.setText("Validation passed!");
@@ -557,6 +559,7 @@ public class FileSelectionStep extends AbstractWizardStep {
                 validationProgress.setVisible(false);
                 validationProgress.progressProperty().unbind();
                 validationStatus.textProperty().unbind();
+                if (wizardController != null) wizardController.hideGlobalProgress();
                 validationStatus.setText("Validation error: " + e.getSource().getException().getMessage());
                 validationStatus.setStyle("-fx-text-fill: #dc3545;");
             });

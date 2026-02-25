@@ -300,6 +300,7 @@ public class SubmissionStep extends AbstractWizardStep {
         overallProgress.setVisible(true);
         liveStatsBox.setVisible(true);
         startStatsTimeline();
+        if (wizardController != null) wizardController.showGlobalProgress();
 
         addLog("Starting submission...");
         uploadStartTimeMs = System.currentTimeMillis();
@@ -663,6 +664,7 @@ public class SubmissionStep extends AbstractWizardStep {
 
             completed.set(true);
             uploading.set(false);
+            if (wizardController != null) wizardController.hideGlobalProgress();
 
             updateStatus("Submission Complete!");
             addLog("=".repeat(40));
@@ -808,6 +810,7 @@ public class SubmissionStep extends AbstractWizardStep {
         }
         Platform.runLater(() -> {
             uploading.set(false);
+            if (wizardController != null) wizardController.hideGlobalProgress();
             startButton.setDisable(false);
             cancelButton.setVisible(false);
             pauseButton.setVisible(false);
