@@ -186,10 +186,6 @@ public class LabHeadStep extends AbstractWizardStep {
         validationLabel = new Label();
         validationLabel.setStyle("-fx-font-weight: bold;");
 
-        // Required note
-        Label requiredNote = new Label("* Required fields");
-        requiredNote.setStyle("-fx-text-fill: #666; -fx-font-style: italic;");
-
         formBox.getChildren().addAll(
             nameSection,
             emailSection,
@@ -198,8 +194,7 @@ public class LabHeadStep extends AbstractWizardStep {
             new Separator(),
             orcidSection,
             new Separator(),
-            validationLabel,
-            requiredNote
+            validationLabel
         );
 
         content.getChildren().addAll(infoBox, formBox);

@@ -53,7 +53,7 @@
         <uk.ac.ebi.jmzidml-jmzidentml.version>1.2.6</uk.ac.ebi.jmzidml-jmzidentml.version>
         <uk.ac.ebi.pride.archive-archive-submission-model.version>1.0.5-SNAPSHOT
         </uk.ac.ebi.pride.archive-archive-submission-model.version>
-        <uk.ac.ebi.pride.sdrf.jsdrf.version>1.0-SNAPSHOT</uk.ac.ebi.pride.sdrf.jsdrf.version>
+
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <javafx.version>21</javafx.version>
@@ -97,17 +97,6 @@
                 <exclusion>
                     <groupId>org.slf4j</groupId>
                     <artifactId>slf4j-reload4j</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>uk.ac.ebi.pride.sdrf</groupId>
-            <artifactId>jsdrf</artifactId>
-            <version>${uk.ac.ebi.pride.sdrf.jsdrf.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>uk.ac.ebi.pride.utilities</groupId>
-                    <artifactId>ols-client</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

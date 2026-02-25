@@ -21,12 +21,17 @@ import uk.ac.ebi.pride.pxsubmit.util.FileTypeDetector;
 import uk.ac.ebi.pride.pxsubmit.view.component.FileClassificationPanel;
 import uk.ac.ebi.pride.pxsubmit.view.component.FileTableView;
 import uk.ac.ebi.pride.pxsubmit.view.component.ValidationFeedback;
-import uk.ac.ebi.pride.sdrf.validate.model.SDRFContent;
-import uk.ac.ebi.pride.sdrf.validate.model.SDRFColumn;
-import uk.ac.ebi.pride.sdrf.validate.validation.SDRFParser;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -84,10 +89,10 @@ public class FileSelectionStep extends AbstractWizardStep {
         HBox buttonBar = new HBox(10);
         buttonBar.setAlignment(Pos.CENTER_LEFT);
 
-        addFilesButton = new Button("Add Files...");
+        addFilesButton = new Button("Select Files");
         addFilesButton.setOnAction(e -> addFiles());
 
-        addFolderButton = new Button("Select From Folder");
+        addFolderButton = new Button("Select Files from Folder");
         addFolderButton.setOnAction(e -> addFolder());
 
         removeSelectedButton = new Button("Remove Selected");
@@ -477,10 +482,14 @@ public class FileSelectionStep extends AbstractWizardStep {
      * Remove selected files
      */
     private void removeSelected() {
-        List<DataFile> selected = fileTable.getSelectedFiles();
+        // Copy the list since getSelectedFiles() returns a live view
+        // that changes as items are removed from the model
+        List<DataFile> selected = new ArrayList<>(fileTable.getSelectedFiles());
+        if (selected.isEmpty()) return;
         for (DataFile file : selected) {
             model.removeFile(file);
         }
+        fileTable.getSelectionModel().clearSelection();
         updateSummary();
     }
 
@@ -621,64 +630,181 @@ public class FileSelectionStep extends AbstractWizardStep {
         }
     }
 
-    /** Required SDRF columns (case-insensitive). */
-    private static final List<String> REQUIRED_COLUMNS = List.of(
-            "source name", "characteristics[organism]"
-    );
-
-    /** Recommended SDRF columns (case-insensitive). */
-    private static final List<String> RECOMMENDED_COLUMNS = List.of(
-            "assay name", "characteristics[organism part]", "characteristics[disease]",
-            "comment[instrument]", "comment[data file]", "comment[label]",
-            "comment[fraction identifier]", "comment[technical replicate]"
-    );
+    private static final String SDRF_VALIDATOR_URL =
+            "https://www.ebi.ac.uk/pride/services/sdrf-validator/validate";
 
     /**
-     * Validate an SDRF file using the jsdrf parser and column checks.
-     * Displays results as non-blocking feedback.
+     * Validate an SDRF file using the PRIDE SDRF Validator REST API.
+     * Sends the file as multipart/form-data and displays results as non-blocking feedback.
+     * Runs asynchronously to avoid blocking the UI.
      */
     private void validateSdrfFile(File file) {
-        try {
-            SDRFParser parser = new SDRFParser();
-            SDRFContent content = parser.getSDRFContent(file.getAbsolutePath());
+        validationFeedback.addInfo("SDRF: Validating " + file.getName() + "...");
 
-            // Check for data rows
-            if (content.getSdrfRows() == null || content.getSdrfRows().isEmpty()) {
-                validationFeedback.addWarning("SDRF: File has no data rows - " + file.getName());
+        Thread.startVirtualThread(() -> {
+            try {
+                String boundary = "----SdrfBoundary" + System.currentTimeMillis();
+                byte[] fileBytes = Files.readAllBytes(file.toPath());
+
+                // Build multipart body
+                byte[] body = buildMultipartBody(boundary, file.getName(), fileBytes);
+
+                HttpClient client = HttpClient.newBuilder()
+                        .version(HttpClient.Version.HTTP_1_1)
+                        .build();
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(SDRF_VALIDATOR_URL + "?template=default&skip_ontology=false&use_ols_cache_only=true"))
+                        .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                        .header("Accept", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofByteArray(body))
+                        .build();
+
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+                Platform.runLater(() -> parseSdrfValidationResponse(file.getName(), response));
+
+            } catch (Exception e) {
+                logger.warn("SDRF validation API call failed for: {}", file.getName(), e);
+                Platform.runLater(() ->
+                    validationFeedback.addWarning("SDRF: Could not reach validator service - " + e.getMessage()));
+            }
+        });
+    }
+
+    private byte[] buildMultipartBody(String boundary, String fileName, byte[] fileBytes) {
+        String prefix = "--" + boundary + "\r\n" +
+                "Content-Disposition: form-data; name=\"file\"; filename=\"" + fileName + "\"\r\n" +
+                "Content-Type: text/tab-separated-values\r\n\r\n";
+        String suffix = "\r\n--" + boundary + "--\r\n";
+
+        byte[] prefixBytes = prefix.getBytes(StandardCharsets.UTF_8);
+        byte[] suffixBytes = suffix.getBytes(StandardCharsets.UTF_8);
+
+        byte[] body = new byte[prefixBytes.length + fileBytes.length + suffixBytes.length];
+        System.arraycopy(prefixBytes, 0, body, 0, prefixBytes.length);
+        System.arraycopy(fileBytes, 0, body, prefixBytes.length, fileBytes.length);
+        System.arraycopy(suffixBytes, 0, body, prefixBytes.length + fileBytes.length, suffixBytes.length);
+        return body;
+    }
+
+    private void parseSdrfValidationResponse(String fileName, HttpResponse<String> response) {
+        try {
+            if (response.statusCode() != 200) {
+                validationFeedback.addWarning("SDRF: Validator returned status " + response.statusCode() + " for " + fileName);
                 return;
             }
 
-            // Collect column names (lowercase for comparison)
-            List<String> columnNames = content.getSdrfColumns().stream()
-                    .map(col -> col.getName().toLowerCase().trim())
-                    .toList();
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(response.body());
 
-            boolean hasIssues = false;
+            boolean valid = root.path("valid").asBoolean(false);
+            int errorCount = root.path("error_count").asInt(0);
+            int warningCount = root.path("warning_count").asInt(0);
 
-            // Check required columns
-            for (String required : REQUIRED_COLUMNS) {
-                if (columnNames.stream().noneMatch(c -> c.contains(required))) {
-                    validationFeedback.addWarning("SDRF: Missing required column '" + required + "' in " + file.getName());
-                    hasIssues = true;
+            // Collect errors and warnings for popup
+            List<String> errorMessages = new ArrayList<>();
+            List<String> warningMessages = new ArrayList<>();
+
+            JsonNode errors = root.path("errors");
+            if (errors.isArray()) {
+                for (JsonNode err : errors) {
+                    errorMessages.add(err.path("msg").asText());
+                }
+            }
+            JsonNode warnings = root.path("warnings");
+            if (warnings.isArray()) {
+                for (JsonNode warn : warnings) {
+                    warningMessages.add(warn.path("msg").asText());
                 }
             }
 
-            // Check recommended columns
-            for (String recommended : RECOMMENDED_COLUMNS) {
-                if (columnNames.stream().noneMatch(c -> c.contains(recommended))) {
-                    validationFeedback.addInfo("SDRF: Missing recommended column '" + recommended + "'");
-                    hasIssues = true;
-                }
+            // Update inline feedback
+            if (valid) {
+                validationFeedback.addInfo("SDRF validated: " + fileName);
+            } else {
+                validationFeedback.addWarning("SDRF validation failed: " + fileName + " (" + errorCount + " error(s))");
             }
 
-            if (!hasIssues) {
-                validationFeedback.addInfo("SDRF file validated successfully: " + file.getName() +
-                        " (" + content.getSdrfRows().size() + " samples)");
-            }
+            // Show popup dialog with full results
+            showSdrfValidationPopup(fileName, valid, errorMessages, warningMessages);
+
         } catch (Exception e) {
-            logger.warn("Could not validate SDRF file: {}", file.getName(), e);
-            validationFeedback.addWarning("SDRF validation failed: " + e.getMessage());
+            logger.warn("Failed to parse SDRF validation response", e);
+            validationFeedback.addWarning("SDRF: Could not parse validation result for " + fileName);
         }
+    }
+
+    private void showSdrfValidationPopup(String fileName, boolean valid,
+                                          List<String> errors, List<String> warnings) {
+        Alert alert = new Alert(valid ? Alert.AlertType.INFORMATION : Alert.AlertType.WARNING);
+        alert.setTitle("SDRF Validation Result");
+        alert.setHeaderText(valid ? "Validation Passed" : "Validation Failed");
+        alert.setResizable(true);
+
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(10));
+        content.setPrefWidth(500);
+
+        // File name
+        Label fileLabel = new Label("File: " + fileName);
+        fileLabel.setStyle("-fx-font-weight: bold;");
+        content.getChildren().add(fileLabel);
+
+        // Status banner
+        Label statusLabel = new Label(valid ? "\u2714 SDRF is valid" : "\u2718 SDRF has errors");
+        statusLabel.setStyle(valid
+            ? "-fx-background-color: #d4edda; -fx-text-fill: #155724; -fx-padding: 8 12; -fx-background-radius: 4; -fx-font-weight: bold;"
+            : "-fx-background-color: #f8d7da; -fx-text-fill: #721c24; -fx-padding: 8 12; -fx-background-radius: 4; -fx-font-weight: bold;");
+        statusLabel.setMaxWidth(Double.MAX_VALUE);
+        content.getChildren().add(statusLabel);
+
+        // Errors
+        if (!errors.isEmpty()) {
+            Label errTitle = new Label("Errors (" + errors.size() + "):");
+            errTitle.setStyle("-fx-font-weight: bold; -fx-text-fill: #dc3545;");
+            content.getChildren().add(errTitle);
+
+            TextArea errArea = new TextArea();
+            errArea.setEditable(false);
+            errArea.setWrapText(true);
+            errArea.setPrefRowCount(Math.min(errors.size(), 8));
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < errors.size(); i++) {
+                sb.append(i + 1).append(". ").append(errors.get(i)).append("\n");
+            }
+            errArea.setText(sb.toString());
+            errArea.setStyle("-fx-control-inner-background: #fff5f5;");
+            content.getChildren().add(errArea);
+        }
+
+        // Warnings
+        if (!warnings.isEmpty()) {
+            Label warnTitle = new Label("Warnings (" + warnings.size() + "):");
+            warnTitle.setStyle("-fx-font-weight: bold; -fx-text-fill: #856404;");
+            content.getChildren().add(warnTitle);
+
+            TextArea warnArea = new TextArea();
+            warnArea.setEditable(false);
+            warnArea.setWrapText(true);
+            warnArea.setPrefRowCount(Math.min(warnings.size(), 6));
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < warnings.size(); i++) {
+                sb.append(i + 1).append(". ").append(warnings.get(i)).append("\n");
+            }
+            warnArea.setText(sb.toString());
+            warnArea.setStyle("-fx-control-inner-background: #fffbf0;");
+            content.getChildren().add(warnArea);
+        }
+
+        // No issues
+        if (errors.isEmpty() && warnings.isEmpty()) {
+            Label noIssues = new Label("No errors or warnings found.");
+            noIssues.setStyle("-fx-text-fill: #28a745;");
+            content.getChildren().add(noIssues);
+        }
+
+        alert.getDialogPane().setContent(content);
+        alert.showAndWait();
     }
 
     private String formatSize(long size) {

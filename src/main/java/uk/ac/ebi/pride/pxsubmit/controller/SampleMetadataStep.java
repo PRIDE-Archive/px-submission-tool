@@ -19,8 +19,8 @@ import uk.ac.ebi.pride.pxsubmit.service.SdrfParserService.SdrfData;
 import uk.ac.ebi.pride.pxsubmit.view.component.OlsAutocomplete;
 
 import java.io.File;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Step for entering sample-level metadata.
@@ -159,10 +159,6 @@ public class SampleMetadataStep extends AbstractWizardStep {
         validationLabel = new Label();
         validationLabel.setStyle("-fx-font-weight: bold;");
 
-        // Required note
-        Label requiredNote = new Label("* Required fields");
-        requiredNote.setStyle("-fx-text-fill: #666; -fx-font-style: italic;");
-
         formBox.getChildren().addAll(
                 speciesSection,
                 tissueSection,
@@ -172,8 +168,7 @@ public class SampleMetadataStep extends AbstractWizardStep {
                 instrumentSection,
                 modificationSection,
                 new Separator(),
-                validationLabel,
-                requiredNote
+                validationLabel
         );
 
         content.getChildren().addAll(sdrfInfoBox, formBox);
@@ -312,48 +307,99 @@ public class SampleMetadataStep extends AbstractWizardStep {
     }
 
     private void checkForSdrfFile() {
-        // Look for SDRF in the file list
-        Optional<DataFile> sdrfFile = model.getFiles().stream()
+        // Find ALL SDRF files in the file list
+        List<File> sdrfFiles = model.getFiles().stream()
                 .filter(df -> df.getFileType() == ProjectFileType.EXPERIMENTAL_DESIGN ||
                              SdrfParserService.isSdrfFile(df.getFile()))
-                .findFirst();
+                .map(DataFile::getFile)
+                .toList();
 
-        if (sdrfFile.isPresent()) {
-            File file = sdrfFile.get().getFile();
-            sdrfStatusLabel.setText("Found SDRF: " + file.getName() + " - Parsing...");
-            sdrfInfoBox.setStyle("-fx-background-color: #d4edda; -fx-border-color: #28a745; -fx-border-radius: 4; -fx-background-radius: 4;");
-
-            // Parse SDRF asynchronously
-            SdrfParserService parser = ServiceFactory.getInstance().createSdrfParserService(file);
-            parser.setOnSucceeded(e -> {
-                parsedSdrfData = parser.getValue();
-                Platform.runLater(() -> {
-                    if (parsedSdrfData != null && !parsedSdrfData.isEmpty()) {
-                        sdrfStatusLabel.setText(String.format(
-                                "Extracted from %s: %d samples, %d organisms, %d tissues, %d instruments",
-                                file.getName(),
-                                parsedSdrfData.getSampleCount(),
-                                parsedSdrfData.organisms().size(),
-                                parsedSdrfData.tissues().size(),
-                                parsedSdrfData.instruments().size()
-                        ));
-                        populateFromSdrf(parsedSdrfData);
-                    } else {
-                        sdrfStatusLabel.setText("SDRF file found but no metadata could be extracted");
-                    }
-                });
-            });
-            parser.setOnFailed(e -> {
-                Platform.runLater(() -> {
-                    sdrfStatusLabel.setText("Failed to parse SDRF: " + e.getSource().getException().getMessage());
-                    sdrfInfoBox.setStyle("-fx-background-color: #f8d7da; -fx-border-color: #dc3545; -fx-border-radius: 4; -fx-background-radius: 4;");
-                });
-            });
-            parser.start();
-        } else {
+        if (sdrfFiles.isEmpty()) {
             sdrfStatusLabel.setText("No SDRF file found - please enter metadata manually below");
             sdrfInfoBox.setStyle("-fx-background-color: #fff3cd; -fx-border-color: #ffc107; -fx-border-radius: 4; -fx-background-radius: 4;");
+            return;
         }
+
+        String fileNames = sdrfFiles.stream().map(File::getName).reduce((a, b) -> a + ", " + b).orElse("");
+        sdrfStatusLabel.setText("Found " + sdrfFiles.size() + " SDRF file(s): " + fileNames + " - Parsing...");
+        sdrfInfoBox.setStyle("-fx-background-color: #d4edda; -fx-border-color: #28a745; -fx-border-radius: 4; -fx-background-radius: 4;");
+
+        // Merged metadata from all SDRF files
+        Set<CvParam> allOrganisms = new LinkedHashSet<>();
+        Set<CvParam> allTissues = new LinkedHashSet<>();
+        Set<CvParam> allCellTypes = new LinkedHashSet<>();
+        Set<CvParam> allDiseases = new LinkedHashSet<>();
+        Set<CvParam> allInstruments = new LinkedHashSet<>();
+        Set<CvParam> allModifications = new LinkedHashSet<>();
+        Set<CvParam> allLabels = new LinkedHashSet<>();
+        AtomicInteger totalSamples = new AtomicInteger(0);
+        AtomicInteger completedCount = new AtomicInteger(0);
+        AtomicInteger failedCount = new AtomicInteger(0);
+
+        for (File file : sdrfFiles) {
+            SdrfParserService parser = ServiceFactory.getInstance().createSdrfParserService(file);
+            parser.setOnSucceeded(e -> {
+                SdrfData data = parser.getValue();
+                if (data != null && !data.isEmpty()) {
+                    synchronized (allOrganisms) {
+                        allOrganisms.addAll(data.organisms());
+                        allTissues.addAll(data.tissues());
+                        allCellTypes.addAll(data.cellTypes());
+                        allDiseases.addAll(data.diseases());
+                        allInstruments.addAll(data.instruments());
+                        allModifications.addAll(data.modifications());
+                        allLabels.addAll(data.labels());
+                        totalSamples.addAndGet(data.getSampleCount());
+                    }
+                }
+                if (completedCount.incrementAndGet() + failedCount.get() == sdrfFiles.size()) {
+                    Platform.runLater(() -> finalizeSdrfMerge(
+                        sdrfFiles.size(), totalSamples.get(), failedCount.get(),
+                        allOrganisms, allTissues, allCellTypes, allDiseases,
+                        allInstruments, allModifications, allLabels));
+                }
+            });
+            parser.setOnFailed(e -> {
+                logger.warn("Failed to parse SDRF: {}", file.getName(), e.getSource().getException());
+                if (failedCount.incrementAndGet() + completedCount.get() == sdrfFiles.size()) {
+                    Platform.runLater(() -> finalizeSdrfMerge(
+                        sdrfFiles.size(), totalSamples.get(), failedCount.get(),
+                        allOrganisms, allTissues, allCellTypes, allDiseases,
+                        allInstruments, allModifications, allLabels));
+                }
+            });
+            parser.start();
+        }
+    }
+
+    private void finalizeSdrfMerge(int totalFiles, int totalSamples, int failedFiles,
+                                    Set<CvParam> organisms, Set<CvParam> tissues,
+                                    Set<CvParam> cellTypes, Set<CvParam> diseases,
+                                    Set<CvParam> instruments, Set<CvParam> modifications,
+                                    Set<CvParam> labels) {
+        // Build merged SdrfData for storage
+        parsedSdrfData = new SdrfData(
+            Collections.emptyList(), organisms, tissues, cellTypes, diseases,
+            instruments, modifications, labels,
+            Collections.emptyList(), Collections.emptyList(), Collections.emptyMap());
+
+        String status = String.format(
+            "Merged from %d SDRF file(s): %d samples, %d organisms, %d tissues, %d instruments",
+            totalFiles - failedFiles, totalSamples,
+            organisms.size(), tissues.size(), instruments.size());
+        if (failedFiles > 0) {
+            status += " (" + failedFiles + " file(s) failed to parse)";
+        }
+        sdrfStatusLabel.setText(status);
+
+        if (failedFiles > 0 && failedFiles < totalFiles) {
+            sdrfInfoBox.setStyle("-fx-background-color: #fff3cd; -fx-border-color: #ffc107; -fx-border-radius: 4; -fx-background-radius: 4;");
+        } else if (failedFiles == totalFiles) {
+            sdrfInfoBox.setStyle("-fx-background-color: #f8d7da; -fx-border-color: #dc3545; -fx-border-radius: 4; -fx-background-radius: 4;");
+            return;
+        }
+
+        populateFromSdrf(parsedSdrfData);
     }
 
     private void populateFromSdrf(SdrfData data) {
