@@ -84,10 +84,13 @@ public class WizardController implements Initializable {
     private final List<Label> stepLabels = new ArrayList<>();
     private final List<Region> stepConnectors = new ArrayList<>();
 
-    // Short labels for the step indicator bar
+    // Mapping from visible dot position to actual step index (rebuilt dynamically)
+    private final List<Integer> visibleStepIndices = new ArrayList<>();
+
+    // Short labels for the step indicator bar (indexed by step registration order)
     private static final String[] STEP_SHORT_LABELS = {
         "Welcome", "Login", "Type", "Resub", "Project",
-        "Files", "Metadata", "Lab Head", "References", "Summary", "Checksum", "Upload"
+        "Files", "Metadata", "Lab Head", "Reference", "Summary", "Checksum", "Upload"
     };
 
     // Animation duration
@@ -190,6 +193,11 @@ public class WizardController implements Initializable {
             logoutButton.managedProperty().bind(model.loggedInProperty());
             logoutButton.setOnAction(e -> handleLogout());
         }
+        // Rebuild step indicator when resubmission mode changes
+        model.resubmissionModeProperty().addListener((obs, wasResub, isResub) -> {
+            refreshStepIndicator();
+        });
+
         if (userLabel != null) {
             userLabel.visibleProperty().bind(model.loggedInProperty());
             userLabel.managedProperty().bind(model.loggedInProperty());
@@ -407,7 +415,8 @@ public class WizardController implements Initializable {
 
     /**
      * Build the visual step indicator bar with numbered dots, labels, and connectors.
-     * Called after all steps have been registered.
+     * Only shows steps that are currently relevant (not skippable).
+     * Called after all steps have been registered and rebuilt when submission type changes.
      */
     private void buildStepIndicator() {
         if (stepIndicatorContainer == null) return;
@@ -416,10 +425,20 @@ public class WizardController implements Initializable {
         stepDots.clear();
         stepLabels.clear();
         stepConnectors.clear();
+        visibleStepIndices.clear();
 
+        // Determine which steps are visible (not skippable)
         for (int i = 0; i < steps.size(); i++) {
+            if (!steps.get(i).canSkip()) {
+                visibleStepIndices.add(i);
+            }
+        }
+
+        for (int v = 0; v < visibleStepIndices.size(); v++) {
+            int actualIndex = visibleStepIndices.get(v);
+
             // Add connector line before each step (except the first)
-            if (i > 0) {
+            if (v > 0) {
                 Region connector = new Region();
                 connector.getStyleClass().add("step-connector");
                 connector.setMinHeight(1);
@@ -433,7 +452,6 @@ public class WizardController implements Initializable {
                 // Wrap connector in a VBox to vertically center it at dot level
                 VBox connectorWrapper = new VBox(connector);
                 connectorWrapper.setAlignment(Pos.TOP_CENTER);
-                // Offset to align with center of the 26px dot + 3px gap above label
                 connectorWrapper.setPadding(new javafx.geometry.Insets(12, 0, 0, 0));
                 stepIndicatorContainer.getChildren().add(connectorWrapper);
             }
@@ -443,7 +461,7 @@ public class WizardController implements Initializable {
             stepItem.setAlignment(Pos.CENTER);
 
             // Circle dot with step number
-            Label numberLabel = new Label(String.valueOf(i + 1));
+            Label numberLabel = new Label(String.valueOf(v + 1));
             numberLabel.getStyleClass().add("step-number");
 
             StackPane dot = new StackPane(numberLabel);
@@ -454,7 +472,8 @@ public class WizardController implements Initializable {
             stepDots.add(dot);
 
             // Short label
-            String shortLabel = i < STEP_SHORT_LABELS.length ? STEP_SHORT_LABELS[i] : steps.get(i).getTitle();
+            String shortLabel = actualIndex < STEP_SHORT_LABELS.length
+                ? STEP_SHORT_LABELS[actualIndex] : steps.get(actualIndex).getTitle();
             Label label = new Label(shortLabel);
             label.getStyleClass().add("step-label");
             stepLabels.add(label);
@@ -466,12 +485,31 @@ public class WizardController implements Initializable {
 
     /**
      * Update the visual step indicator to reflect the current step.
+     * Maps the actual step index to the visible dot position.
      * Completed steps get a checkmark, current step is highlighted, future steps are dimmed.
      */
     private void updateStepIndicator(int currentIndex) {
-        for (int i = 0; i < stepDots.size(); i++) {
-            StackPane dot = stepDots.get(i);
-            Label label = stepLabels.get(i);
+        // Find which visible position corresponds to the current actual step index
+        int visibleCurrent = -1;
+        for (int v = 0; v < visibleStepIndices.size(); v++) {
+            if (visibleStepIndices.get(v) == currentIndex) {
+                visibleCurrent = v;
+                break;
+            }
+            // If current step is between two visible steps, mark up to the previous visible one
+            if (visibleStepIndices.get(v) > currentIndex) {
+                visibleCurrent = v - 1;
+                break;
+            }
+        }
+        // If current step is beyond all visible steps
+        if (visibleCurrent == -1 && !visibleStepIndices.isEmpty()) {
+            visibleCurrent = visibleStepIndices.size() - 1;
+        }
+
+        for (int v = 0; v < stepDots.size(); v++) {
+            StackPane dot = stepDots.get(v);
+            Label label = stepLabels.get(v);
 
             // Remove previous state classes
             dot.getStyleClass().removeAll("active", "completed");
@@ -480,19 +518,19 @@ public class WizardController implements Initializable {
             // Get the number label inside the dot
             Label numberLabel = (Label) dot.getChildren().get(0);
 
-            if (i < currentIndex) {
+            if (v < visibleCurrent) {
                 // Completed step
                 dot.getStyleClass().add("completed");
                 label.getStyleClass().add("completed");
                 numberLabel.setText("\u2713"); // checkmark
-            } else if (i == currentIndex) {
+            } else if (v == visibleCurrent) {
                 // Current step
                 dot.getStyleClass().add("active");
                 label.getStyleClass().add("active");
-                numberLabel.setText(String.valueOf(i + 1));
+                numberLabel.setText(String.valueOf(v + 1));
             } else {
                 // Future step
-                numberLabel.setText(String.valueOf(i + 1));
+                numberLabel.setText(String.valueOf(v + 1));
             }
         }
 
@@ -500,10 +538,19 @@ public class WizardController implements Initializable {
         for (int i = 0; i < stepConnectors.size(); i++) {
             Region connector = stepConnectors.get(i);
             connector.getStyleClass().removeAll("completed");
-            if (i < currentIndex) {
+            if (i < visibleCurrent) {
                 connector.getStyleClass().add("completed");
             }
         }
+    }
+
+    /**
+     * Rebuild the step indicator to reflect current skip states.
+     * Call this after submission type changes (e.g., switching to/from resubmission).
+     */
+    public void refreshStepIndicator() {
+        buildStepIndicator();
+        updateStepIndicator(currentStepIndex.get());
     }
 
     // ==================== Event Handlers ====================

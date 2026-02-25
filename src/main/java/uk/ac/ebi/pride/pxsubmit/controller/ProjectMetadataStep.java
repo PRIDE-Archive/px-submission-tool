@@ -11,7 +11,14 @@ import uk.ac.ebi.pride.data.model.CvParam;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 import uk.ac.ebi.pride.pxsubmit.service.OlsService;
 
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+
 import uk.ac.ebi.pride.pxsubmit.service.OlsService.OlsOntology;
 import uk.ac.ebi.pride.pxsubmit.view.component.ChipInput;
 import uk.ac.ebi.pride.pxsubmit.view.component.OlsAutocomplete;
@@ -35,6 +42,16 @@ public class ProjectMetadataStep extends AbstractWizardStep {
     // Character counters
     private Label titleCounter;
     private Label descriptionCounter;
+
+    // Project Tags
+    private MenuButton projectTagsMenuButton;
+    private FlowPane selectedTagsPane;
+    private final List<CheckMenuItem> tagMenuItems = new ArrayList<>();
+
+    // Crosslinking warning banner
+    private static final String CROSSLINK_ACCESSION = "PRIDE:0000430";
+    private VBox crosslinkBanner;
+    private VBox form; // reference for banner insertion
 
     // Validation feedback
     private ValidationFeedback validationFeedback;
@@ -64,8 +81,13 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         scrollPane.setFitToWidth(true);
         scrollPane.setStyle("-fx-background-color: transparent;");
 
-        VBox form = new VBox(20);
+        form = new VBox(20);
         form.setPadding(new Insets(20));
+
+        // Crosslinking warning banner (hidden by default, shown when detected)
+        crosslinkBanner = createCrosslinkBanner();
+        crosslinkBanner.setVisible(false);
+        crosslinkBanner.setManaged(false);
 
         // Project Title
         VBox titleSection = createFieldSection("Project Title",
@@ -182,10 +204,14 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         dataProtocolArea.setTooltip(dataTooltip);
         dataSection.getChildren().add(dataProtocolArea);
 
+        // Project Tags (optional)
+        VBox projectTagsSection = createProjectTagsSection();
+
         // Validation feedback
         validationFeedback = new ValidationFeedback();
 
         form.getChildren().addAll(
+            crosslinkBanner,
             titleSection,
             descSection,
             keywordsSection,
@@ -193,11 +219,217 @@ public class ProjectMetadataStep extends AbstractWizardStep {
             dataSection,
             experimentTypeSection,
             softwareSection,
+            new Separator(),
+            projectTagsSection,
             validationFeedback
         );
 
         scrollPane.setContent(form);
         return scrollPane;
+    }
+
+    /**
+     * Create the inline crosslinking warning banner.
+     * Styled as a modern notification card with icon, message, and clickable links.
+     */
+    private VBox createCrosslinkBanner() {
+        VBox banner = new VBox(8);
+        banner.setPadding(new Insets(14));
+        banner.setStyle(
+            "-fx-background-color: #fff8e1; " +
+            "-fx-border-color: #f9a825; " +
+            "-fx-border-width: 0 0 0 4; " +
+            "-fx-border-radius: 0 6 6 0; " +
+            "-fx-background-radius: 0 6 6 0;");
+
+        HBox headerRow = new HBox(8);
+        headerRow.setAlignment(Pos.CENTER_LEFT);
+
+        Label icon = new Label("\u26A0");
+        icon.setStyle("-fx-font-size: 18px; -fx-text-fill: #f9a825;");
+
+        Label title = new Label("Crosslinking Dataset Detected");
+        title.setStyle("-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #6d4c00;");
+
+        headerRow.getChildren().addAll(icon, title);
+
+        Label message = new Label(
+            "We detected this may be a crosslinking dataset. " +
+            "Please ensure your files and metadata meet the requirements " +
+            "for the PRIDE Crosslinking Resource.");
+        message.setWrapText(true);
+        message.setStyle("-fx-text-fill: #6d4c00; -fx-font-size: 12px;");
+
+        HBox linksRow = new HBox(16);
+        linksRow.setPadding(new Insets(4, 0, 0, 0));
+
+        Hyperlink guidelinesLink = new Hyperlink("Submission Guidelines");
+        guidelinesLink.setStyle("-fx-text-fill: #0066cc; -fx-font-size: 12px;");
+        guidelinesLink.setOnAction(e -> openUrl("https://www.ebi.ac.uk/pride/markdownpage/crosslinking"));
+
+        Hyperlink resourceLink = new Hyperlink("PRIDE Crosslinking Resource");
+        resourceLink.setStyle("-fx-text-fill: #0066cc; -fx-font-size: 12px;");
+        resourceLink.setOnAction(e -> openUrl("https://www.ebi.ac.uk/pride/archive/crosslinking"));
+
+        linksRow.getChildren().addAll(guidelinesLink, resourceLink);
+
+        // Dismiss button
+        Button dismissBtn = new Button("\u2715");
+        dismissBtn.setStyle(
+            "-fx-background-color: transparent; -fx-text-fill: #6d4c00; " +
+            "-fx-font-size: 12px; -fx-cursor: hand; -fx-padding: 0 4;");
+        dismissBtn.setOnAction(e -> {
+            banner.setVisible(false);
+            banner.setManaged(false);
+        });
+
+        // Title row with dismiss on the right
+        HBox topRow = new HBox();
+        topRow.setAlignment(Pos.CENTER_LEFT);
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        topRow.getChildren().addAll(headerRow, spacer, dismissBtn);
+
+        banner.getChildren().addAll(topRow, message, linksRow);
+        return banner;
+    }
+
+    /**
+     * Check if the current metadata indicates a crosslinking dataset.
+     * Detection: experiment type CV accession PRIDE:0000430, or
+     * "crosslink"/"cross-link" in title, keywords, description, or protocols.
+     */
+    private boolean isCrosslinkDataset() {
+        // Check experiment type accession
+        boolean hasCrosslinkType = experimentTypeField.getSelectedTerms().stream()
+            .anyMatch(t -> CROSSLINK_ACCESSION.equals(t.getAccession()));
+        if (hasCrosslinkType) return true;
+
+        // Check text fields for crosslinking keywords
+        String[] fieldsToCheck = {
+            titleField.getText(),
+            keywordsInput.getText(),
+            descriptionArea.getText(),
+            sampleProtocolArea.getText(),
+            dataProtocolArea.getText()
+        };
+        for (String text : fieldsToCheck) {
+            if (text != null) {
+                String lower = text.toLowerCase();
+                if (lower.contains("crosslink") || lower.contains("cross-link")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Show/hide the crosslinking banner reactively based on experiment type selection.
+     */
+    private void updateCrosslinkBanner() {
+        boolean detected = experimentTypeField.getSelectedTerms().stream()
+            .anyMatch(t -> CROSSLINK_ACCESSION.equals(t.getAccession()));
+        crosslinkBanner.setVisible(detected);
+        crosslinkBanner.setManaged(detected);
+    }
+
+    private void openUrl(String url) {
+        try {
+            java.awt.Desktop.getDesktop().browse(new java.net.URI(url));
+        } catch (Exception e) {
+            logger.error("Failed to open URL: {}", url, e);
+        }
+    }
+
+    private VBox createProjectTagsSection() {
+        VBox section = createFieldSection("Project Tags",
+            "Select any applicable project affiliations (optional)", false);
+
+        // MenuButton acts as a multi-select dropdown
+        projectTagsMenuButton = new MenuButton("Select project tags...");
+        projectTagsMenuButton.setStyle(
+            "-fx-background-color: white; " +
+            "-fx-border-color: #ccc; " +
+            "-fx-border-radius: 4; " +
+            "-fx-background-radius: 4;");
+        projectTagsMenuButton.setPrefWidth(400);
+
+        // Load tags from CV file and add as CheckMenuItems
+        List<String> tags = loadProjectTags();
+        for (String tag : tags) {
+            CheckMenuItem item = new CheckMenuItem(tag);
+            item.setOnAction(e -> updateTagChips());
+            tagMenuItems.add(item);
+        }
+        projectTagsMenuButton.getItems().addAll(tagMenuItems);
+
+        // FlowPane to display selected tags as removable chips
+        selectedTagsPane = new FlowPane();
+        selectedTagsPane.setHgap(6);
+        selectedTagsPane.setVgap(4);
+        selectedTagsPane.setPadding(new Insets(4, 0, 0, 0));
+
+        section.getChildren().addAll(projectTagsMenuButton, selectedTagsPane);
+        return section;
+    }
+
+    private List<String> loadProjectTags() {
+        List<String> tags = new ArrayList<>();
+        try (InputStream is = getClass().getResourceAsStream("/cv/projecttag.cv")) {
+            if (is != null) {
+                try (BufferedReader reader = new BufferedReader(
+                        new InputStreamReader(is, StandardCharsets.UTF_8))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        line = line.trim();
+                        if (!line.isEmpty()) {
+                            tags.add(line);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.warn("Could not load project tags from CV file", e);
+        }
+        return tags;
+    }
+
+    private void updateTagChips() {
+        selectedTagsPane.getChildren().clear();
+        for (CheckMenuItem item : tagMenuItems) {
+            if (item.isSelected()) {
+                Label chip = new Label(item.getText() + "  \u2715");
+                chip.setStyle(
+                    "-fx-background-color: #0066cc; " +
+                    "-fx-text-fill: white; " +
+                    "-fx-padding: 3 8; " +
+                    "-fx-background-radius: 12; " +
+                    "-fx-font-size: 11px; " +
+                    "-fx-cursor: hand;");
+                chip.setOnMouseClicked(e -> {
+                    item.setSelected(false);
+                    updateTagChips();
+                });
+                selectedTagsPane.getChildren().add(chip);
+            }
+        }
+        // Update button text to show count
+        long count = tagMenuItems.stream().filter(CheckMenuItem::isSelected).count();
+        projectTagsMenuButton.setText(count > 0 ? count + " tag(s) selected" : "Select project tags...");
+    }
+
+    private void saveProjectTags() {
+        var meta = model.getSubmission().getProjectMetaData();
+        if (meta == null) return;
+        meta.clearProjectTags();
+        List<String> selected = tagMenuItems.stream()
+            .filter(CheckMenuItem::isSelected)
+            .map(CheckMenuItem::getText)
+            .toList();
+        if (!selected.isEmpty()) {
+            meta.addProjectTags(selected.toArray(new String[0]));
+        }
     }
 
     private VBox createSection(String title, String description) {
@@ -322,7 +554,10 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         keywordsInput.textProperty().addListener((obs, oldVal, newVal) -> updateValidationFeedback());
         sampleProtocolArea.textProperty().addListener((obs, oldVal, newVal) -> updateValidationFeedback());
         dataProtocolArea.textProperty().addListener((obs, oldVal, newVal) -> updateValidationFeedback());
-        experimentTypeField.getSelectedTerms().addListener((javafx.collections.ListChangeListener.Change<? extends CvParam> c) -> updateValidationFeedback());
+        experimentTypeField.getSelectedTerms().addListener((javafx.collections.ListChangeListener.Change<? extends CvParam> c) -> {
+            updateValidationFeedback();
+            updateCrosslinkBanner();
+        });
         softwareField.getSelectedTerms().addListener((javafx.collections.ListChangeListener.Change<? extends CvParam> c) -> updateValidationFeedback());
 
         // Load existing experiment methods and software from model
@@ -417,13 +652,32 @@ public class ProjectMetadataStep extends AbstractWizardStep {
             return false;
         }
 
-        // Sync to model
+        // Check for crosslinking dataset and show banner
+        if (isCrosslinkDataset()) {
+            crosslinkBanner.setVisible(true);
+            crosslinkBanner.setManaged(true);
+        }
+
+        // Save project tags and sync to model
+        saveProjectTags();
         model.syncMetadataToSubmission();
         return true;
     }
 
     @Override
     protected void onStepEntering() {
+        // Load existing project tags from model
+        var meta = model.getSubmission().getProjectMetaData();
+        if (meta != null) {
+            Set<String> selectedTags = meta.getProjectTags();
+            if (selectedTags != null) {
+                for (CheckMenuItem item : tagMenuItems) {
+                    item.setSelected(selectedTags.contains(item.getText()));
+                }
+                updateTagChips();
+            }
+        }
+
         // In test mode, pre-fill with example data if fields are empty
         if (model.isTrainingMode()) {
             populateTestModeExamples();

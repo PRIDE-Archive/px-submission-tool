@@ -108,6 +108,11 @@ public class SummaryStep extends AbstractWizardStep {
             contentBox.getChildren().add(warningLabel);
         }
 
+        // Crosslinking warning banner
+        if (!model.isResubmissionMode() && isCrosslinkDataset()) {
+            contentBox.getChildren().add(createCrosslinkBanner());
+        }
+
         // Validation Summary
         ValidationFeedback validation = createValidationSummary();
         contentBox.getChildren().add(validation);
@@ -156,23 +161,20 @@ public class SummaryStep extends AbstractWizardStep {
             // Project References
             var meta = model.getSubmission().getProjectMetaData();
             if (meta != null) {
-                boolean hasRefs = meta.hasPubmedIds() || meta.hasReanalysisPxAccessions()
+                boolean hasReferences = meta.hasPubmedIds()
                     || meta.hasOtherOmicsLink() || !meta.getProjectTags().isEmpty();
-                if (hasRefs) {
-                    VBox refsSection = createSectionBox("Project References");
+                if (hasReferences) {
+                    VBox additionalSection = createSectionBox("Project References");
                     if (meta.hasPubmedIds()) {
-                        addField(refsSection, "PubMed IDs", String.join(", ", meta.getPubmedIds()));
-                    }
-                    if (meta.hasReanalysisPxAccessions()) {
-                        addField(refsSection, "Reanalysis PX Accessions", String.join(", ", meta.getReanalysisAccessions()));
+                        addField(additionalSection, "PubMed IDs", String.join(", ", meta.getPubmedIds()));
                     }
                     if (meta.hasOtherOmicsLink()) {
-                        addField(refsSection, "Other Omics Links", meta.getOtherOmicsLink());
+                        addField(additionalSection, "Omics Dataset Links", meta.getOtherOmicsLink());
                     }
                     if (!meta.getProjectTags().isEmpty()) {
-                        addField(refsSection, "Project Tags", String.join(", ", meta.getProjectTags()));
+                        addField(additionalSection, "Project Tags", String.join(", ", meta.getProjectTags()));
                     }
-                    contentBox.getChildren().add(refsSection);
+                    contentBox.getChildren().add(additionalSection);
                 }
             }
         }
@@ -545,6 +547,87 @@ public class SummaryStep extends AbstractWizardStep {
         }
 
         return missing;
+    }
+
+    // ==================== Crosslinking Detection ====================
+
+    private static final String CROSSLINK_ACCESSION = "PRIDE:0000430";
+
+    private boolean isCrosslinkDataset() {
+        // Check experiment type accession
+        boolean hasCrosslinkType = model.getExperimentMethods().stream()
+            .anyMatch(t -> CROSSLINK_ACCESSION.equals(t.getAccession()));
+        if (hasCrosslinkType) return true;
+
+        // Check text fields
+        String[] fields = {
+            model.getProjectTitle(),
+            model.getKeywords(),
+            model.getProjectDescription(),
+            model.getSampleProcessingProtocol(),
+            model.getDataProcessingProtocol()
+        };
+        for (String text : fields) {
+            if (text != null) {
+                String lower = text.toLowerCase();
+                if (lower.contains("crosslink") || lower.contains("cross-link")) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private VBox createCrosslinkBanner() {
+        VBox banner = new VBox(8);
+        banner.setPadding(new Insets(14));
+        banner.setStyle(
+            "-fx-background-color: #fff8e1; " +
+            "-fx-border-color: #f9a825; " +
+            "-fx-border-width: 0 0 0 4; " +
+            "-fx-border-radius: 0 6 6 0; " +
+            "-fx-background-radius: 0 6 6 0;");
+
+        HBox headerRow = new HBox(8);
+        headerRow.setAlignment(Pos.CENTER_LEFT);
+
+        Label icon = new Label("\u26A0");
+        icon.setStyle("-fx-font-size: 18px; -fx-text-fill: #f9a825;");
+
+        Label title = new Label("Crosslinking Dataset Detected");
+        title.setStyle("-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #6d4c00;");
+
+        headerRow.getChildren().addAll(icon, title);
+
+        Label message = new Label(
+            "Please ensure your files and metadata meet the requirements " +
+            "for the PRIDE Crosslinking Resource.");
+        message.setWrapText(true);
+        message.setStyle("-fx-text-fill: #6d4c00; -fx-font-size: 12px;");
+
+        HBox linksRow = new HBox(16);
+        linksRow.setPadding(new Insets(4, 0, 0, 0));
+
+        Hyperlink guidelinesLink = new Hyperlink("Submission Guidelines");
+        guidelinesLink.setStyle("-fx-text-fill: #0066cc; -fx-font-size: 12px;");
+        guidelinesLink.setOnAction(e -> openUrl("https://www.ebi.ac.uk/pride/markdownpage/crosslinking"));
+
+        Hyperlink resourceLink = new Hyperlink("PRIDE Crosslinking Resource");
+        resourceLink.setStyle("-fx-text-fill: #0066cc; -fx-font-size: 12px;");
+        resourceLink.setOnAction(e -> openUrl("https://www.ebi.ac.uk/pride/archive/crosslinking"));
+
+        linksRow.getChildren().addAll(guidelinesLink, resourceLink);
+
+        banner.getChildren().addAll(headerRow, message, linksRow);
+        return banner;
+    }
+
+    private void openUrl(String url) {
+        try {
+            java.awt.Desktop.getDesktop().browse(new java.net.URI(url));
+        } catch (Exception e) {
+            LoggerFactory.getLogger(SummaryStep.class).error("Failed to open URL: {}", url, e);
+        }
     }
 
     // ==================== Submission.px Writing ====================

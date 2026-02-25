@@ -110,26 +110,7 @@ public class FileSelectionStep extends AbstractWizardStep {
         topBox.getChildren().addAll(instructionLabel, buttonBar, classificationPanel);
         root.setTop(topBox);
 
-        // Search field right above the table, aligned right
-        HBox searchBar = new HBox(8);
-        searchBar.setAlignment(Pos.CENTER_RIGHT);
-        searchBar.setPadding(new Insets(0, 0, 5, 0));
-
-        TextField searchField = new TextField();
-        searchField.setPromptText("Search files...");
-        searchField.setPrefWidth(250);
-        searchField.textProperty().addListener((obs, oldVal, newVal) -> {
-            if (fileTable != null) {
-                fileTable.filterByName(newVal);
-            }
-        });
-
-        searchBar.getChildren().add(searchField);
-
-        // Center: File table wrapped with search bar
-        VBox centerBox = new VBox(0);
-        centerBox.getChildren().add(searchBar);
-
+        // Create file table first so search can bind to it
         fileTable = new FileTableView();
         fileTable.setDataFiles(model.getFiles());
         fileTable.setOnFilesDropped(this::addFilesFromDrop);
@@ -142,7 +123,21 @@ public class FileSelectionStep extends AbstractWizardStep {
             removeSelectedButton.setDisable(fileTable.getSelectionModel().isEmpty());
         });
 
-        centerBox.getChildren().add(fileTable);
+        // Search field right above the table, aligned right
+        HBox searchBar = new HBox(8);
+        searchBar.setAlignment(Pos.CENTER_RIGHT);
+        searchBar.setPadding(new Insets(0, 0, 5, 0));
+
+        Label searchIcon = new Label("\u2315");
+        searchIcon.setStyle("-fx-font-size: 16px; -fx-text-fill: #666;");
+
+        TextField searchField = fileTable.createSearchField();
+        searchField.setPrefWidth(250);
+
+        searchBar.getChildren().addAll(searchIcon, searchField);
+
+        VBox centerBox = new VBox(0);
+        centerBox.getChildren().addAll(searchBar, fileTable);
         VBox.setVgrow(fileTable, Priority.ALWAYS);
         root.setCenter(centerBox);
 
