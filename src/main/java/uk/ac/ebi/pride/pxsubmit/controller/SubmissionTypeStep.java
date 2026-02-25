@@ -264,22 +264,40 @@ public class SubmissionTypeStep extends AbstractWizardStep {
 
     @Override
     protected void initializeStep() {
-        // Always valid since one option is pre-selected
-        valid.set(true);
-
         // Listen for selection changes to update model
         submissionTypeGroup.selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null) {
                 String optionId = (String) newVal.getUserData();
                 handleOptionChange(optionId);
             }
-            valid.set(newVal != null);
+            updateValidity();
         });
+
+        // Listen for project selection changes in resubmission combo
+        projectComboBox.valueProperty().addListener((obs, oldVal, newVal) -> updateValidity());
 
         // Set initial value in model
         Toggle selected = submissionTypeGroup.getSelectedToggle();
         if (selected != null) {
             handleOptionChange((String) selected.getUserData());
+        }
+
+        updateValidity();
+    }
+
+    private void updateValidity() {
+        Toggle selected = submissionTypeGroup.getSelectedToggle();
+        if (selected == null) {
+            valid.set(false);
+            return;
+        }
+        String optionId = (String) selected.getUserData();
+        if ("resubmission".equals(optionId)) {
+            // Require a project to be selected
+            String project = projectComboBox.getValue();
+            valid.set(project != null && !project.isEmpty());
+        } else {
+            valid.set(true);
         }
     }
 

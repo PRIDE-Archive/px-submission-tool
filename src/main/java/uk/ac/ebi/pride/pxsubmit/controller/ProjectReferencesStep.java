@@ -7,40 +7,46 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * Step for entering project references:
- * - Project Tags (from cv/projecttag.cv)
  * - PubMed IDs
- * - Reanalysis PX Accessions
- * - Links to other omics datasets
+ * - Links to other omics datasets (source + accession, multiple entries)
  *
  * All fields are optional.
  */
 public class ProjectReferencesStep extends AbstractWizardStep {
 
     private static final Pattern PUBMED_PATTERN = Pattern.compile("^\\d[\\d, ]+\\d$");
-    private static final Pattern PX_ACCESSION_PATTERN = Pattern.compile("^(PXD\\d{6}[, ]*)+$");
+
+    /** Omics data sources: display name -> submission.px prefix */
+    private static final LinkedHashMap<String, String> OMICS_SOURCES = new LinkedHashMap<>();
+    static {
+        OMICS_SOURCES.put("PRIDE", "pride.project");
+        OMICS_SOURCES.put("GEO", "geo");
+        OMICS_SOURCES.put("ArrayExpress", "arrayexpress");
+        OMICS_SOURCES.put("SRA", "insdc.sra");
+        OMICS_SOURCES.put("BioProject", "bioproject");
+        OMICS_SOURCES.put("ENA", "ena");
+        OMICS_SOURCES.put("dbGaP", "dbgap");
+        OMICS_SOURCES.put("MetaboLights", "metabolights");
+        OMICS_SOURCES.put("ProteomeXchange", "px");
+        OMICS_SOURCES.put("EGA Study", "ega.study");
+        OMICS_SOURCES.put("EGA Dataset", "ega.dataset");
+        OMICS_SOURCES.put("PeptideAtlas", "peptideatlas.dataset");
+    }
 
     private TextField pubmedField;
-    private TextField reanalysisField;
-    private TextField omicsLinkField;
-    private VBox tagCheckboxContainer;
-    private final List<CheckBox> tagCheckboxes = new ArrayList<>();
     private Label pubmedValidationLabel;
-    private Label reanalysisValidationLabel;
+    private VBox omicsEntriesContainer;
+    private final List<OmicsEntryRow> omicsEntries = new ArrayList<>();
 
     public ProjectReferencesStep(SubmissionModel model) {
         super("project-references",
-              "Project References",
-              "Add publications, project tags, and related dataset links",
+              "Reference",
+              "Add publications and related dataset links",
               model);
     }
 
@@ -71,7 +77,7 @@ public class ProjectReferencesStep extends AbstractWizardStep {
         infoTitle.setStyle("-fx-font-weight: bold; -fx-text-fill: #0066cc;");
 
         Label infoText = new Label(
-            "Add any publications, project affiliations, or links to related datasets. " +
+            "Add any publications or links to related datasets. " +
             "All fields on this page are optional - skip if not applicable.");
         infoText.setWrapText(true);
         infoText.setStyle("-fx-text-fill: #666; -fx-font-size: 11px;");
@@ -81,24 +87,14 @@ public class ProjectReferencesStep extends AbstractWizardStep {
         // PubMed IDs section
         VBox pubmedSection = createPubmedSection();
 
-        // Reanalysis section
-        VBox reanalysisSection = createReanalysisSection();
-
-        // Other omics link section
-        VBox omicsSection = createOmicsLinkSection();
-
-        // Project Tags section
-        VBox tagsSection = createProjectTagsSection();
+        // Omics links section
+        VBox omicsSection = createOmicsLinksSection();
 
         content.getChildren().addAll(
             infoBox,
             pubmedSection,
             new Separator(),
-            reanalysisSection,
-            new Separator(),
-            omicsSection,
-            new Separator(),
-            tagsSection
+            omicsSection
         );
 
         scrollPane.setContent(content);
@@ -129,105 +125,40 @@ public class ProjectReferencesStep extends AbstractWizardStep {
         return section;
     }
 
-    private VBox createReanalysisSection() {
-        VBox section = new VBox(8);
-
-        Label titleLabel = new Label("Reanalysis ProteomeXchange Accession(s)");
-        titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
-
-        Label descLabel = new Label(
-            "Only applicable if your results are based on the reprocessing of previously submitted PX dataset(s). " +
-            "Enter PX accessions separated by commas.");
-        descLabel.setWrapText(true);
-        descLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 11px;");
-
-        reanalysisField = new TextField();
-        reanalysisField.setPromptText("e.g. PXD012345, PXD067890");
-        reanalysisField.setPrefWidth(400);
-
-        reanalysisValidationLabel = new Label();
-        reanalysisValidationLabel.setStyle("-fx-font-size: 11px;");
-        reanalysisValidationLabel.setVisible(false);
-        reanalysisValidationLabel.setManaged(false);
-
-        section.getChildren().addAll(titleLabel, descLabel, reanalysisField, reanalysisValidationLabel);
-        return section;
-    }
-
-    private VBox createOmicsLinkSection() {
+    private VBox createOmicsLinksSection() {
         VBox section = new VBox(8);
 
         Label titleLabel = new Label("Links to Other 'Omics' Datasets");
         titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
 
         Label descLabel = new Label(
-            "Only applicable if proteomics results can be linked to other biological data " +
-            "submitted to other resources (e.g. ArrayExpress, GEO).");
+            "Link your proteomics results to related datasets in other repositories. " +
+            "Select the source and enter the accession/identifier.");
         descLabel.setWrapText(true);
         descLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 11px;");
 
-        omicsLinkField = new TextField();
-        omicsLinkField.setPromptText("e.g. https://www.ebi.ac.uk/arrayexpress/experiments/E-MTAB-1234");
-        omicsLinkField.setPrefWidth(500);
+        // Container for omics entry rows
+        omicsEntriesContainer = new VBox(6);
 
-        section.getChildren().addAll(titleLabel, descLabel, omicsLinkField);
+        // Add button
+        Button addButton = new Button("+ Add Link");
+        addButton.setStyle("-fx-background-color: #0066cc; -fx-text-fill: white; " +
+            "-fx-background-radius: 4; -fx-cursor: hand;");
+        addButton.setOnAction(e -> addOmicsEntryRow(null, ""));
+
+        section.getChildren().addAll(titleLabel, descLabel, omicsEntriesContainer, addButton);
         return section;
     }
 
-    private VBox createProjectTagsSection() {
-        VBox section = new VBox(8);
-
-        Label titleLabel = new Label("Project Tags");
-        titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
-
-        Label descLabel = new Label(
-            "Select any applicable project affiliations for your dataset.");
-        descLabel.setWrapText(true);
-        descLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 11px;");
-
-        tagCheckboxContainer = new VBox(4);
-        tagCheckboxContainer.setPadding(new Insets(5, 0, 0, 10));
-
-        // Load project tags from CV file
-        List<String> tags = loadProjectTags();
-        for (String tag : tags) {
-            CheckBox cb = new CheckBox(tag);
-            cb.setStyle("-fx-font-size: 12px;");
-            tagCheckboxes.add(cb);
-            tagCheckboxContainer.getChildren().add(cb);
-        }
-
-        // Wrap in a scroll pane if many tags
-        ScrollPane tagScroll = new ScrollPane(tagCheckboxContainer);
-        tagScroll.setFitToWidth(true);
-        tagScroll.setPrefHeight(200);
-        tagScroll.setMaxHeight(200);
-        tagScroll.setStyle("-fx-background-color: transparent; -fx-border-color: #e0e0e0; " +
-            "-fx-border-radius: 4; -fx-background-radius: 4;");
-
-        section.getChildren().addAll(titleLabel, descLabel, tagScroll);
-        return section;
+    private void addOmicsEntryRow(String sourceKey, String accession) {
+        OmicsEntryRow row = new OmicsEntryRow(sourceKey, accession);
+        omicsEntries.add(row);
+        omicsEntriesContainer.getChildren().add(row.getNode());
     }
 
-    private List<String> loadProjectTags() {
-        List<String> tags = new ArrayList<>();
-        try (InputStream is = getClass().getResourceAsStream("/cv/projecttag.cv")) {
-            if (is != null) {
-                try (BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(is, StandardCharsets.UTF_8))) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        line = line.trim();
-                        if (!line.isEmpty()) {
-                            tags.add(line);
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            logger.warn("Could not load project tags from CV file", e);
-        }
-        return tags;
+    private void removeOmicsEntryRow(OmicsEntryRow row) {
+        omicsEntries.remove(row);
+        omicsEntriesContainer.getChildren().remove(row.getNode());
     }
 
     @Override
@@ -257,29 +188,6 @@ public class ProjectReferencesStep extends AbstractWizardStep {
                 pubmedValidationLabel.setManaged(false);
             }
         });
-
-        // Live reanalysis validation
-        reanalysisField.textProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal != null && !newVal.trim().isEmpty()) {
-                if (PX_ACCESSION_PATTERN.matcher(newVal.trim()).matches()) {
-                    reanalysisField.setStyle("");
-                    reanalysisValidationLabel.setText("\u2714 Valid PX accession(s)");
-                    reanalysisValidationLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #28a745;");
-                    reanalysisValidationLabel.setVisible(true);
-                    reanalysisValidationLabel.setManaged(true);
-                } else {
-                    reanalysisField.setStyle("-fx-border-color: #dc3545;");
-                    reanalysisValidationLabel.setText("Use format: PXD000000 (separated by commas)");
-                    reanalysisValidationLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #dc3545;");
-                    reanalysisValidationLabel.setVisible(true);
-                    reanalysisValidationLabel.setManaged(true);
-                }
-            } else {
-                reanalysisField.setStyle("");
-                reanalysisValidationLabel.setVisible(false);
-                reanalysisValidationLabel.setManaged(false);
-            }
-        });
     }
 
     @Override
@@ -292,23 +200,29 @@ public class ProjectReferencesStep extends AbstractWizardStep {
                 pubmedField.setText(String.join(", ", meta.getPubmedIds()));
             }
 
-            // Reanalysis accessions
-            if (meta.hasReanalysisPxAccessions()) {
-                reanalysisField.setText(String.join(", ", meta.getReanalysisAccessions()));
-            }
-
-            // Other omics link
+            // Other omics links - parse from stored format "source:accession,source:accession"
             if (meta.hasOtherOmicsLink()) {
-                omicsLinkField.setText(meta.getOtherOmicsLink());
-            }
-
-            // Project tags
-            Set<String> selectedTags = meta.getProjectTags();
-            if (selectedTags != null) {
-                for (CheckBox cb : tagCheckboxes) {
-                    cb.setSelected(selectedTags.contains(cb.getText()));
+                String link = meta.getOtherOmicsLink();
+                // Clear existing rows
+                omicsEntries.clear();
+                omicsEntriesContainer.getChildren().clear();
+                // Parse entries
+                if (link != null && !link.trim().isEmpty()) {
+                    String[] parts = link.split(",");
+                    for (String part : parts) {
+                        part = part.trim();
+                        int colonIdx = part.indexOf(':');
+                        if (colonIdx > 0) {
+                            String sourceValue = part.substring(0, colonIdx);
+                            String accession = part.substring(colonIdx + 1);
+                            // Find display key for this source value
+                            String displayKey = findDisplayKeyForValue(sourceValue);
+                            addOmicsEntryRow(displayKey, accession);
+                        }
+                    }
                 }
             }
+
         }
 
         // Test mode: pre-fill example data
@@ -316,7 +230,20 @@ public class ProjectReferencesStep extends AbstractWizardStep {
             if (pubmedField.getText() == null || pubmedField.getText().isEmpty()) {
                 pubmedField.setText("12345678");
             }
+            if (omicsEntries.isEmpty()) {
+                addOmicsEntryRow("GEO", "GSE123456");
+            }
         }
+    }
+
+    /** Find the display key (e.g. "GEO") for a submission.px value (e.g. "geo") */
+    private String findDisplayKeyForValue(String value) {
+        for (Map.Entry<String, String> entry : OMICS_SOURCES.entrySet()) {
+            if (entry.getValue().equals(value)) {
+                return entry.getKey();
+            }
+        }
+        return null;
     }
 
     @Override
@@ -342,38 +269,26 @@ public class ProjectReferencesStep extends AbstractWizardStep {
             }
         }
 
-        // Reanalysis accessions
-        meta.clearReanalysisPxAccessions();
-        String reanalysisText = reanalysisField.getText();
-        if (reanalysisText != null && !reanalysisText.trim().isEmpty()) {
-            String[] accessions = reanalysisText.trim().split("[,\\s]+");
-            List<String> validAccessions = Arrays.stream(accessions)
-                .map(String::trim)
-                .filter(s -> s.matches("PXD\\d{6}"))
-                .toList();
-            if (!validAccessions.isEmpty()) {
-                meta.addReanalysisPxAccessions(validAccessions.toArray(new String[0]));
+        // Build omics link string: "source:accession,source:accession"
+        StringBuilder omicsBuilder = new StringBuilder();
+        for (OmicsEntryRow row : omicsEntries) {
+            String sourceKey = row.getSelectedSourceKey();
+            String accession = row.getAccession();
+            if (sourceKey != null && !accession.isEmpty()) {
+                String sourceValue = OMICS_SOURCES.get(sourceKey);
+                if (sourceValue != null) {
+                    if (omicsBuilder.length() > 0) {
+                        omicsBuilder.append(",");
+                    }
+                    omicsBuilder.append(sourceValue).append(":").append(accession.trim());
+                }
             }
         }
+        meta.setOtherOmicsLink(omicsBuilder.length() > 0 ? omicsBuilder.toString() : null);
 
-        // Other omics link
-        String omicsLink = omicsLinkField.getText();
-        meta.setOtherOmicsLink(omicsLink != null && !omicsLink.trim().isEmpty() ? omicsLink.trim() : null);
-
-        // Project tags
-        meta.clearProjectTags();
-        List<String> selectedTags = tagCheckboxes.stream()
-            .filter(CheckBox::isSelected)
-            .map(CheckBox::getText)
-            .toList();
-        if (!selectedTags.isEmpty()) {
-            meta.addProjectTags(selectedTags.toArray(new String[0]));
-        }
-
-        logger.info("Saved references: {} PubMed IDs, {} reanalysis accessions, {} project tags",
+        logger.info("Saved references: {} PubMed IDs, {} omics links",
             meta.getNumberOfPubmedIds(),
-            meta.getNumberOfReanalysisPxAccessions(),
-            meta.getProjectTags().size());
+            omicsEntries.stream().filter(r -> r.getSelectedSourceKey() != null && !r.getAccession().isEmpty()).count());
     }
 
     @Override
@@ -388,22 +303,18 @@ public class ProjectReferencesStep extends AbstractWizardStep {
             }
         }
 
-        // Validate reanalysis accessions if entered
-        String reanalysisText = reanalysisField.getText();
-        if (reanalysisText != null && !reanalysisText.trim().isEmpty()) {
-            if (!PX_ACCESSION_PATTERN.matcher(reanalysisText.trim()).matches()) {
-                showError("Please enter valid PX accessions in format PXD000000 (separated by commas)");
-                reanalysisField.requestFocus();
+        // Validate omics entries - each must have both source and accession if partially filled
+        for (OmicsEntryRow row : omicsEntries) {
+            String sourceKey = row.getSelectedSourceKey();
+            String accession = row.getAccession();
+            if (sourceKey != null && accession.isEmpty()) {
+                showError("Please enter an accession for the selected source '" + sourceKey + "', or remove the entry.");
                 return false;
             }
-        }
-
-        // Validate omics link length
-        String omicsLink = omicsLinkField.getText();
-        if (omicsLink != null && omicsLink.length() > 500) {
-            showError("Links to other omics datasets must be less than 500 characters");
-            omicsLinkField.requestFocus();
-            return false;
+            if (sourceKey == null && !accession.isEmpty()) {
+                showError("Please select a source for the accession '" + accession + "', or remove the entry.");
+                return false;
+            }
         }
 
         // Save to model before leaving
@@ -417,5 +328,52 @@ public class ProjectReferencesStep extends AbstractWizardStep {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    /**
+     * Inner class representing a single omics link entry row (source dropdown + accession field + remove button).
+     */
+    private class OmicsEntryRow {
+        private final HBox container;
+        private final ComboBox<String> sourceCombo;
+        private final TextField accessionField;
+
+        OmicsEntryRow(String sourceKey, String accession) {
+            container = new HBox(8);
+            container.setAlignment(Pos.CENTER_LEFT);
+
+            sourceCombo = new ComboBox<>();
+            sourceCombo.getItems().addAll(OMICS_SOURCES.keySet());
+            sourceCombo.setPromptText("Select source...");
+            sourceCombo.setPrefWidth(180);
+            if (sourceKey != null) {
+                sourceCombo.setValue(sourceKey);
+            }
+
+            accessionField = new TextField(accession != null ? accession : "");
+            accessionField.setPromptText("Accession / Identifier");
+            accessionField.setPrefWidth(250);
+
+            Button removeBtn = new Button("\u2715");
+            removeBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #dc3545; " +
+                "-fx-font-size: 14px; -fx-cursor: hand; -fx-padding: 2 6;");
+            removeBtn.setTooltip(new Tooltip("Remove this entry"));
+            removeBtn.setOnAction(e -> removeOmicsEntryRow(this));
+
+            container.getChildren().addAll(sourceCombo, accessionField, removeBtn);
+        }
+
+        HBox getNode() {
+            return container;
+        }
+
+        String getSelectedSourceKey() {
+            return sourceCombo.getValue();
+        }
+
+        String getAccession() {
+            String text = accessionField.getText();
+            return text != null ? text.trim() : "";
+        }
     }
 }
