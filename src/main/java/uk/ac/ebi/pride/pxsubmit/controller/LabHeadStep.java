@@ -38,9 +38,35 @@ public class LabHeadStep extends AbstractWizardStep {
             .connectTimeout(Duration.ofSeconds(10))
             .build();
 
+    /** Country list with display names */
+    private static final String[] COUNTRY_LIST = {
+        "Afghanistan", "Albania", "Algeria", "Argentina", "Armenia",
+        "Australia", "Austria", "Azerbaijan", "Bangladesh", "Belarus",
+        "Belgium", "Bolivia", "Bosnia and Herzegovina", "Brazil", "Bulgaria",
+        "Cambodia", "Cameroon", "Canada", "Chile", "China",
+        "Colombia", "Costa Rica", "Croatia", "Cuba", "Cyprus",
+        "Czech Republic", "Denmark", "Ecuador", "Egypt", "Estonia",
+        "Ethiopia", "Finland", "France", "Georgia", "Germany",
+        "Ghana", "Greece", "Guatemala", "Hong Kong", "Hungary",
+        "Iceland", "India", "Indonesia", "Iran", "Iraq",
+        "Ireland", "Israel", "Italy", "Japan", "Jordan",
+        "Kazakhstan", "Kenya", "South Korea", "Kuwait", "Latvia",
+        "Lebanon", "Lithuania", "Luxembourg", "Macau", "Malaysia",
+        "Mexico", "Morocco", "Nepal", "Netherlands", "New Zealand",
+        "Nigeria", "Norway", "Oman", "Pakistan", "Panama",
+        "Peru", "Philippines", "Poland", "Portugal", "Qatar",
+        "Romania", "Russia", "Saudi Arabia", "Serbia", "Singapore",
+        "Slovakia", "Slovenia", "South Africa", "Spain", "Sri Lanka",
+        "Sweden", "Switzerland", "Taiwan", "Tanzania", "Thailand",
+        "Tunisia", "Turkey", "Uganda", "Ukraine", "United Arab Emirates",
+        "United Kingdom", "United States", "Uruguay", "Uzbekistan",
+        "Venezuela", "Vietnam", "Zimbabwe"
+    };
+
     private TextField nameField;
     private TextField emailField;
     private TextArea affiliationField;
+    private ComboBox<String> countryComboBox;
     private TextField orcidField;
     private Label orcidStatusLabel;
     private ProgressIndicator orcidSpinner;
@@ -118,6 +144,17 @@ public class LabHeadStep extends AbstractWizardStep {
         affiliationField.setWrapText(true);
         affiliationSection.getChildren().add(affiliationField);
 
+        // Country
+        VBox countrySection = createFieldSection("Country *",
+            "Country of the lab head's institution", true);
+        countryComboBox = new ComboBox<>();
+        countryComboBox.getItems().addAll(COUNTRY_LIST);
+        countryComboBox.setPromptText("Select country...");
+        countryComboBox.setPrefWidth(400);
+        countryComboBox.setEditable(true);
+
+        countrySection.getChildren().add(countryComboBox);
+
         // ORCID
         VBox orcidSection = createFieldSection("ORCID iD",
             "ORCID identifier of the lab head (recommended)", false);
@@ -157,6 +194,7 @@ public class LabHeadStep extends AbstractWizardStep {
             nameSection,
             emailSection,
             affiliationSection,
+            countrySection,
             new Separator(),
             orcidSection,
             new Separator(),
@@ -202,18 +240,30 @@ public class LabHeadStep extends AbstractWizardStep {
         affiliationField.textProperty().bindBidirectional(model.labHeadAffiliationProperty());
         orcidField.textProperty().bindBidirectional(model.labHeadOrcidProperty());
 
-        // Validation: name, email, and affiliation required
+        // Bind country ComboBox to model
+        countryComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
+            model.setLabHeadCountry(newVal);
+        });
+        // Pre-fill from model if available
+        if (model.getLabHeadCountry() != null) {
+            countryComboBox.setValue(model.getLabHeadCountry());
+        }
+
+        // Validation: name, email, affiliation, and country required
         valid.bind(Bindings.createBooleanBinding(() -> {
                 String name = nameField.getText();
                 String email = emailField.getText();
                 String affiliation = affiliationField.getText();
+                String country = countryComboBox.getValue();
                 return name != null && !name.trim().isEmpty()
                     && email != null && EMAIL_PATTERN.matcher(email.trim()).matches()
-                    && affiliation != null && !affiliation.trim().isEmpty();
+                    && affiliation != null && !affiliation.trim().isEmpty()
+                    && country != null && !country.trim().isEmpty();
             },
             nameField.textProperty(),
             emailField.textProperty(),
-            affiliationField.textProperty()
+            affiliationField.textProperty(),
+            countryComboBox.valueProperty()
         ));
 
         valid.addListener((obs, oldVal, newVal) -> updateValidationLabel());
@@ -254,6 +304,7 @@ public class LabHeadStep extends AbstractWizardStep {
                 nameField.setText("John Smith");
                 emailField.setText("john.smith@example.org");
                 affiliationField.setText("Department of Proteomics, Test University, Test City, UK");
+                countryComboBox.setValue("United Kingdom");
                 orcidField.setText("0000-0002-1825-0097");
             }
         }
@@ -269,8 +320,9 @@ public class LabHeadStep extends AbstractWizardStep {
         boolean hasName = nameField.getText() != null && !nameField.getText().trim().isEmpty();
         boolean hasEmail = emailField.getText() != null && EMAIL_PATTERN.matcher(emailField.getText().trim()).matches();
         boolean hasAffiliation = affiliationField.getText() != null && !affiliationField.getText().trim().isEmpty();
+        boolean hasCountry = countryComboBox.getValue() != null && !countryComboBox.getValue().trim().isEmpty();
 
-        if (hasName && hasEmail && hasAffiliation) {
+        if (hasName && hasEmail && hasAffiliation && hasCountry) {
             validationLabel.setText("\u2714 All required fields completed");
             validationLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #28a745;");
         } else {
@@ -278,6 +330,7 @@ public class LabHeadStep extends AbstractWizardStep {
             if (!hasName) missing.append("Name, ");
             if (!hasEmail) missing.append("Email, ");
             if (!hasAffiliation) missing.append("Affiliation, ");
+            if (!hasCountry) missing.append("Country, ");
             String missingStr = missing.substring(0, missing.length() - 2);
             validationLabel.setText("\u26A0 " + missingStr);
             validationLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #dc3545;");
@@ -308,6 +361,13 @@ public class LabHeadStep extends AbstractWizardStep {
         if (affiliationField.getText().length() > 500) {
             showError("Affiliation must be less than 500 characters");
             affiliationField.requestFocus();
+            return false;
+        }
+
+        String country = countryComboBox.getValue();
+        if (country == null || country.trim().isEmpty()) {
+            showError("Please select the lab head's country");
+            countryComboBox.requestFocus();
             return false;
         }
 

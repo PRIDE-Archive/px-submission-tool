@@ -164,25 +164,23 @@ public class PxSubmitApplication extends Application {
         // 3. Submission Type - Choose submission type
         // 4. File Resubmission - Manage existing/new files (skipped for normal submissions)
         // 5. Project Metadata - Title, description, keywords (skipped for resubmission)
-        // 6. Sample Information - SDRF templates and guidance (skipped for resubmission)
-        // 7. File Selection - Add files (drag-drop) (skipped for resubmission)
-        // 8. File Review - Review and adjust classifications (skipped for resubmission)
-        // 9. Sample Metadata - Species, tissue, instrument, etc. (skipped for resubmission)
-        // 10. Lab Head - PI contact details (skipped for resubmission)
-        // 11. Summary - Review before upload
-        // 12. Checksum Computation - Compute checksums for all files
-        // 13. Submission - Upload and complete
+        // 6. File Selection - Add files (drag-drop) (skipped for resubmission)
+        // 7. Sample Metadata - Species, tissue, instrument, etc. (skipped for resubmission)
+        // 8. Lab Head - PI contact details (skipped for resubmission)
+        // 9. Project References - PubMed IDs, project tags (skipped for resubmission)
+        // 10. Summary - Review before upload
+        // 11. Checksum Computation - Compute checksums for all files
+        // 12. Submission - Upload and complete
 
         wizardController.addStep(new WelcomeStep(model));
         wizardController.addStep(new LoginStep(model));
         wizardController.addStep(new SubmissionTypeStep(model));
         wizardController.addStep(new FileResubmissionStep(model));  // Resubmission file management (skipped for normal)
         wizardController.addStep(new ProjectMetadataStep(model));
-        wizardController.addStep(new SampleInformationStep(model));
         wizardController.addStep(new FileSelectionStep(model));
-        wizardController.addStep(new FileReviewStep(model));
         wizardController.addStep(new SampleMetadataStep(model));
         wizardController.addStep(new LabHeadStep(model));
+        wizardController.addStep(new ProjectReferencesStep(model));
         wizardController.addStep(new SummaryStep(model));
         wizardController.addStep(new ChecksumComputationStep(model));
         wizardController.addStep(new SubmissionStep(model));

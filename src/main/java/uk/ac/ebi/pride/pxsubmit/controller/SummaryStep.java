@@ -144,10 +144,36 @@ public class SummaryStep extends AbstractWizardStep {
                 addField(labHeadSection, "Name", model.getLabHeadName());
                 addField(labHeadSection, "Email", model.getLabHeadEmail());
                 addField(labHeadSection, "Affiliation", model.getLabHeadAffiliation());
+                if (model.getLabHeadCountry() != null && !model.getLabHeadCountry().isEmpty()) {
+                    addField(labHeadSection, "Country", model.getLabHeadCountry());
+                }
                 if (model.getLabHeadOrcid() != null && !model.getLabHeadOrcid().isEmpty()) {
                     addField(labHeadSection, "ORCID iD", model.getLabHeadOrcid());
                 }
                 contentBox.getChildren().add(labHeadSection);
+            }
+
+            // Project References
+            var meta = model.getSubmission().getProjectMetaData();
+            if (meta != null) {
+                boolean hasRefs = meta.hasPubmedIds() || meta.hasReanalysisPxAccessions()
+                    || meta.hasOtherOmicsLink() || !meta.getProjectTags().isEmpty();
+                if (hasRefs) {
+                    VBox refsSection = createSectionBox("Project References");
+                    if (meta.hasPubmedIds()) {
+                        addField(refsSection, "PubMed IDs", String.join(", ", meta.getPubmedIds()));
+                    }
+                    if (meta.hasReanalysisPxAccessions()) {
+                        addField(refsSection, "Reanalysis PX Accessions", String.join(", ", meta.getReanalysisAccessions()));
+                    }
+                    if (meta.hasOtherOmicsLink()) {
+                        addField(refsSection, "Other Omics Links", meta.getOtherOmicsLink());
+                    }
+                    if (!meta.getProjectTags().isEmpty()) {
+                        addField(refsSection, "Project Tags", String.join(", ", meta.getProjectTags()));
+                    }
+                    contentBox.getChildren().add(refsSection);
+                }
             }
         }
 
@@ -535,8 +561,9 @@ public class SummaryStep extends AbstractWizardStep {
 
         SubmissionFileWriter.write(model.getSubmission(), file);
 
-        // Append lab head ORCID (not supported by Contact model, so we add as COM line)
+        // Append lab head ORCID and country (not supported by Contact model, so we add as COM lines)
         appendLabHeadOrcid(file, model);
+        appendLabHeadCountry(file, model);
 
         // Append resubmission file change summary as COM lines
         if (model.isResubmissionMode()) {
@@ -560,6 +587,22 @@ public class SummaryStep extends AbstractWizardStep {
             } catch (IOException e) {
                 LoggerFactory.getLogger(SummaryStep.class)
                     .error("Failed to append lab head ORCID to submission.px", e);
+            }
+        }
+    }
+
+    /**
+     * Append lab head country to submission.px as a COM line.
+     */
+    private static void appendLabHeadCountry(File file, SubmissionModel model) {
+        String country = model.getLabHeadCountry();
+        if (country != null && !country.trim().isEmpty()) {
+            try (BufferedWriter bw = new BufferedWriter(new FileWriter(file, true))) {
+                bw.write("COM\tlab_head_country\t" + country.trim());
+                bw.newLine();
+            } catch (IOException e) {
+                LoggerFactory.getLogger(SummaryStep.class)
+                    .error("Failed to append lab head country to submission.px", e);
             }
         }
     }

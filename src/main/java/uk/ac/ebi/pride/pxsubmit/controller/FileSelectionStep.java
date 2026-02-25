@@ -94,21 +94,8 @@ public class FileSelectionStep extends AbstractWizardStep {
         removeSelectedButton.setOnAction(e -> removeSelected());
         removeSelectedButton.setDisable(true);
 
-        // Search field to filter the file table
-        TextField searchField = new TextField();
-        searchField.setPromptText("Search files...");
-        searchField.setPrefWidth(180);
-        searchField.textProperty().addListener((obs, oldVal, newVal) -> {
-            if (fileTable != null) {
-                fileTable.filterByName(newVal);
-            }
-        });
-
-        Region spacer = new Region();
-        HBox.setHgrow(spacer, Priority.ALWAYS);
-
         buttonBar.getChildren().addAll(
-            addFilesButton, addFolderButton, removeSelectedButton, spacer, searchField
+            addFilesButton, addFolderButton, removeSelectedButton
         );
 
         // File classification panel
@@ -123,7 +110,26 @@ public class FileSelectionStep extends AbstractWizardStep {
         topBox.getChildren().addAll(instructionLabel, buttonBar, classificationPanel);
         root.setTop(topBox);
 
-        // Center: File table
+        // Search field right above the table, aligned right
+        HBox searchBar = new HBox(8);
+        searchBar.setAlignment(Pos.CENTER_RIGHT);
+        searchBar.setPadding(new Insets(0, 0, 5, 0));
+
+        TextField searchField = new TextField();
+        searchField.setPromptText("Search files...");
+        searchField.setPrefWidth(250);
+        searchField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (fileTable != null) {
+                fileTable.filterByName(newVal);
+            }
+        });
+
+        searchBar.getChildren().add(searchField);
+
+        // Center: File table wrapped with search bar
+        VBox centerBox = new VBox(0);
+        centerBox.getChildren().add(searchBar);
+
         fileTable = new FileTableView();
         fileTable.setDataFiles(model.getFiles());
         fileTable.setOnFilesDropped(this::addFilesFromDrop);
@@ -136,7 +142,9 @@ public class FileSelectionStep extends AbstractWizardStep {
             removeSelectedButton.setDisable(fileTable.getSelectionModel().isEmpty());
         });
 
-        root.setCenter(fileTable);
+        centerBox.getChildren().add(fileTable);
+        VBox.setVgrow(fileTable, Priority.ALWAYS);
+        root.setCenter(centerBox);
 
         // Bottom: Summary, pagination, validation feedback, and validation status
         VBox bottomBox = new VBox(5);
