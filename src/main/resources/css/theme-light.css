@@ -82,15 +82,21 @@
     -fx-effect: dropshadow(gaussian, -px-shadow, 4, 0, 0, 2);
 }
 
-.wizard-title {
+.wizard-title,
+.wizard-header .wizard-title {
     -fx-font-size: 22px;
     -fx-font-weight: bold;
     -fx-text-fill: white;
 }
 
-.wizard-description {
+.wizard-description,
+.wizard-header .wizard-description {
     -fx-font-size: 14px;
     -fx-text-fill: rgba(255, 255, 255, 0.9);
+}
+
+.wizard-header .user-label {
+    -fx-text-fill: white;
 }
 
 .training-mode-badge {
@@ -161,20 +167,6 @@
 .global-progress-bar {
     -fx-pref-height: 3;
     -fx-max-height: 3;
-    -fx-padding: 0;
-}
-
-.global-progress-bar .track {
-    -fx-background-color: transparent;
-    -fx-background-insets: 0;
-    -fx-background-radius: 0;
-    -fx-padding: 0;
-}
-
-.global-progress-bar .bar {
-    -fx-background-color: -px-pride-teal;
-    -fx-background-insets: 0;
-    -fx-background-radius: 0;
     -fx-padding: 0;
 }
 
@@ -547,6 +539,21 @@
 
 .progress-bar-error .bar {
     -fx-background-color: -px-error;
+}
+
+/* Global progress bar override (must come after general .progress-bar .bar) */
+.global-progress-bar .bar {
+    -fx-background-color: #ff7100;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-padding: 0;
+}
+
+.global-progress-bar .track {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-padding: 0;
 }
 
 .progress-indicator {

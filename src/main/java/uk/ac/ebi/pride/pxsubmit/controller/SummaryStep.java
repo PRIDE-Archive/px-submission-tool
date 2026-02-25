@@ -131,6 +131,10 @@ public class SummaryStep extends AbstractWizardStep {
             addField(projectSection, "Title", model.getProjectTitle());
             addField(projectSection, "Description", model.getProjectDescription());
             addField(projectSection, "Keywords", model.getKeywords());
+            addListField(projectSection, "Experiment Type",
+                model.getExperimentMethods().stream().map(CvParam::getName).collect(Collectors.toList()));
+            addListField(projectSection, "Software",
+                model.getSoftware().stream().map(CvParam::getName).collect(Collectors.toList()));
             addField(projectSection, "Sample Processing", model.getSampleProcessingProtocol());
             addField(projectSection, "Data Processing", model.getDataProcessingProtocol());
             contentBox.getChildren().add(projectSection);
@@ -146,38 +150,28 @@ public class SummaryStep extends AbstractWizardStep {
                 model.getQuantifications().stream().map(CvParam::getName).collect(Collectors.toList()));
             contentBox.getChildren().add(metadataSection);
 
-            if (model.getLabHeadName() != null && !model.getLabHeadName().isEmpty()) {
-                VBox labHeadSection = createSectionBox("Lab Head", "\uD83D\uDC64");
-                addField(labHeadSection, "Name", model.getLabHeadName());
-                addField(labHeadSection, "Email", model.getLabHeadEmail());
-                addField(labHeadSection, "Affiliation", model.getLabHeadAffiliation());
-                if (model.getLabHeadCountry() != null && !model.getLabHeadCountry().isEmpty()) {
-                    addField(labHeadSection, "Country", model.getLabHeadCountry());
-                }
-                if (model.getLabHeadOrcid() != null && !model.getLabHeadOrcid().isEmpty()) {
-                    addField(labHeadSection, "ORCID iD", model.getLabHeadOrcid());
-                }
-                contentBox.getChildren().add(labHeadSection);
+            VBox labHeadSection = createSectionBox("Lab Head", "\uD83D\uDC64");
+            addField(labHeadSection, "Name", model.getLabHeadName());
+            addField(labHeadSection, "Email", model.getLabHeadEmail());
+            addField(labHeadSection, "Affiliation", model.getLabHeadAffiliation());
+            addField(labHeadSection, "Country", model.getLabHeadCountry());
+            if (model.getLabHeadOrcid() != null && !model.getLabHeadOrcid().isEmpty()) {
+                addField(labHeadSection, "ORCID iD", model.getLabHeadOrcid());
             }
+            contentBox.getChildren().add(labHeadSection);
 
             // Project References
             var meta = model.getSubmission().getProjectMetaData();
             if (meta != null) {
-                boolean hasReferences = meta.hasPubmedIds()
-                    || meta.hasOtherOmicsLink() || !meta.getProjectTags().isEmpty();
-                if (hasReferences) {
-                    VBox additionalSection = createSectionBox("Project References", "\uD83D\uDD17");
-                    if (meta.hasPubmedIds()) {
-                        addField(additionalSection, "PubMed IDs", String.join(", ", meta.getPubmedIds()));
-                    }
-                    if (meta.hasOtherOmicsLink()) {
-                        addField(additionalSection, "Omics Dataset Links", meta.getOtherOmicsLink());
-                    }
-                    if (!meta.getProjectTags().isEmpty()) {
-                        addField(additionalSection, "Project Tags", String.join(", ", meta.getProjectTags()));
-                    }
-                    contentBox.getChildren().add(additionalSection);
+                VBox referencesSection = createSectionBox("References & Links", "\uD83D\uDD17");
+                addField(referencesSection, "PubMed IDs",
+                    meta.hasPubmedIds() ? String.join(", ", meta.getPubmedIds()) : null);
+                addField(referencesSection, "Omics Dataset Links",
+                    meta.hasOtherOmicsLink() ? meta.getOtherOmicsLink() : null);
+                if (!meta.getProjectTags().isEmpty()) {
+                    addField(referencesSection, "Project Tags", String.join(", ", meta.getProjectTags()));
                 }
+                contentBox.getChildren().add(referencesSection);
             }
         }
 

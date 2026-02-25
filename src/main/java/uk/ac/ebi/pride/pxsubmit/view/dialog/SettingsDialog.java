@@ -31,6 +31,10 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
     private static final String PREF_MAX_RETRIES = "connection.maxRetries";
     private static final String PREF_SHOW_ADVANCED = "ui.showAdvanced";
     private static final String PREF_AUTO_VALIDATE = "files.autoValidate";
+    private static final String PREF_AI_ENABLED = "ai.enabled";
+    private static final String PREF_AI_API_KEY = "ai.apiKey";
+    private static final String PREF_AI_API_URL = "ai.apiUrl";
+    private static final String PREF_AI_MODEL = "ai.model";
 
     private final Preferences preferences;
 
@@ -41,6 +45,10 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
     private Spinner<Integer> maxRetriesSpinner;
     private CheckBox autoValidateCheck;
     private CheckBox showAdvancedCheck;
+    private CheckBox aiEnabledCheck;
+    private PasswordField aiApiKeyField;
+    private TextField aiApiUrlField;
+    private TextField aiModelField;
 
     public SettingsDialog(Window owner) {
         preferences = Preferences.userNodeForPackage(SettingsDialog.class);
@@ -76,7 +84,11 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
                         connectionTimeoutSpinner.getValue(),
                         maxRetriesSpinner.getValue(),
                         autoValidateCheck.isSelected(),
-                        showAdvancedCheck.isSelected()
+                        showAdvancedCheck.isSelected(),
+                        aiEnabledCheck.isSelected(),
+                        aiApiKeyField.getText(),
+                        aiApiUrlField.getText(),
+                        aiModelField.getText()
                 );
             }
             return null;
@@ -93,10 +105,13 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
         // Connection section
         TitledPane connectionPane = createConnectionSection();
 
+        // AI Assistant section
+        TitledPane aiPane = createAiAssistantSection();
+
         // Advanced section
         TitledPane advancedPane = createAdvancedSection();
 
-        content.getChildren().addAll(uploadPane, connectionPane, advancedPane);
+        content.getChildren().addAll(uploadPane, connectionPane, aiPane, advancedPane);
 
         return content;
     }
@@ -165,6 +180,61 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
         grid.add(retriesHint, 1, 2);
 
         TitledPane pane = new TitledPane("Connection Settings", grid);
+        pane.setCollapsible(false);
+        return pane;
+    }
+
+    private TitledPane createAiAssistantSection() {
+        GridPane grid = createFormGrid();
+
+        // Enable/disable checkbox
+        aiEnabledCheck = new CheckBox("Enable AI keyword suggestions");
+        aiEnabledCheck.setSelected(true);
+
+        Label enableHint = new Label("Use an AI assistant to suggest keywords based on project metadata");
+        enableHint.setStyle("-fx-text-fill: #666; -fx-font-size: 11px;");
+
+        // API URL
+        Label urlLabel = new Label("API URL:");
+        aiApiUrlField = new TextField();
+        aiApiUrlField.setPromptText("https://api.example.com/v1/completions");
+
+        Label urlHint = new Label("HTTP endpoint to POST keyword suggestion requests");
+        urlHint.setStyle("-fx-text-fill: #666; -fx-font-size: 11px;");
+
+        // API Key
+        Label keyLabel = new Label("API Key:");
+        aiApiKeyField = new PasswordField();
+        aiApiKeyField.setPromptText("Enter your API key");
+
+        // Model
+        Label modelLabel = new Label("Model (optional):");
+        aiModelField = new TextField();
+        aiModelField.setPromptText("e.g., gpt-4o-mini");
+
+        Label modelHint = new Label("Leave blank to use the endpoint's default model");
+        modelHint.setStyle("-fx-text-fill: #666; -fx-font-size: 11px;");
+
+        // Disable fields when AI is unchecked
+        aiApiUrlField.disableProperty().bind(aiEnabledCheck.selectedProperty().not());
+        aiApiKeyField.disableProperty().bind(aiEnabledCheck.selectedProperty().not());
+        aiModelField.disableProperty().bind(aiEnabledCheck.selectedProperty().not());
+
+        grid.add(aiEnabledCheck, 0, 0, 2, 1);
+        grid.add(enableHint, 0, 1, 2, 1);
+
+        grid.add(urlLabel, 0, 2);
+        grid.add(aiApiUrlField, 1, 2);
+        grid.add(urlHint, 1, 3);
+
+        grid.add(keyLabel, 0, 4);
+        grid.add(aiApiKeyField, 1, 4);
+
+        grid.add(modelLabel, 0, 5);
+        grid.add(aiModelField, 1, 5);
+        grid.add(modelHint, 1, 6);
+
+        TitledPane pane = new TitledPane("AI Assistant", grid);
         pane.setCollapsible(false);
         return pane;
     }
@@ -241,6 +311,16 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
             showAdvancedCheck.setSelected(
                     preferences.getBoolean(PREF_SHOW_ADVANCED, false));
 
+            // AI Assistant
+            aiEnabledCheck.setSelected(
+                    preferences.getBoolean(PREF_AI_ENABLED, true));
+            aiApiKeyField.setText(
+                    preferences.get(PREF_AI_API_KEY, ""));
+            aiApiUrlField.setText(
+                    preferences.get(PREF_AI_API_URL, ""));
+            aiModelField.setText(
+                    preferences.get(PREF_AI_MODEL, ""));
+
         } catch (Exception e) {
             logger.error("Failed to load settings", e);
         }
@@ -266,6 +346,12 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
             // Show advanced
             preferences.putBoolean(PREF_SHOW_ADVANCED, showAdvancedCheck.isSelected());
 
+            // AI Assistant
+            preferences.putBoolean(PREF_AI_ENABLED, aiEnabledCheck.isSelected());
+            preferences.put(PREF_AI_API_KEY, aiApiKeyField.getText());
+            preferences.put(PREF_AI_API_URL, aiApiUrlField.getText());
+            preferences.put(PREF_AI_MODEL, aiModelField.getText());
+
             preferences.flush();
             logger.info("Settings saved successfully");
 
@@ -282,6 +368,10 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
         maxRetriesSpinner.getValueFactory().setValue(3);
         autoValidateCheck.setSelected(true);
         showAdvancedCheck.setSelected(false);
+        aiEnabledCheck.setSelected(true);
+        aiApiKeyField.setText("");
+        aiApiUrlField.setText("");
+        aiModelField.setText("");
     }
 
     /**
@@ -293,7 +383,11 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
             int connectionTimeout,
             int maxRetries,
             boolean autoValidate,
-            boolean showAdvanced
+            boolean showAdvanced,
+            boolean aiEnabled,
+            String aiApiKey,
+            String aiApiUrl,
+            String aiModel
     ) {}
 
     /**

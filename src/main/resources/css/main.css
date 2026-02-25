@@ -26,13 +26,15 @@
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 4, 0, 0, 2);
 }
 
-.wizard-title {
+.wizard-title,
+.wizard-header .wizard-title {
     -fx-font-size: 22px;
     -fx-font-weight: bold;
     -fx-text-fill: white;
 }
 
-.wizard-description {
+.wizard-description,
+.wizard-header .wizard-description {
     -fx-font-size: 14px;
     -fx-text-fill: rgba(255, 255, 255, 0.9);
 }
@@ -47,8 +49,9 @@
 }
 
 /* User label and Logout button */
-.user-label {
-    -fx-text-fill: rgba(255, 255, 255, 0.85);
+.user-label,
+.wizard-header .user-label {
+    -fx-text-fill: white;
     -fx-font-size: 12px;
 }
 

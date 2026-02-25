@@ -8,8 +8,7 @@ import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.data.model.DataFile;
@@ -19,7 +18,6 @@ import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -34,7 +32,6 @@ public class ChecksumComputationStep extends AbstractWizardStep {
 
     // UI components
     private TableView<FileChecksumRow> fileTable;
-    private ProgressBar overallProgress;
     private Label statusLabel;
     private Label progressLabel;
     private Label etaLabel;
@@ -128,10 +125,6 @@ public class ChecksumComputationStep extends AbstractWizardStep {
         etaLabel.setVisible(false);
         etaLabel.setManaged(false);
 
-        overallProgress = new ProgressBar(0);
-        overallProgress.setPrefWidth(Double.MAX_VALUE);
-        overallProgress.setPrefHeight(25);
-
         // Buttons
         HBox buttonBox = new HBox(10);
         buttonBox.setAlignment(Pos.CENTER);
@@ -155,7 +148,6 @@ public class ChecksumComputationStep extends AbstractWizardStep {
             statusLabel,
             progressLabel,
             etaLabel,
-            overallProgress,
             buttonBox
         );
 
@@ -180,7 +172,6 @@ public class ChecksumComputationStep extends AbstractWizardStep {
         // Reset state
         computing.set(false);
         completed.set(false);
-        overallProgress.setProgress(0);
         fileRowMap.clear();
 
         // Populate table with files
@@ -245,7 +236,6 @@ public class ChecksumComputationStep extends AbstractWizardStep {
             }
         }
         statusLabel.setText("All checksums already computed");
-        overallProgress.setProgress(1.0);
         progressLabel.setText(fileTable.getItems().size() + " / " + fileTable.getItems().size() + " files processed");
     }
 
@@ -281,11 +271,6 @@ public class ChecksumComputationStep extends AbstractWizardStep {
                     }
                 }
             });
-        });
-
-        // Monitor progress
-        checksumService.progressProperty().addListener((obs, oldVal, newVal) -> {
-            Platform.runLater(() -> overallProgress.setProgress(newVal.doubleValue()));
         });
 
         checksumService.filesProcessedProperty().addListener((obs, oldVal, newVal) -> {
@@ -485,47 +470,48 @@ public class ChecksumComputationStep extends AbstractWizardStep {
         private Region createStatusIcon(FileChecksumStatus status) {
             StackPane pane = new StackPane();
             pane.setAlignment(Pos.CENTER);
-            pane.setPrefSize(24, 24);
+            pane.setMinSize(26, 26);
+            pane.setPrefSize(26, 26);
+            pane.setMaxSize(26, 26);
 
-            Circle circle = new Circle(10);
+            Label symbol = new Label();
+            symbol.setStyle("-fx-font-weight: bold; -fx-font-size: 12px;");
 
             switch (status) {
                 case PENDING:
-                    circle.setFill(Color.LIGHTGRAY);
-                    circle.setStroke(Color.GRAY);
-                    circle.setStrokeWidth(1);
+                    pane.setStyle(
+                        "-fx-background-color: #dee2e6; " +
+                        "-fx-background-radius: 13;");
+                    symbol.setText("\u2022");
+                    symbol.setStyle("-fx-text-fill: #6c757d; -fx-font-size: 14px;");
                     break;
 
                 case PROCESSING:
-                    circle.setFill(Color.LIGHTYELLOW);
-                    circle.setStroke(Color.ORANGE);
-                    circle.setStrokeWidth(2);
+                    pane.setStyle(
+                        "-fx-background-color: #1cc4c1; " +
+                        "-fx-background-radius: 13;");
+                    symbol.setText("\u2026");
+                    symbol.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
                     break;
 
                 case COMPLETED:
-                    circle.setFill(Color.LIGHTGREEN);
-                    circle.setStroke(Color.GREEN);
-                    circle.setStrokeWidth(2);
-
-                    // Add checkmark
-                    Label checkmark = new Label("✓");
-                    checkmark.setStyle("-fx-text-fill: green; -fx-font-weight: bold; -fx-font-size: 14px;");
-                    pane.getChildren().add(checkmark);
+                    pane.setStyle(
+                        "-fx-background-color: #69cb7e; " +
+                        "-fx-background-radius: 13;");
+                    symbol.setText("\u2713");
+                    symbol.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
                     break;
 
                 case FAILED:
-                    circle.setFill(Color.LIGHTCORAL);
-                    circle.setStroke(Color.RED);
-                    circle.setStrokeWidth(2);
-
-                    // Add X mark
-                    Label xmark = new Label("✗");
-                    xmark.setStyle("-fx-text-fill: red; -fx-font-weight: bold; -fx-font-size: 14px;");
-                    pane.getChildren().add(xmark);
+                    pane.setStyle(
+                        "-fx-background-color: #dc3545; " +
+                        "-fx-background-radius: 13;");
+                    symbol.setText("\u2717");
+                    symbol.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 14px;");
                     break;
             }
 
-            pane.getChildren().add(0, circle);
+            pane.getChildren().add(symbol);
             return pane;
         }
 

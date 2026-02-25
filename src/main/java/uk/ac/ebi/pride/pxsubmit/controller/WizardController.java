@@ -552,6 +552,7 @@ public class WizardController implements Initializable {
                 connector.getStyleClass().add("completed");
             }
         }
+
     }
 
     /**
