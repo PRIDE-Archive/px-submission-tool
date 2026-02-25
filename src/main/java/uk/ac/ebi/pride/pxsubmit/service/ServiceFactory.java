@@ -8,6 +8,9 @@ import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Resubmission;
 import uk.ac.ebi.pride.data.model.Submission;
 
+import uk.ac.ebi.pride.pxsubmit.service.ai.KeywordSuggestionService;
+import uk.ac.ebi.pride.pxsubmit.view.dialog.SettingsDialog;
+
 import java.io.File;
 import java.util.List;
 
@@ -64,5 +67,12 @@ public class ServiceFactory {
     public AsperaUploadService createAsperaUploadService(List<DataFile> files,
                                                          UploadDetail detail, String ascpPath) {
         return new AsperaUploadService(files, detail, ascpPath);
+    }
+
+    public KeywordSuggestionService createKeywordSuggestionService() {
+        String apiUrl = SettingsDialog.getStringPreference("ai.apiUrl", "");
+        String apiKey = SettingsDialog.getStringPreference("ai.apiKey", "");
+        String model = SettingsDialog.getStringPreference("ai.model", "");
+        return new KeywordSuggestionService(apiUrl, apiKey, model);
     }
 }

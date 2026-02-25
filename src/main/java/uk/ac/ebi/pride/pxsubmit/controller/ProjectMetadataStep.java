@@ -1,5 +1,6 @@
 package uk.ac.ebi.pride.pxsubmit.controller;
 
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -10,12 +11,16 @@ import javafx.util.Duration;
 import uk.ac.ebi.pride.data.model.CvParam;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 import uk.ac.ebi.pride.pxsubmit.service.OlsService;
+import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
+import uk.ac.ebi.pride.pxsubmit.service.ai.KeywordSuggestionService;
+import uk.ac.ebi.pride.pxsubmit.view.dialog.SettingsDialog;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -52,6 +57,14 @@ public class ProjectMetadataStep extends AbstractWizardStep {
     private static final String CROSSLINK_ACCESSION = "PRIDE:0000430";
     private VBox crosslinkBanner;
     private VBox form; // reference for banner insertion
+
+    // AI keyword suggestion UI
+    private Button suggestKeywordsButton;
+    private ProgressIndicator aiProgressIndicator;
+    private Label aiStatusLabel;
+    private FlowPane aiSuggestionsPane;
+    private VBox aiSuggestionBox;
+    private final Set<String> addedSuggestions = new HashSet<>();
 
     // Validation feedback
     private ValidationFeedback validationFeedback;
@@ -129,21 +142,6 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         descriptionCounter.setStyle("-fx-text-fill: #666; -fx-font-size: 11px;");
         descSection.getChildren().addAll(descriptionArea, descriptionCounter);
 
-        // Keywords
-        VBox keywordsSection = createFieldSection("Keywords",
-            "Type a keyword and press Enter to add it. Click \u2715 to remove.", true);
-        keywordsInput = new ChipInput();
-        keywordsInput.setPromptText("Type keyword and press Enter...");
-        Tooltip keywordsTooltip = new Tooltip(
-            "Add keywords that describe your dataset.\n" +
-            "Type a word and press Enter to add it as a tag.\n" +
-            "Click X on a tag to remove it.");
-        keywordsTooltip.setShowDelay(Duration.millis(300));
-        Tooltip.install(keywordsInput, keywordsTooltip);
-        Label keywordsHint = new Label("Examples: liver cancer, proteomics, mass spectrometry, biomarker");
-        keywordsHint.setStyle("-fx-text-fill: #999; -fx-font-size: 11px; -fx-font-style: italic;");
-        keywordsSection.getChildren().addAll(keywordsInput, keywordsHint);
-
         // Experiment Type
         VBox experimentTypeSection = createFieldSection("Experiment Type",
             "Select the type of mass spectrometry experiment", true);
@@ -207,6 +205,25 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         // Project Tags (optional)
         VBox projectTagsSection = createProjectTagsSection();
 
+        // Keywords (moved to bottom so users fill context first for AI suggestions)
+        VBox keywordsSection = createFieldSection("Keywords",
+            "Type a keyword and press Enter to add it. Click \u2715 to remove.", true);
+        keywordsInput = new ChipInput();
+        keywordsInput.setPromptText("Type keyword and press Enter...");
+        Tooltip keywordsTooltip = new Tooltip(
+            "Add keywords that describe your dataset.\n" +
+            "Type a word and press Enter to add it as a tag.\n" +
+            "Click X on a tag to remove it.");
+        keywordsTooltip.setShowDelay(Duration.millis(300));
+        Tooltip.install(keywordsInput, keywordsTooltip);
+        Label keywordsHint = new Label("Examples: liver cancer, proteomics, mass spectrometry, biomarker");
+        keywordsHint.setStyle("-fx-text-fill: #999; -fx-font-size: 11px; -fx-font-style: italic;");
+        keywordsSection.getChildren().addAll(keywordsInput, keywordsHint);
+
+        // AI keyword suggestion UI
+        aiSuggestionBox = createAiSuggestionBox();
+        keywordsSection.getChildren().add(aiSuggestionBox);
+
         // Validation feedback
         validationFeedback = new ValidationFeedback();
 
@@ -214,13 +231,13 @@ public class ProjectMetadataStep extends AbstractWizardStep {
             crosslinkBanner,
             titleSection,
             descSection,
-            keywordsSection,
             sampleSection,
             dataSection,
             experimentTypeSection,
             softwareSection,
             new Separator(),
             projectTagsSection,
+            keywordsSection,
             validationFeedback
         );
 
@@ -342,6 +359,183 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         }
     }
 
+    private VBox createAiSuggestionBox() {
+        VBox box = new VBox(8);
+        box.setPadding(new Insets(8, 0, 0, 0));
+
+        // Button + progress indicator row
+        HBox buttonRow = new HBox(10);
+        buttonRow.setAlignment(Pos.CENTER_LEFT);
+
+        suggestKeywordsButton = new Button("Suggest Keywords with AI");
+        suggestKeywordsButton.setStyle(
+            "-fx-background-color: #0066cc; " +
+            "-fx-text-fill: white; " +
+            "-fx-padding: 6 16; " +
+            "-fx-background-radius: 4; " +
+            "-fx-cursor: hand;");
+        suggestKeywordsButton.setOnAction(e -> requestAiSuggestions());
+
+        aiProgressIndicator = new ProgressIndicator();
+        aiProgressIndicator.setPrefSize(20, 20);
+        aiProgressIndicator.setVisible(false);
+        aiProgressIndicator.setManaged(false);
+
+        aiStatusLabel = new Label();
+        aiStatusLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #666;");
+
+        buttonRow.getChildren().addAll(suggestKeywordsButton, aiProgressIndicator, aiStatusLabel);
+
+        // Suggestions pane
+        aiSuggestionsPane = new FlowPane();
+        aiSuggestionsPane.setHgap(6);
+        aiSuggestionsPane.setVgap(6);
+        aiSuggestionsPane.setPadding(new Insets(4, 0, 0, 0));
+
+        box.getChildren().addAll(buttonRow, aiSuggestionsPane);
+        return box;
+    }
+
+    private void requestAiSuggestions() {
+        // Validate that title and description are filled
+        String title = titleField.getText();
+        String desc = descriptionArea.getText();
+        if (isNullOrEmpty(title) || isNullOrEmpty(desc)) {
+            aiStatusLabel.setText("Please fill in the title and description first.");
+            aiStatusLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #dc3545;");
+            return;
+        }
+
+        // Check AI is enabled
+        boolean aiEnabled = SettingsDialog.getBooleanPreference("ai.enabled", true);
+        if (!aiEnabled) {
+            aiStatusLabel.setText("AI assistant is disabled in Settings.");
+            aiStatusLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #dc3545;");
+            return;
+        }
+
+        // Create service and check configuration
+        KeywordSuggestionService service = ServiceFactory.getInstance().createKeywordSuggestionService();
+        if (!service.isConfigured()) {
+            aiStatusLabel.setText("Please configure the AI API URL and key in Settings.");
+            aiStatusLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #dc3545;");
+            return;
+        }
+
+        // Show progress
+        suggestKeywordsButton.setDisable(true);
+        aiProgressIndicator.setVisible(true);
+        aiProgressIndicator.setManaged(true);
+        aiStatusLabel.setText("Requesting suggestions...");
+        aiStatusLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #666;");
+        aiSuggestionsPane.getChildren().clear();
+        addedSuggestions.clear();
+
+        // Gather experiment types
+        List<String> experimentTypes = experimentTypeField.getSelectedTerms().stream()
+                .map(CvParam::getName)
+                .toList();
+
+        service.suggestKeywords(
+                title, desc,
+                sampleProtocolArea.getText(),
+                dataProtocolArea.getText(),
+                experimentTypes
+        ).thenAccept(suggestions -> Platform.runLater(() -> {
+            aiProgressIndicator.setVisible(false);
+            aiProgressIndicator.setManaged(false);
+            suggestKeywordsButton.setDisable(false);
+
+            if (suggestions.isEmpty()) {
+                aiStatusLabel.setText("No suggestions returned. Check your API configuration.");
+                aiStatusLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #dc3545;");
+                return;
+            }
+
+            aiStatusLabel.setText("Click a suggestion to add it as a keyword:");
+            aiStatusLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #28a745;");
+
+            for (String keyword : suggestions) {
+                Label chip = createSuggestionChip(keyword);
+                aiSuggestionsPane.getChildren().add(chip);
+            }
+        }));
+    }
+
+    private Label createSuggestionChip(String keyword) {
+        Label chip = new Label(keyword);
+        chip.setStyle(
+            "-fx-font-size: 11px; " +
+            "-fx-padding: 4 10; " +
+            "-fx-background-color: #e8f4fd; " +
+            "-fx-text-fill: #0066cc; " +
+            "-fx-background-radius: 12; " +
+            "-fx-border-color: #b3d9f2; " +
+            "-fx-border-radius: 12; " +
+            "-fx-cursor: hand;");
+        chip.setOnMouseEntered(e -> {
+            if (!addedSuggestions.contains(keyword)) {
+                chip.setStyle(
+                    "-fx-font-size: 11px; " +
+                    "-fx-padding: 4 10; " +
+                    "-fx-background-color: #0066cc; " +
+                    "-fx-text-fill: white; " +
+                    "-fx-background-radius: 12; " +
+                    "-fx-border-color: #0066cc; " +
+                    "-fx-border-radius: 12; " +
+                    "-fx-cursor: hand;");
+            }
+        });
+        chip.setOnMouseExited(e -> {
+            if (!addedSuggestions.contains(keyword)) {
+                chip.setStyle(
+                    "-fx-font-size: 11px; " +
+                    "-fx-padding: 4 10; " +
+                    "-fx-background-color: #e8f4fd; " +
+                    "-fx-text-fill: #0066cc; " +
+                    "-fx-background-radius: 12; " +
+                    "-fx-border-color: #b3d9f2; " +
+                    "-fx-border-radius: 12; " +
+                    "-fx-cursor: hand;");
+            }
+        });
+        chip.setOnMouseClicked(e -> {
+            if (!addedSuggestions.contains(keyword)) {
+                keywordsInput.add(keyword);
+                addedSuggestions.add(keyword);
+                chip.setStyle(
+                    "-fx-font-size: 11px; " +
+                    "-fx-padding: 4 10; " +
+                    "-fx-background-color: #d6d6d6; " +
+                    "-fx-text-fill: #888; " +
+                    "-fx-background-radius: 12; " +
+                    "-fx-border-color: #ccc; " +
+                    "-fx-border-radius: 12; " +
+                    "-fx-cursor: default;");
+            }
+        });
+        return chip;
+    }
+
+    private void updateAiSuggestionVisibility() {
+        boolean aiEnabled = SettingsDialog.getBooleanPreference("ai.enabled", true);
+        if (!aiEnabled) {
+            aiSuggestionBox.setVisible(false);
+            aiSuggestionBox.setManaged(false);
+        } else {
+            aiSuggestionBox.setVisible(true);
+            aiSuggestionBox.setManaged(true);
+
+            KeywordSuggestionService service = ServiceFactory.getInstance().createKeywordSuggestionService();
+            if (!service.isConfigured()) {
+                aiStatusLabel.setText("Configure AI API URL and key in Settings to enable suggestions.");
+                aiStatusLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #999;");
+            } else {
+                aiStatusLabel.setText("");
+            }
+        }
+    }
+
     private VBox createProjectTagsSection() {
         VBox section = createFieldSection("Project Tags",
             "Select any applicable project affiliations (optional)", false);
@@ -430,19 +624,6 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         if (!selected.isEmpty()) {
             meta.addProjectTags(selected.toArray(new String[0]));
         }
-    }
-
-    private VBox createSection(String title, String description) {
-        VBox section = new VBox(5);
-
-        Label titleLabel = new Label(title);
-        titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
-
-        Label descLabel = new Label(description);
-        descLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 12px;");
-
-        section.getChildren().addAll(titleLabel, descLabel);
-        return section;
     }
 
     private VBox createFieldSection(String title, String description, boolean required) {
@@ -677,6 +858,9 @@ public class ProjectMetadataStep extends AbstractWizardStep {
                 updateTagChips();
             }
         }
+
+        // Update AI suggestion visibility based on settings
+        updateAiSuggestionVisibility();
 
         // In test mode, pre-fill with example data if fields are empty
         if (model.isTrainingMode()) {

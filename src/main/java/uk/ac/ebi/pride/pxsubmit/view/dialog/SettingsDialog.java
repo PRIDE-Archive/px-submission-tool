@@ -8,7 +8,6 @@ import javafx.stage.Window;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
-import uk.ac.ebi.pride.pxsubmit.view.ThemeManager;
 
 import java.util.prefs.Preferences;
 
@@ -32,17 +31,24 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
     private static final String PREF_MAX_RETRIES = "connection.maxRetries";
     private static final String PREF_SHOW_ADVANCED = "ui.showAdvanced";
     private static final String PREF_AUTO_VALIDATE = "files.autoValidate";
+    private static final String PREF_AI_ENABLED = "ai.enabled";
+    private static final String PREF_AI_API_KEY = "ai.apiKey";
+    private static final String PREF_AI_API_URL = "ai.apiUrl";
+    private static final String PREF_AI_MODEL = "ai.model";
 
     private final Preferences preferences;
 
     // UI Controls
-    private ComboBox<ThemeManager.Theme> themeCombo;
     private ComboBox<UploadMethod> uploadMethodCombo;
     private Spinner<Integer> concurrentUploadsSpinner;
     private Spinner<Integer> connectionTimeoutSpinner;
     private Spinner<Integer> maxRetriesSpinner;
     private CheckBox autoValidateCheck;
     private CheckBox showAdvancedCheck;
+    private CheckBox aiEnabledCheck;
+    private PasswordField aiApiKeyField;
+    private TextField aiApiUrlField;
+    private TextField aiModelField;
 
     public SettingsDialog(Window owner) {
         preferences = Preferences.userNodeForPackage(SettingsDialog.class);
@@ -73,13 +79,16 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
             if (buttonType == ButtonType.OK) {
                 saveSettings();
                 return new Settings(
-                        themeCombo.getValue(),
                         uploadMethodCombo.getValue(),
                         concurrentUploadsSpinner.getValue(),
                         connectionTimeoutSpinner.getValue(),
                         maxRetriesSpinner.getValue(),
                         autoValidateCheck.isSelected(),
-                        showAdvancedCheck.isSelected()
+                        showAdvancedCheck.isSelected(),
+                        aiEnabledCheck.isSelected(),
+                        aiApiKeyField.getText(),
+                        aiApiUrlField.getText(),
+                        aiModelField.getText()
                 );
             }
             return null;
@@ -90,43 +99,21 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
         VBox content = new VBox(20);
         content.setPadding(new Insets(20));
 
-        // Appearance section
-        TitledPane appearancePane = createAppearanceSection();
-
         // Upload section
         TitledPane uploadPane = createUploadSection();
 
         // Connection section
         TitledPane connectionPane = createConnectionSection();
 
+        // AI Assistant section
+        TitledPane aiPane = createAiAssistantSection();
+
         // Advanced section
         TitledPane advancedPane = createAdvancedSection();
 
-        content.getChildren().addAll(appearancePane, uploadPane, connectionPane, advancedPane);
+        content.getChildren().addAll(uploadPane, connectionPane, aiPane, advancedPane);
 
         return content;
-    }
-
-    private TitledPane createAppearanceSection() {
-        GridPane grid = createFormGrid();
-
-        // Theme
-        Label themeLabel = new Label("Theme:");
-        themeCombo = new ComboBox<>();
-        themeCombo.getItems().addAll(ThemeManager.Theme.values());
-        themeCombo.setValue(ThemeManager.getInstance().getCurrentTheme());
-
-        // Apply theme immediately on change
-        themeCombo.setOnAction(e -> {
-            ThemeManager.getInstance().setTheme(themeCombo.getValue());
-        });
-
-        grid.add(themeLabel, 0, 0);
-        grid.add(themeCombo, 1, 0);
-
-        TitledPane pane = new TitledPane("Appearance", grid);
-        pane.setCollapsible(false);
-        return pane;
     }
 
     private TitledPane createUploadSection() {
@@ -197,6 +184,61 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
         return pane;
     }
 
+    private TitledPane createAiAssistantSection() {
+        GridPane grid = createFormGrid();
+
+        // Enable/disable checkbox
+        aiEnabledCheck = new CheckBox("Enable AI keyword suggestions");
+        aiEnabledCheck.setSelected(true);
+
+        Label enableHint = new Label("Use an AI assistant to suggest keywords based on project metadata");
+        enableHint.setStyle("-fx-text-fill: #666; -fx-font-size: 11px;");
+
+        // API URL
+        Label urlLabel = new Label("API URL:");
+        aiApiUrlField = new TextField();
+        aiApiUrlField.setPromptText("https://api.example.com/v1/completions");
+
+        Label urlHint = new Label("HTTP endpoint to POST keyword suggestion requests");
+        urlHint.setStyle("-fx-text-fill: #666; -fx-font-size: 11px;");
+
+        // API Key
+        Label keyLabel = new Label("API Key:");
+        aiApiKeyField = new PasswordField();
+        aiApiKeyField.setPromptText("Enter your API key");
+
+        // Model
+        Label modelLabel = new Label("Model (optional):");
+        aiModelField = new TextField();
+        aiModelField.setPromptText("e.g., gpt-4o-mini");
+
+        Label modelHint = new Label("Leave blank to use the endpoint's default model");
+        modelHint.setStyle("-fx-text-fill: #666; -fx-font-size: 11px;");
+
+        // Disable fields when AI is unchecked
+        aiApiUrlField.disableProperty().bind(aiEnabledCheck.selectedProperty().not());
+        aiApiKeyField.disableProperty().bind(aiEnabledCheck.selectedProperty().not());
+        aiModelField.disableProperty().bind(aiEnabledCheck.selectedProperty().not());
+
+        grid.add(aiEnabledCheck, 0, 0, 2, 1);
+        grid.add(enableHint, 0, 1, 2, 1);
+
+        grid.add(urlLabel, 0, 2);
+        grid.add(aiApiUrlField, 1, 2);
+        grid.add(urlHint, 1, 3);
+
+        grid.add(keyLabel, 0, 4);
+        grid.add(aiApiKeyField, 1, 4);
+
+        grid.add(modelLabel, 0, 5);
+        grid.add(aiModelField, 1, 5);
+        grid.add(modelHint, 1, 6);
+
+        TitledPane pane = new TitledPane("AI Assistant", grid);
+        pane.setCollapsible(false);
+        return pane;
+    }
+
     private TitledPane createAdvancedSection() {
         GridPane grid = createFormGrid();
 
@@ -241,14 +283,6 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
 
     private void loadSettings() {
         try {
-            // Theme
-            String themeName = preferences.get("theme", ThemeManager.Theme.LIGHT.name());
-            try {
-                themeCombo.setValue(ThemeManager.Theme.valueOf(themeName));
-            } catch (IllegalArgumentException e) {
-                themeCombo.setValue(ThemeManager.Theme.LIGHT);
-            }
-
             // Upload method
             String methodName = preferences.get(PREF_UPLOAD_METHOD, UploadMethod.FTP.name());
             try {
@@ -277,6 +311,16 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
             showAdvancedCheck.setSelected(
                     preferences.getBoolean(PREF_SHOW_ADVANCED, false));
 
+            // AI Assistant
+            aiEnabledCheck.setSelected(
+                    preferences.getBoolean(PREF_AI_ENABLED, true));
+            aiApiKeyField.setText(
+                    preferences.get(PREF_AI_API_KEY, ""));
+            aiApiUrlField.setText(
+                    preferences.get(PREF_AI_API_URL, ""));
+            aiModelField.setText(
+                    preferences.get(PREF_AI_MODEL, ""));
+
         } catch (Exception e) {
             logger.error("Failed to load settings", e);
         }
@@ -284,9 +328,6 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
 
     private void saveSettings() {
         try {
-            // Theme
-            preferences.put("theme", themeCombo.getValue().name());
-
             // Upload method
             preferences.put(PREF_UPLOAD_METHOD, uploadMethodCombo.getValue().name());
 
@@ -305,6 +346,12 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
             // Show advanced
             preferences.putBoolean(PREF_SHOW_ADVANCED, showAdvancedCheck.isSelected());
 
+            // AI Assistant
+            preferences.putBoolean(PREF_AI_ENABLED, aiEnabledCheck.isSelected());
+            preferences.put(PREF_AI_API_KEY, aiApiKeyField.getText());
+            preferences.put(PREF_AI_API_URL, aiApiUrlField.getText());
+            preferences.put(PREF_AI_MODEL, aiModelField.getText());
+
             preferences.flush();
             logger.info("Settings saved successfully");
 
@@ -315,29 +362,32 @@ public class SettingsDialog extends Dialog<SettingsDialog.Settings> {
     }
 
     private void resetToDefaults() {
-        themeCombo.setValue(ThemeManager.Theme.LIGHT);
         uploadMethodCombo.setValue(UploadMethod.FTP);
         concurrentUploadsSpinner.getValueFactory().setValue(3);
         connectionTimeoutSpinner.getValueFactory().setValue(30);
         maxRetriesSpinner.getValueFactory().setValue(3);
         autoValidateCheck.setSelected(true);
         showAdvancedCheck.setSelected(false);
-
-        // Apply theme immediately
-        ThemeManager.getInstance().setTheme(ThemeManager.Theme.LIGHT);
+        aiEnabledCheck.setSelected(true);
+        aiApiKeyField.setText("");
+        aiApiUrlField.setText("");
+        aiModelField.setText("");
     }
 
     /**
      * Settings data class
      */
     public record Settings(
-            ThemeManager.Theme theme,
             UploadMethod defaultUploadMethod,
             int concurrentUploads,
             int connectionTimeout,
             int maxRetries,
             boolean autoValidate,
-            boolean showAdvanced
+            boolean showAdvanced,
+            boolean aiEnabled,
+            String aiApiKey,
+            String aiApiUrl,
+            String aiModel
     ) {}
 
     /**

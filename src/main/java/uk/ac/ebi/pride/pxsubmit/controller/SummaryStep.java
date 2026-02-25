@@ -19,6 +19,8 @@ import uk.ac.ebi.pride.pxsubmit.view.component.ValidationFeedback;
 
 import org.slf4j.LoggerFactory;
 
+import javafx.scene.control.cell.PropertyValueFactory;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -125,15 +127,19 @@ public class SummaryStep extends AbstractWizardStep {
         // Project Information, Metadata, Lab Head — skip for resubmission
         // (metadata is already on the server for the existing project)
         if (!model.isResubmissionMode()) {
-            VBox projectSection = createSectionBox("Project Information");
+            VBox projectSection = createSectionBox("Project Information", "\uD83D\uDCCB");
             addField(projectSection, "Title", model.getProjectTitle());
             addField(projectSection, "Description", model.getProjectDescription());
             addField(projectSection, "Keywords", model.getKeywords());
+            addListField(projectSection, "Experiment Type",
+                model.getExperimentMethods().stream().map(CvParam::getName).collect(Collectors.toList()));
+            addListField(projectSection, "Software",
+                model.getSoftware().stream().map(CvParam::getName).collect(Collectors.toList()));
             addField(projectSection, "Sample Processing", model.getSampleProcessingProtocol());
             addField(projectSection, "Data Processing", model.getDataProcessingProtocol());
             contentBox.getChildren().add(projectSection);
 
-            VBox metadataSection = createSectionBox("Metadata");
+            VBox metadataSection = createSectionBox("Metadata", "\uD83E\uDDEC");
             addListField(metadataSection, "Species",
                 model.getSpecies().stream().map(CvParam::getName).collect(Collectors.toList()));
             addListField(metadataSection, "Instruments",
@@ -144,55 +150,45 @@ public class SummaryStep extends AbstractWizardStep {
                 model.getQuantifications().stream().map(CvParam::getName).collect(Collectors.toList()));
             contentBox.getChildren().add(metadataSection);
 
-            if (model.getLabHeadName() != null && !model.getLabHeadName().isEmpty()) {
-                VBox labHeadSection = createSectionBox("Lab Head");
-                addField(labHeadSection, "Name", model.getLabHeadName());
-                addField(labHeadSection, "Email", model.getLabHeadEmail());
-                addField(labHeadSection, "Affiliation", model.getLabHeadAffiliation());
-                if (model.getLabHeadCountry() != null && !model.getLabHeadCountry().isEmpty()) {
-                    addField(labHeadSection, "Country", model.getLabHeadCountry());
-                }
-                if (model.getLabHeadOrcid() != null && !model.getLabHeadOrcid().isEmpty()) {
-                    addField(labHeadSection, "ORCID iD", model.getLabHeadOrcid());
-                }
-                contentBox.getChildren().add(labHeadSection);
+            VBox labHeadSection = createSectionBox("Lab Head", "\uD83D\uDC64");
+            addField(labHeadSection, "Name", model.getLabHeadName());
+            addField(labHeadSection, "Email", model.getLabHeadEmail());
+            addField(labHeadSection, "Affiliation", model.getLabHeadAffiliation());
+            addField(labHeadSection, "Country", model.getLabHeadCountry());
+            if (model.getLabHeadOrcid() != null && !model.getLabHeadOrcid().isEmpty()) {
+                addField(labHeadSection, "ORCID iD", model.getLabHeadOrcid());
             }
+            contentBox.getChildren().add(labHeadSection);
 
             // Project References
             var meta = model.getSubmission().getProjectMetaData();
             if (meta != null) {
-                boolean hasReferences = meta.hasPubmedIds()
-                    || meta.hasOtherOmicsLink() || !meta.getProjectTags().isEmpty();
-                if (hasReferences) {
-                    VBox additionalSection = createSectionBox("Project References");
-                    if (meta.hasPubmedIds()) {
-                        addField(additionalSection, "PubMed IDs", String.join(", ", meta.getPubmedIds()));
-                    }
-                    if (meta.hasOtherOmicsLink()) {
-                        addField(additionalSection, "Omics Dataset Links", meta.getOtherOmicsLink());
-                    }
-                    if (!meta.getProjectTags().isEmpty()) {
-                        addField(additionalSection, "Project Tags", String.join(", ", meta.getProjectTags()));
-                    }
-                    contentBox.getChildren().add(additionalSection);
+                VBox referencesSection = createSectionBox("References & Links", "\uD83D\uDD17");
+                addField(referencesSection, "PubMed IDs",
+                    meta.hasPubmedIds() ? String.join(", ", meta.getPubmedIds()) : null);
+                addField(referencesSection, "Omics Dataset Links",
+                    meta.hasOtherOmicsLink() ? meta.getOtherOmicsLink() : null);
+                if (!meta.getProjectTags().isEmpty()) {
+                    addField(referencesSection, "Project Tags", String.join(", ", meta.getProjectTags()));
                 }
+                contentBox.getChildren().add(referencesSection);
             }
         }
 
         // Resubmission file changes (only in resubmission mode)
         if (model.isResubmissionMode()) {
-            VBox resubFilesSection = createSectionBox("Resubmission File Changes");
+            VBox resubFilesSection = createSectionBox("Resubmission File Changes", "\uD83D\uDD04");
             addResubmissionFileSummary(resubFilesSection);
             contentBox.getChildren().add(resubFilesSection);
         }
 
         // Files
-        VBox filesSection = createSectionBox("Files");
+        VBox filesSection = createSectionBox("Files", "\uD83D\uDCC1");
         addFileSummary(filesSection);
         contentBox.getChildren().add(filesSection);
 
         // Export submission.px section
-        VBox exportSection = createSectionBox("Export Submission");
+        VBox exportSection = createSectionBox("Export Submission", "\uD83D\uDCBE");
 
         Label autoSaveNote = new Label("Note: Your submission.px file will be automatically saved before upload.");
         autoSaveNote.setWrapText(true);
@@ -330,17 +326,38 @@ public class SummaryStep extends AbstractWizardStep {
     }
 
     private VBox createSectionBox(String title) {
-        VBox box = new VBox(8);
+        return createSectionBox(title, null);
+    }
+
+    private VBox createSectionBox(String title, String iconText) {
+        VBox box = new VBox(10);
         box.setStyle(
             "-fx-background-color: #f8f9fa; " +
-            "-fx-border-color: #e9ecef; " +
-            "-fx-border-radius: 8; " +
-            "-fx-background-radius: 8; " +
-            "-fx-padding: 15;");
+            "-fx-border-color: #e0e0e0; " +
+            "-fx-border-radius: 10; " +
+            "-fx-background-radius: 10; " +
+            "-fx-padding: 18;");
+
+        HBox headerRow = new HBox(8);
+        headerRow.setAlignment(Pos.CENTER_LEFT);
+
+        if (iconText != null) {
+            Label icon = new Label(iconText);
+            icon.setStyle("-fx-font-size: 16px;");
+            headerRow.getChildren().add(icon);
+        }
 
         Label titleLabel = new Label(title);
-        titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
-        box.getChildren().add(titleLabel);
+        titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 15px; -fx-text-fill: #333;");
+        headerRow.getChildren().add(titleLabel);
+
+        // Subtle separator line under header
+        Region separator = new Region();
+        separator.setMaxHeight(1);
+        separator.setStyle("-fx-background-color: #dee2e6;");
+        VBox.setMargin(separator, new Insets(2, 0, 4, 0));
+
+        box.getChildren().addAll(headerRow, separator);
 
         return box;
     }
@@ -349,19 +366,22 @@ public class SummaryStep extends AbstractWizardStep {
         VBox box = createSectionBox(title);
         Label valueLabel = new Label(value != null ? value : "-");
         valueLabel.setWrapText(true);
+        valueLabel.setStyle("-fx-font-size: 13px;");
         box.getChildren().add(valueLabel);
         contentBox.getChildren().add(box);
     }
 
     private void addField(VBox container, String label, String value) {
         HBox row = new HBox(10);
+        row.setAlignment(Pos.TOP_LEFT);
 
-        Label labelNode = new Label(label + ":");
-        labelNode.setStyle("-fx-font-weight: bold; -fx-min-width: 150;");
-        labelNode.setMinWidth(150);
+        Label labelNode = new Label(label);
+        labelNode.setStyle("-fx-font-weight: bold; -fx-text-fill: #555; -fx-min-width: 160;");
+        labelNode.setMinWidth(160);
 
         Label valueNode = new Label(truncate(value, 500));
         valueNode.setWrapText(true);
+        valueNode.setStyle("-fx-text-fill: #222;");
         HBox.setHgrow(valueNode, Priority.ALWAYS);
 
         row.getChildren().addAll(labelNode, valueNode);
@@ -384,15 +404,8 @@ public class SummaryStep extends AbstractWizardStep {
         }
 
         // Count by type
-        long rawCount = model.getFiles().stream()
-            .filter(f -> f.getFileType() == ProjectFileType.RAW).count();
-        long resultCount = model.getFiles().stream()
-            .filter(f -> f.getFileType() == ProjectFileType.RESULT).count();
-        long searchCount = model.getFiles().stream()
-            .filter(f -> f.getFileType() == ProjectFileType.SEARCH).count();
-        long peakCount = model.getFiles().stream()
-            .filter(f -> f.getFileType() == ProjectFileType.PEAK).count();
-        long otherCount = total - rawCount - resultCount - searchCount - peakCount;
+        Map<ProjectFileType, List<DataFile>> byType = model.getFiles().stream()
+            .collect(Collectors.groupingBy(f -> f.getFileType() != null ? f.getFileType() : ProjectFileType.OTHER));
 
         // Total size
         long totalSize = model.getFiles().stream()
@@ -400,14 +413,65 @@ public class SummaryStep extends AbstractWizardStep {
             .mapToLong(f -> f.getFile().length())
             .sum();
 
-        addField(container, "Total Files", String.valueOf(total));
-        addField(container, "Total Size", formatSize(totalSize));
+        // Summary chips
+        FlowPane chips = new FlowPane(8, 6);
+        chips.setAlignment(Pos.CENTER_LEFT);
 
-        if (rawCount > 0) addField(container, "RAW Files", String.valueOf(rawCount));
-        if (resultCount > 0) addField(container, "STANDARD Files", String.valueOf(resultCount));
-        if (searchCount > 0) addField(container, "ANALYSIS Files", String.valueOf(searchCount));
-        if (peakCount > 0) addField(container, "Peak Lists", String.valueOf(peakCount));
-        if (otherCount > 0) addField(container, "Other Files", String.valueOf(otherCount));
+        // Total chip
+        chips.getChildren().add(createChip("Total: " + total, "#6c757d"));
+        chips.getChildren().add(createChip(formatSize(totalSize), "#6c757d"));
+
+        for (Map.Entry<ProjectFileType, List<DataFile>> entry : byType.entrySet()) {
+            String color = FileTypeDetector.getColor(entry.getKey());
+            String name = FileTypeDetector.getDisplayName(entry.getKey());
+            chips.getChildren().add(createChip(name + ": " + entry.getValue().size(), color));
+        }
+
+        container.getChildren().add(chips);
+
+        // File table
+        TableView<DataFile> fileTable = new TableView<>();
+        fileTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        fileTable.setMaxHeight(250);
+        fileTable.setStyle("-fx-font-size: 12px;");
+
+        TableColumn<DataFile, String> nameCol = new TableColumn<>("File Name");
+        nameCol.setCellValueFactory(param ->
+            new javafx.beans.property.SimpleStringProperty(param.getValue().getFileName()));
+        nameCol.setPrefWidth(300);
+
+        TableColumn<DataFile, String> typeCol = new TableColumn<>("Type");
+        typeCol.setCellValueFactory(param -> {
+            ProjectFileType ft = param.getValue().getFileType();
+            return new javafx.beans.property.SimpleStringProperty(
+                ft != null ? FileTypeDetector.getDisplayName(ft) : "Other");
+        });
+        typeCol.setPrefWidth(150);
+
+        TableColumn<DataFile, String> sizeCol = new TableColumn<>("Size");
+        sizeCol.setCellValueFactory(param -> {
+            File f = param.getValue().getFile();
+            return new javafx.beans.property.SimpleStringProperty(
+                f != null ? formatSize(f.length()) : "-");
+        });
+        sizeCol.setPrefWidth(100);
+
+        fileTable.getColumns().addAll(nameCol, typeCol, sizeCol);
+        fileTable.getItems().addAll(model.getFiles());
+
+        container.getChildren().add(fileTable);
+    }
+
+    private Label createChip(String text, String color) {
+        Label chip = new Label(text);
+        chip.setStyle(String.format(
+            "-fx-background-color: %s; " +
+            "-fx-text-fill: white; " +
+            "-fx-padding: 4 10 4 10; " +
+            "-fx-background-radius: 12; " +
+            "-fx-font-size: 11px; " +
+            "-fx-font-weight: bold;", color));
+        return chip;
     }
 
     private void addResubmissionFileSummary(VBox container) {

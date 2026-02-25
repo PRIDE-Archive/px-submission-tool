@@ -42,9 +42,9 @@ public class LoginStep extends AbstractWizardStep {
         root.setPadding(new Insets(40));
         root.setMaxWidth(500);
 
-        // Welcome text
-        Label welcomeLabel = new Label("Welcome to the PRIDE Submission Tool");
-        welcomeLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
+        // User icon
+        Label loginIcon = new Label("\uD83D\uDC64"); // Bust silhouette icon
+        loginIcon.setStyle("-fx-font-size: 48px;");
 
         // Login form
         GridPane form = new GridPane();
@@ -97,7 +97,7 @@ public class LoginStep extends AbstractWizardStep {
         linksBox.getChildren().addAll(registerLink, forgotLink);
 
         root.getChildren().addAll(
-            welcomeLabel,
+            loginIcon,
             form,
             errorLabel,
             progressBox,

@@ -44,9 +44,10 @@
     -px-info: #17a2b8;
     -px-info-bg: #d1ecf1;
 
-    /* Header gradient */
-    -px-header-start: #003366;
-    -px-header-end: #006699;
+    /* PRIDE brand colors */
+    -px-pride-blue: #00608f;
+    -px-pride-teal: #1cc4c1;
+    -px-pride-green: #69cb7e;
 
     /* Shadow */
     -px-shadow: rgba(0, 0, 0, 0.15);
@@ -77,19 +78,25 @@
 /* ==================== Header ==================== */
 
 .wizard-header {
-    -fx-background-color: linear-gradient(to right, -px-header-start, -px-header-end);
+    -fx-background-color: -px-pride-blue;
     -fx-effect: dropshadow(gaussian, -px-shadow, 4, 0, 0, 2);
 }
 
-.wizard-title {
+.wizard-title,
+.wizard-header .wizard-title {
     -fx-font-size: 22px;
     -fx-font-weight: bold;
-    -fx-text-fill: -px-text-inverse;
+    -fx-text-fill: white;
 }
 
-.wizard-description {
+.wizard-description,
+.wizard-header .wizard-description {
     -fx-font-size: 14px;
     -fx-text-fill: rgba(255, 255, 255, 0.9);
+}
+
+.wizard-header .user-label {
+    -fx-text-fill: white;
 }
 
 .training-mode-badge {
@@ -120,11 +127,15 @@
 }
 
 .step-dot.active {
-    -fx-background-color: -px-primary;
+    -fx-background-color: -px-pride-teal;
+}
+
+.step-dot.active .step-number {
+    -fx-text-fill: white;
 }
 
 .step-dot.completed {
-    -fx-background-color: -px-success;
+    -fx-background-color: -px-pride-green;
 }
 
 .step-label {
@@ -133,7 +144,7 @@
 }
 
 .step-label.active {
-    -fx-text-fill: -px-primary;
+    -fx-text-fill: -px-pride-teal;
     -fx-font-weight: bold;
 }
 
@@ -148,7 +159,15 @@
 }
 
 .step-connector.completed {
-    -fx-border-color: -px-success;
+    -fx-border-color: -px-pride-green;
+}
+
+/* ==================== Global Progress Bar ==================== */
+
+.global-progress-bar {
+    -fx-pref-height: 3;
+    -fx-max-height: 3;
+    -fx-padding: 0;
 }
 
 /* ==================== Content Area ==================== */
@@ -520,6 +539,21 @@
 
 .progress-bar-error .bar {
     -fx-background-color: -px-error;
+}
+
+/* Global progress bar override (must come after general .progress-bar .bar) */
+.global-progress-bar .bar {
+    -fx-background-color: #ff7100;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-padding: 0;
+}
+
+.global-progress-bar .track {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-padding: 0;
 }
 
 .progress-indicator {

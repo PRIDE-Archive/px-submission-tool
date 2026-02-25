@@ -23,17 +23,18 @@
 /* ==================== Header ==================== */
 
 .wizard-header {
-    -fx-background-color: linear-gradient(to right, #003366, #006699);
     -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 4, 0, 0, 2);
 }
 
-.wizard-title {
+.wizard-title,
+.wizard-header .wizard-title {
     -fx-font-size: 22px;
     -fx-font-weight: bold;
     -fx-text-fill: white;
 }
 
-.wizard-description {
+.wizard-description,
+.wizard-header .wizard-description {
     -fx-font-size: 14px;
     -fx-text-fill: rgba(255, 255, 255, 0.9);
 }
@@ -48,8 +49,9 @@
 }
 
 /* User label and Logout button */
-.user-label {
-    -fx-text-fill: rgba(255, 255, 255, 0.85);
+.user-label,
+.wizard-header .user-label {
+    -fx-text-fill: white;
     -fx-font-size: 12px;
 }
 
@@ -73,6 +75,23 @@
     -fx-border-color: rgba(255, 255, 255, 0.7);
 }
 
+.settings-button {
+    -fx-background-color: transparent;
+    -fx-text-fill: rgba(255, 255, 255, 0.7);
+    -fx-border-color: transparent;
+    -fx-font-size: 18px;
+    -fx-padding: 2 6 2 6;
+    -fx-cursor: hand;
+    -fx-min-width: 28;
+    -fx-min-height: 28;
+}
+
+.settings-button:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.15);
+    -fx-text-fill: white;
+    -fx-background-radius: 4;
+}
+
 /* Step Indicator Bar */
 .step-indicator-bar {
     -fx-alignment: center;
@@ -90,22 +109,10 @@
     -fx-alignment: center;
 }
 
-.step-dot.active {
-    -fx-background-color: white;
-}
-
-.step-dot.completed {
-    -fx-background-color: #81C784;
-}
-
 .step-number {
     -fx-text-fill: rgba(255, 255, 255, 0.7);
     -fx-font-size: 11px;
     -fx-font-weight: bold;
-}
-
-.step-dot.active .step-number {
-    -fx-text-fill: #1B5E20;
 }
 
 .step-dot.completed .step-number {
@@ -116,11 +123,6 @@
 .step-label {
     -fx-text-fill: rgba(255, 255, 255, 0.5);
     -fx-font-size: 10px;
-}
-
-.step-label.active {
-    -fx-text-fill: white;
-    -fx-font-weight: bold;
 }
 
 .step-label.completed {
@@ -135,10 +137,6 @@
     -fx-pref-height: 1;
     -fx-min-height: 1;
     -fx-max-height: 1;
-}
-
-.step-connector.completed {
-    -fx-border-color: #81C784;
 }
 
 /* ==================== Content Area ==================== */
