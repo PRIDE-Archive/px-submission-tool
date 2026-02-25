@@ -30,6 +30,7 @@ public class ProjectMetadataStep extends AbstractWizardStep {
     private TextArea sampleProtocolArea;
     private TextArea dataProtocolArea;
     private OlsAutocomplete experimentTypeField;
+    private OlsAutocomplete softwareField;
 
     // Character counters
     private Label titleCounter;
@@ -132,6 +133,17 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         experimentTypeSection.getChildren().add(experimentTypeField);
         experimentTypeSection.getChildren().add(createQuickSelectPane(OlsService.getCommonExperimentTypes(), experimentTypeField));
 
+        // Software / Analysis Tools
+        VBox softwareSection = createFieldSection("Software / Analysis Tools",
+            "Select the software used for data analysis", true);
+        softwareField = new OlsAutocomplete(OlsOntology.MS);
+        softwareField.setPromptText("Search software (e.g., MaxQuant, DIA-NN, FragPipe)...");
+        softwareField.setCommonTerms(OlsService.getCommonSoftware());
+        softwareField.setOnTermSelected(term -> model.addSoftware(term));
+        softwareField.setOnTermRemoved(term -> model.removeSoftware(term));
+        softwareSection.getChildren().add(softwareField);
+        softwareSection.getChildren().add(createQuickSelectPane(OlsService.getCommonSoftware(), softwareField));
+
         // Sample Processing Protocol
         VBox sampleSection = createFieldSection("Sample Processing Protocol",
             "Describe how samples were prepared for analysis", true);
@@ -180,6 +192,7 @@ public class ProjectMetadataStep extends AbstractWizardStep {
             sampleSection,
             dataSection,
             experimentTypeSection,
+            softwareSection,
             validationFeedback
         );
 
@@ -310,10 +323,14 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         sampleProtocolArea.textProperty().addListener((obs, oldVal, newVal) -> updateValidationFeedback());
         dataProtocolArea.textProperty().addListener((obs, oldVal, newVal) -> updateValidationFeedback());
         experimentTypeField.getSelectedTerms().addListener((javafx.collections.ListChangeListener.Change<? extends CvParam> c) -> updateValidationFeedback());
+        softwareField.getSelectedTerms().addListener((javafx.collections.ListChangeListener.Change<? extends CvParam> c) -> updateValidationFeedback());
 
-        // Load existing experiment methods from model
+        // Load existing experiment methods and software from model
         if (!model.getExperimentMethods().isEmpty()) {
             experimentTypeField.setSelectedTerms(model.getExperimentMethods());
+        }
+        if (!model.getSoftware().isEmpty()) {
+            softwareField.setSelectedTerms(model.getSoftware());
         }
 
         // Validation binding
@@ -324,11 +341,13 @@ public class ProjectMetadataStep extends AbstractWizardStep {
             String sampleProtocol = sampleProtocolArea.getText();
             String dataProtocol = dataProtocolArea.getText();
             boolean hasExperimentType = experimentTypeField.hasSelection();
+            boolean hasSoftware = softwareField.hasSelection();
 
             return isValidTitle(title) &&
                    isValidDescription(desc) &&
                    isNotEmpty(keywords) &&
                    hasExperimentType &&
+                   hasSoftware &&
                    isNotEmpty(sampleProtocol) &&
                    isNotEmpty(dataProtocol);
         },
@@ -336,6 +355,7 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         descriptionArea.textProperty(),
         keywordsInput.textProperty(),
         experimentTypeField.getSelectedTerms(),
+        softwareField.getSelectedTerms(),
         sampleProtocolArea.textProperty(),
         dataProtocolArea.textProperty()));
     }
@@ -376,6 +396,12 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         if (!experimentTypeField.hasSelection()) {
             showError("Please select at least one experiment type");
             experimentTypeField.requestFocus();
+            return false;
+        }
+
+        if (!softwareField.hasSelection()) {
+            showError("Please select at least one software/analysis tool");
+            softwareField.requestFocus();
             return false;
         }
 
@@ -453,7 +479,15 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         if (!experimentTypeField.hasSelection()) {
             List<CvParam> commonTypes = uk.ac.ebi.pride.pxsubmit.service.OlsService.getCommonExperimentTypes();
             if (!commonTypes.isEmpty()) {
-                experimentTypeField.addTerm(commonTypes.get(0)); // Add first common type (e.g., Bottom-up)
+                experimentTypeField.addTerm(commonTypes.get(0));
+            }
+        }
+
+        // Add example software if none selected
+        if (!softwareField.hasSelection()) {
+            List<CvParam> commonSoftware = uk.ac.ebi.pride.pxsubmit.service.OlsService.getCommonSoftware();
+            if (!commonSoftware.isEmpty()) {
+                softwareField.addTerm(commonSoftware.get(0));
             }
         }
     }
@@ -490,9 +524,10 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         String sampleProtocol = sampleProtocolArea.getText();
         String dataProtocol = dataProtocolArea.getText();
         boolean hasExperimentType = experimentTypeField != null && experimentTypeField.hasSelection();
+        boolean hasSoftware = softwareField != null && softwareField.hasSelection();
 
         int completedFields = 0;
-        int totalFields = 6;
+        int totalFields = 7;
 
         // Title validation
         if (title == null || title.trim().length() < MIN_TITLE_LENGTH) {
@@ -522,6 +557,13 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         // Experiment type validation
         if (!hasExperimentType) {
             validationFeedback.addWarning("Experiment Type: At least one type required");
+        } else {
+            completedFields++;
+        }
+
+        // Software validation
+        if (!hasSoftware) {
+            validationFeedback.addWarning("Software: At least one analysis tool required");
         } else {
             completedFields++;
         }

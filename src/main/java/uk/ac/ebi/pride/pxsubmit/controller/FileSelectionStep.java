@@ -87,7 +87,7 @@ public class FileSelectionStep extends AbstractWizardStep {
         addFilesButton = new Button("Add Files...");
         addFilesButton.setOnAction(e -> addFiles());
 
-        addFolderButton = new Button("Add Folder...");
+        addFolderButton = new Button("Select From Folder");
         addFolderButton.setOnAction(e -> addFolder());
 
         removeSelectedButton = new Button("Remove Selected");
@@ -110,19 +110,41 @@ public class FileSelectionStep extends AbstractWizardStep {
         topBox.getChildren().addAll(instructionLabel, buttonBar, classificationPanel);
         root.setTop(topBox);
 
-        // Center: File table
+        // Search field right above the table, aligned right
+        HBox searchBar = new HBox(8);
+        searchBar.setAlignment(Pos.CENTER_RIGHT);
+        searchBar.setPadding(new Insets(0, 0, 5, 0));
+
+        TextField searchField = new TextField();
+        searchField.setPromptText("Search files...");
+        searchField.setPrefWidth(250);
+        searchField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (fileTable != null) {
+                fileTable.filterByName(newVal);
+            }
+        });
+
+        searchBar.getChildren().add(searchField);
+
+        // Center: File table wrapped with search bar
+        VBox centerBox = new VBox(0);
+        centerBox.getChildren().add(searchBar);
+
         fileTable = new FileTableView();
         fileTable.setDataFiles(model.getFiles());
         fileTable.setOnFilesDropped(this::addFilesFromDrop);
         fileTable.setOnFileRemoved(this::removeFile);
         fileTable.setOnFileTypeChanged(this::onFileTypeChanged);
+        fileTable.setChecksumLookup(df -> model.getChecksum(df));
 
         // Enable remove button when selection changes
         fileTable.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             removeSelectedButton.setDisable(fileTable.getSelectionModel().isEmpty());
         });
 
-        root.setCenter(fileTable);
+        centerBox.getChildren().add(fileTable);
+        VBox.setVgrow(fileTable, Priority.ALWAYS);
+        root.setCenter(centerBox);
 
         // Bottom: Summary, pagination, validation feedback, and validation status
         VBox bottomBox = new VBox(5);

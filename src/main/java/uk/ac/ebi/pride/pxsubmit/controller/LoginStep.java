@@ -43,7 +43,7 @@ public class LoginStep extends AbstractWizardStep {
         root.setMaxWidth(500);
 
         // Welcome text
-        Label welcomeLabel = new Label("Welcome to the PX Submission Tool");
+        Label welcomeLabel = new Label("Welcome to the PRIDE Submission Tool");
         welcomeLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
 
         // Login form
@@ -105,6 +105,17 @@ public class LoginStep extends AbstractWizardStep {
         );
 
         return root;
+    }
+
+    @Override
+    public boolean canSkip() {
+        // Skip login entirely in test mode
+        if (model.isTrainingMode()) {
+            model.setLoggedIn(true);
+            model.setResubmissionMode(false);
+            return true;
+        }
+        return false;
     }
 
     @Override

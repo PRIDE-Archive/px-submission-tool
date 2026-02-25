@@ -30,6 +30,7 @@ import java.io.File;
 import java.text.DecimalFormat;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -77,6 +78,9 @@ public class FileTableView extends TableView<DataFile> {
     private FilteredList<DataFile> filteredList;
     private final ObjectProperty<Predicate<DataFile>> filterPredicate = new SimpleObjectProperty<>(f -> true);
     private final StringProperty searchText = new SimpleStringProperty("");
+
+    // Checksum lookup for search
+    private Function<DataFile, String> checksumLookup;
 
     // Pagination state
     private final BooleanProperty paginationEnabled = new SimpleBooleanProperty(false);
@@ -346,6 +350,13 @@ public class FileTableView extends TableView<DataFile> {
         this.onFileTypeChanged = handler;
     }
 
+    /**
+     * Set a function to look up checksums for files (used in search filtering).
+     */
+    public void setChecksumLookup(Function<DataFile, String> lookup) {
+        this.checksumLookup = lookup;
+    }
+
     // ==================== Utility Methods ====================
 
     /**
@@ -477,6 +488,12 @@ public class FileTableView extends TableView<DataFile> {
             if (file.getFileType() != null && file.getFileType().name().toLowerCase().contains(lowerText)) {
                 return true;
             }
+            if (checksumLookup != null) {
+                String checksum = checksumLookup.apply(file);
+                if (checksum != null && checksum.toLowerCase().contains(lowerText)) {
+                    return true;
+                }
+            }
             return false;
         };
     }
@@ -561,6 +578,13 @@ public class FileTableView extends TableView<DataFile> {
         searchText.set(text);
         currentPage.set(0);
         updatePagination();
+    }
+
+    /**
+     * Filter files by name (delegates to search text)
+     */
+    public void filterByName(String text) {
+        setSearchText(text != null ? text : "");
     }
 
     /**
