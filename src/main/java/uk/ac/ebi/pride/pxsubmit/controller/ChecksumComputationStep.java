@@ -11,13 +11,18 @@ import javafx.scene.layout.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 import uk.ac.ebi.pride.pxsubmit.service.ChecksumService;
 import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
+import uk.ac.ebi.pride.pxsubmit.util.FileTypeDetector;
+import uk.ac.ebi.pride.pxsubmit.view.component.FileClassificationPanel;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -32,6 +37,8 @@ public class ChecksumComputationStep extends AbstractWizardStep {
 
     // UI components
     private TableView<FileChecksumRow> fileTable;
+    private FileClassificationPanel classificationPanel;
+    private TextField searchField;
     private Label statusLabel;
     private Label progressLabel;
     private Label etaLabel;
@@ -43,6 +50,8 @@ public class ChecksumComputationStep extends AbstractWizardStep {
     private final BooleanProperty completed = new SimpleBooleanProperty(false);
     private ChecksumService checksumService;
     private final Map<String, FileChecksumRow> fileRowMap = new ConcurrentHashMap<>();
+    private final List<FileChecksumRow> allRows = new ArrayList<>();
+    private ProjectFileType activeTypeFilter;
     private long computationStartTime;
 
     public ChecksumComputationStep(SubmissionModel model) {
@@ -72,6 +81,30 @@ public class ChecksumComputationStep extends AbstractWizardStep {
         descLabel.setMaxWidth(700);
 
         header.getChildren().addAll(titleLabel, descLabel);
+
+        // File classification panel (category filter)
+        classificationPanel = new FileClassificationPanel();
+        classificationPanel.setShowDetails(false);
+        classificationPanel.setShowWarnings(false);
+        classificationPanel.setOnTypeSelected((type, files) -> {
+            activeTypeFilter = type;
+            applyFilters();
+        });
+
+        // Search field
+        HBox searchBar = new HBox(8);
+        searchBar.setAlignment(Pos.CENTER_RIGHT);
+        searchBar.setPadding(new Insets(0, 0, 5, 0));
+
+        Label searchIcon = new Label("\u2315");
+        searchIcon.setStyle("-fx-font-size: 16px; -fx-text-fill: #666;");
+
+        searchField = new TextField();
+        searchField.setPromptText("Search files...");
+        searchField.setPrefWidth(250);
+        searchField.textProperty().addListener((obs, oldVal, newVal) -> applyFilters());
+
+        searchBar.getChildren().addAll(searchIcon, searchField);
 
         // File table
         fileTable = new TableView<>();
@@ -151,9 +184,28 @@ public class ChecksumComputationStep extends AbstractWizardStep {
             buttonBox
         );
 
-        root.getChildren().addAll(header, fileTable, progressSection);
+        root.getChildren().addAll(header, classificationPanel, searchBar, fileTable, progressSection);
 
         return root;
+    }
+
+    /**
+     * Apply search text and category type filters to the table.
+     */
+    private void applyFilters() {
+        String search = searchField.getText();
+        String searchLower = (search != null) ? search.toLowerCase().trim() : "";
+
+        fileTable.getItems().clear();
+        for (FileChecksumRow row : allRows) {
+            boolean matchesType = activeTypeFilter == null
+                    || row.getDataFile().getFileType() == activeTypeFilter;
+            boolean matchesSearch = searchLower.isEmpty()
+                    || row.getFileName().toLowerCase().contains(searchLower);
+            if (matchesType && matchesSearch) {
+                fileTable.getItems().add(row);
+            }
+        }
     }
 
     @Override
@@ -210,7 +262,11 @@ public class ChecksumComputationStep extends AbstractWizardStep {
 
     private void populateFileTable() {
         fileTable.getItems().clear();
+        allRows.clear();
+        activeTypeFilter = null;
+        if (searchField != null) searchField.clear();
 
+        List<DataFile> filesForPanel = new ArrayList<>();
         for (DataFile dataFile : model.getFiles()) {
             // Skip checksum.txt itself
             if ("checksum.txt".equals(dataFile.getFileName())) {
@@ -218,11 +274,16 @@ public class ChecksumComputationStep extends AbstractWizardStep {
             }
 
             FileChecksumRow row = new FileChecksumRow(dataFile);
+            allRows.add(row);
             fileTable.getItems().add(row);
             fileRowMap.put(dataFile.getFileName(), row);
+            filesForPanel.add(dataFile);
         }
 
-        int total = fileTable.getItems().size();
+        // Update classification panel
+        classificationPanel.setFiles(filesForPanel);
+
+        int total = allRows.size();
         progressLabel.setText("0 / " + total + " files processed");
     }
 

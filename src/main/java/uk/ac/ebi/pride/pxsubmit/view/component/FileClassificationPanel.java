@@ -197,6 +197,18 @@ public class FileClassificationPanel extends VBox {
         tooltip.setShowDelay(Duration.millis(300));
         Tooltip.install(badge, tooltip);
 
+        // Store default style for hover restoration
+        String defaultStyle = badge.getStyle();
+        String hoverStyle = String.format(
+                "-fx-background-color: %s; " +
+                "-fx-border-color: %s; " +
+                "-fx-border-width: 2; " +
+                "-fx-border-radius: 16; " +
+                "-fx-background-radius: 16; " +
+                "-fx-cursor: hand; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 6, 0, 0, 2);",
+                isEmpty ? "#fff3cd" : bgColor, borderColor);
+
         // Click handler
         badge.setOnMouseClicked(e -> {
             if (selectionHandler != null) {
@@ -204,9 +216,9 @@ public class FileClassificationPanel extends VBox {
             }
         });
 
-        // Hover effect
-        badge.setOnMouseEntered(e -> badge.setStyle(badge.getStyle() + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 4, 0, 0, 1);"));
-        badge.setOnMouseExited(e -> badge.setStyle(badge.getStyle().replace("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 4, 0, 0, 1);", "")));
+        // Hover effect - thicker border + shadow
+        badge.setOnMouseEntered(e -> badge.setStyle(hoverStyle));
+        badge.setOnMouseExited(e -> badge.setStyle(defaultStyle));
 
         return badge;
     }
@@ -246,8 +258,16 @@ public class FileClassificationPanel extends VBox {
             }
         });
 
-        badge.setOnMouseEntered(e -> badge.setStyle(badge.getStyle() + "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 4, 0, 0, 1);"));
-        badge.setOnMouseExited(e -> badge.setStyle(badge.getStyle().replace("-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 4, 0, 0, 1);", "")));
+        String allDefault = badge.getStyle();
+        String allHover = "-fx-background-color: white; " +
+                "-fx-border-color: #6c757d; " +
+                "-fx-border-width: 2; " +
+                "-fx-border-radius: 16; " +
+                "-fx-background-radius: 16; " +
+                "-fx-cursor: hand; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 6, 0, 0, 2);";
+        badge.setOnMouseEntered(e -> badge.setStyle(allHover));
+        badge.setOnMouseExited(e -> badge.setStyle(allDefault));
 
         return badge;
     }
@@ -342,26 +362,17 @@ public class FileClassificationPanel extends VBox {
     private String createTooltipText(ProjectFileType type, List<DataFile> typeFiles) {
         StringBuilder sb = new StringBuilder();
         sb.append(FileTypeDetector.getDisplayName(type)).append("\n");
-        sb.append("Count: ").append(typeFiles.size()).append("\n");
+        sb.append("Count: ").append(typeFiles.size());
 
         if (!typeFiles.isEmpty()) {
             long size = typeFiles.stream()
                     .filter(f -> f.getFile() != null)
                     .mapToLong(f -> f.getFile().length())
                     .sum();
-            sb.append("Size: ").append(formatSize(size)).append("\n\n");
-
-            sb.append("Files:\n");
-            int count = 0;
-            for (DataFile df : typeFiles) {
-                if (count++ >= 5) {
-                    sb.append("  ... and ").append(typeFiles.size() - 5).append(" more\n");
-                    break;
-                }
-                sb.append("  - ").append(df.getFileName()).append("\n");
-            }
+            sb.append("\nSize: ").append(formatSize(size));
+            sb.append("\n\nClick to filter");
         } else if (FileTypeDetector.isMandatory(type)) {
-            sb.append("\nRequired for submission!");
+            sb.append("\n\nRequired for submission!");
         }
 
         return sb.toString();
