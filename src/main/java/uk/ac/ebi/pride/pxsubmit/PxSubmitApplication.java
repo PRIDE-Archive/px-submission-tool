@@ -14,7 +14,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
+import uk.ac.ebi.pride.data.io.SubmissionFileParser;
 import uk.ac.ebi.pride.data.model.DataFile;
+import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.pxsubmit.controller.*;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 import uk.ac.ebi.pride.pxsubmit.model.UploadCheckpoint;
@@ -251,7 +253,27 @@ public class PxSubmitApplication extends Application {
             }
         }
 
-        // Restore files from checkpoint
+        // Restore full submission metadata from submission.px file
+        // This populates: title, description, keywords, protocols, species,
+        // instruments, modifications, quantifications, experiment types, lab head, etc.
+        if (checkpoint.getSubmissionPxPath() != null) {
+            File submissionPxFile = new File(checkpoint.getSubmissionPxPath());
+            if (submissionPxFile.exists()) {
+                try {
+                    Submission parsedSubmission = SubmissionFileParser.parse(submissionPxFile);
+                    model.setSubmission(parsedSubmission); // triggers syncMetadataFromSubmission()
+                    logger.info("Restored submission metadata from: {}", submissionPxFile.getAbsolutePath());
+                } catch (Exception e) {
+                    logger.warn("Could not parse submission.px for metadata restore: {}", e.getMessage());
+                }
+            } else {
+                logger.warn("Submission.px file not found at: {}", checkpoint.getSubmissionPxPath());
+            }
+        }
+
+        // Clear files loaded from submission.px (may have stale/relative paths)
+        // and rebuild from checkpoint which has correct absolute paths
+        model.getFiles().clear();
         if (checkpoint.getFiles() != null) {
             for (UploadCheckpoint.FileEntry entry : checkpoint.getFiles()) {
                 File file = new File(entry.getFilePath());

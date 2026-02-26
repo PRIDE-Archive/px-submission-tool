@@ -15,6 +15,7 @@ import uk.ac.ebi.pride.data.model.ResubmissionFileChangeState;
 import uk.ac.ebi.pride.pxsubmit.config.AppConfig;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 import uk.ac.ebi.pride.pxsubmit.util.FileTypeDetector;
+import uk.ac.ebi.pride.pxsubmit.view.component.FileClassificationPanel;
 import uk.ac.ebi.pride.pxsubmit.view.component.ValidationFeedback;
 
 import org.slf4j.LoggerFactory;
@@ -219,9 +220,9 @@ public class SummaryStep extends AbstractWizardStep {
     private void exportSubmissionFile() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save Submission File");
-        fileChooser.setInitialFileName("submission.px");
+        fileChooser.setInitialFileName("submission");
         fileChooser.getExtensionFilters().add(
-            new FileChooser.ExtensionFilter("PX Submission Files", "*.px")
+            new FileChooser.ExtensionFilter("PX Submission Files (*.px)", "*.px")
         );
 
         File file = fileChooser.showSaveDialog(contentBox.getScene().getWindow());
@@ -403,31 +404,26 @@ public class SummaryStep extends AbstractWizardStep {
             return;
         }
 
-        // Count by type
-        Map<ProjectFileType, List<DataFile>> byType = model.getFiles().stream()
-            .collect(Collectors.groupingBy(f -> f.getFileType() != null ? f.getFileType() : ProjectFileType.OTHER));
+        // File classification panel (category filter)
+        FileClassificationPanel classPanel = new FileClassificationPanel();
+        classPanel.setShowDetails(false);
+        classPanel.setShowWarnings(false);
+        classPanel.setFiles(model.getFiles());
+        container.getChildren().add(classPanel);
 
-        // Total size
-        long totalSize = model.getFiles().stream()
-            .filter(f -> f.getFile() != null)
-            .mapToLong(f -> f.getFile().length())
-            .sum();
+        // Search field
+        HBox searchBar = new HBox(8);
+        searchBar.setAlignment(Pos.CENTER_RIGHT);
 
-        // Summary chips
-        FlowPane chips = new FlowPane(8, 6);
-        chips.setAlignment(Pos.CENTER_LEFT);
+        Label searchIcon = new Label("\u2315");
+        searchIcon.setStyle("-fx-font-size: 16px; -fx-text-fill: #666;");
 
-        // Total chip
-        chips.getChildren().add(createChip("Total: " + total, "#6c757d"));
-        chips.getChildren().add(createChip(formatSize(totalSize), "#6c757d"));
+        TextField searchField = new TextField();
+        searchField.setPromptText("Search files...");
+        searchField.setPrefWidth(250);
 
-        for (Map.Entry<ProjectFileType, List<DataFile>> entry : byType.entrySet()) {
-            String color = FileTypeDetector.getColor(entry.getKey());
-            String name = FileTypeDetector.getDisplayName(entry.getKey());
-            chips.getChildren().add(createChip(name + ": " + entry.getValue().size(), color));
-        }
-
-        container.getChildren().add(chips);
+        searchBar.getChildren().addAll(searchIcon, searchField);
+        container.getChildren().add(searchBar);
 
         // File table
         TableView<DataFile> fileTable = new TableView<>();
@@ -457,9 +453,36 @@ public class SummaryStep extends AbstractWizardStep {
         sizeCol.setPrefWidth(100);
 
         fileTable.getColumns().addAll(nameCol, typeCol, sizeCol);
-        fileTable.getItems().addAll(model.getFiles());
+
+        List<DataFile> allFiles = new ArrayList<>(model.getFiles());
+        fileTable.getItems().addAll(allFiles);
+
+        // Wire category filter
+        final ProjectFileType[] activeFilter = {null};
+        classPanel.setOnTypeSelected((type, files) -> {
+            activeFilter[0] = type;
+            filterSummaryFileTable(fileTable, allFiles, activeFilter[0], searchField.getText());
+        });
+
+        // Wire search filter
+        searchField.textProperty().addListener((obs, oldVal, newVal) ->
+            filterSummaryFileTable(fileTable, allFiles, activeFilter[0], newVal));
 
         container.getChildren().add(fileTable);
+    }
+
+    private void filterSummaryFileTable(TableView<DataFile> table, List<DataFile> allFiles,
+                                         ProjectFileType typeFilter, String searchText) {
+        String searchLower = (searchText != null) ? searchText.toLowerCase().trim() : "";
+        table.getItems().clear();
+        for (DataFile df : allFiles) {
+            boolean matchesType = typeFilter == null || df.getFileType() == typeFilter;
+            boolean matchesSearch = searchLower.isEmpty()
+                    || df.getFileName().toLowerCase().contains(searchLower);
+            if (matchesType && matchesSearch) {
+                table.getItems().add(df);
+            }
+        }
     }
 
     private Label createChip(String text, String color) {

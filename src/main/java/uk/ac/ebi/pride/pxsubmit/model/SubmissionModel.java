@@ -442,6 +442,32 @@ public class SubmissionModel {
         meta.setKeywords(keywords.get());
         meta.setSubmissionType(submissionType.get());
 
+        // Species, tissues, cell types, diseases
+        meta.clearSpecies();
+        if (!species.isEmpty()) meta.addSpecies(species.toArray(new CvParam[0]));
+        meta.clearTissues();
+        if (!tissues.isEmpty()) meta.addTissues(tissues.toArray(new CvParam[0]));
+        meta.clearCellTypes();
+        if (!cellTypes.isEmpty()) meta.addCellTypes(cellTypes.toArray(new CvParam[0]));
+        meta.clearDiseases();
+        if (!diseases.isEmpty()) meta.addDiseases(diseases.toArray(new CvParam[0]));
+
+        // Instruments, modifications, quantifications
+        meta.clearInstruments();
+        if (!instruments.isEmpty()) meta.addInstruments(instruments.toArray(new CvParam[0]));
+        meta.clearModifications();
+        if (!modifications.isEmpty()) meta.addModifications(modifications.toArray(new CvParam[0]));
+        meta.clearQuantifications();
+        if (!quantifications.isEmpty()) meta.addQuantifications(quantifications.toArray(new CvParam[0]));
+
+        // Experiment methods
+        meta.clearMassSpecExperimentMethods();
+        if (!experimentMethods.isEmpty()) meta.addMassSpecExperimentMethods(experimentMethods.toArray(new CvParam[0]));
+
+        // Software
+        meta.clearSoftwares();
+        if (!software.isEmpty()) meta.addSoftwares(software.toArray(new CvParam[0]));
+
         // Lab head
         Contact labHead = new Contact();
         labHead.setName(labHeadName.get());
@@ -472,6 +498,9 @@ public class SubmissionModel {
             modifications.setAll(meta.getModifications());
             quantifications.setAll(meta.getQuantifications());
             experimentMethods.setAll(meta.getMassSpecExperimentMethods());
+            if (meta.getSoftwares() != null) {
+                software.setAll(meta.getSoftwares());
+            }
 
             // Lab head
             Contact labHead = meta.getLabHeadContact();
@@ -479,6 +508,18 @@ public class SubmissionModel {
                 labHeadName.set(labHead.getName());
                 labHeadEmail.set(labHead.getEmail());
                 labHeadAffiliation.set(labHead.getAffiliation());
+            }
+        }
+
+        // Restore lab head ORCID and country from COM lines (not in Contact model)
+        List<String> comments = submission.get().getComments();
+        if (comments != null) {
+            for (String comment : comments) {
+                if (comment != null && comment.startsWith("lab_head_orcid\t")) {
+                    labHeadOrcid.set(comment.substring("lab_head_orcid\t".length()).trim());
+                } else if (comment != null && comment.startsWith("lab_head_country\t")) {
+                    labHeadCountry.set(comment.substring("lab_head_country\t".length()).trim());
+                }
             }
         }
 
