@@ -169,8 +169,8 @@ public class App extends Desktop {
             String proxyHost = bootstrapProps.getProperty("px.proxy.host");
             String proxyPort = bootstrapProps.getProperty("px.proxy.port");
             if (proxyHost != null && proxyPort != null) {
-                System.setProperty("http.proxyHost", "cds");
-                System.setProperty("http.proxyPort", "6474");
+                System.setProperty("http.proxyHost", proxyHost);
+                System.setProperty("http.proxyPort", proxyPort);
                 logger.info("Proxy configured from config.props: {}:{}", proxyHost, proxyPort);
             }
 
