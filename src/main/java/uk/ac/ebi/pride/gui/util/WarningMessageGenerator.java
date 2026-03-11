@@ -129,7 +129,7 @@ public final class WarningMessageGenerator {
     public static String getDuplicateFilesWarning(List<String> missingModifiedFile) {
         StringBuilder errMsg = new StringBuilder();
         errMsg.append("<html>");
-        errMsg.append("<b>The following filenames are already present, please select modify in the below panel to update it</b><br/>");
+        errMsg.append("<b>The following filenames are already present, please select DELETE in the below panel to replace it</b><br/>");
         for (String dataFile :
                 missingModifiedFile) {
             errMsg.append("<li>");

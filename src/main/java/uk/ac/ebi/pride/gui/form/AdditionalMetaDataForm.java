@@ -16,6 +16,7 @@ import uk.ac.ebi.pride.gui.util.ValidationState;
 import javax.swing.*;
 import java.awt.*;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -292,12 +293,14 @@ public class AdditionalMetaDataForm extends Form {
     }
 
     public Set<CvParam> getSoftwares() {
-        return softwareTableModel.getValues();
+        return softwareTableModel != null ? softwareTableModel.getValues() : Collections.emptySet();
     }
 
     public void setSoftwares(Collection<CvParam> softwares) {
-        softwareTableModel.clearValues();
-        softwareTableModel.addValues(softwares);
+        if (softwareTableModel != null) {
+            softwareTableModel.clearValues();
+            softwareTableModel.addValues(softwares);
+        }
     }
 
     public Set<CvParam> getDiseases() {
@@ -319,21 +322,25 @@ public class AdditionalMetaDataForm extends Form {
     }
 
     public Set<CvParam> getModifications() {
-        return modificationTableModel.getValues();
+        return modificationTableModel != null ? modificationTableModel.getValues() : Collections.emptySet();
     }
 
     public void setModifications(Collection<CvParam> modifications) {
-        modificationTableModel.clearValues();
-        modificationTableModel.addValues(modifications);
+        if (modificationTableModel != null) {
+            modificationTableModel.clearValues();
+            modificationTableModel.addValues(modifications);
+        }
     }
 
     public Set<CvParam> getQuantifications() {
-        return quantTableModel.getValues();
+        return quantTableModel != null ? quantTableModel.getValues() : Collections.emptySet();
     }
 
     public void setQuantifications(Collection<CvParam> quants) {
-        quantTableModel.clearValues();
-        quantTableModel.addValues(quants);
+        if (quantTableModel != null) {
+            quantTableModel.clearValues();
+            quantTableModel.addValues(quants);
+        }
     }
 
     public void setComment(String comment) {
@@ -365,6 +372,14 @@ public class AdditionalMetaDataForm extends Form {
             invalid = true;
         }
 
+        // tissue not applicable validation
+        Set<CvParam> tissues = getTissues();
+        if (!invalid && tissues.size() > 1 && tissues.stream().anyMatch(cv -> "PRIDE:0000442".equals(cv.getAccession()))) {
+            warningBalloonTip = BalloonTipUtil.createErrorBalloonTip(tissuePanel, "'Not applicable' cannot be selected together with other tissues");
+            showWarnings();
+            invalid = true;
+        }
+
         // cell type
         Set<CvParam> cellTypes = getCellTypes();
         if (!invalid && !cellTypes.isEmpty() && SubmissionValidator.validateCellTypes(cellTypes).hasError()) {
@@ -392,12 +407,21 @@ public class AdditionalMetaDataForm extends Form {
         SubmissionTypeConstants submissionType = appContext.getSubmissionType();
 
         if (!submissionType.equals(SubmissionTypeConstants.AFFINITY)) {
+            // No PTMs validation
+            Set<CvParam> modifications = getModifications();
+            if (!invalid && modifications.size() > 1 && modifications.stream().anyMatch(cv -> "PRIDE:0000398".equals(cv.getAccession()))) {
+                warningBalloonTip = BalloonTipUtil.createErrorBalloonTip(modificationPanel, "'No PTMs' cannot be selected together with other modifications");
+                showWarnings();
+                invalid = true;
+            }
+
             // modification
             if (!invalid && SubmissionValidator.validateModifications(getModifications()).hasError()) {
                 warningBalloonTip = BalloonTipUtil.createErrorBalloonTip(modificationPanel, "Please choose modifications");
                 showWarnings();
                 invalid = true;
             }
+
         }
 
 
@@ -458,5 +482,17 @@ public class AdditionalMetaDataForm extends Form {
 
     public void setModificationTableModel(MetaDataTableModel modificationTableModel) {
         this.modificationTableModel = modificationTableModel;
+    }
+
+    public JPanel getSoftwarePanel() {
+        return softwarePanel;
+    }
+
+    public void setSoftwarePanel(JPanel softwarePanel) {
+        this.softwarePanel = softwarePanel;
+    }
+
+    public void setSoftwareTableModel(MetaDataTableModel softwareTableModel) {
+        this.softwareTableModel = softwareTableModel;
     }
 }

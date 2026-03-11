@@ -79,6 +79,18 @@ public class AppBootstrap {
             cmdBuffer.append(proxyPort);
         }
 
+        // get aspera retry settings
+        String retryCount = bootstrapProps.getProperty("aspera.xfer.retryCount");
+        if (retryCount != null) {
+            cmdBuffer.append(" -Daspera.xfer.retryCount=");
+            cmdBuffer.append(retryCount);
+        }
+        String retryDelayMs = bootstrapProps.getProperty("aspera.xfer.retryDelayMs");
+        if (retryDelayMs != null) {
+            cmdBuffer.append(" -Daspera.xfer.retryDelayMs=");
+            cmdBuffer.append(retryDelayMs);
+        }
+
         // get upload protocol
         String uploadProtocol = bootstrapProps.getProperty("px.upload.protocol");
 
@@ -230,35 +242,32 @@ public class AppBootstrap {
     }
     
     /**
-     * Get the application version from properties or manifest
+     * Get the application version from setting.prop (Maven-filtered) or JAR manifest
      */
     private String getApplicationVersion() {
         try {
-            // Try to get version from system properties first
-            String version = System.getProperty("px.submission.tool.version");
-            if (version != null && !version.isEmpty()) {
-                return version;
+            // Read from setting.prop which has Maven-filtered ${version}
+            Properties settingProps = new Properties();
+            try (InputStream is = AppBootstrap.class.getResourceAsStream("/prop/setting.prop")) {
+                if (is != null) {
+                    settingProps.load(is);
+                    String version = settingProps.getProperty("px.submission.tool.version");
+                    if (version != null && !version.isEmpty() && !version.contains("${")) {
+                        return version;
+                    }
+                }
             }
-            
-            // Try to get from package info
+
+            // Fallback: JAR manifest Implementation-Version
             Package pkg = AppBootstrap.class.getPackage();
             if (pkg != null && pkg.getImplementationVersion() != null) {
                 return pkg.getImplementationVersion();
             }
-            
-            // Fallback to reading from properties file
-            Properties props = getBootstrapSettings();
-            String propVersion = props.getProperty("px.submission.tool.version");
-            if (propVersion != null && !propVersion.isEmpty()) {
-                return propVersion;
-            }
-            
-            // Final fallback
-            return "2.11.1";
-            
+
+            return "unknown";
         } catch (Exception e) {
             logger.warn("Failed to determine application version: {}", e.getMessage());
-            return "2.11.1";
+            return "unknown";
         }
     }
     

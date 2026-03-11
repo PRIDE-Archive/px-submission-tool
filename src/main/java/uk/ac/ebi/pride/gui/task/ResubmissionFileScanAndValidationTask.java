@@ -104,6 +104,12 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
             return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getAllFilesAreBeingRemoved());
         }
 
+        if (hasNoChanges()) {
+            return new DataFileValidationMessage(ValidationState.ERROR,
+                "<html><b>No changes detected</b><br/>" +
+                "Please add new files or select an action (DELETE) for existing files before proceeding.</html>");
+        }
+
         //2. If file is modified, check if the new file has been uploaded
         List<DataFile> missingModifiedFile = findMissingModifiedFiles();
         if (missingModifiedFile.size() > 0) {
@@ -401,10 +407,18 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
         return new DataFileValidationMessage(ValidationState.SUCCESS);
     }
 
+    private boolean hasNoChanges() {
+        boolean hasNewFiles = submission.getDataFiles().stream()
+                .anyMatch(f -> !f.getFileName().equals("checksum.txt"));
+        boolean hasStateChanges = resubmission.getResubmission().values().stream()
+                .anyMatch(state -> !state.equals(ResubmissionFileChangeState.NONE));
+        return !hasNewFiles && !hasStateChanges;
+    }
+
     private boolean checkAllFileDeletions() {
         List<String> deletingOrModifyingFiles = resubmission.getResubmission().entrySet().stream()
-                .filter(f -> f.getValue().equals(ResubmissionFileChangeState.DELETE) ||
-                        f.getValue().equals(ResubmissionFileChangeState.MODIFY))
+                .filter(f -> f.getValue().equals(ResubmissionFileChangeState.DELETE)
+                )
                 .map(f -> f.getKey().getFileName()).collect(Collectors.toList());
 
         long totalCountOfFilesAlreadyPresent = resubmission.getResubmission().entrySet().stream().count();
@@ -424,17 +438,17 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
     private List<DataFile> findMissingModifiedFiles() {
         List<DataFile> missingModifiedFile = new ArrayList<>();
         for (Map.Entry<DataFile, ResubmissionFileChangeState> resubmissionFile : resubmission.getResubmission().entrySet()) {
-            if (resubmissionFile.getValue().equals(ResubmissionFileChangeState.MODIFY)) {
-                boolean isFound = false;
-                for (DataFile newlyUploadedFile : submission.getDataFiles()) {
-                    if (newlyUploadedFile.getFileName().equals(resubmissionFile.getKey().getFileName())) {
-                        isFound = true;
-                    }
-                }
-                if (!isFound) {
-                    missingModifiedFile.add(resubmissionFile.getKey());
-                }
-            }
+//            if (resubmissionFile.getValue().equals(ResubmissionFileChangeState.MODIFY)) {
+//                boolean isFound = false;
+//                for (DataFile newlyUploadedFile : submission.getDataFiles()) {
+//                    if (newlyUploadedFile.getFileName().equals(resubmissionFile.getKey().getFileName())) {
+//                        isFound = true;
+//                    }
+//                }
+//                if (!isFound) {
+//                    missingModifiedFile.add(resubmissionFile.getKey());
+//                }
+//            }
         }
         return missingModifiedFile;
     }

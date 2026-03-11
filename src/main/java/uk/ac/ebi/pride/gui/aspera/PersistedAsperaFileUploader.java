@@ -8,6 +8,9 @@ import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
 import uk.ac.ebi.pride.gui.util.Constant;
 
+import uk.ac.ebi.pride.App;
+import uk.ac.ebi.pride.AppContext;
+
 import java.io.File;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -21,8 +24,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class PersistedAsperaFileUploader {
     private static final Logger logger = LoggerFactory.getLogger(PersistedAsperaFileUploader.class);
-    private static final int MAX_RETRIES = 3;
-    private static final int RETRY_DELAY_MS = 5000;
+    private final int maxRetries;
+    private final long retryDelayMs;
 
     private final AtomicInteger retryCount = new AtomicInteger(0);
     private final File ascpExecutable;
@@ -34,6 +37,14 @@ public class PersistedAsperaFileUploader {
         this.ascpExecutable = ascpExecutable;
         this.submissionRecord = submissionRecord;
         Environment.setFasp2ScpPath(getAscpPath(ascpExecutable));
+
+        // config.props overrides (via AppBootstrap -D flags) take priority over setting.prop defaults
+        AppContext appContext = (AppContext) App.getInstance().getDesktopContext();
+        String retryCountStr = System.getProperty("aspera.xfer.retryCount", appContext.getProperty("aspera.xfer.retryCount"));
+        String retryDelayStr = System.getProperty("aspera.xfer.retryDelayMs", appContext.getProperty("aspera.xfer.retryDelayMs"));
+        this.maxRetries = Integer.parseInt(retryCountStr);
+        this.retryDelayMs = Long.parseLong(retryDelayStr);
+        logger.info("Aspera retry config: maxRetries={}, retryDelayMs={}", maxRetries, retryDelayMs);
     }
 
     public String startTransferSession(RemoteLocation remoteLocation, XferParams transferParameters)
@@ -67,27 +78,27 @@ public class PersistedAsperaFileUploader {
 
         // Attempt transfer with retry mechanism
         String sessionId = null;
-        while (retryCount.get() < MAX_RETRIES) {
+        while (retryCount.get() < maxRetries) {
             try {
-                logger.info("Attempting transfer (attempt {}/{})", retryCount.get() + 1, MAX_RETRIES);
+                logger.info("Attempting transfer (attempt {}/{})", retryCount.get() + 1, maxRetries);
                 sessionId = FaspManager.getSingleton().startTransfer(order);
                 logger.info("Transfer started successfully with session ID: {}", sessionId);
                 break;
             } catch (Exception e) {
                 retryCount.incrementAndGet();
                 logger.error("Transfer attempt {} failed: {}", retryCount.get(), e.getMessage(), e);
-                if (retryCount.get() < MAX_RETRIES) {
+                if (retryCount.get() < maxRetries) {
                     try {
-                        logger.info("Waiting {}ms before retry", RETRY_DELAY_MS);
-                        Thread.sleep(RETRY_DELAY_MS);
+                        logger.info("Waiting {}ms before retry", retryDelayMs);
+                        Thread.sleep(retryDelayMs);
                     } catch (InterruptedException ie) {
                         logger.error("Transfer interrupted during retry", ie);
                         Thread.currentThread().interrupt();
                         throw new RuntimeException("Transfer interrupted during retry", ie);
                     }
                 } else {
-                    logger.error("All transfer attempts failed after {} retries", MAX_RETRIES, e);
-                    throw new RuntimeException("Failed to start transfer after " + MAX_RETRIES + " attempts: " + e.getMessage(), e);
+                    logger.error("All transfer attempts failed after {} retries", maxRetries, e);
+                    throw new RuntimeException("Failed to start transfer after " + maxRetries + " attempts: " + e.getMessage(), e);
                 }
             }
         }

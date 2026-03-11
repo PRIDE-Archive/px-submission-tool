@@ -376,7 +376,7 @@ public class UpdateChecker {
                 );
                 System.exit(0);
             }
-            
+
             // Check if this is a major version update that requires restart
             if (isMajorVersionUpdate(toolCurrentVersion, latestVersion)) {
                 int restartOption = JOptionPane.showConfirmDialog(

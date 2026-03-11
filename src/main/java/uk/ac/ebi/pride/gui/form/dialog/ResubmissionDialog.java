@@ -1,6 +1,8 @@
 package uk.ac.ebi.pride.gui.form.dialog;
 
+import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.data.model.ProjectMetaData;
+import uk.ac.ebi.pride.data.model.Resubmission;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareDialog;
@@ -163,6 +165,11 @@ public class ResubmissionDialog extends ContextAwareDialog implements ActionList
                 // remove resubmission related details
                 appContext.setResubmission(false);
                 projectMetaData.setResubmissionPxAccession(null);
+                // Reset submission type to COMPLETE (default) since resubmission may have overridden it
+                appContext.setSubmissionsType(SubmissionTypeConstants.COMPLETE);
+                // Clear resubmission data so re-enabling triggers a fresh reload
+                appContext.getResubmissionRecord().setResubmission(new Resubmission());
+                appContext.setResubmissionRecord(appContext.getResubmissionRecord());
                 this.setVisible(false);
             }
 

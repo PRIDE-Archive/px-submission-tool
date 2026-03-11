@@ -40,3 +40,9 @@ px.aspera.verify.server.files = true
 px.aspera.post.transfer.delay.ms = 45000
 
 px.upload.check.connection = true
+
+# Aspera transfer retry settings
+# Number of retry attempts if transfer fails to start (default: 10)
+# aspera.xfer.retryCount = 10
+# Delay between retry attempts in milliseconds (default: 300000 = 5 minutes)
+# aspera.xfer.retryDelayMs = 300000

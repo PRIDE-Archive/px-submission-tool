@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * Action for selecting and adding files to be submitted
@@ -98,6 +99,8 @@ public class AddFileSelectionAction extends AbstractAction {
      * Task to process files or folders selected
      */
     private static class FileSelectionTask extends TaskAdapter<Void, DataFile> {
+        private static final Pattern VALID_FILENAME_PATTERN = Pattern.compile("^[A-Za-z0-9][-_.A-Za-z0-9]*$");
+        private final List<String> skippedFiles = new ArrayList<>();
         private List<File> files;
 
         public FileSelectionTask(List<File> files) {
@@ -115,6 +118,24 @@ public class AddFileSelectionAction extends AbstractAction {
                     // folder
                     handleFolder(file);
                 }
+            }
+
+            if (!skippedFiles.isEmpty()) {
+                StringBuilder msg = new StringBuilder();
+                msg.append("The following files were skipped because their names contain\n");
+                msg.append("special characters. File names must start with a letter or digit\n");
+                msg.append("and contain only letters, digits, hyphens, underscores, and dots.\n\n");
+                for (String name : skippedFiles) {
+                    msg.append("  - ").append(name).append("\n");
+                }
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(
+                        ((App) App.getInstance()).getMainFrame(),
+                        msg.toString(),
+                        "Invalid File Names",
+                        JOptionPane.WARNING_MESSAGE
+                    );
+                });
             }
 
             return null;
@@ -152,6 +173,11 @@ public class AddFileSelectionAction extends AbstractAction {
          * @param file given file
          */
         private void createDataFile(File file) throws IOException {
+            String fileName = file.getName();
+            if (!VALID_FILENAME_PATTERN.matcher(fileName).matches()) {
+                skippedFiles.add(fileName);
+                return;
+            }
 
             DataFile newDataFile;
 
@@ -169,7 +195,6 @@ public class AddFileSelectionAction extends AbstractAction {
                 ((AppContext) App.getInstance().getDesktopContext()).addDataFile(newDataFile);
             }
         }
-
 
         /**
          * Check whether a given data file list contains

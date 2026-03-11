@@ -16,6 +16,7 @@ import javax.help.HelpSet;
 import javax.help.HelpSetException;
 import java.net.URL;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -300,7 +301,12 @@ public class AppContext extends DesktopContext {
             firePropertyChange(REMOVE_DATA_FILE, dataFile, null);
         }
         if(isResubmission){
-            getResubmissionRecord().getResubmission().getResubmission().remove(dataFile);
+            Map<DataFile, ResubmissionFileChangeState> resubMap = getResubmissionRecord().getResubmission().getResubmission();
+            ResubmissionFileChangeState removed = resubMap.remove(dataFile);
+            if (removed == null) {
+                // Fallback: remove by identity if hashCode/equals changed (e.g., fileType was modified)
+                resubMap.entrySet().removeIf(entry -> entry.getKey() == dataFile);
+            }
         }
     }
 

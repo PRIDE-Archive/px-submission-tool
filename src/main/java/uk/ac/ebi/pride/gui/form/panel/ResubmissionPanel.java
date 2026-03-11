@@ -128,7 +128,9 @@ public class ResubmissionPanel extends ContextAwarePanel implements ActionListen
             getPXSubmissionDetailTask.addTaskListener(this);
             getPXSubmissionDetailTask.setGUIBlocker(new DefaultGUIBlocker(getPXSubmissionDetailTask, GUIBlocker.Scope.NONE, null));
             App.getInstance().getDesktopContext().addTask(getPXSubmissionDetailTask);
-            warningBalloonTip.setVisible(false);
+            if (warningBalloonTip != null) {
+                warningBalloonTip.setVisible(false);
+            }
         }
     }
 
