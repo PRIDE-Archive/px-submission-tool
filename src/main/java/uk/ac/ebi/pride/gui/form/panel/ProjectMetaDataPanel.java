@@ -230,19 +230,19 @@ private boolean isCrosslinkDataset(ProjectMetaData projectMetaData, String title
             }
         }
     }
-    if (title.toLowerCase().contains("crosslink") || title.toLowerCase().contains("cross-link")) {
+    if ( title!=null && (title.toLowerCase().contains("crosslink") || title.toLowerCase().contains("cross-link"))) {
         isCrosslinkDataset = true;
     }
-    if (keywords.toLowerCase().contains("crosslink") || keywords.toLowerCase().contains("cross-link")) {
+    if (keywords !=null && (keywords.toLowerCase().contains("crosslink") || keywords.toLowerCase().contains("cross-link"))) {
         isCrosslinkDataset = true;
     }
-    if (projectDesc.toLowerCase().contains("crosslink") || projectDesc.toLowerCase().contains("cross-link")) {
+    if (projectDesc!=null && (projectDesc.toLowerCase().contains("crosslink") || projectDesc.toLowerCase().contains("cross-link"))) {
         isCrosslinkDataset = true;
     }
-    if (sampleProcessing.toLowerCase().contains("crosslink") || sampleProcessing.toLowerCase().contains("cross-link")) {
+    if (sampleProcessing!=null && (sampleProcessing.toLowerCase().contains("crosslink") || sampleProcessing.toLowerCase().contains("cross-link"))) {
         isCrosslinkDataset = true;
     }
-    if (dataProcessing.toLowerCase().contains("crosslink") || dataProcessing.toLowerCase().contains("cross-link")) {
+    if (dataProcessing!=null && (dataProcessing.toLowerCase().contains("crosslink") || dataProcessing.toLowerCase().contains("cross-link"))){
         isCrosslinkDataset = true;
     }
     return isCrosslinkDataset;

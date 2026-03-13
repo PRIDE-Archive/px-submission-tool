@@ -23,9 +23,12 @@ import uk.ac.ebi.pride.toolsuite.gui.task.TaskEvent;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskListener;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * This form is responsible for adding resubmission files
@@ -95,8 +98,18 @@ public class FileResubmissionForm extends Form implements TaskListener<DataFileV
         addFilesButton.setPreferredSize(new Dimension(DEFAULT_BUTTON_WIDTH, DEFAULT_BUTTON_HEIGHT));
         newResubmissionFileTopPanel.add(addFilesButton,BorderLayout.NORTH);
 
+        // search bar for new files
+        JTextField newFilesSearchField = new JTextField(15);
+        newFilesSearchField.setToolTipText("Search new files by name");
+        newResubmissionFileTopPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        newResubmissionFileTopPanel.add(new JLabel("Search:"));
+        newResubmissionFileTopPanel.add(newFilesSearchField);
+
         //newResubmissionFileTable table
         newResubmissionFileTable = TableFactory.createFileNewResubmissionTable();
+
+        // attach search filter for new files table
+        newFilesSearchField.getDocument().addDocumentListener(createSearchListener(newResubmissionFileTable, newFilesSearchField, 1));
 
         // mapping file table model
         resubmissionFileSelectionTableModel = (ResubmissionFileSelectionTableModel) newResubmissionFileTable.getModel();
@@ -125,11 +138,22 @@ public class FileResubmissionForm extends Form implements TaskListener<DataFileV
         existingFileTopPanel.add(existingFileLabel);
         existingFileTopPanel.add(Box.createRigidArea(new Dimension(5, 0)));
         existingFileTopPanel.add(existingFileDescLabel);
+
+        // search bar for existing files
+        JTextField existingFilesSearchField = new JTextField(15);
+        existingFilesSearchField.setToolTipText("Search existing files by name");
+        existingFileTopPanel.add(Box.createRigidArea(new Dimension(10, 0)));
+        existingFileTopPanel.add(new JLabel("Search:"));
+        existingFileTopPanel.add(existingFilesSearchField);
+
         existingFilePanel.add(existingFileTopPanel, BorderLayout.NORTH);
 
 
         // existing file table
         existingFileTable = TableFactory.createExistingFilesResubmissionTable();
+
+        // attach search filter for existing files table
+        existingFilesSearchField.getDocument().addDocumentListener(createSearchListener(existingFileTable, existingFilesSearchField, 1));
 
         // existing file table model
         existingFileTableModel = (ExistingFilesResubmissionTableModel) existingFileTable.getModel();
@@ -229,6 +253,31 @@ public class FileResubmissionForm extends Form implements TaskListener<DataFileV
     @Override
     public void progress(TaskEvent<Integer> taskEvent) {
 
+    }
+
+    @SuppressWarnings("unchecked")
+    private DocumentListener createSearchListener(JTable table, JTextField searchField, int columnIndex) {
+        return new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) { applyFilter(); }
+            @Override
+            public void removeUpdate(DocumentEvent e) { applyFilter(); }
+            @Override
+            public void changedUpdate(DocumentEvent e) { applyFilter(); }
+
+            private void applyFilter() {
+                RowSorter<?> sorter = table.getRowSorter();
+                if (sorter instanceof DefaultRowSorter) {
+                    String text = searchField.getText();
+                    if (text == null || text.isEmpty()) {
+                        ((DefaultRowSorter) sorter).setRowFilter(null);
+                    } else {
+                        ((DefaultRowSorter) sorter).setRowFilter(
+                            RowFilter.regexFilter("(?i)" + Pattern.quote(text), columnIndex));
+                    }
+                }
+            }
+        };
     }
 
     public class ResetExistingFileResubmissionAction extends AbstractAction {

@@ -82,9 +82,9 @@ public abstract class AbstractMetadataComboSelectionModel extends AbstractListMo
                 }
             } else {
                 if (defaultValueFile.contains("instrument")) {
+                    // For MS submissions (Complete/Partial), exclude affinity instruments (Olink, SomaScan)
                     elements.addAll(cvParams.stream().filter(cvParam -> !cvParam.getCvLabel().equals(PRIDE)).collect(Collectors.toList()));
-                }
-                if(defaultValueFile.contains("msmethod")){
+                } else if(defaultValueFile.contains("msmethod")){
                     elements.addAll(cvParams.stream().filter(cvParam -> !cvParam.getAccession().equals("PRIDE:0000636") &&
                             !cvParam.getAccession().equals("PRIDE:0000637")).collect(Collectors.toList()));
                 } else {

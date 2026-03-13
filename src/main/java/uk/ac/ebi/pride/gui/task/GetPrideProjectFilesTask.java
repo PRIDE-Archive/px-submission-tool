@@ -7,10 +7,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import uk.ac.ebi.pride.App;
-import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.archive.submission.model.File.ProjectFile;
 import uk.ac.ebi.pride.archive.submission.model.File.ProjectFileList;
-import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.gui.data.Credentials;
 import uk.ac.ebi.pride.gui.util.PrideRepoRestClient;
 import uk.ac.ebi.pride.gui.util.Utils;
@@ -20,7 +18,6 @@ import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 import java.nio.charset.Charset;
 import java.util.Base64;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -86,11 +83,6 @@ public class GetPrideProjectFilesTask extends TaskAdapter<ProjectFileList, Strin
                 projectFileList.addProjectFile(projectFile);
             }
             logger.info("projectFileList file count:" + projectFileList.getProjectFiles().size());
-
-            List<DataFile> files = ((AppContext) context).getResubmissionRecord().getResubmission().getDataFiles();
-            if (files != null && files.size() > 0 && projectFileList.getProjectFiles().size()==files.size()) {
-                return null;
-            }
 
             return projectFileList;
 

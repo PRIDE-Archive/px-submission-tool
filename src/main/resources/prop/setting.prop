@@ -83,6 +83,12 @@ aspera.xfer.createPath = true
 # ASCP4 automatically uses --sparse-file, --chunk-size=134217728, --compression=lz4
 # These are built into the ascp4 binary and don't need SDK configuration
 
+# Aspera retry settings
+# Number of retry attempts if transfer fails to start
+aspera.xfer.retryCount = 10
+# Delay between retry attempts (in milliseconds) - 5 minutes
+aspera.xfer.retryDelayMs = 300000
+
 # Aspera timeout settings (in milliseconds)
 aspera.timeout.transfer = 600000
 aspera.timeout.progress = 120000

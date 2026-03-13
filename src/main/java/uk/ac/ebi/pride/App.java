@@ -161,6 +161,30 @@ public class App extends Desktop {
         } catch (IOException e) {
             logger.error("Error while loading properties", e);
         }
+
+        // Load config.props overrides (proxy, aspera retry, etc.)
+        try {
+            java.util.Properties bootstrapProps = AppBootstrap.getBootstrapSettings();
+
+            String proxyHost = bootstrapProps.getProperty("px.proxy.host");
+            String proxyPort = bootstrapProps.getProperty("px.proxy.port");
+            if (proxyHost != null && proxyPort != null) {
+                System.setProperty("http.proxyHost", proxyHost);
+                System.setProperty("http.proxyPort", proxyPort);
+                logger.info("Proxy configured from config.props: {}:{}", proxyHost, proxyPort);
+            }
+
+            String retryCount = bootstrapProps.getProperty("aspera.xfer.retryCount");
+            if (retryCount != null) {
+                System.setProperty("aspera.xfer.retryCount", retryCount);
+            }
+            String retryDelay = bootstrapProps.getProperty("aspera.xfer.retryDelayMs");
+            if (retryDelay != null) {
+                System.setProperty("aspera.xfer.retryDelayMs", retryDelay);
+            }
+        } catch (Exception e) {
+            logger.warn("Could not load config.props overrides: {}", e.getMessage());
+        }
     }
 
     /**
@@ -242,10 +266,8 @@ public class App extends Desktop {
                     UIManager.setLookAndFeel(info.getClassName());
                     return;
                 }
-                if (isMac() && (info.getName().contains("Mac OS"))) {
-                    UIManager.setLookAndFeel(info.getClassName());
-                    return;
-                }
+                // Skip Mac OS X Aqua LAF due to known AquaMenuPainter NPE bug with combo boxes
+                // Falls through to Nimbus which works reliably on macOS
             }
             // No look and feel found, set default
             UIManager.setLookAndFeel(lookAndFeel);

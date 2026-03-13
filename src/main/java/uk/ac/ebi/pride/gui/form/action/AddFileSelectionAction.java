@@ -7,6 +7,7 @@ import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.data.util.AffinityFileFormat;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
+import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.GUIBlocker;
@@ -98,6 +99,8 @@ public class AddFileSelectionAction extends AbstractAction {
      * Task to process files or folders selected
      */
     private static class FileSelectionTask extends TaskAdapter<Void, DataFile> {
+        // Use shared validator from Constant.isValidFilename
+        private final List<String> skippedFiles = new ArrayList<>();
         private List<File> files;
 
         public FileSelectionTask(List<File> files) {
@@ -115,6 +118,23 @@ public class AddFileSelectionAction extends AbstractAction {
                     // folder
                     handleFolder(file);
                 }
+            }
+
+            if (!skippedFiles.isEmpty()) {
+                StringBuilder msg = new StringBuilder();
+                msg.append("The following files were skipped because their names contain\n");
+                msg.append("special characters. ").append(Constant.FILENAME_DESCRIPTION).append("\n\n");
+                for (String name : skippedFiles) {
+                    msg.append("  - ").append(name).append("\n");
+                }
+                SwingUtilities.invokeLater(() -> {
+                    JOptionPane.showMessageDialog(
+                        ((App) App.getInstance()).getMainFrame(),
+                        msg.toString(),
+                        "Invalid File Names",
+                        JOptionPane.WARNING_MESSAGE
+                    );
+                });
             }
 
             return null;
@@ -152,6 +172,11 @@ public class AddFileSelectionAction extends AbstractAction {
          * @param file given file
          */
         private void createDataFile(File file) throws IOException {
+            String fileName = file.getName();
+            if (!Constant.isValidFilename(fileName)) {
+                skippedFiles.add(fileName);
+                return;
+            }
 
             DataFile newDataFile;
 
@@ -169,7 +194,6 @@ public class AddFileSelectionAction extends AbstractAction {
                 ((AppContext) App.getInstance().getDesktopContext()).addDataFile(newDataFile);
             }
         }
-
 
         /**
          * Check whether a given data file list contains

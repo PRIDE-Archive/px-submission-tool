@@ -9,6 +9,7 @@ import uk.ac.ebi.pride.archive.submission.model.File.ProjectFileList;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Resubmission;
 import uk.ac.ebi.pride.data.model.Submission;
+import uk.ac.ebi.pride.gui.data.ResubmissionRecord;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.form.dialog.TaskDialog;
@@ -35,6 +36,7 @@ public class FileResubmissionDescriptor extends ContextAwareNavigationPanelDescr
     ProjectFileList projectFileList;
     FileResubmissionForm form;
     PrideProjectFilesTaskListener projectFilesTaskListener;
+    private String lastLoadedAccession;
 
     public FileResubmissionDescriptor(String id, String title, String desc) {
         super(id, title, desc, new FileResubmissionForm());
@@ -89,18 +91,32 @@ public class FileResubmissionDescriptor extends ContextAwareNavigationPanelDescr
     @Override
     public void displayingPanel() {
         SubmissionRecord submissionRecord = appContext.getSubmissionRecord();
-        String username = submissionRecord.getUserName().trim();
-        String password = submissionRecord.getPassword().trim();
+        String currentAccession = submissionRecord.getSubmission().getProjectMetaData().getResubmissionPxAccession();
 
-        // launch a new task to retrieve Existing project files from API call
-        Task task = new GetPrideProjectFilesTask(username, password.toCharArray(), submissionRecord.getSubmission().getProjectMetaData().getResubmissionPxAccession());
-        task.addTaskListener(projectFilesTaskListener);
+        // Only clear and re-fetch if the dataset accession changed, or data was cleared (e.g., resubmission disabled/re-enabled)
+        // When navigating back from next panel, preserve existing DELETE/state selections
+        boolean dataCleared = appContext.getResubmissionRecord().getResubmission().getDataFiles().isEmpty();
+        if (lastLoadedAccession == null || !lastLoadedAccession.equals(currentAccession) || dataCleared) {
+            lastLoadedAccession = currentAccession;
 
-        // set gui blocker
-        task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
+            String username = submissionRecord.getUserName().trim();
+            String password = submissionRecord.getPassword().trim();
 
-        // execute submitted file finding task
-        App.getInstance().getDesktopContext().addTask(task);
+            // Clear old resubmission data before fetching new dataset files
+            ResubmissionRecord resubmissionRecord = appContext.getResubmissionRecord();
+            resubmissionRecord.setResubmission(new Resubmission());
+            appContext.setResubmissionRecord(resubmissionRecord);
+
+            // launch a new task to retrieve Existing project files from API call
+            Task task = new GetPrideProjectFilesTask(username, password.toCharArray(), currentAccession);
+            task.addTaskListener(projectFilesTaskListener);
+
+            // set gui blocker
+            task.setGUIBlocker(new DefaultGUIBlocker(task, GUIBlocker.Scope.NONE, null));
+
+            // execute submitted file finding task
+            App.getInstance().getDesktopContext().addTask(task);
+        }
 
         firePropertyChange(DISPLAYING_PANEL_PROPERTY, false, true);
     }
