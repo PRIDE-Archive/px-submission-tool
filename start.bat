@@ -1,4 +1,5 @@
 @echo off
+setlocal enabledelayedexpansion
 echo 🚀 PX Submission Tool - Windows Launcher
 echo ======================================
 echo.
@@ -49,17 +50,17 @@ if %errorlevel% equ 0 (
         set JAVA_VER_RAW=%%~v
     )
     REM Extract major version (before first dot)
-    for /f "tokens=1 delims=." %%m in ("%JAVA_VER_RAW%") do (
+    for /f "tokens=1 delims=." %%m in ("!JAVA_VER_RAW!") do (
         set JAVA_MAJOR=%%m
     )
-    echo System Java version: %JAVA_MAJOR%
+    echo System Java version: !JAVA_MAJOR!
 
-    if %JAVA_MAJOR% GEQ 21 (
-        echo ✅ System Java %JAVA_MAJOR% is compatible (21+^)
+    if !JAVA_MAJOR! GEQ 21 (
+        echo ✅ System Java !JAVA_MAJOR! is compatible (21+^)
         set JAVA_CMD=java
         goto :java_found
     ) else (
-        echo ⚠️ System Java %JAVA_MAJOR% is too old (need 21+^)
+        echo ⚠️ System Java !JAVA_MAJOR! is too old (need 21+^)
         goto :download_jre
     )
 ) else (

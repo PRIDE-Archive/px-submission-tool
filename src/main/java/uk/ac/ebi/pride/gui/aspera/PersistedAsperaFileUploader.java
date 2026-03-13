@@ -39,11 +39,13 @@ public class PersistedAsperaFileUploader {
         Environment.setFasp2ScpPath(getAscpPath(ascpExecutable));
 
         // config.props overrides (via AppBootstrap -D flags) take priority over setting.prop defaults
+        final int defaultMaxRetries = 10;
+        final long defaultRetryDelayMs = 300000L;
         AppContext appContext = (AppContext) App.getInstance().getDesktopContext();
         String retryCountStr = System.getProperty("aspera.xfer.retryCount", appContext.getProperty("aspera.xfer.retryCount"));
         String retryDelayStr = System.getProperty("aspera.xfer.retryDelayMs", appContext.getProperty("aspera.xfer.retryDelayMs"));
-        this.maxRetries = Integer.parseInt(retryCountStr);
-        this.retryDelayMs = Long.parseLong(retryDelayStr);
+        this.maxRetries = parseIntOrDefault(retryCountStr, defaultMaxRetries, "aspera.xfer.retryCount");
+        this.retryDelayMs = parseLongOrDefault(retryDelayStr, defaultRetryDelayMs, "aspera.xfer.retryDelayMs");
         logger.info("Aspera retry config: maxRetries={}, retryDelayMs={}", maxRetries, retryDelayMs);
     }
 
@@ -256,5 +258,31 @@ public class PersistedAsperaFileUploader {
         }
 
         logger.info("Transfer validation successful for session: {}", sessionId);
+    }
+
+    private int parseIntOrDefault(String value, int defaultValue, String propertyName) {
+        if (value == null || value.trim().isEmpty()) {
+            logger.warn("Property '{}' is null or empty, using default: {}", propertyName, defaultValue);
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(value.trim());
+        } catch (NumberFormatException e) {
+            logger.warn("Invalid value '{}' for property '{}', using default: {}", value, propertyName, defaultValue);
+            return defaultValue;
+        }
+    }
+
+    private long parseLongOrDefault(String value, long defaultValue, String propertyName) {
+        if (value == null || value.trim().isEmpty()) {
+            logger.warn("Property '{}' is null or empty, using default: {}", propertyName, defaultValue);
+            return defaultValue;
+        }
+        try {
+            return Long.parseLong(value.trim());
+        } catch (NumberFormatException e) {
+            logger.warn("Invalid value '{}' for property '{}', using default: {}", value, propertyName, defaultValue);
+            return defaultValue;
+        }
     }
 }

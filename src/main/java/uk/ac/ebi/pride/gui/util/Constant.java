@@ -49,4 +49,13 @@ public final class Constant {
     public static final Pattern PX_ACC_PATTERN = Pattern.compile("^PXD\\d{6}$");
 
     public static final Pattern PAD_ACC_PATTERN = Pattern.compile("^PAD\\d{6}$");
+
+    public static final Pattern FILENAME_PATTERN = Pattern.compile("^[A-Za-z0-9][-_.A-Za-z0-9]*$");
+
+    public static final String FILENAME_DESCRIPTION =
+            "File names must start with a letter or digit and contain only letters, digits, hyphens, underscores, and dots.";
+
+    public static boolean isValidFilename(String filename) {
+        return filename != null && FILENAME_PATTERN.matcher(filename).matches();
+    }
 }

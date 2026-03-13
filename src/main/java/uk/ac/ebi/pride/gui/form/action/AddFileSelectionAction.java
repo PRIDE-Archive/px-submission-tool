@@ -7,6 +7,7 @@ import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.data.util.AffinityFileFormat;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
+import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.GUIBlocker;
@@ -20,7 +21,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
 
 /**
  * Action for selecting and adding files to be submitted
@@ -99,7 +99,7 @@ public class AddFileSelectionAction extends AbstractAction {
      * Task to process files or folders selected
      */
     private static class FileSelectionTask extends TaskAdapter<Void, DataFile> {
-        private static final Pattern VALID_FILENAME_PATTERN = Pattern.compile("^[A-Za-z0-9][-_.A-Za-z0-9]*$");
+        // Use shared validator from Constant.isValidFilename
         private final List<String> skippedFiles = new ArrayList<>();
         private List<File> files;
 
@@ -123,8 +123,7 @@ public class AddFileSelectionAction extends AbstractAction {
             if (!skippedFiles.isEmpty()) {
                 StringBuilder msg = new StringBuilder();
                 msg.append("The following files were skipped because their names contain\n");
-                msg.append("special characters. File names must start with a letter or digit\n");
-                msg.append("and contain only letters, digits, hyphens, underscores, and dots.\n\n");
+                msg.append("special characters. ").append(Constant.FILENAME_DESCRIPTION).append("\n\n");
                 for (String name : skippedFiles) {
                     msg.append("  - ").append(name).append("\n");
                 }
@@ -174,7 +173,7 @@ public class AddFileSelectionAction extends AbstractAction {
          */
         private void createDataFile(File file) throws IOException {
             String fileName = file.getName();
-            if (!VALID_FILENAME_PATTERN.matcher(fileName).matches()) {
+            if (!Constant.isValidFilename(fileName)) {
                 skippedFiles.add(fileName);
                 return;
             }
