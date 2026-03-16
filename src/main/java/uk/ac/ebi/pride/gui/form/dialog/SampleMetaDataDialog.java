@@ -370,9 +370,28 @@ public class SampleMetaDataDialog extends ContextAwareDialog implements ActionLi
         if (CANCEL_ACTION_COMMAND.equals(evtName)) {
             this.dispose();
         } else if (ADD_ACTION_COMMAND.equals(evtName)) {
+            String validationError = validateSelections();
+            if (validationError != null) {
+                JOptionPane.showMessageDialog(this, validationError, "Validation Warning", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
             updateDataFile();
             this.dispose();
         }
+    }
+
+    private String validateSelections() {
+        Set<CvParam> tissues = tissueTableModel.getValues();
+        if (tissues.size() > 1 && tissues.stream().anyMatch(cv -> "PRIDE:0000442".equals(cv.getAccession()))) {
+            return "'Not applicable' cannot be selected together with other tissues.";
+        }
+
+        Set<CvParam> modifications = modificationTableModel.getValues();
+        if (modifications.size() > 1 && modifications.stream().anyMatch(cv -> "PRIDE:0000398".equals(cv.getAccession()))) {
+            return "'No PTMs' cannot be selected together with other modifications.";
+        }
+
+        return null;
     }
 
     private void updateDataFile() {
