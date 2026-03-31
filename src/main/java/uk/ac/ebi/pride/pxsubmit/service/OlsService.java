@@ -469,4 +469,67 @@ public class OlsService {
                 new CvParam("MS", "MS:1001327", "Spectronaut", null)
         );
     }
+
+    /**
+     * Get all species from GitHub CV file (with local fallback)
+     */
+    public static List<CvParam> getAllSpecies() {
+        return CvService.getInstance().loadCvParams("species.cv").join();
+    }
+
+    /**
+     * Get all instruments from GitHub CV file (with local fallback)
+     */
+    public static List<CvParam> getAllInstruments() {
+        return CvService.getInstance().loadCvParams("instrument.cv").join();
+    }
+
+    /**
+     * Get all modifications from GitHub CV file (with local fallback)
+     */
+    public static List<CvParam> getAllModifications() {
+        return CvService.getInstance().loadCvParams("modification.cv").join();
+    }
+
+    /**
+     * Get all tissues from GitHub CV file (with local fallback)
+     */
+    public static List<CvParam> getAllTissues() {
+        return CvService.getInstance().loadCvParams("tissue.cv").join();
+    }
+
+    /**
+     * Get all diseases from GitHub CV file (with local fallback)
+     */
+    public static List<CvParam> getAllDiseases() {
+        return CvService.getInstance().loadCvParams("disease.cv").join();
+    }
+
+    /**
+     * Get all cell types from GitHub CV file (with local fallback)
+     */
+    public static List<CvParam> getAllCellTypes() {
+        return CvService.getInstance().loadCvParams("celltype.cv").join();
+    }
+
+    /**
+     * Get all experiment types / MS methods from GitHub CV file (with local fallback)
+     */
+    public static List<CvParam> getAllExperimentTypes() {
+        return CvService.getInstance().loadCvParams("msmethod.cv").join();
+    }
+
+    /**
+     * Get all software/tools from GitHub CV file (with local fallback)
+     */
+    public static List<CvParam> getAllSoftware() {
+        return CvService.getInstance().loadCvParams("software.cv").join();
+    }
+
+    /**
+     * Get project tags from GitHub CV file (with local fallback)
+     */
+    public static List<String> getProjectTags() {
+        return CvService.getInstance().loadStringList("projecttag.cv").join();
+    }
 }

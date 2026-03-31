@@ -15,10 +15,6 @@ import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
 import uk.ac.ebi.pride.pxsubmit.service.ai.KeywordSuggestionService;
 import uk.ac.ebi.pride.pxsubmit.view.dialog.SettingsDialog;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -147,7 +143,7 @@ public class ProjectMetadataStep extends AbstractWizardStep {
             "Select the type of mass spectrometry experiment", true);
         experimentTypeField = new OlsAutocomplete(OlsOntology.PRIDE);
         experimentTypeField.setPromptText("Search experiment type (e.g., Bottom-up, DIA, DDA)...");
-        experimentTypeField.setCommonTerms(OlsService.getCommonExperimentTypes());
+        experimentTypeField.setCommonTerms(OlsService.getAllExperimentTypes());
         experimentTypeField.setOnTermSelected(term -> model.addExperimentMethod(term));
         experimentTypeField.setOnTermRemoved(term -> model.removeExperimentMethod(term));
         experimentTypeSection.getChildren().add(experimentTypeField);
@@ -158,7 +154,7 @@ public class ProjectMetadataStep extends AbstractWizardStep {
             "Select the software used for data analysis", true);
         softwareField = new OlsAutocomplete(OlsOntology.MS);
         softwareField.setPromptText("Search software (e.g., MaxQuant, DIA-NN, FragPipe)...");
-        softwareField.setCommonTerms(OlsService.getCommonSoftware());
+        softwareField.setCommonTerms(OlsService.getAllSoftware());
         softwareField.setOnTermSelected(term -> model.addSoftware(term));
         softwareField.setOnTermRemoved(term -> model.removeSoftware(term));
         softwareSection.getChildren().add(softwareField);
@@ -569,24 +565,7 @@ public class ProjectMetadataStep extends AbstractWizardStep {
     }
 
     private List<String> loadProjectTags() {
-        List<String> tags = new ArrayList<>();
-        try (InputStream is = getClass().getResourceAsStream("/cv/projecttag.cv")) {
-            if (is != null) {
-                try (BufferedReader reader = new BufferedReader(
-                        new InputStreamReader(is, StandardCharsets.UTF_8))) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        line = line.trim();
-                        if (!line.isEmpty()) {
-                            tags.add(line);
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            logger.warn("Could not load project tags from CV file", e);
-        }
-        return tags;
+        return OlsService.getProjectTags();
     }
 
     private void updateTagChips() {

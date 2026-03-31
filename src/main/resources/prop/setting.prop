@@ -1,6 +1,6 @@
 # details on the px submission tool
 px.submission.tool.name=${name}
-px.submission.tool.version=${version}
+px.submission.tool.version=2.12.0
 
 # the default size of the submission tool
 px.submission.tool.width = 800

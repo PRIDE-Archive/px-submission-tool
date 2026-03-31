@@ -86,18 +86,18 @@ public class AuthService extends Service<ContactDetail> {
             logger.debug("Starting authentication for user: {}", taskUsername);
             logger.debug("Login URL: {}", loginUrl);
 
-            try {
-                RestTemplate restTemplate = createRestTemplate();
+            RestTemplate restTemplate = createRestTemplate();
 
+            // Prepare credentials payload using a Map for proper JSON serialization
+            java.util.Map<String, String> credentials = new java.util.LinkedHashMap<>();
+            credentials.put("username", taskUsername);
+            credentials.put("password", taskPassword);
+
+            try {
                 // Prepare headers
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
                 headers.add("version", toolVersion);
-
-                // Prepare credentials payload using a Map for proper JSON serialization
-                java.util.Map<String, String> credentials = new java.util.LinkedHashMap<>();
-                credentials.put("username", taskUsername);
-                credentials.put("password", taskPassword);
 
                 HttpEntity<java.util.Map<String, String>> entity = new HttpEntity<>(credentials, headers);
 

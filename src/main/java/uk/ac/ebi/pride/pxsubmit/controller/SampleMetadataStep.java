@@ -84,7 +84,7 @@ public class SampleMetadataStep extends AbstractWizardStep {
                 true);
         speciesField = new OlsAutocomplete(OlsOntology.NCBI_TAXON);
         speciesField.setPromptText("Search species (e.g., Homo sapiens, mouse)...");
-        speciesField.setCommonTerms(OlsService.getCommonSpecies());
+        speciesField.setCommonTerms(OlsService.getAllSpecies());
         speciesField.setOnTermSelected(term -> model.addSpecies(term));
         speciesField.setOnTermRemoved(term -> model.removeSpecies(term));
         speciesSection.getChildren().add(speciesField);
@@ -97,7 +97,7 @@ public class SampleMetadataStep extends AbstractWizardStep {
                 true);
         tissueField = new OlsAutocomplete(OlsOntology.BTO);
         tissueField.setPromptText("Search tissue (e.g., liver, blood, brain)...");
-        tissueField.setCommonTerms(OlsService.getCommonTissues());
+        tissueField.setCommonTerms(OlsService.getAllTissues());
         tissueField.setOnTermSelected(term -> model.addTissue(term));
         tissueField.setOnTermRemoved(term -> model.removeTissue(term));
         tissueSection.getChildren().add(tissueField);
@@ -110,7 +110,7 @@ public class SampleMetadataStep extends AbstractWizardStep {
                 true);
         cellTypeField = new OlsAutocomplete(OlsOntology.CL);
         cellTypeField.setPromptText("Search cell type (e.g., T cell, HeLa)...");
-        cellTypeField.setCommonTerms(OlsService.getCommonCellTypes());
+        cellTypeField.setCommonTerms(OlsService.getAllCellTypes());
         cellTypeField.setOnTermSelected(term -> model.addCellType(term));
         cellTypeField.setOnTermRemoved(term -> model.removeCellType(term));
         cellTypeSection.getChildren().add(cellTypeField);
@@ -123,7 +123,7 @@ public class SampleMetadataStep extends AbstractWizardStep {
                 true);
         diseaseField = new OlsAutocomplete(OlsOntology.DOID);
         diseaseField.setPromptText("Search disease (e.g., cancer, diabetes)...");
-        diseaseField.setCommonTerms(OlsService.getCommonDiseases());
+        diseaseField.setCommonTerms(OlsService.getAllDiseases());
         diseaseField.setOnTermSelected(term -> model.addDisease(term));
         diseaseField.setOnTermRemoved(term -> model.removeDisease(term));
         diseaseSection.getChildren().add(diseaseField);
@@ -136,7 +136,7 @@ public class SampleMetadataStep extends AbstractWizardStep {
                 true);
         instrumentField = new OlsAutocomplete(OlsOntology.MS);
         instrumentField.setPromptText("Search instrument (e.g., Q Exactive, Orbitrap)...");
-        instrumentField.setCommonTerms(OlsService.getCommonInstruments());
+        instrumentField.setCommonTerms(OlsService.getAllInstruments());
         instrumentField.setOnTermSelected(term -> model.addInstrument(term));
         instrumentField.setOnTermRemoved(term -> model.removeInstrument(term));
         instrumentSection.getChildren().add(instrumentField);
@@ -149,7 +149,7 @@ public class SampleMetadataStep extends AbstractWizardStep {
                 true);
         modificationField = new OlsAutocomplete(OlsOntology.MOD);
         modificationField.setPromptText("Search modification (e.g., phosphorylation, acetylation)...");
-        modificationField.setCommonTerms(OlsService.getCommonModifications());
+        modificationField.setCommonTerms(OlsService.getAllModifications());
         modificationField.setOnTermSelected(term -> model.addModification(term));
         modificationField.setOnTermRemoved(term -> model.removeModification(term));
         modificationSection.getChildren().add(modificationField);
