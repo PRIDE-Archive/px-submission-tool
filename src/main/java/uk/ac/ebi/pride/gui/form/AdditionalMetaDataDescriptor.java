@@ -13,7 +13,6 @@ import uk.ac.ebi.pride.gui.util.ValidationState;
 import javax.help.HelpBroker;
 import javax.swing.*;
 import java.awt.*;
-import java.util.Collections;
 import java.util.Set;
 
 /**
@@ -177,12 +176,20 @@ public class AdditionalMetaDataDescriptor extends ContextAwareNavigationPanelDes
         AdditionalMetaDataForm form = (AdditionalMetaDataForm) getNavigationPanel();
         ValidationState state = form.doValidation();
         if (!ValidationState.ERROR.equals(state)) {
-            if(appContext.getSubmissionType().getName().equals(SubmissionTypeConstants.AFFINITY.name())){
-                form.setModifications(Collections.singletonList(new CvParam("PRIDE","PRIDE:0000398","No PTMs are included in the dataset",
-                        "")));
-            }
             // save user input
             saveFormContent();
+
+            // For AFFINITY the modification panel is hidden/nulled, so routing the default
+            // "No PTMs" CvParam through the form is a no-op (form table model is null) and
+            // saveFormContent() ends up writing an empty modification set. Set it directly on
+            // ProjectMetaData after the save, and replace any prior modifications so the
+            // "No PTMs" + other-modification combination cannot persist.
+            if (appContext.getSubmissionType().getName().equals(SubmissionTypeConstants.AFFINITY.name())) {
+                ProjectMetaData metaData = appContext.getSubmissionRecord().getSubmission().getProjectMetaData();
+                metaData.clearModifications();
+                metaData.addModifications(new CvParam("PRIDE", "PRIDE:0000398",
+                        "No PTMs are included in the dataset", ""));
+            }
 
             // hide warnings
             form.hideWarnings();

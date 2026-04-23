@@ -72,7 +72,12 @@ public class SubmissionTypeDescriptor extends ContextAwareNavigationPanelDescrip
         boolean loadPreviousSubmission = detectPreviousSubmission();
 
         ProjectMetaData projectMetaData = appContext.getSubmissionRecord().getSubmission().getProjectMetaData();
-        projectMetaData.clearMassSpecExperimentMethods();
+        // Preserve previously chosen experiment methods on resubmissions and resumed submissions;
+        // ProjectMetaDataDescriptor (where the combobox lives) is skipped for resubmissions, so
+        // clearing here would leave experiment_type empty in the generated submission.px.
+        if (!appContext.isResubmission() && !loadPreviousSubmission) {
+            projectMetaData.clearMassSpecExperimentMethods();
+        }
 
         if (!projectMetaData.isResubmission()) {
             appContext.setResubmission(false);
