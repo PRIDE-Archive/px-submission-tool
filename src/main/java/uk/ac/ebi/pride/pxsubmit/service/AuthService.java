@@ -92,7 +92,9 @@ public class AuthService extends Service<ContactDetail> {
                 // Prepare headers
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
-                headers.add("version", toolVersion);
+//                headers.add("version", toolVersion);
+                headers.add("version", "v2.11.3");
+
 
                 // Prepare credentials payload using a Map for proper JSON serialization
                 java.util.Map<String, String> credentials = new java.util.LinkedHashMap<>();
@@ -102,6 +104,7 @@ public class AuthService extends Service<ContactDetail> {
                 HttpEntity<java.util.Map<String, String>> entity = new HttpEntity<>(credentials, headers);
 
                 updateMessage("Contacting PRIDE server...");
+
 
                 // Make login request
                 ResponseEntity<ContactDetail> response = restTemplate.exchange(
