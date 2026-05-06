@@ -421,6 +421,7 @@ public class AsperaUploadService extends AbstractUploadService {
                             Platform.runLater(() -> {
                                 uploadedFilesProperty().set(finishedFileCount);
                                 currentFileNameProperty().set(fileName);
+
                                 double progress = (double) finishedFileCount / totalFilesProperty().get();
                                 overallProgress.set(progress);
                             });           }

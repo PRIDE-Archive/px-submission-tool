@@ -1,7 +1,6 @@
 package uk.ac.ebi.pride.pxsubmit.controller;
 
 import javafx.application.Platform;
-import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -15,6 +14,7 @@ import javafx.stage.Stage;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
+import uk.ac.ebi.pride.pxsubmit.service.SdrfParserService;
 import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
 import uk.ac.ebi.pride.pxsubmit.service.ValidationService;
 import uk.ac.ebi.pride.pxsubmit.util.FileTypeDetector;
@@ -28,6 +28,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -35,9 +36,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -57,6 +60,11 @@ public class FileSelectionStep extends AbstractWizardStep {
     private ProgressBar validationProgress;
     private Label validationStatus;
 
+    private volatile boolean sdrfTemplatesFetchStarted;
+    private List<String> sdrfTemplateNames = new ArrayList<>();
+    private String sdrfPopupSignature;
+    private boolean sdrfPopupShownForCurrentFiles;
+
     public FileSelectionStep(SubmissionModel model) {
         super("file-selection",
               "Select Files",
@@ -72,6 +80,12 @@ public class FileSelectionStep extends AbstractWizardStep {
 
     @Override
     protected Parent createContent() {
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setFitToWidth(true);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setStyle("-fx-background-color: transparent;");
+
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(10));
 
@@ -176,7 +190,8 @@ public class FileSelectionStep extends AbstractWizardStep {
         bottomBox.getChildren().addAll(summaryLabel, validationFeedback, validationBox);
         root.setBottom(bottomBox);
 
-        return root;
+        scrollPane.setContent(root);
+        return scrollPane;
     }
 
     @Override
@@ -186,15 +201,40 @@ public class FileSelectionStep extends AbstractWizardStep {
             updateSummary();
         });
 
-        // Valid when at least one file is added
-        valid.bind(Bindings.isNotEmpty(model.getFiles()));
-
+        ensureSdrfTemplatesLoaded();
         updateSummary();
     }
 
     @Override
     protected void onStepEntering() {
+        ensureSdrfTemplatesLoaded();
         updateSummary();
+    }
+
+    @Override
+    public boolean validate() {
+        if (model.getFiles().isEmpty()) {
+            return false;
+        }
+
+        List<File> sdrfFiles = getSdrfFiles();
+        if (sdrfFiles.isEmpty()) {
+            return true;
+        }
+
+        String signature = buildSdrfPopupSignature(sdrfFiles);
+        if (!signature.equals(sdrfPopupSignature)) {
+            sdrfPopupSignature = signature;
+            sdrfPopupShownForCurrentFiles = false;
+        }
+
+        if (!sdrfPopupShownForCurrentFiles) {
+            sdrfPopupShownForCurrentFiles = true;
+            showSdrfValidationDialog(sdrfFiles);
+            return false;
+        }
+
+        return true;
     }
 
     /**
@@ -441,10 +481,6 @@ public class FileSelectionStep extends AbstractWizardStep {
                     model.addFile(dataFile);
                     logger.debug("Added file: {} (type: {})", file.getName(), dataFile.getFileType());
                     addedCount++;
-
-                    if (dataFile.getFileType() == ProjectFileType.EXPERIMENTAL_DESIGN) {
-                        validateSdrfFile(file);
-                    }
                 }
             }
         }
@@ -454,6 +490,7 @@ public class FileSelectionStep extends AbstractWizardStep {
         }
 
         updateSummary();
+        resetSdrfPopupState();
     }
 
     /**
@@ -491,6 +528,7 @@ public class FileSelectionStep extends AbstractWizardStep {
         }
         fileTable.getSelectionModel().clearSelection();
         updateSummary();
+        resetSdrfPopupState();
     }
 
     /**
@@ -499,6 +537,7 @@ public class FileSelectionStep extends AbstractWizardStep {
     private void removeFile(DataFile file) {
         model.removeFile(file);
         updateSummary();
+        resetSdrfPopupState();
     }
 
     /**
@@ -506,6 +545,8 @@ public class FileSelectionStep extends AbstractWizardStep {
      */
     private void onFileTypeChanged(DataFile file) {
         logger.debug("File type changed for {}: {}", file.getFileName(), file.getFileType());
+        updateSummary();
+        resetSdrfPopupState();
     }
 
     /**
@@ -578,7 +619,14 @@ public class FileSelectionStep extends AbstractWizardStep {
         // Clear and update validation feedback
         validationFeedback.clear();
 
+        boolean hasSdrf = model.getFiles().stream()
+            .anyMatch(f -> f.getFileType() == ProjectFileType.EXPERIMENTAL_DESIGN);
+        boolean hasRaw = model.getFiles().stream()
+            .anyMatch(f -> f.getFileType() == ProjectFileType.RAW);
         int total = model.getFiles().size();
+
+        // Keep Next disabled when SDRF is present but RAW files are missing.
+        setValid(total > 0 && (!hasSdrf || hasRaw));
         if (total == 0) {
             summaryLabel.setText("No files added - drag and drop files or use the buttons above");
             summaryLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #666;");
@@ -609,10 +657,9 @@ public class FileSelectionStep extends AbstractWizardStep {
             validationFeedback.addInfo("Recommended: Add a FASTA database for sequence validation");
         }
 
-        boolean hasSdrf = model.getFiles().stream()
-            .anyMatch(f -> f.getFileType() == ProjectFileType.EXPERIMENTAL_DESIGN);
         if (hasSdrf) {
             validationFeedback.addInfo("SDRF/experimental design file included - metadata will be auto-populated");
+            validationFeedback.addInfo("Click Next to open SDRF template/validation popup");
         }
 
         // Success messages
@@ -635,13 +682,63 @@ public class FileSelectionStep extends AbstractWizardStep {
 
     private static final String SDRF_VALIDATOR_URL =
             "https://www.ebi.ac.uk/pride/services/sdrf-validator/validate";
+    private static final String SDRF_TEMPLATES_URL =
+            "https://www.ebi.ac.uk/pride/services/sdrf-validator/templates";
+
+    private void ensureSdrfTemplatesLoaded() {
+        if (sdrfTemplatesFetchStarted) {
+            return;
+        }
+        sdrfTemplatesFetchStarted = true;
+        Thread.startVirtualThread(this::fetchAndApplySdrfTemplates);
+    }
+
+    private void fetchAndApplySdrfTemplates() {
+        try {
+            HttpClient client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(SDRF_TEMPLATES_URL))
+                    .header("Accept", "application/json")
+                    .GET()
+                    .build();
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                logger.warn("SDRF templates API returned status {}", response.statusCode());
+                sdrfTemplatesFetchStarted = false;
+                Platform.runLater(() -> {
+                    validationFeedback.addWarning("SDRF: Could not load validator templates (HTTP " + response.statusCode() + ")");
+                });
+                return;
+            }
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(response.body());
+            JsonNode templatesNode = root.path("templates");
+            List<String> names = new ArrayList<>();
+            if (templatesNode.isArray()) {
+                for (JsonNode t : templatesNode) {
+                    String name = t.path("name").asText(null);
+                    if (name != null && !name.isBlank()) {
+                        names.add(name);
+                    }
+                }
+            }
+            Collections.sort(names, String.CASE_INSENSITIVE_ORDER);
+            sdrfTemplateNames = names;
+        } catch (Exception e) {
+            logger.warn("Failed to fetch SDRF validator templates", e);
+            sdrfTemplatesFetchStarted = false;
+            Platform.runLater(() -> {
+                validationFeedback.addWarning("SDRF: Could not load validator templates - " + e.getMessage());
+            });
+        }
+    }
 
     /**
-     * Validate an SDRF file using the PRIDE SDRF Validator REST API.
+     * Validate an SDRF file using the PRIDE SDRF Validator REST API (called when the user selects a template).
      * Sends the file as multipart/form-data and displays results as non-blocking feedback.
      * Runs asynchronously to avoid blocking the UI.
      */
-    private void validateSdrfFile(File file) {
+    private void validateSdrfFile(File file, String template) {
         validationFeedback.addInfo("SDRF: Validating " + file.getName() + "...");
 
         Thread.startVirtualThread(() -> {
@@ -652,11 +749,16 @@ public class FileSelectionStep extends AbstractWizardStep {
                 // Build multipart body
                 byte[] body = buildMultipartBody(boundary, file.getName(), fileBytes);
 
+                String templateParam = URLEncoder.encode(template, StandardCharsets.UTF_8);
+                String validateUri = SDRF_VALIDATOR_URL
+                        + "?template=" + templateParam
+                        + "&skip_ontology=false&use_ols_cache_only=true";
+
                 HttpClient client = HttpClient.newBuilder()
                         .version(HttpClient.Version.HTTP_1_1)
                         .build();
                 HttpRequest request = HttpRequest.newBuilder()
-                        .uri(URI.create(SDRF_VALIDATOR_URL + "?template=default&skip_ontology=false&use_ols_cache_only=true"))
+                        .uri(URI.create(validateUri))
                         .header("Content-Type", "multipart/form-data; boundary=" + boundary)
                         .header("Accept", "application/json")
                         .POST(HttpRequest.BodyPublishers.ofByteArray(body))
@@ -672,6 +774,269 @@ public class FileSelectionStep extends AbstractWizardStep {
                     validationFeedback.addWarning("SDRF: Could not reach validator service - " + e.getMessage()));
             }
         });
+    }
+
+    private ValidationOutcome validateSdrfFileSync(File file, String template) {
+        try {
+            String boundary = "----SdrfBoundary" + System.currentTimeMillis();
+            byte[] fileBytes = Files.readAllBytes(file.toPath());
+
+            // Build multipart body
+            byte[] body = buildMultipartBody(boundary, file.getName(), fileBytes);
+
+            String templateParam = URLEncoder.encode(template, StandardCharsets.UTF_8);
+            String validateUri = SDRF_VALIDATOR_URL
+                    + "?template=" + templateParam
+                    + "&skip_ontology=false&use_ols_cache_only=true";
+
+            HttpClient client = HttpClient.newBuilder()
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .build();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(validateUri))
+                    .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                    .header("Accept", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(body))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            return parseSdrfValidationOutcome(file.getName(), response);
+        } catch (Exception e) {
+            logger.warn("SDRF validation API call failed for: {}", file.getName(), e);
+            return new ValidationOutcome(
+                    false,
+                    List.of(file.getName() + ": Could not reach validator service - " + e.getMessage()),
+                    List.of()
+            );
+        }
+    }
+
+    private ValidationOutcome parseSdrfValidationOutcome(String fileName, HttpResponse<String> response) {
+        try {
+            if (response.statusCode() != 200) {
+                return new ValidationOutcome(
+                        false,
+                        List.of(fileName + ": Validator returned status " + response.statusCode()),
+                        List.of()
+                );
+            }
+
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(response.body());
+            boolean valid = root.path("valid").asBoolean(false);
+
+            List<String> errorMessages = new ArrayList<>();
+            List<String> warningMessages = new ArrayList<>();
+
+            JsonNode errors = root.path("errors");
+            if (errors.isArray()) {
+                for (JsonNode err : errors) {
+                    errorMessages.add(fileName + ": " + formatValidationEntry(err));
+                }
+            }
+            JsonNode warnings = root.path("warnings");
+            if (warnings.isArray()) {
+                for (JsonNode warn : warnings) {
+                    warningMessages.add(fileName + ": " + formatValidationEntry(warn));
+                }
+            }
+
+            return new ValidationOutcome(valid, errorMessages, warningMessages);
+        } catch (Exception e) {
+            logger.warn("Failed to parse SDRF validation response", e);
+            return new ValidationOutcome(
+                    false,
+                    List.of(fileName + ": Could not parse validation result"),
+                    List.of()
+            );
+        }
+    }
+
+    private void showSdrfValidationDialog(List<File> sdrfFiles) {
+        List<String> templateNames = sdrfTemplateNames.isEmpty()
+                ? List.of("ms-proteomics")
+                : sdrfTemplateNames;
+
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("SDRF file detected");
+        dialog.setHeaderText("Select SDRF template and run validation");
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dialog.setResizable(true);
+
+        VBox content = new VBox(10);
+        content.setPadding(new Insets(10));
+
+        Label fileLabel = new Label("Detected SDRF file(s): " +
+                sdrfFiles.stream().map(File::getName).collect(Collectors.joining(", ")));
+        fileLabel.setWrapText(true);
+
+        HBox templateRow = new HBox(8);
+        templateRow.setAlignment(Pos.CENTER_LEFT);
+        Label templateLabel = new Label("Template:");
+        ComboBox<String> templateCombo = new ComboBox<>();
+        templateCombo.getItems().setAll(templateNames);
+        templateCombo.setPrefWidth(260);
+        String preferred = templateNames.contains("ms-proteomics") ? "ms-proteomics" : templateNames.get(0);
+        templateCombo.getSelectionModel().select(preferred);
+        templateRow.getChildren().addAll(templateLabel, templateCombo);
+
+        Label status = new Label("Choose template and click Validate.");
+        status.setStyle("-fx-text-fill: #555;");
+
+        Label resultSummary = new Label("No validation result yet.");
+        resultSummary.setWrapText(true);
+        resultSummary.setStyle("-fx-text-fill: #555;");
+
+        Label errorTitle = new Label("Errors:");
+        errorTitle.setStyle("-fx-font-weight: bold; -fx-text-fill: #dc3545;");
+        TextArea errorArea = new TextArea();
+        errorArea.setEditable(false);
+        errorArea.setWrapText(true);
+        errorArea.setPrefRowCount(8);
+        errorArea.setPromptText("No errors");
+        errorArea.setStyle("-fx-control-inner-background: #fff5f5;");
+
+        Label warningTitle = new Label("Warnings:");
+        warningTitle.setStyle("-fx-font-weight: bold; -fx-text-fill: #856404;");
+        TextArea warningArea = new TextArea();
+        warningArea.setEditable(false);
+        warningArea.setWrapText(true);
+        warningArea.setPrefRowCount(6);
+        warningArea.setPromptText("No warnings");
+        warningArea.setStyle("-fx-control-inner-background: #fffbf0;");
+
+        Button validateButton = new Button("Validate");
+        validateButton.setOnAction(evt -> {
+            String template = templateCombo.getValue();
+            if (template == null || template.isBlank()) {
+                status.setText("Please select a template.");
+                status.setStyle("-fx-text-fill: #dc3545;");
+                return;
+            }
+            status.setText("Validating SDRF file(s)...");
+            status.setStyle("-fx-text-fill: #555;");
+            validateButton.setDisable(true);
+            errorArea.clear();
+            warningArea.clear();
+            resultSummary.setText("Validation in progress...");
+            resultSummary.setStyle("-fx-text-fill: #555;");
+
+            Thread.startVirtualThread(() -> {
+                List<String> allErrors = new ArrayList<>();
+                List<String> allWarnings = new ArrayList<>();
+                boolean allValid = true;
+
+                for (File file : sdrfFiles) {
+                    ValidationOutcome outcome = validateSdrfFileSync(file, template);
+                    if (!outcome.valid) {
+                        allValid = false;
+                    }
+                    allErrors.addAll(outcome.errors);
+                    allWarnings.addAll(outcome.warnings);
+                }
+                final boolean finalAllValid = allValid;
+
+                Platform.runLater(() -> {
+                    validateButton.setDisable(false);
+                    status.setText("Validation completed.");
+                    status.setStyle("-fx-text-fill: #555;");
+
+                    errorArea.setText(joinLines(allErrors));
+                    warningArea.setText(joinLines(allWarnings));
+
+                    if (finalAllValid && allErrors.isEmpty() && allWarnings.isEmpty()) {
+                        resultSummary.setText("SDRF validation passed. No errors or warnings.");
+                        resultSummary.setStyle("-fx-text-fill: #28a745; -fx-font-weight: bold;");
+                    } else if (allErrors.isEmpty()) {
+                        resultSummary.setText("SDRF validation passed with warnings.");
+                        resultSummary.setStyle("-fx-text-fill: #856404; -fx-font-weight: bold;");
+                    } else {
+                        resultSummary.setText("SDRF validation failed. Please review errors below.");
+                        resultSummary.setStyle("-fx-text-fill: #dc3545; -fx-font-weight: bold;");
+                    }
+                });
+            });
+        });
+
+        content.getChildren().addAll(
+                fileLabel,
+                templateRow,
+                validateButton,
+                status,
+                resultSummary,
+                errorTitle,
+                errorArea,
+                warningTitle,
+                warningArea
+        );
+        dialog.getDialogPane().setContent(content);
+        dialog.showAndWait();
+    }
+
+    private String joinLines(List<String> messages) {
+        if (messages == null || messages.isEmpty()) {
+            return "";
+        }
+        StringJoiner joiner = new StringJoiner("\n");
+        for (String message : messages) {
+            joiner.add(message);
+        }
+        return joiner.toString();
+    }
+
+    private String formatValidationEntry(JsonNode node) {
+        String message = node.path("message").asText("");
+        if (message.isBlank()) {
+            message = node.path("msg").asText("Unknown validation issue");
+        }
+
+        JsonNode rowNode = node.path("row");
+        if (rowNode.isInt()) {
+            int row = rowNode.asInt(-1);
+            if (row >= 0) {
+                return message + " (row " + row + ")";
+            }
+        }
+        return message;
+    }
+
+    private static class ValidationOutcome {
+        private final boolean valid;
+        private final List<String> errors;
+        private final List<String> warnings;
+
+        private ValidationOutcome(boolean valid, List<String> errors, List<String> warnings) {
+            this.valid = valid;
+            this.errors = errors;
+            this.warnings = warnings;
+        }
+    }
+
+    private List<File> getSdrfFiles() {
+        List<File> sdrfFiles = new ArrayList<>();
+        for (DataFile df : model.getFiles()) {
+            File file = df.getFile();
+            if (file == null || !file.isFile()) {
+                continue;
+            }
+            if (df.getFileType() == ProjectFileType.EXPERIMENTAL_DESIGN || SdrfParserService.isSdrfFile(file)) {
+                sdrfFiles.add(file);
+            }
+        }
+        return sdrfFiles;
+    }
+
+    private String buildSdrfPopupSignature(List<File> sdrfFiles) {
+        List<String> ids = sdrfFiles.stream()
+                .map(f -> f.getAbsolutePath() + ":" + f.lastModified() + ":" + f.length())
+                .sorted()
+                .toList();
+        return String.join("|", ids);
+    }
+
+    private void resetSdrfPopupState() {
+        sdrfPopupSignature = null;
+        sdrfPopupShownForCurrentFiles = false;
     }
 
     private byte[] buildMultipartBody(String boundary, String fileName, byte[] fileBytes) {
@@ -711,13 +1076,13 @@ public class FileSelectionStep extends AbstractWizardStep {
             JsonNode errors = root.path("errors");
             if (errors.isArray()) {
                 for (JsonNode err : errors) {
-                    errorMessages.add(err.path("msg").asText());
+                    errorMessages.add(formatValidationEntry(err));
                 }
             }
             JsonNode warnings = root.path("warnings");
             if (warnings.isArray()) {
                 for (JsonNode warn : warnings) {
-                    warningMessages.add(warn.path("msg").asText());
+                    warningMessages.add(formatValidationEntry(warn));
                 }
             }
 
@@ -728,86 +1093,10 @@ public class FileSelectionStep extends AbstractWizardStep {
                 validationFeedback.addWarning("SDRF validation failed: " + fileName + " (" + errorCount + " error(s))");
             }
 
-            // Show popup dialog with full results
-            showSdrfValidationPopup(fileName, valid, errorMessages, warningMessages);
-
         } catch (Exception e) {
             logger.warn("Failed to parse SDRF validation response", e);
             validationFeedback.addWarning("SDRF: Could not parse validation result for " + fileName);
         }
-    }
-
-    private void showSdrfValidationPopup(String fileName, boolean valid,
-                                          List<String> errors, List<String> warnings) {
-        Alert alert = new Alert(valid ? Alert.AlertType.INFORMATION : Alert.AlertType.WARNING);
-        alert.setTitle("SDRF Validation Result");
-        alert.setHeaderText(valid ? "Validation Passed" : "Validation Failed");
-        alert.setResizable(true);
-
-        VBox content = new VBox(10);
-        content.setPadding(new Insets(10));
-        content.setPrefWidth(500);
-
-        // File name
-        Label fileLabel = new Label("File: " + fileName);
-        fileLabel.setStyle("-fx-font-weight: bold;");
-        content.getChildren().add(fileLabel);
-
-        // Status banner
-        Label statusLabel = new Label(valid ? "\u2714 SDRF is valid" : "\u2718 SDRF has errors");
-        statusLabel.setStyle(valid
-            ? "-fx-background-color: #d4edda; -fx-text-fill: #155724; -fx-padding: 8 12; -fx-background-radius: 4; -fx-font-weight: bold;"
-            : "-fx-background-color: #f8d7da; -fx-text-fill: #721c24; -fx-padding: 8 12; -fx-background-radius: 4; -fx-font-weight: bold;");
-        statusLabel.setMaxWidth(Double.MAX_VALUE);
-        content.getChildren().add(statusLabel);
-
-        // Errors
-        if (!errors.isEmpty()) {
-            Label errTitle = new Label("Errors (" + errors.size() + "):");
-            errTitle.setStyle("-fx-font-weight: bold; -fx-text-fill: #dc3545;");
-            content.getChildren().add(errTitle);
-
-            TextArea errArea = new TextArea();
-            errArea.setEditable(false);
-            errArea.setWrapText(true);
-            errArea.setPrefRowCount(Math.min(errors.size(), 8));
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < errors.size(); i++) {
-                sb.append(i + 1).append(". ").append(errors.get(i)).append("\n");
-            }
-            errArea.setText(sb.toString());
-            errArea.setStyle("-fx-control-inner-background: #fff5f5;");
-            content.getChildren().add(errArea);
-        }
-
-        // Warnings
-        if (!warnings.isEmpty()) {
-            Label warnTitle = new Label("Warnings (" + warnings.size() + "):");
-            warnTitle.setStyle("-fx-font-weight: bold; -fx-text-fill: #856404;");
-            content.getChildren().add(warnTitle);
-
-            TextArea warnArea = new TextArea();
-            warnArea.setEditable(false);
-            warnArea.setWrapText(true);
-            warnArea.setPrefRowCount(Math.min(warnings.size(), 6));
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < warnings.size(); i++) {
-                sb.append(i + 1).append(". ").append(warnings.get(i)).append("\n");
-            }
-            warnArea.setText(sb.toString());
-            warnArea.setStyle("-fx-control-inner-background: #fffbf0;");
-            content.getChildren().add(warnArea);
-        }
-
-        // No issues
-        if (errors.isEmpty() && warnings.isEmpty()) {
-            Label noIssues = new Label("No errors or warnings found.");
-            noIssues.setStyle("-fx-text-fill: #28a745;");
-            content.getChildren().add(noIssues);
-        }
-
-        alert.getDialogPane().setContent(content);
-        alert.showAndWait();
     }
 
     private String formatSize(long size) {
