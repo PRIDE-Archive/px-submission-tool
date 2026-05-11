@@ -60,6 +60,7 @@ public class SampleMetaDataDescriptor extends ContextAwareNavigationPanelDescrip
         ProjectMetaData projectMetaData = submission.getProjectMetaData();
         projectMetaData.clearSpecies();
         projectMetaData.clearTissues();
+        projectMetaData.clearSoftwares();
         projectMetaData.clearDiseases();
         projectMetaData.clearCellTypes();
         projectMetaData.clearInstruments();
