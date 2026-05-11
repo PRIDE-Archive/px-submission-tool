@@ -50,30 +50,16 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
         nextButton.setText(appContext.getProperty("checksum.submit.button.title"));
         nextButton.setEnabled(false);
 
-        int option = JOptionPane.showConfirmDialog(app.getMainFrame(),
-                appContext.getProperty("checksum.confirm.message"),
-                appContext.getProperty("checksum.confirm.title"),
-                JOptionPane.YES_NO_OPTION, JOptionPane.YES_NO_OPTION);
+        dontCalculateChecksum = false;
+        CalculateChecksumForm calculateChecksumForm = (CalculateChecksumForm) CalculateChecksumDescriptor.this.getNavigationPanel();
+        calculateChecksumForm.enableCancelButton(true);
+        calculateChecksumForm.setProgressMessage(appContext.getProperty("checksum.default.message"));
 
-        if (option != JOptionPane.YES_OPTION) {
-            dontCalculateChecksum = true;
-            removeChecksumFile();
-            nextButton.setEnabled(true);
-        } else {
-            dontCalculateChecksum = false;
-            // enable cancel button
-            CalculateChecksumForm calculateChecksumForm = (CalculateChecksumForm) CalculateChecksumDescriptor.this.getNavigationPanel();
-            calculateChecksumForm.enableCancelButton(true);
-            // set the default upload message
-            calculateChecksumForm.setProgressMessage(appContext.getProperty("checksum.default.message"));
-            Task newTask = new CalculateChecksumTask(appContext.getSubmissionRecord().getSubmission());
-            newTask.addTaskListener(this);
-            // set task's gui blocker
-            newTask.setGUIBlocker(new DefaultGUIBlocker(newTask, GUIBlocker.Scope.NONE, null));
-            // add task listeners
-            appContext.addTask(newTask);
-            firePropertyChange(DISPLAYING_PANEL_PROPERTY, false, true);
-        }
+        Task newTask = new CalculateChecksumTask(appContext.getSubmissionRecord().getSubmission());
+        newTask.addTaskListener(this);
+        newTask.setGUIBlocker(new DefaultGUIBlocker(newTask, GUIBlocker.Scope.NONE, null));
+        appContext.addTask(newTask);
+        firePropertyChange(DISPLAYING_PANEL_PROPERTY, false, true);
     }
 
     private void removeChecksumFile() {

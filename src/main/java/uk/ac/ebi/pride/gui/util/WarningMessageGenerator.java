@@ -62,6 +62,21 @@ public final class WarningMessageGenerator {
         return "<html>" + "<b>Invalid EXPERIMENTAL_DESIGN/SDRF file detected, please check log file for detailed error report</b><br/>" + "</html>";
     }
 
+    public static String getInvalidSDRFFileWarning(SdrfValidatorClient.ValidationResult validationResult) {
+        StringBuilder errMsg = new StringBuilder();
+        errMsg.append("<html>");
+        errMsg.append("<b>Invalid EXPERIMENTAL_DESIGN/SDRF file detected by PRIDE SDRF Validator API</b><br/>");
+        errMsg.append("Errors: ").append(validationResult.getError_count())
+                .append(", warnings: ").append(validationResult.getWarning_count()).append("<br/>");
+        errMsg.append("Please review the SDRF validation dialog for details.");
+        errMsg.append("</html>");
+        return errMsg.toString();
+    }
+
+    public static String getCancelledSDRFValidationWarning() {
+        return "<html>" + "<b>SDRF validation was cancelled. Please validate the EXPERIMENTAL_DESIGN/SDRF file before continuing.</b><br/>" + "</html>";
+    }
+
     public static String getWiffScanMissingWarning() {
         return "<html>" + "<b>It is recommended to submit wiff scan files associated with wiff files</b><br/>" + "</html>";
     }
