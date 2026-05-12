@@ -15,7 +15,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
@@ -84,12 +83,20 @@ public class SdrfValidatorClient {
 
     public ValidationResult validate(File sdrfFile, String templateName, boolean skipOntology, boolean useOlsCacheOnly)
             throws IOException, InterruptedException {
+        List<String> templateNames = new ArrayList<>();
+        templateNames.add(templateName);
+        return validate(sdrfFile, templateNames, skipOntology, useOlsCacheOnly);
+    }
+
+    public ValidationResult validate(File sdrfFile, List<String> templateNames, boolean skipOntology, boolean useOlsCacheOnly)
+            throws IOException, InterruptedException {
         validateReadableSdrfFile(sdrfFile);
+        List<String> selectedTemplateNames = getSelectedTemplateNames(templateNames);
         String boundary = "PXSubmissionTool-" + UUID.randomUUID();
         byte[] requestBody = buildMultipartBody(sdrfFile, boundary);
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(BASE_URL + "/validate?" + buildQuery(templateName, skipOntology, useOlsCacheOnly)))
+                .uri(URI.create(BASE_URL + "/validate?" + buildQuery(selectedTemplateNames, skipOntology, useOlsCacheOnly)))
                 .version(HttpClient.Version.HTTP_1_1)
                 .timeout(REQUEST_TIMEOUT)
                 .POST(HttpRequest.BodyPublishers.ofByteArray(requestBody))
@@ -161,9 +168,26 @@ public class SdrfValidatorClient {
         }
     }
 
-    private String buildQuery(String templateName, boolean skipOntology, boolean useOlsCacheOnly) {
+    private List<String> getSelectedTemplateNames(List<String> templateNames) throws IOException {
+        List<String> selectedTemplateNames = new ArrayList<>();
+        if (templateNames != null) {
+            for (String templateName : templateNames) {
+                if (templateName != null && !templateName.isBlank()) {
+                    selectedTemplateNames.add(templateName);
+                }
+            }
+        }
+        if (selectedTemplateNames.isEmpty()) {
+            throw new IOException("No SDRF validation template was selected.");
+        }
+        return selectedTemplateNames;
+    }
+
+    private String buildQuery(List<String> templateNames, boolean skipOntology, boolean useOlsCacheOnly) {
         StringJoiner query = new StringJoiner("&");
-        query.add("template=" + encode(templateName));
+        for (String templateName : templateNames) {
+            query.add("template=" + encode(templateName));
+        }
         query.add("skip_ontology=" + skipOntology);
         query.add("use_ols_cache_only=" + useOlsCacheOnly);
         return query.toString();

@@ -8,18 +8,27 @@ import uk.ac.ebi.pride.gui.util.SdrfValidatorClient;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class SdrfValidationDialog extends ContextAwareDialog {
+    private static final String SDRF_VALIDATOR_PORTAL_URL = "https://www.ebi.ac.uk/pride/services/sdrf-validator";
+
     private final DataFile dataFile;
     private final SdrfValidatorClient validatorClient;
-    private final JComboBox<SdrfValidatorClient.TemplateInfo> templateComboBox;
+    private final JButton templateDropdownButton;
+    private final JPopupMenu templatePopupMenu;
+    private final JPanel templateSelectionPanel;
+    private final List<JCheckBox> templateCheckBoxes;
     private final JCheckBox skipOntologyCheckBox;
     private final JCheckBox useOlsCacheOnlyCheckBox;
     private final JButton validateButton;
@@ -29,6 +38,8 @@ public class SdrfValidationDialog extends ContextAwareDialog {
 
     private SdrfValidatorClient.ValidationResult validationResult;
     private boolean cancelled = true;
+    private boolean templatesLoading;
+    private boolean validationInProgress;
 
     public static SdrfValidatorClient.ValidationResult showDialog(Frame owner, DataFile dataFile)
             throws Exception {
@@ -63,14 +74,38 @@ public class SdrfValidationDialog extends ContextAwareDialog {
         super(owner, "SDRF validation", true);
         this.dataFile = dataFile;
         this.validatorClient = validatorClient;
-        this.templateComboBox = new JComboBox<>();
+        this.templateDropdownButton = new JButton("Select templates");
+        this.templatePopupMenu = new JPopupMenu();
+        this.templateSelectionPanel = new JPanel();
+        this.templateCheckBoxes = new ArrayList<>();
         this.skipOntologyCheckBox = new JCheckBox("Skip ontology term validation");
         this.useOlsCacheOnlyCheckBox = new JCheckBox("Use OLS cache only", true);
         this.validateButton = new JButton("Validate");
         this.closeButton = new JButton(appContext.getProperty("close.button.label"));
         this.resultTextArea = new JTextArea();
         this.statusLabel = new JLabel("Loading SDRF validation templates...");
+        configureTemplateDropdown();
         initComponents();
+    }
+
+    private void configureTemplateDropdown() {
+        templateDropdownButton.setHorizontalAlignment(SwingConstants.LEFT);
+        templateDropdownButton.setToolTipText("Select one or more SDRF validation templates");
+        templateDropdownButton.addActionListener(e -> showTemplatePopup());
+
+        templateSelectionPanel.setLayout(new BoxLayout(templateSelectionPanel, BoxLayout.Y_AXIS));
+        JScrollPane templateScrollPane = new JScrollPane(templateSelectionPanel);
+        templateScrollPane.setBorder(BorderFactory.createEmptyBorder());
+        templateScrollPane.setPreferredSize(new Dimension(520, 220));
+
+        templatePopupMenu.setLayout(new BorderLayout());
+        templatePopupMenu.add(templateScrollPane, BorderLayout.CENTER);
+    }
+
+    private void showTemplatePopup() {
+        if (!templateCheckBoxes.isEmpty()) {
+            templatePopupMenu.show(templateDropdownButton, 0, templateDropdownButton.getHeight());
+        }
     }
 
     private void initComponents() {
@@ -101,6 +136,11 @@ public class SdrfValidationDialog extends ContextAwareDialog {
         setTemplateLoadingInProgress(true);
     }
 
+    private void refreshValidateButtonEnabled() {
+        boolean idle = !templatesLoading && !validationInProgress;
+        validateButton.setEnabled(idle && !getSelectedTemplateNames().isEmpty());
+    }
+
     private JPanel createDetailsPanel() {
         JPanel detailsPanel = new JPanel(new GridBagLayout());
         detailsPanel.setBorder(BorderFactory.createTitledBorder("SDRF details"));
@@ -117,12 +157,12 @@ public class SdrfValidationDialog extends ContextAwareDialog {
         constraints.gridx = 0;
         constraints.gridy = 3;
         constraints.weightx = 0;
-        detailsPanel.add(new JLabel("Template:"), constraints);
+        detailsPanel.add(new JLabel("Templates:"), constraints);
 
         constraints.gridx = 1;
         constraints.gridy = 3;
         constraints.weightx = 1;
-        detailsPanel.add(templateComboBox, constraints);
+        detailsPanel.add(templateDropdownButton, constraints);
 
         constraints.gridx = 1;
         constraints.gridy = 4;
@@ -138,6 +178,12 @@ public class SdrfValidationDialog extends ContextAwareDialog {
         statusLabel.setBorder(BorderFactory.createEmptyBorder(6, 0, 0, 0));
         detailsPanel.add(statusLabel, constraints);
 
+        constraints.gridx = 0;
+        constraints.gridy = 7;
+        constraints.gridwidth = 2;
+        constraints.weightx = 1;
+        detailsPanel.add(createSdrfValidatorLinkLabel(), constraints);
+
         return detailsPanel;
     }
 
@@ -152,6 +198,35 @@ public class SdrfValidationDialog extends ContextAwareDialog {
         constraints.gridy = row;
         constraints.weightx = 1;
         detailsPanel.add(new JLabel(value), constraints);
+    }
+
+    private JComponent createSdrfValidatorLinkLabel() {
+        JLabel linkLabel = new JLabel("<html><a href=\"" + SDRF_VALIDATOR_PORTAL_URL + "\">SDRF Validator</a></html>");
+        linkLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        linkLabel.setBorder(BorderFactory.createEmptyBorder(2, 0, 0, 0));
+        linkLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                try {
+                    if (!Desktop.isDesktopSupported()) {
+                        JOptionPane.showMessageDialog(
+                                SdrfValidationDialog.this,
+                                "Opening links is not supported on this system.\nPlease open this URL manually:\n" + SDRF_VALIDATOR_PORTAL_URL,
+                                "SDRF validation",
+                                JOptionPane.INFORMATION_MESSAGE);
+                        return;
+                    }
+                    Desktop.getDesktop().browse(URI.create(SDRF_VALIDATOR_PORTAL_URL));
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(
+                            SdrfValidationDialog.this,
+                            "Could not open the SDRF Validator portal.\nPlease open this URL manually:\n" + SDRF_VALIDATOR_PORTAL_URL,
+                            "SDRF validation",
+                            JOptionPane.WARNING_MESSAGE);
+                }
+            }
+        });
+        return linkLabel;
     }
 
     private JPanel createResultPanel() {
@@ -188,7 +263,7 @@ public class SdrfValidationDialog extends ContextAwareDialog {
             protected void done() {
                 try {
                     setTemplates(get());
-                    statusLabel.setText("Choose a validation template, then validate the SDRF file.");
+                    statusLabel.setText("Choose one or more validation templates, then validate the SDRF file.");
                     resultTextArea.setText("Validation has not run yet.");
                 } catch (Exception e) {
                     setTemplates(SdrfValidatorClient.getFallbackTemplates());
@@ -204,21 +279,58 @@ public class SdrfValidationDialog extends ContextAwareDialog {
     }
 
     private void setTemplates(List<SdrfValidatorClient.TemplateInfo> templates) {
-        DefaultComboBoxModel<SdrfValidatorClient.TemplateInfo> model = new DefaultComboBoxModel<>();
+        templateSelectionPanel.removeAll();
+        templateCheckBoxes.clear();
         for (SdrfValidatorClient.TemplateInfo template : templates) {
-            model.addElement(template);
+            JCheckBox templateCheckBox = new JCheckBox(template.toString());
+            templateCheckBox.putClientProperty("template", template);
+            templateCheckBox.addItemListener(e -> {
+                updateTemplateDropdownLabel();
+                refreshValidateButtonEnabled();
+            });
+            templateCheckBoxes.add(templateCheckBox);
+            templateSelectionPanel.add(templateCheckBox);
         }
-        templateComboBox.setModel(model);
-        if (model.getSize() > 0) {
-            templateComboBox.setSelectedIndex(0);
+        templateSelectionPanel.revalidate();
+        templateSelectionPanel.repaint();
+        updateTemplateDropdownLabel();
+        refreshValidateButtonEnabled();
+    }
+
+    private List<String> getSelectedTemplateNames() {
+        List<String> selectedTemplateNames = new ArrayList<>();
+        for (JCheckBox templateCheckBox : templateCheckBoxes) {
+            if (templateCheckBox.isSelected()) {
+                SdrfValidatorClient.TemplateInfo template =
+                        (SdrfValidatorClient.TemplateInfo) templateCheckBox.getClientProperty("template");
+                selectedTemplateNames.add(template.getName());
+            }
+        }
+        return selectedTemplateNames;
+    }
+
+    private void updateTemplateDropdownLabel() {
+        List<String> selectedTemplateNames = getSelectedTemplateNames();
+        if (selectedTemplateNames.isEmpty()) {
+            templateDropdownButton.setText("Select templates");
+            templateDropdownButton.setToolTipText("Select one or more SDRF validation templates");
+            return;
+        }
+
+        String selectedTemplatesText = String.join(", ", selectedTemplateNames);
+        templateDropdownButton.setToolTipText(selectedTemplatesText);
+        if (selectedTemplateNames.size() <= 2) {
+            templateDropdownButton.setText(selectedTemplatesText);
+        } else {
+            templateDropdownButton.setText(selectedTemplateNames.get(0) + ", "
+                    + selectedTemplateNames.get(1) + " +" + (selectedTemplateNames.size() - 2) + " more");
         }
     }
 
     private void validateSdrf() {
-        SdrfValidatorClient.TemplateInfo selectedTemplate =
-                (SdrfValidatorClient.TemplateInfo) templateComboBox.getSelectedItem();
-        if (selectedTemplate == null) {
-            JOptionPane.showMessageDialog(this, "Please select an SDRF validation template.", "SDRF validation", JOptionPane.WARNING_MESSAGE);
+        List<String> selectedTemplateNames = getSelectedTemplateNames();
+        if (selectedTemplateNames.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please select at least one SDRF validation template.", "SDRF validation", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
@@ -228,7 +340,7 @@ public class SdrfValidationDialog extends ContextAwareDialog {
             protected SdrfValidatorClient.ValidationResult doInBackground() throws Exception {
                 return validatorClient.validate(
                         getValidationFile(),
-                        selectedTemplate.getName(),
+                        selectedTemplateNames,
                         skipOntologyCheckBox.isSelected(),
                         useOlsCacheOnlyCheckBox.isSelected());
             }
@@ -258,13 +370,14 @@ public class SdrfValidationDialog extends ContextAwareDialog {
     }
 
     private void setTemplateLoadingInProgress(boolean inProgress) {
-        validateButton.setEnabled(!inProgress);
-        templateComboBox.setEnabled(!inProgress);
+        this.templatesLoading = inProgress;
+        templateDropdownButton.setEnabled(!inProgress);
         skipOntologyCheckBox.setEnabled(!inProgress);
         useOlsCacheOnlyCheckBox.setEnabled(!inProgress);
         if (inProgress) {
             resultTextArea.setText("Loading templates from PRIDE SDRF Validator API...");
         }
+        refreshValidateButtonEnabled();
     }
 
     private SdrfValidatorClient.ValidationResult buildFailedValidationResult(Exception exception) {
@@ -278,8 +391,8 @@ public class SdrfValidationDialog extends ContextAwareDialog {
     }
 
     private void setValidationInProgress(boolean inProgress) {
-        validateButton.setEnabled(!inProgress);
-        templateComboBox.setEnabled(!inProgress);
+        this.validationInProgress = inProgress;
+        templateDropdownButton.setEnabled(!inProgress);
         skipOntologyCheckBox.setEnabled(!inProgress);
         useOlsCacheOnlyCheckBox.setEnabled(!inProgress);
         closeButton.setEnabled(!inProgress);
@@ -287,6 +400,7 @@ public class SdrfValidationDialog extends ContextAwareDialog {
             statusLabel.setText("Validating SDRF with PRIDE SDRF Validator API...");
             resultTextArea.setText("Validation is running. Please wait...");
         }
+        refreshValidateButtonEnabled();
     }
 
     private String formatValidationResult(SdrfValidatorClient.ValidationResult result) {
