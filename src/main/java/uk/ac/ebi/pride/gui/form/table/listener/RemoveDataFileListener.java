@@ -4,7 +4,7 @@ import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
 import uk.ac.ebi.pride.data.model.DataFile;
 
-import javax.swing.*;
+import javax.swing.JTable;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -32,16 +32,6 @@ public class RemoveDataFileListener extends MouseAdapter {
             if (row >= 0 && row < table.getRowCount()) {
                 Object value = table.getValueAt(row, col);
                 DataFile dataFile = (DataFile) value;
-                
-                // Don't allow removal of checksum.txt files
-                if (dataFile.getFileName().equals("checksum.txt")) {
-                    JOptionPane.showMessageDialog(table, 
-                        "Cannot remove checksum.txt files. These files are required for submission integrity.",
-                        "File Removal Not Allowed", 
-                        JOptionPane.WARNING_MESSAGE);
-                    return;
-                }
-                
                 ((AppContext) App.getInstance().getDesktopContext()).removeDatafile(dataFile);
             }
         }

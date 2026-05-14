@@ -7,6 +7,8 @@ import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.data.util.AffinityFileFormat;
 import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
+import uk.ac.ebi.pride.gui.form.CalculateChecksumDescriptor;
+import uk.ac.ebi.pride.gui.form.panel.SummaryItemPanel;
 import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
@@ -190,9 +192,29 @@ public class AddFileSelectionAction extends AbstractAction {
                 newDataFile = format == null ? new DataFile(file, ProjectFileType.OTHER) : new DataFile(file, format);
             }
 
-            if (!hasSameFileName(newDataFile)) {
-                ((AppContext) App.getInstance().getDesktopContext()).addDataFile(newDataFile);
+            AppContext context = (AppContext) App.getInstance().getDesktopContext();
+            if (isChecksumFile(context, fileName)) {
+                updateChecksumFile(context, file, newDataFile);
+            } else if (!hasSameFileName(newDataFile)) {
+                context.addDataFile(newDataFile);
             }
+        }
+
+        private boolean isChecksumFile(AppContext context, String fileName) {
+            return context.getProperty("checksum.filename").equals(fileName);
+        }
+
+        private void updateChecksumFile(AppContext context, File file, DataFile newDataFile) {
+            DataFile existingChecksumFile = getDataFileByName(context, file.getName());
+            if (existingChecksumFile == null) {
+                context.addDataFile(newDataFile);
+            } else {
+                context.setDataFileFile(existingChecksumFile, file);
+                context.setFileType(existingChecksumFile, ProjectFileType.OTHER);
+            }
+            context.setCustomChecksumFileProvided(true);
+            SummaryItemPanel.checksumFile = file;
+            CalculateChecksumDescriptor.checksumCalculatedFiles.clear();
         }
 
         /**
@@ -214,6 +236,16 @@ public class AddFileSelectionAction extends AbstractAction {
                 }
             }
             return false;
+        }
+
+        private DataFile getDataFileByName(AppContext context, String dataFileName) {
+            Submission submission = context.getSubmissionRecord().getSubmission();
+            for (DataFile file : submission.getDataFiles()) {
+                if (file.getFileName().equals(dataFileName)) {
+                    return file;
+                }
+            }
+            return null;
         }
     }
 }

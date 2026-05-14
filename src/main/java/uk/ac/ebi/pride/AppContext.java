@@ -14,6 +14,7 @@ import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import javax.help.HelpBroker;
 import javax.help.HelpSet;
 import javax.help.HelpSetException;
+import java.io.File;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,7 @@ public class AppContext extends DesktopContext {
     public static final String ADD_NEW_RESUBMISSION_DATA_FILE = "addNewResubmissionDataFile";
     public static final String REMOVE_RESUBMISSION_DATA_FILE = "removeResubmissionDataFile";
     public static final String CHANGE_DATA_FILE_TYPE = "changeDataFileType";
+    public static final String CHANGE_DATA_FILE_PATH = "changeDataFilePath";
     public static final String CHANGE_RESUBMISSION_DATA_FILE_ACTION = "changeResubmissionDataFileAction";
     public static final String ADD_NEW_SPECIES = "addNewSpecies";
     public static final String REMOVE_SPECIES = "removeSpecies";
@@ -110,6 +112,8 @@ public class AppContext extends DesktopContext {
     private boolean isResubmission = false;
 
     private boolean isLoggedIn = false;
+
+    private boolean customChecksumFileProvided = false;
 
     private UploadMethod uploadMethod;
 
@@ -283,13 +287,9 @@ public class AppContext extends DesktopContext {
      * @param dataFile data file to remove
      */
     public synchronized void removeDatafile(DataFile dataFile) {
-        // Don't allow removal of checksum.txt files
-        if (dataFile.getFileName().equals("checksum.txt")) {
-            logger.warn("Attempted to remove checksum.txt file: {}", dataFile.getFileName());
-            return;
-        }
-        
         Submission submission = submissionRecord.getSubmission();
+
+        boolean isChecksumFile = "checksum.txt".equals(dataFile.getFileName());
 
         if (submission.containsDataFile(dataFile)) {
             // remove data file
@@ -307,6 +307,23 @@ public class AppContext extends DesktopContext {
                 // Fallback: remove by identity if hashCode/equals changed (e.g., fileType was modified)
                 resubMap.entrySet().removeIf(entry -> entry.getKey() == dataFile);
             }
+        }
+        if (isChecksumFile) {
+            clearChecksumFileState();
+        }
+    }
+
+    private void clearChecksumFileState() {
+        customChecksumFileProvided = false;
+        try {
+            uk.ac.ebi.pride.gui.form.panel.SummaryItemPanel.checksumFile = null;
+        } catch (Throwable ignored) {
+            // SummaryItemPanel may not be initialized; ignore.
+        }
+        try {
+            uk.ac.ebi.pride.gui.form.CalculateChecksumDescriptor.checksumCalculatedFiles.clear();
+        } catch (Throwable ignored) {
+            // Descriptor may not be loaded yet; ignore.
         }
     }
 
@@ -342,13 +359,9 @@ public class AppContext extends DesktopContext {
      * @param dataFile data file to remove
      */
     public synchronized void removeResubmissionDatafile(DataFile dataFile) {
-        // Don't allow removal of checksum.txt files
-        if (dataFile.getFileName().equals("checksum.txt")) {
-            logger.warn("Attempted to remove checksum.txt file from resubmission: {}", dataFile.getFileName());
-            return;
-        }
-        
         Resubmission resubmission = resubmissionRecord.getResubmission();
+
+        boolean isChecksumFile = "checksum.txt".equals(dataFile.getFileName());
 
         if (resubmission.containsDataFile(dataFile)) {
             // remove data file
@@ -358,6 +371,9 @@ public class AppContext extends DesktopContext {
 //                removeFileMapping(file, dataFile);
 //            }
             firePropertyChange(REMOVE_RESUBMISSION_DATA_FILE, dataFile, null);
+        }
+        if (isChecksumFile) {
+            clearChecksumFileState();
         }
     }
 
@@ -460,6 +476,28 @@ public class AppContext extends DesktopContext {
             dataFile.setFileType(type);
             firePropertyChange(CHANGE_DATA_FILE_TYPE, null, dataFile);
         }
+    }
+
+    public synchronized void setDataFileFile(DataFile dataFile, File file) {
+        if (dataFile == null || file == null) {
+            return;
+        }
+
+        File currentFile = dataFile.getFile();
+        if (currentFile != null && currentFile.getAbsolutePath().equals(file.getAbsolutePath())) {
+            return;
+        }
+
+        dataFile.setFile(file);
+        firePropertyChange(CHANGE_DATA_FILE_PATH, currentFile, dataFile);
+    }
+
+    public synchronized boolean isCustomChecksumFileProvided() {
+        return customChecksumFileProvided;
+    }
+
+    public synchronized void setCustomChecksumFileProvided(boolean customChecksumFileProvided) {
+        this.customChecksumFileProvided = customChecksumFileProvided;
     }
 
 
