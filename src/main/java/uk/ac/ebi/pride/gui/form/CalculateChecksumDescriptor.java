@@ -10,6 +10,7 @@ import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.form.panel.SummaryItemPanel;
 import uk.ac.ebi.pride.gui.navigation.Navigator;
+import uk.ac.ebi.pride.gui.util.ChecksumSubmissionValidator;
 import uk.ac.ebi.pride.gui.task.CalculateChecksumTask;
 import uk.ac.ebi.pride.gui.task.checksum.ChecksumMessage;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
@@ -21,15 +22,16 @@ import uk.ac.ebi.pride.utilities.util.Tuple;
 
 import javax.help.HelpBroker;
 import javax.swing.*;
+import javax.swing.event.HyperlinkEvent;
+import java.awt.Desktop;
+import java.awt.Dimension;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDescriptor implements TaskListener<DataFile, ChecksumMessage> {
     private static final Logger logger = LoggerFactory.getLogger(SubmissionTypeDescriptor.class);
@@ -100,7 +102,7 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
             } else if (confirmChecksumChoice(checksumFileRef,
                     existingValidation == null || existingValidation.isValid()
                             ? null
-                            : existingValidation.getMissingFileNames())) {
+                            : existingValidation)) {
                 try {
                     ensureChecksumFile(dataFiles);
                     startChecksumCalculation();
@@ -135,7 +137,7 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
                         validateChecksumFile(appContext.getSubmissionRecord().getSubmission().getDataFiles(), SummaryItemPanel.checksumFile);
                 if (validationResult.isValid()) {
                     firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, false, true);
-                } else if (confirmChecksumChoice(validationResult.getChecksumFile(), validationResult.getMissingFileNames())) {
+                } else if (confirmChecksumChoice(validationResult.getChecksumFile(), validationResult)) {
                     usingProvidedChecksumFile = false;
                     ensureChecksumFile(appContext.getSubmissionRecord().getSubmission().getDataFiles());
                     startChecksumCalculation();
@@ -224,74 +226,65 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
     }
 
     private ChecksumValidationResult validateChecksumFile(List<DataFile> dataFiles, File checksumFile) throws IOException {
-        List<String> missingFileNames = new ArrayList<>();
-        if (checksumFile == null || !checksumFile.exists() || !checksumFile.canRead()) {
-            for (DataFile dataFile : dataFiles) {
-                if (!isChecksumDataFile(dataFile)) {
-                    missingFileNames.add(dataFile.getFileName());
-                }
-            }
-            return new ChecksumValidationResult(checksumFile, missingFileNames);
-        }
-
-        Set<String> checksumEntries = readChecksumEntries(checksumFile);
-        for (DataFile dataFile : dataFiles) {
-            if (!isChecksumDataFile(dataFile) && !checksumEntries.contains(dataFile.getFileName())) {
-                missingFileNames.add(dataFile.getFileName());
-            }
-        }
-        return new ChecksumValidationResult(checksumFile, missingFileNames);
-    }
-
-    private Set<String> readChecksumEntries(File checksumFile) throws IOException {
-        Set<String> checksumEntries = new HashSet<>();
-        List<String> lines = java.nio.file.Files.readAllLines(checksumFile.toPath(), Charset.defaultCharset());
-        for (String line : lines) {
-            String trimmedLine = line.trim();
-            if (trimmedLine.isEmpty() || trimmedLine.startsWith("#")) {
-                continue;
-            }
-
-            String[] parts = trimmedLine.split("\\s+");
-            if (parts.length > 0) {
-                checksumEntries.add(parts[0]);
-                checksumEntries.add(new File(parts[0]).getName());
-            }
-        }
-        return checksumEntries;
+        ChecksumSubmissionValidator.Result r =
+                ChecksumSubmissionValidator.validate(dataFiles, checksumFile, appContext.getProperty("checksum.filename"));
+        return new ChecksumValidationResult(checksumFile,
+                new ArrayList<>(r.getMissingInChecksum()),
+                new ArrayList<>(r.getExtraInChecksum()));
     }
 
     private boolean isChecksumDataFile(DataFile dataFile) {
         return appContext.getProperty("checksum.filename").equals(dataFile.getFileName());
     }
 
-    private boolean confirmChecksumChoice(File checksumFile, List<String> missingFileNames) {
-        StringBuilder message = new StringBuilder();
-        if (missingFileNames == null) {
-            message.append("Please provide the checksum file for this submission.");
+    private boolean confirmChecksumChoice(File checksumFile, ChecksumValidationResult invalidDetailOrNull) {
+        StringBuilder html = new StringBuilder();
+        html.append("<html><body style=\"width:420px;font-family:sans-serif;font-size:11pt;\">");
+        if (invalidDetailOrNull == null) {
+            html.append("<p>").append(htmlEscape("Please provide the checksum file for this submission.")).append("</p>");
         } else {
-            message.append("The provided checksum.txt does not include all selected files.");
+            html.append("<p>").append(htmlEscape("The provided checksum.txt is not valid for the selected files.")).append("</p>");
             if (checksumFile != null) {
-                message.append("\n\nChecksum file:\n").append(checksumFile.getAbsolutePath());
+                html.append("<p><b>").append(htmlEscape("Checksum file:")).append("</b><br>")
+                        .append(htmlEscape(checksumFile.getAbsolutePath())).append("</p>");
             }
-            message.append("\n\nMissing file names:");
-            int limit = Math.min(missingFileNames.size(), 20);
-            for (int i = 0; i < limit; i++) {
-                message.append("\n- ").append(missingFileNames.get(i));
+            if (!invalidDetailOrNull.getMissingFileNames().isEmpty()) {
+                html.append("<p><b>").append(htmlEscape("Selected files not listed in checksum.txt:")).append("</b></p><ul>");
+                int limit = Math.min(invalidDetailOrNull.getMissingFileNames().size(), 20);
+                for (int i = 0; i < limit; i++) {
+                    html.append("<li>").append(htmlEscape(invalidDetailOrNull.getMissingFileNames().get(i))).append("</li>");
+                }
+                html.append("</ul>");
+                if (invalidDetailOrNull.getMissingFileNames().size() > limit) {
+                    html.append("<p>").append(htmlEscape("... and " + (invalidDetailOrNull.getMissingFileNames().size() - limit) + " more")).append("</p>");
+                }
             }
-            if (missingFileNames.size() > limit) {
-                message.append("\n... and ").append(missingFileNames.size() - limit).append(" more");
+            if (!invalidDetailOrNull.getExtraInChecksum().isEmpty()) {
+                html.append("<p><b>").append(htmlEscape("Entries in checksum.txt that do not match any selected file:")).append("</b></p><ul>");
+                int limitEx = Math.min(invalidDetailOrNull.getExtraInChecksum().size(), 20);
+                for (int i = 0; i < limitEx; i++) {
+                    html.append("<li>").append(htmlEscape(invalidDetailOrNull.getExtraInChecksum().get(i))).append("</li>");
+                }
+                html.append("</ul>");
+                if (invalidDetailOrNull.getExtraInChecksum().size() > limitEx) {
+                    html.append("<p>").append(htmlEscape("... and " + (invalidDetailOrNull.getExtraInChecksum().size() - limitEx) + " more")).append("</p>");
+                }
             }
         }
-
-        message.append("\n\nYou can create checksum.txt using this PRIDE checksum guide:\n")
-                .append(PRIDE_CHECKSUM_GUIDE_URL)
-                .append("\n\nIf you choose to calculate checksums in the submission tool, it can take a long time for large submissions.");
+        html.append("<p>")
+                .append(htmlEscape("You can create checksum.txt using this "))
+                .append("<a href=\"").append(PRIDE_CHECKSUM_GUIDE_URL).append("\">")
+                .append(htmlEscape("PRIDE checksum guide")).append("</a>")
+                .append(htmlEscape(".")).append("</p>");
+        html.append("<p>")
+                .append(htmlEscape("If you choose to calculate checksums in the submission tool, it can take a long time for large submissions."))
+                .append("</p>");
+        html.append("</body></html>");
 
         Object[] options = {"Please provide checksum", "Calculate checksum"};
         int option = JOptionPane.showOptionDialog(
                 app.getMainFrame(),
-                createWrappedMessage(message.toString()),
+                createClickableHtmlMessage(html.toString()),
                 "Checksum file required",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE,
@@ -302,14 +295,46 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
         return option == JOptionPane.NO_OPTION;
     }
 
-    private JTextArea createWrappedMessage(String text) {
-        JTextArea messageArea = new JTextArea(text);
-        messageArea.setEditable(false);
-        messageArea.setOpaque(false);
-        messageArea.setLineWrap(true);
-        messageArea.setWrapStyleWord(true);
-        messageArea.setColumns(72);
-        return messageArea;
+    private static String htmlEscape(String text) {
+        if (text == null) {
+            return "";
+        }
+        return text.replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;");
+    }
+
+    private JEditorPane createClickableHtmlMessage(String html) {
+        JEditorPane pane = new JEditorPane();
+        pane.setContentType("text/html; charset=UTF-8");
+        pane.setEditable(false);
+        pane.setOpaque(false);
+        pane.putClientProperty(JEditorPane.HONOR_DISPLAY_PROPERTIES, Boolean.TRUE);
+        pane.setText(html);
+        pane.addHyperlinkListener(e -> {
+            if (e.getEventType() != HyperlinkEvent.EventType.ACTIVATED) {
+                return;
+            }
+            try {
+                if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
+                    Desktop.getDesktop().browse(e.getURL().toURI());
+                } else {
+                    JOptionPane.showMessageDialog(app.getMainFrame(),
+                            "Please open this link in a browser:\n" + e.getURL(),
+                            "Open link",
+                            JOptionPane.INFORMATION_MESSAGE);
+                }
+            } catch (Exception ex) {
+                logger.warn("Could not open hyperlink", ex);
+                JOptionPane.showMessageDialog(app.getMainFrame(),
+                        "Could not open the link. Please open it manually:\n" + e.getURL(),
+                        "Link error",
+                        JOptionPane.WARNING_MESSAGE);
+            }
+        });
+        pane.setPreferredSize(new Dimension(460, 280));
+        return pane;
     }
 
     private void navigateBackToFileSelectionPage() {
@@ -351,14 +376,16 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
     private static class ChecksumValidationResult {
         private final File checksumFile;
         private final List<String> missingFileNames;
+        private final List<String> extraInChecksum;
 
-        private ChecksumValidationResult(File checksumFile, List<String> missingFileNames) {
+        private ChecksumValidationResult(File checksumFile, List<String> missingFileNames, List<String> extraInChecksum) {
             this.checksumFile = checksumFile;
             this.missingFileNames = missingFileNames;
+            this.extraInChecksum = extraInChecksum;
         }
 
         private boolean isValid() {
-            return missingFileNames.isEmpty();
+            return missingFileNames.isEmpty() && extraInChecksum.isEmpty();
         }
 
         private File getChecksumFile() {
@@ -367,6 +394,10 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
 
         private List<String> getMissingFileNames() {
             return missingFileNames;
+        }
+
+        private List<String> getExtraInChecksum() {
+            return extraInChecksum;
         }
     }
 
