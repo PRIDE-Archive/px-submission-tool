@@ -203,8 +203,33 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
             return true;
         }
         File file = checksumDataFile.getFile();
-        File defaultChecksumFile = new File(Constant.CHECKSUM_FILE_NAME);
-        return file != null && !file.getAbsolutePath().equals(defaultChecksumFile.getAbsolutePath());
+        if (file == null) {
+            return false;
+        }
+        File defaultChecksumFile = resolveDefaultChecksumLocation(file);
+        try {
+            return !file.getCanonicalFile().equals(defaultChecksumFile.getCanonicalFile());
+        } catch (IOException e) {
+            logger.warn("Could not resolve checksum file paths for default vs custom detection; using absolute path comparison", e);
+            return !file.getAbsoluteFile().equals(defaultChecksumFile.getAbsoluteFile());
+        }
+    }
+
+    /**
+     * Resolves {@code checksum.filename} from configuration: absolute paths are used as-is;
+     * relative names are resolved next to the directory containing the current checksum file (not JVM CWD).
+     */
+    private File resolveDefaultChecksumLocation(File checksumFile) {
+        String configured = appContext.getProperty("checksum.filename");
+        if (configured == null || configured.isEmpty()) {
+            configured = Constant.CHECKSUM_FILE_NAME;
+        }
+        File asDeclared = new File(configured);
+        if (asDeclared.isAbsolute()) {
+            return asDeclared;
+        }
+        File parent = checksumFile.getAbsoluteFile().getParentFile();
+        return parent != null ? new File(parent, asDeclared.getPath()) : new File(asDeclared.getPath());
     }
 
     private void ensureChecksumFile(List<DataFile> dataFiles) throws IOException {
