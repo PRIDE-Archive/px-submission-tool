@@ -482,7 +482,7 @@ public class AppContext extends DesktopContext {
         }
 
         dataFile.setFile(file);
-        firePropertyChange(CHANGE_DATA_FILE_PATH, currentFile, dataFile);
+        firePropertyChange(CHANGE_DATA_FILE_PATH, currentFile, file);
     }
 
     public synchronized boolean isCustomChecksumFileProvided() {
