@@ -242,7 +242,16 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
 
         File checksumFile = SummaryItemPanel.checksumFile != null
                 ? SummaryItemPanel.checksumFile
-                : new File(Constant.CHECKSUM_FILE_NAME);
+                : resolveChecksumFileForCreation(dataFiles);
+
+        File parentDir = checksumFile.getAbsoluteFile().getParentFile();
+        if (parentDir != null) {
+            java.nio.file.Files.createDirectories(parentDir.toPath());
+            if (!java.nio.file.Files.isWritable(parentDir.toPath())) {
+                throw new IOException("Cannot write checksum file: directory not writable: "
+                        + parentDir.getAbsolutePath());
+            }
+        }
         if (!checksumFile.exists()) {
             java.nio.file.Files.write(checksumFile.toPath(), "#Checksum File\n".getBytes(Charset.defaultCharset()));
         }
@@ -253,6 +262,42 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
         ((AppContext) App.getInstance().getDesktopContext()).addDataFile(newChecksumDataFile);
         ((AppContext) App.getInstance().getDesktopContext()).setCustomChecksumFileProvided(false);
         SummaryItemPanel.checksumFile = checksumFile;
+    }
+
+    /**
+     * Chooses the path for a new checksum manifest: absolute {@code checksum.filename} is honoured;
+     * otherwise the file is placed next to the first on-disk submission data file (not JVM CWD).
+     */
+    private File resolveChecksumFileForCreation(List<DataFile> dataFiles) {
+        String configured = appContext.getProperty("checksum.filename");
+        if (configured == null || configured.isEmpty()) {
+            configured = Constant.CHECKSUM_FILE_NAME;
+        }
+        File asDeclared = new File(configured);
+        if (asDeclared.isAbsolute()) {
+            return asDeclared;
+        }
+        File baseDir = findSubmissionDataDirectory(dataFiles);
+        if (baseDir != null) {
+            return new File(baseDir, asDeclared.getPath());
+        }
+        return new File(configured);
+    }
+
+    private File findSubmissionDataDirectory(List<DataFile> dataFiles) {
+        for (DataFile df : dataFiles) {
+            if (isChecksumDataFile(df)) {
+                continue;
+            }
+            File f = df.getFile();
+            if (f != null) {
+                File parent = f.getAbsoluteFile().getParentFile();
+                if (parent != null) {
+                    return parent;
+                }
+            }
+        }
+        return null;
     }
 
     private ChecksumValidationResult validateChecksumFile(List<DataFile> dataFiles, File checksumFile) throws IOException {
