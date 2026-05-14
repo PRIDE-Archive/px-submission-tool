@@ -7,6 +7,7 @@ import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
 import uk.ac.ebi.pride.data.model.*;
 import uk.ac.ebi.pride.gui.data.ResubmissionRecord;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
+import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.toolsuite.gui.desktop.DesktopContext;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 
@@ -290,7 +291,7 @@ public class AppContext extends DesktopContext {
     public synchronized void removeDatafile(DataFile dataFile) {
         Submission submission = submissionRecord.getSubmission();
 
-        boolean isChecksumFile = "checksum.txt".equals(dataFile.getFileName());
+        boolean isChecksumFile = Constant.CHECKSUM_FILE_NAME.equals(dataFile.getFileName());
 
         if (submission.containsDataFile(dataFile)) {
             // remove data file
@@ -353,7 +354,7 @@ public class AppContext extends DesktopContext {
     public synchronized void removeResubmissionDatafile(DataFile dataFile) {
         Resubmission resubmission = resubmissionRecord.getResubmission();
 
-        boolean isChecksumFile = "checksum.txt".equals(dataFile.getFileName());
+        boolean isChecksumFile = Constant.CHECKSUM_FILE_NAME.equals(dataFile.getFileName());
 
         if (resubmission.containsDataFile(dataFile)) {
             // remove data file

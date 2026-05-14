@@ -408,7 +408,7 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
 
     private boolean hasNoChanges() {
         boolean hasNewFiles = submission.getDataFiles().stream()
-                .anyMatch(f -> !f.getFileName().equals("checksum.txt"));
+                .anyMatch(f -> !f.getFileName().equals(Constant.CHECKSUM_FILE_NAME));
         boolean hasStateChanges = resubmission.getResubmission().values().stream()
                 .anyMatch(state -> !state.equals(ResubmissionFileChangeState.NONE));
         return !hasNewFiles && !hasStateChanges;
@@ -462,7 +462,7 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
                 .filter(f -> f.getValue().equals(ResubmissionFileChangeState.NONE))
                 .map(f -> f.getKey().getFileName()).collect(Collectors.toList());
         List<String> duplicateFileNames = submission.getDataFiles().stream().map(DataFile::getFileName)
-                .filter(fileName -> !fileName.equals("checksum.txt"))
+                .filter(fileName -> !fileName.equals(Constant.CHECKSUM_FILE_NAME))
                 .filter(alreadyPresentFiles::contains)
                 .collect(Collectors.toList());
 

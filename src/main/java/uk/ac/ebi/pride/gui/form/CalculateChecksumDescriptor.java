@@ -11,6 +11,7 @@ import uk.ac.ebi.pride.gui.form.comp.ContextAwareNavigationPanelDescriptor;
 import uk.ac.ebi.pride.gui.form.panel.SummaryItemPanel;
 import uk.ac.ebi.pride.gui.navigation.Navigator;
 import uk.ac.ebi.pride.gui.util.ChecksumSubmissionValidator;
+import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.gui.task.CalculateChecksumTask;
 import uk.ac.ebi.pride.gui.task.checksum.ChecksumMessage;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
@@ -84,7 +85,8 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
             usingProvidedChecksumFile = true;
             dontCalculateChecksum = true;
             calculateChecksumForm.enableCancelButton(false);
-            calculateChecksumForm.setProgressMessage("Provided checksum.txt will be validated when you click Next.");
+            calculateChecksumForm.setProgressMessage(
+                    "Provided " + Constant.CHECKSUM_FILE_NAME + " will be validated when you click Next.");
             nextButton.setEnabled(true);
         } else {
             File checksumFileRef = checksumDataFile != null ? checksumDataFile.getFile() : null;
@@ -92,10 +94,10 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
             try {
                 existingValidation = validateChecksumFile(dataFiles, checksumFileRef);
             } catch (IOException e) {
-                logger.warn("Could not validate existing checksum.txt", e);
+                logger.warn("Could not validate existing {}", Constant.CHECKSUM_FILE_NAME, e);
             }
 
-            // Tool-generated or existing checksum.txt that already covers all files: no provide/calculate popup.
+            // Tool-generated or existing checksum file that already covers all files: no provide/calculate popup.
             if (checksumDataFile != null && existingValidation != null && existingValidation.isValid()) {
                 SummaryItemPanel.checksumFile = checksumFileRef;
                 dontCalculateChecksum = true;
@@ -114,7 +116,7 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
                     logger.error("Error preparing checksum file", e);
                     JOptionPane.showMessageDialog(
                             app.getMainFrame(),
-                            "Could not prepare checksum.txt for checksum calculation.\n\nError: " + e.getMessage(),
+                            "Could not prepare " + Constant.CHECKSUM_FILE_NAME + " for checksum calculation.\n\nError: " + e.getMessage(),
                             "Checksum File Error",
                             JOptionPane.ERROR_MESSAGE);
                 }
@@ -128,7 +130,7 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
     private void removeChecksumFile() {
         List<DataFile> files = ((AppContext) App.getInstance().getDesktopContext()).getSubmissionRecord().getSubmission().getDataFiles();
         for (DataFile file : files) {
-            if (file.getFileName().equals("checksum.txt"))
+            if (file.getFileName().equals(Constant.CHECKSUM_FILE_NAME))
                 ((AppContext) App.getInstance().getDesktopContext()).removeDatafile(file);
         }
     }
@@ -185,9 +187,8 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
     }
 
     private DataFile getChecksumDataFile(List<DataFile> dataFiles) {
-        String checksumFilename = appContext.getProperty("checksum.filename");
         for (DataFile dataFile : dataFiles) {
-            if (checksumFilename.equals(dataFile.getFileName())) {
+            if (Constant.CHECKSUM_FILE_NAME.equals(dataFile.getFileName())) {
                 return dataFile;
             }
         }
@@ -202,7 +203,7 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
             return true;
         }
         File file = checksumDataFile.getFile();
-        File defaultChecksumFile = new File(appContext.getProperty("checksum.filename"));
+        File defaultChecksumFile = new File(Constant.CHECKSUM_FILE_NAME);
         return file != null && !file.getAbsolutePath().equals(defaultChecksumFile.getAbsolutePath());
     }
 
@@ -216,7 +217,7 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
 
         File checksumFile = SummaryItemPanel.checksumFile != null
                 ? SummaryItemPanel.checksumFile
-                : new File(appContext.getProperty("checksum.filename"));
+                : new File(Constant.CHECKSUM_FILE_NAME);
         if (!checksumFile.exists()) {
             java.nio.file.Files.write(checksumFile.toPath(), "#Checksum File\n".getBytes(Charset.defaultCharset()));
         }
@@ -231,14 +232,14 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
 
     private ChecksumValidationResult validateChecksumFile(List<DataFile> dataFiles, File checksumFile) throws IOException {
         ChecksumSubmissionValidator.Result r =
-                ChecksumSubmissionValidator.validate(dataFiles, checksumFile, appContext.getProperty("checksum.filename"));
+                ChecksumSubmissionValidator.validate(dataFiles, checksumFile, Constant.CHECKSUM_FILE_NAME);
         return new ChecksumValidationResult(checksumFile,
                 new ArrayList<>(r.getMissingInChecksum()),
                 new ArrayList<>(r.getExtraInChecksum()));
     }
 
     private boolean isChecksumDataFile(DataFile dataFile) {
-        return appContext.getProperty("checksum.filename").equals(dataFile.getFileName());
+        return Constant.CHECKSUM_FILE_NAME.equals(dataFile.getFileName());
     }
 
     private boolean confirmChecksumChoice(File checksumFile, ChecksumValidationResult invalidDetailOrNull) {
@@ -247,13 +248,13 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
         if (invalidDetailOrNull == null) {
             html.append("<p>").append(htmlEscape("Please provide the checksum file for this submission.")).append("</p>");
         } else {
-            html.append("<p>").append(htmlEscape("The provided checksum.txt is not valid for the selected files.")).append("</p>");
+            html.append("<p>").append(htmlEscape("The provided " + Constant.CHECKSUM_FILE_NAME + " is not valid for the selected files.")).append("</p>");
             if (checksumFile != null) {
                 html.append("<p><b>").append(htmlEscape("Checksum file:")).append("</b><br>")
                         .append(htmlEscape(checksumFile.getAbsolutePath())).append("</p>");
             }
             if (!invalidDetailOrNull.getMissingFileNames().isEmpty()) {
-                html.append("<p><b>").append(htmlEscape("Selected files not listed in checksum.txt:")).append("</b></p><ul>");
+                html.append("<p><b>").append(htmlEscape("Selected files not listed in " + Constant.CHECKSUM_FILE_NAME + ":")).append("</b></p><ul>");
                 int limit = Math.min(invalidDetailOrNull.getMissingFileNames().size(), 20);
                 for (int i = 0; i < limit; i++) {
                     html.append("<li>").append(htmlEscape(invalidDetailOrNull.getMissingFileNames().get(i))).append("</li>");
@@ -264,7 +265,7 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
                 }
             }
             if (!invalidDetailOrNull.getExtraInChecksum().isEmpty()) {
-                html.append("<p><b>").append(htmlEscape("Entries in checksum.txt that do not match any selected file:")).append("</b></p><ul>");
+                html.append("<p><b>").append(htmlEscape("Entries in " + Constant.CHECKSUM_FILE_NAME + " that do not match any selected file:")).append("</b></p><ul>");
                 int limitEx = Math.min(invalidDetailOrNull.getExtraInChecksum().size(), 20);
                 for (int i = 0; i < limitEx; i++) {
                     html.append("<li>").append(htmlEscape(invalidDetailOrNull.getExtraInChecksum().get(i))).append("</li>");
@@ -276,7 +277,7 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
             }
         }
         html.append("<p>")
-                .append(htmlEscape("You can create checksum.txt using this "))
+                .append(htmlEscape("You can create " + Constant.CHECKSUM_FILE_NAME + " using this "))
                 .append("<a href=\"").append(PRIDE_CHECKSUM_GUIDE_URL).append("\">")
                 .append(htmlEscape("PRIDE checksum guide")).append("</a>")
                 .append(htmlEscape(".")).append("</p>");
@@ -352,27 +353,27 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
     }
 
     private boolean checkAndWriteChecksum(List<DataFile> dataFiles) throws Exception {
-        logger.info("Writing calculated checksum to checksum.txt");
+        logger.info("Writing calculated checksum to {}", Constant.CHECKSUM_FILE_NAME);
         Files.write("#Checksum File\n".getBytes(), SummaryItemPanel.checksumFile);
         int countOfChecksumCalculatedFiles = 0;
         for (DataFile dataFile : dataFiles) {
             try {
                 if (checksumCalculatedFiles.containsKey(dataFile.getFilePath()) &&
-                        !dataFile.getFile().getName().equals("checksum.txt")) {
+                        !dataFile.getFile().getName().equals(Constant.CHECKSUM_FILE_NAME)) {
                     Files.append(dataFile.getFilePath() + "\t" +
                                     checksumCalculatedFiles.get(dataFile.getFilePath()).getValue() + "\n",
                             SummaryItemPanel.checksumFile, Charset.defaultCharset());
                     countOfChecksumCalculatedFiles++;
-                } else if (!dataFile.getFile().getName().equals("checksum.txt")) {
+                } else if (!dataFile.getFile().getName().equals(Constant.CHECKSUM_FILE_NAME)) {
                     return false;
                 }
             } catch (Exception ex) {
-                logger.error("Error in adding file " + dataFile.getFile().getName() + " to checksum.txt");
+                logger.error("Error in adding file {} to {}", dataFile.getFile().getName(), Constant.CHECKSUM_FILE_NAME);
                 logger.error(ex.getMessage());
                 return false;
             }
         }
-        logger.info("Checksum calculated and written to checksum.txt for all files");
+        logger.info("Checksum calculated and written to {} for all files", Constant.CHECKSUM_FILE_NAME);
         logger.info("Files count " + countOfChecksumCalculatedFiles);
         return true;
     }

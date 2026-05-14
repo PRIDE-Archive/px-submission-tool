@@ -14,6 +14,7 @@ import uk.ac.ebi.pride.toolsuite.gui.task.Task;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskEvent;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskListener;
 import uk.ac.ebi.pride.gui.util.ChecksumSubmissionValidator;
+import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.gui.util.DataFileValidationMessage;
 import uk.ac.ebi.pride.gui.util.ValidationState;
 
@@ -138,7 +139,7 @@ public class FileSelectionDescriptor extends ContextAwareNavigationPanelDescript
             ChecksumSubmissionValidator.Result r = ChecksumSubmissionValidator.validate(
                     submission.getDataFiles(),
                     checksumDataFile == null ? null : checksumDataFile.getFile(),
-                    appContext.getProperty("checksum.filename"));
+                    Constant.CHECKSUM_FILE_NAME);
             if (r.isValid()) {
                 return true;
             }
@@ -155,9 +156,8 @@ public class FileSelectionDescriptor extends ContextAwareNavigationPanelDescript
     }
 
     private DataFile getChecksumDataFile(Submission submission) {
-        String checksumFilename = appContext.getProperty("checksum.filename");
         for (DataFile dataFile : submission.getDataFiles()) {
-            if (checksumFilename.equals(dataFile.getFileName())) {
+            if (Constant.CHECKSUM_FILE_NAME.equals(dataFile.getFileName())) {
                 return dataFile;
             }
         }
@@ -165,16 +165,17 @@ public class FileSelectionDescriptor extends ContextAwareNavigationPanelDescript
     }
 
     private void showInvalidChecksumFileError(File checksumFile, ChecksumSubmissionValidator.Result result) {
-        StringBuilder message = new StringBuilder("The provided checksum.txt is not valid for the selected files.");
+        String name = Constant.CHECKSUM_FILE_NAME;
+        StringBuilder message = new StringBuilder("The provided " + name + " is not valid for the selected files.");
         if (checksumFile != null) {
             message.append("\n\nChecksum file:\n").append(checksumFile.getAbsolutePath());
         }
         if (!result.getMissingInChecksum().isEmpty()) {
-            message.append("\n\nSelected files not listed in checksum.txt:");
+            message.append("\n\nSelected files not listed in ").append(name).append(":");
             appendLimitedLines(message, result.getMissingInChecksum());
         }
         if (!result.getExtraInChecksum().isEmpty()) {
-            message.append("\n\nEntries in checksum.txt that do not match any selected file:");
+            message.append("\n\nEntries in ").append(name).append(" that do not match any selected file:");
             appendLimitedLines(message, result.getExtraInChecksum());
         }
 

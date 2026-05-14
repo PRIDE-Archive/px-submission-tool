@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Validates that checksum.txt lists exactly the submission's selected data files
- * (no missing entries and no extra lines for other files).
+ * Validates that the checksum manifest file ({@link Constant#CHECKSUM_FILE_NAME}) lists exactly
+ * the submission's selected data files (no missing entries and no extra lines for other files).
  */
 public final class ChecksumSubmissionValidator {
 
@@ -99,12 +99,24 @@ public final class ChecksumSubmissionValidator {
             if (trimmed.isEmpty() || trimmed.startsWith("#")) {
                 continue;
             }
-            String[] parts = trimmed.split("\\s+");
-            if (parts.length > 0 && !parts[0].isEmpty()) {
-                tokens.add(parts[0]);
+            String firstColumn = extractFirstColumn(trimmed);
+            if (firstColumn != null && !firstColumn.isEmpty()) {
+                tokens.add(firstColumn);
             }
         }
         return tokens;
+    }
+
+    /**
+     * First column is path/hash prefix. Tool-written lines use TAB before the checksum; paths may contain spaces.
+     */
+    private static String extractFirstColumn(String line) {
+        int tab = line.indexOf('\t');
+        if (tab >= 0) {
+            return line.substring(0, tab).trim();
+        }
+        String[] parts = line.split("\\s+");
+        return parts.length > 0 ? parts[0] : null;
     }
 
     static boolean matchesToken(String token, DataFile df) {

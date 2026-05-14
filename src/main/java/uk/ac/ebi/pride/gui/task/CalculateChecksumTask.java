@@ -6,6 +6,7 @@ import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.gui.form.CalculateChecksumDescriptor;
 import uk.ac.ebi.pride.gui.task.checksum.ChecksumMessage;
+import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.gui.util.Hash;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 import uk.ac.ebi.pride.utilities.util.Tuple;
@@ -46,7 +47,7 @@ public class CalculateChecksumTask extends TaskAdapter<Boolean, ChecksumMessage>
         logger.info("=== Starting checksum calculation for files ===");
         for (DataFile dataFile : dataFiles) {
             logger.debug("Processing file: {}", dataFile.getFile().getName());
-            if (!dataFile.getFile().getName().equals("checksum.txt")) {
+            if (!dataFile.getFile().getName().equals(Constant.CHECKSUM_FILE_NAME)) {
                 logger.info("Adding checksum calculation task for: {}", dataFile.getFile().getName());
                 tasks.add(executor.submit((Callable) () -> {
                     try {
@@ -65,7 +66,7 @@ public class CalculateChecksumTask extends TaskAdapter<Boolean, ChecksumMessage>
                     }
                 }));
             } else {
-                logger.info("Skipping checksum calculation for checksum.txt file");
+                logger.info("Skipping checksum calculation for {} file", Constant.CHECKSUM_FILE_NAME);
             }
         }
         
@@ -73,9 +74,9 @@ public class CalculateChecksumTask extends TaskAdapter<Boolean, ChecksumMessage>
         int totalNoOfFiles = dataFiles.size() - 1;
         logger.info("Total files to process: {}", totalNoOfFiles);
         
-        if (!dataFiles.stream().anyMatch(file -> file.getFileName().equals("checksum.txt"))) {
-            logger.error("No checksum.txt present in submission files");
-            throw new RuntimeException("No checksum.txt present");
+        if (!dataFiles.stream().anyMatch(file -> file.getFileName().equals(Constant.CHECKSUM_FILE_NAME))) {
+            logger.error("No {} present in submission files", Constant.CHECKSUM_FILE_NAME);
+            throw new RuntimeException("No " + Constant.CHECKSUM_FILE_NAME + " present");
         }
         
         if (totalNoOfFiles == 0) {

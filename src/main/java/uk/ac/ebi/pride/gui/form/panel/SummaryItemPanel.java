@@ -11,6 +11,7 @@ import uk.ac.ebi.pride.gui.form.SummaryDescriptor;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwarePanel;
 import uk.ac.ebi.pride.gui.form.dialog.ValidationProgressDialog;
 import uk.ac.ebi.pride.gui.util.BalloonTipUtil;
+import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 
 import javax.swing.*;
@@ -210,8 +211,7 @@ public class SummaryItemPanel extends ContextAwarePanel
             Object newVal = evt.getNewValue();
             if (newVal instanceof DataFile) {
                 DataFile changed = (DataFile) newVal;
-                String checksumName = appContext.getProperty("checksum.filename");
-                if (checksumName != null && checksumName.equalsIgnoreCase(changed.getFileName())
+                if (Constant.CHECKSUM_FILE_NAME.equals(changed.getFileName())
                          && changed.getFile() != null) {
                      SummaryItemPanel.checksumFile = changed.getFile();
                 }

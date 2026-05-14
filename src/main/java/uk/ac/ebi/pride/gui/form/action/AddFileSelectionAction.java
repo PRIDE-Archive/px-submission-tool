@@ -10,6 +10,7 @@ import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
 import uk.ac.ebi.pride.gui.form.CalculateChecksumDescriptor;
 import uk.ac.ebi.pride.gui.form.panel.SummaryItemPanel;
 import uk.ac.ebi.pride.gui.util.Constant;
+import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.toolsuite.gui.GUIUtilities;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.GUIBlocker;
@@ -193,15 +194,15 @@ public class AddFileSelectionAction extends AbstractAction {
             }
 
             AppContext context = (AppContext) App.getInstance().getDesktopContext();
-            if (isChecksumFile(context, fileName)) {
+            if (isChecksumFile(fileName)) {
                 updateChecksumFile(context, file, newDataFile);
             } else if (!hasSameFileName(newDataFile)) {
                 context.addDataFile(newDataFile);
             }
         }
 
-        private boolean isChecksumFile(AppContext context, String fileName) {
-            return context.getProperty("checksum.filename").equals(fileName);
+        private boolean isChecksumFile(String fileName) {
+            return Constant.CHECKSUM_FILE_NAME.equals(fileName);
         }
 
         private void updateChecksumFile(AppContext context, File file, DataFile newDataFile) {
