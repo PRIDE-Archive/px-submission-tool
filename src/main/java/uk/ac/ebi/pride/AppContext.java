@@ -43,6 +43,7 @@ public class AppContext extends DesktopContext {
     public static final String REMOVE_RESUBMISSION_DATA_FILE = "removeResubmissionDataFile";
     public static final String CHANGE_DATA_FILE_TYPE = "changeDataFileType";
     public static final String CHANGE_DATA_FILE_PATH = "changeDataFilePath";
+    public static final String CHECKSUM_FILE_REMOVED = "checksumFileRemoved";
     public static final String CHANGE_RESUBMISSION_DATA_FILE_ACTION = "changeResubmissionDataFileAction";
     public static final String ADD_NEW_SPECIES = "addNewSpecies";
     public static final String REMOVE_SPECIES = "removeSpecies";
@@ -315,16 +316,7 @@ public class AppContext extends DesktopContext {
 
     private void clearChecksumFileState() {
         customChecksumFileProvided = false;
-        try {
-            uk.ac.ebi.pride.gui.form.panel.SummaryItemPanel.checksumFile = null;
-        } catch (Throwable ignored) {
-            // SummaryItemPanel may not be initialized; ignore.
-        }
-        try {
-            uk.ac.ebi.pride.gui.form.CalculateChecksumDescriptor.checksumCalculatedFiles.clear();
-        } catch (Throwable ignored) {
-            // Descriptor may not be loaded yet; ignore.
-        }
+        firePropertyChange(CHECKSUM_FILE_REMOVED, null, null);
     }
 
     /**

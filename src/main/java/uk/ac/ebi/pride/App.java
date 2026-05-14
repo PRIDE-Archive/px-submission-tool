@@ -121,6 +121,8 @@ public class App extends Desktop {
 
         // build navigation
         buildNavigation();
+
+        registerChecksumRemovalListener();
     }
 
     /**
@@ -404,6 +406,29 @@ public class App extends Desktop {
         }
 
         mainFrame.setContentPane(navigator);
+    }
+
+    /**
+     * Listens for checksum removal on {@link AppContext} and clears related static GUI state
+     * so {@link AppContext} does not reference form classes directly.
+     */
+    private void registerChecksumRemovalListener() {
+        AppContext appContext = (AppContext) getDesktopContext();
+        appContext.addPropertyChangeListener(event -> {
+            if (!AppContext.CHECKSUM_FILE_REMOVED.equals(event.getPropertyName())) {
+                return;
+            }
+            try {
+                uk.ac.ebi.pride.gui.form.panel.SummaryItemPanel.resetChecksumFileReference();
+            } catch (Exception e) {
+                logger.warn("Could not reset checksum file reference after removal: {}", e.getMessage(), e);
+            }
+            try {
+                CalculateChecksumDescriptor.resetChecksumCalculationCache();
+            } catch (Exception e) {
+                logger.warn("Could not reset checksum calculation cache after removal: {}", e.getMessage(), e);
+            }
+        });
     }
 
     /**

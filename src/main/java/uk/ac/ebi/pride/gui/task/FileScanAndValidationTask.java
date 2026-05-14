@@ -361,7 +361,8 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         for (DataFile dataFile : submission.getDataFiles()) {
             if (dataFile.getFileType().equals(ProjectFileType.EXPERIMENTAL_DESIGN)) {
                 isSdrfFound = true;
-                DataFileValidationMessage sdrfValidationMessage = validateSdrfWithApi(dataFile);
+                DataFileValidationMessage sdrfValidationMessage =
+                        SdrfValidationDialog.validateSdrf(((App) App.getInstance()).getMainFrame(), dataFile);
                 if (sdrfValidationMessage != null) {
                     return sdrfValidationMessage;
                 }
@@ -425,28 +426,6 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         }
 
         return new DataFileValidationMessage(ValidationState.SUCCESS);
-    }
-
-    private DataFileValidationMessage validateSdrfWithApi(DataFile dataFile) {
-        try {
-            SdrfValidatorClient.ValidationResult validationResult =
-                    SdrfValidationDialog.showDialog(((App) App.getInstance()).getMainFrame(), dataFile);
-            if (validationResult == null) {
-                logger.warn("SDRF API validation cancelled for file {}", dataFile.getFileName());
-                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getCancelledSDRFValidationWarning());
-            }
-            if (!validationResult.isValid() || validationResult.getError_count() > 0) {
-                logger.error("Error in SDRF file {}. PRIDE SDRF Validator API reported {} errors and {} warnings.",
-                        dataFile.getFileName(), validationResult.getError_count(), validationResult.getWarning_count());
-                validationResult.getErrors().forEach(error -> logger.error(error.format()));
-                validationResult.getWarnings().forEach(warning -> logger.warn(warning.format()));
-                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSDRFFileWarning(validationResult));
-            }
-        } catch (Exception e) {
-            logger.error("Error validating SDRF file {} with PRIDE SDRF Validator API", dataFile.getFileName(), e);
-            return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSDRFFileWarning());
-        }
-        return null;
     }
 
     private boolean checkBafFiles(List<DataFile> dataFiles) {

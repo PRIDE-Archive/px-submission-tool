@@ -130,9 +130,13 @@ public class SdrfValidatorClient {
 
     private List<ValidationIssue> parseErrorResponse(String responseBody) throws IOException {
         List<ValidationIssue> issues = new ArrayList<>();
-        JsonNode rootNode = objectMapper.readTree(responseBody);
-        JsonNode detailNode = rootNode.get("detail");
-
+        JsonNode detailNode = null;
+        try {
+            JsonNode rootNode = objectMapper.readTree(responseBody);
+            detailNode = rootNode.get("detail");
+            } catch (IOException parseException) {
+            // Non-JSON error body (e.g. HTML 502 from a proxy); fall through and use the raw body.
+        }
         if (detailNode != null && detailNode.isArray()) {
             for (JsonNode detail : detailNode) {
                 issues.add(objectMapper.treeToValue(detail, ValidationIssue.class));

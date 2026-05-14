@@ -39,6 +39,10 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
 
     public static Map<String, Tuple<String, String>> checksumCalculatedFiles = new HashMap<>();
 
+    public static void resetChecksumCalculationCache() {
+        checksumCalculatedFiles.clear();
+    }
+
     public boolean dontCalculateChecksum = true;
     private boolean usingProvidedChecksumFile;
     private boolean checksumCalculationStarted;

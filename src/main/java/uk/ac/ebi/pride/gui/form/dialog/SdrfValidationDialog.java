@@ -1,10 +1,15 @@
 package uk.ac.ebi.pride.gui.form.dialog;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.gui.form.comp.ContextAwareDialog;
 import uk.ac.ebi.pride.gui.form.comp.NonOpaquePanel;
 import uk.ac.ebi.pride.gui.navigation.NavigationControlPanel;
+import uk.ac.ebi.pride.gui.util.DataFileValidationMessage;
 import uk.ac.ebi.pride.gui.util.SdrfValidatorClient;
+import uk.ac.ebi.pride.gui.util.ValidationState;
+import uk.ac.ebi.pride.gui.util.WarningMessageGenerator;
 
 import javax.swing.*;
 import java.awt.*;
@@ -21,6 +26,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class SdrfValidationDialog extends ContextAwareDialog {
+    private static final Logger logger = LoggerFactory.getLogger(SdrfValidationDialog.class);
     private static final String SDRF_VALIDATOR_PORTAL_URL = "https://www.ebi.ac.uk/pride/services/sdrf-validator";
 
     private final DataFile dataFile;
@@ -58,6 +64,40 @@ public class SdrfValidationDialog extends ContextAwareDialog {
             return null;
         }
         return dialog.validationResult;
+    }
+
+    /**
+     * Runs SDRF validation via the PRIDE API dialog and maps the outcome to {@link DataFileValidationMessage}.
+     *
+     * @return {@code null} if validation succeeded; otherwise a non-null error message
+     */
+    public static DataFileValidationMessage validateSdrf(Frame parent, DataFile dataFile) {
+        try {
+            SdrfValidatorClient.ValidationResult validationResult = showDialog(parent, dataFile);
+            if (validationResult == null) {
+                logger.warn("SDRF API validation cancelled for file {}", dataFile.getFileName());
+                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getCancelledSDRFValidationWarning());
+            }
+            if (!validationResult.isValid() || validationResult.getError_count() > 0) {
+                logger.error("Error in SDRF file {}. PRIDE SDRF Validator API reported {} errors and {} warnings.",
+                        dataFile.getFileName(), validationResult.getError_count(), validationResult.getWarning_count());
+                validationResult.getErrors().forEach(error -> logger.error(error.format()));
+                validationResult.getWarnings().forEach(warning -> logger.warn(warning.format()));
+                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSDRFFileWarning(validationResult));
+            }
+        } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            } else if (e instanceof InvocationTargetException) {
+                Throwable cause = ((InvocationTargetException) e).getCause();
+                if (cause instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            logger.error("Error validating SDRF file {} with PRIDE SDRF Validator API", dataFile.getFileName(), e);
+            return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSDRFFileWarning());
+        }
+        return null;
     }
 
     private static void runOnEventDispatchThread(Runnable runnable) throws InvocationTargetException, InterruptedException {

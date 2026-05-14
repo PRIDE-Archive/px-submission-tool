@@ -47,6 +47,13 @@ public class SummaryItemPanel extends ContextAwarePanel
 
     public static File checksumFile;
 
+    /**
+     * Clears the cached checksum file path when {@link AppContext#CHECKSUM_FILE_REMOVED} is broadcast.
+     */
+    public static void resetChecksumFileReference() {
+        checksumFile = null;
+    }
+
     public SummaryItemPanel() {
         submission = appContext.getSubmissionRecord().getSubmission();
         submissionType = submission.getProjectMetaData().getSubmissionType();
@@ -203,8 +210,10 @@ public class SummaryItemPanel extends ContextAwarePanel
             Object newVal = evt.getNewValue();
             if (newVal instanceof DataFile) {
                 DataFile changed = (DataFile) newVal;
-                if (appContext.getProperty("checksum.filename").equals(changed.getFileName())) {
-                    SummaryItemPanel.checksumFile = changed.getFile();
+                String checksumName = appContext.getProperty("checksum.filename");
+                if (checksumName != null && checksumName.equalsIgnoreCase(changed.getFileName())
+                         && changed.getFile() != null) {
+                     SummaryItemPanel.checksumFile = changed.getFile();
                 }
             }
         }

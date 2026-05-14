@@ -214,7 +214,7 @@ public class AddFileSelectionAction extends AbstractAction {
             }
             context.setCustomChecksumFileProvided(true);
             SummaryItemPanel.checksumFile = file;
-            CalculateChecksumDescriptor.checksumCalculatedFiles.clear();
+            CalculateChecksumDescriptor.resetChecksumCalculationCache();
         }
 
         /**
