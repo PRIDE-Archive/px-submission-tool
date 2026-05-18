@@ -440,10 +440,10 @@ public class SampleMetaDataDialog extends ContextAwareDialog implements ActionLi
         if (softwareApplyToAll.isSelected()) {
             java.util.List<DataFile> resultFiles = appContext.getSubmissionFilesByType(ProjectFileType.RESULT);
             for (DataFile resultFile : resultFiles) {
-                appContext.setSampleMetaDataEntries(resultFile, SampleMetaData.Type.DISEASE, softwareTableModel.getValues());
+                appContext.setSampleMetaDataEntries(resultFile, SampleMetaData.Type.SOFTWARE, softwareTableModel.getValues());
             }
         } else {
-            appContext.setSampleMetaDataEntries(dataFile, SampleMetaData.Type.DISEASE, softwareTableModel.getValues());
+            appContext.setSampleMetaDataEntries(dataFile, SampleMetaData.Type.SOFTWARE, softwareTableModel.getValues());
         }
 
         // check disease apply to all
