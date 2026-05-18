@@ -230,7 +230,7 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
         if (file == null) {
             return false;
         }
-        File defaultChecksumFile = resolveDefaultChecksumLocation(file);
+        File defaultChecksumFile = resolveDefaultChecksumLocation();
         try {
             return !file.getCanonicalFile().equals(defaultChecksumFile.getCanonicalFile());
         } catch (IOException e) {
@@ -240,10 +240,10 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
     }
 
     /**
-     * Resolves {@code checksum.filename} from configuration: absolute paths are used as-is;
-     * relative names are resolved next to the directory containing the current checksum file (not JVM CWD).
+     * Resolves the default tool-generated checksum path: absolute {@code checksum.filename} is used as-is;
+     * relative names are resolved in the tool active directory ({@code user.dir}).
      */
-    private File resolveDefaultChecksumLocation(File checksumFile) {
+    private File resolveDefaultChecksumLocation() {
         String configured = appContext.getProperty("checksum.filename");
         if (configured == null || configured.isEmpty()) {
             configured = Constant.CHECKSUM_FILE_NAME;
@@ -252,21 +252,30 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
         if (asDeclared.isAbsolute()) {
             return asDeclared;
         }
-        File parent = checksumFile.getAbsoluteFile().getParentFile();
-        return parent != null ? new File(parent, asDeclared.getPath()) : new File(asDeclared.getPath());
+        return new File(getToolActiveDirectory(), asDeclared.getPath());
     }
 
     private void ensureChecksumFile(List<DataFile> dataFiles) throws IOException {
-        DataFile checksumDataFile = getChecksumDataFile(dataFiles);
-        if (checksumDataFile != null) {
-            SummaryItemPanel.checksumFile = checksumDataFile.getFile();
-            ((AppContext) App.getInstance().getDesktopContext()).setCustomChecksumFileProvided(false);
+        AppContext context = (AppContext) App.getInstance().getDesktopContext();
+        if (context.isCustomChecksumFileProvided()) {
+            DataFile checksumDataFile = getChecksumDataFile(dataFiles);
+            if (checksumDataFile != null && checksumDataFile.getFile() != null) {
+                SummaryItemPanel.checksumFile = checksumDataFile.getFile();
+            }
             return;
         }
 
-        File checksumFile = SummaryItemPanel.checksumFile != null
-                ? SummaryItemPanel.checksumFile
-                : resolveChecksumFileForCreation(dataFiles);
+        File checksumFile = resolveChecksumFileForCreation();
+        DataFile checksumDataFile = getChecksumDataFile(dataFiles);
+        if (checksumDataFile != null) {
+            File existing = checksumDataFile.getFile();
+            if (existing != null && isSameChecksumLocation(existing, checksumFile)) {
+                SummaryItemPanel.checksumFile = existing;
+                context.setCustomChecksumFileProvided(false);
+                return;
+            }
+            context.removeDatafile(checksumDataFile);
+        }
 
         File parentDir = checksumFile.getAbsoluteFile().getParentFile();
         if (parentDir != null) {
@@ -283,16 +292,16 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
         DataFile newChecksumDataFile = new DataFile();
         newChecksumDataFile.setFile(checksumFile);
         newChecksumDataFile.setFileType(ProjectFileType.OTHER);
-        ((AppContext) App.getInstance().getDesktopContext()).addDataFile(newChecksumDataFile);
-        ((AppContext) App.getInstance().getDesktopContext()).setCustomChecksumFileProvided(false);
+        context.addDataFile(newChecksumDataFile);
+        context.setCustomChecksumFileProvided(false);
         SummaryItemPanel.checksumFile = checksumFile;
     }
 
     /**
-     * Chooses the path for a new checksum manifest: absolute {@code checksum.filename} is honoured;
-     * otherwise the file is placed next to the first on-disk submission data file (not JVM CWD).
+     * Path for a tool-calculated checksum manifest: absolute {@code checksum.filename} is honoured;
+     * otherwise the file is created in the tool active directory ({@code user.dir}).
      */
-    private File resolveChecksumFileForCreation(List<DataFile> dataFiles) {
+    private File resolveChecksumFileForCreation() {
         String configured = appContext.getProperty("checksum.filename");
         if (configured == null || configured.isEmpty()) {
             configured = Constant.CHECKSUM_FILE_NAME;
@@ -301,31 +310,35 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
         if (asDeclared.isAbsolute()) {
             return asDeclared;
         }
-        File baseDir = findSubmissionDataDirectory(dataFiles);
-        if (baseDir != null) {
-            return new File(baseDir, asDeclared.getPath());
-        }
-        return new File(configured);
+        return new File(getToolActiveDirectory(), asDeclared.getPath());
     }
 
-    private File findSubmissionDataDirectory(List<DataFile> dataFiles) {
-        for (DataFile df : dataFiles) {
-            if (isChecksumDataFile(df)) {
-                continue;
-            }
-            File f = df.getFile();
-            if (f != null) {
-                File parent = f.getAbsoluteFile().getParentFile();
-                if (parent != null) {
-                    return parent;
-                }
-            }
+    private static File getToolActiveDirectory() {
+        return new File(System.getProperty("user.dir"));
+    }
+
+    private static boolean isSameChecksumLocation(File a, File b) {
+        if (a == null || b == null) {
+            return false;
         }
-        return null;
+        try {
+            return a.getCanonicalFile().equals(b.getCanonicalFile());
+        } catch (IOException e) {
+            return a.getAbsoluteFile().equals(b.getAbsoluteFile());
+        }
     }
 
     private static boolean isChecksumFilePresent(File checksumFile) {
         return checksumFile != null && checksumFile.exists() && checksumFile.canRead();
+    }
+
+    private static String resolveChecksumLookupKey(DataFile dataFile) {
+        File file = dataFile.getFile();
+        if (file != null) {
+            return file.getAbsolutePath();
+        }
+        String path = dataFile.getFilePath();
+        return path != null ? path : "";
     }
 
     private ChecksumValidationResult validateChecksumFile(List<DataFile> dataFiles, File checksumFile) throws IOException {
@@ -461,17 +474,18 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
         int countOfChecksumCalculatedFiles = 0;
         for (DataFile dataFile : dataFiles) {
             try {
-                if (checksumCalculatedFiles.containsKey(dataFile.getFilePath()) &&
-                        !dataFile.getFile().getName().equals(Constant.CHECKSUM_FILE_NAME)) {
-                    Files.append(dataFile.getFilePath() + "\t" +
-                                    checksumCalculatedFiles.get(dataFile.getFilePath()).getValue() + "\n",
+                String lookupKey = resolveChecksumLookupKey(dataFile);
+                if (checksumCalculatedFiles.containsKey(lookupKey)
+                        && !Constant.CHECKSUM_FILE_NAME.equals(dataFile.getFileName())) {
+                    Files.append(lookupKey + "\t" +
+                                    checksumCalculatedFiles.get(lookupKey).getValue() + "\n",
                             SummaryItemPanel.checksumFile, Charset.defaultCharset());
                     countOfChecksumCalculatedFiles++;
-                } else if (!dataFile.getFile().getName().equals(Constant.CHECKSUM_FILE_NAME)) {
+                } else if (!Constant.CHECKSUM_FILE_NAME.equals(dataFile.getFileName())) {
                     return false;
                 }
             } catch (Exception ex) {
-                logger.error("Error in adding file {} to {}", dataFile.getFile().getName(), Constant.CHECKSUM_FILE_NAME);
+                logger.error("Error in adding file {} to {}", dataFile.getFileName(), Constant.CHECKSUM_FILE_NAME);
                 logger.error(ex.getMessage());
                 return false;
             }
