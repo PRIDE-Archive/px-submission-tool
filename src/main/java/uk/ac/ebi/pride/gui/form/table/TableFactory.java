@@ -44,6 +44,14 @@ public class TableFactory {
     private TableFactory() {
     }
 
+    private static void bindRemovalColumnVisibility(TableColumnExt removalColumn, TableModel tableModel) {
+        removalColumn.setVisible(tableModel.getRowCount() > 0);
+        tableModel.addTableModelListener(e -> {
+            int rowCnt = ((TableModel) e.getSource()).getRowCount();
+            removalColumn.setVisible(rowCnt > 0);
+        });
+    }
+
     /**
      * Create a table for submission file selection
      *
@@ -98,7 +106,6 @@ public class TableFactory {
         String removalColHeader = FileSelectionTableModel.TableHeader.REMOVAL.getHeader();
         final TableColumnExt removalColumn = (TableColumnExt) table.getColumn(removalColHeader);
         removalColumn.setCellRenderer(new RemovalCellRenderer());
-        removalColumn.setVisible(false);
         removalColumn.setMaxWidth(REMOVAL_COLUMN_WIDTH);
         removalColumn.setMinWidth(REMOVAL_COLUMN_WIDTH);
 
@@ -106,11 +113,7 @@ public class TableFactory {
         TableColumnExt validColumn = (TableColumnExt) table.getColumn(FileSelectionTableModel.TableHeader.VALIDATION.getHeader());
         validColumn.setVisible(false);
 
-        // add a listener to show/hide removal column
-        tableModel.addTableModelListener(e -> {
-            int rowCnt = ((TableModel) e.getSource()).getRowCount();
-            removalColumn.setVisible(rowCnt > 0);
-        });
+        bindRemovalColumnVisibility(removalColumn, tableModel);
 
         // add listener for removal
         table.addMouseMotionListener(new TableCellMouseMotionListener(table, removalColHeader));
@@ -167,7 +170,6 @@ public class TableFactory {
         String removalColHeader = FileSelectionTableModel.TableHeader.REMOVAL.getHeader();
         final TableColumnExt removalColumn = (TableColumnExt) table.getColumn(removalColHeader);
         removalColumn.setCellRenderer(new RemovalCellRenderer());
-        removalColumn.setVisible(false);
         removalColumn.setMaxWidth(REMOVAL_COLUMN_WIDTH);
         removalColumn.setMinWidth(REMOVAL_COLUMN_WIDTH);
 
@@ -175,11 +177,7 @@ public class TableFactory {
         TableColumnExt validColumn = (TableColumnExt) table.getColumn(FileSelectionTableModel.TableHeader.VALIDATION.getHeader());
         validColumn.setVisible(false);
 
-        // add a listener to show/hide removal column
-        tableModel.addTableModelListener(e -> {
-            int rowCnt = ((TableModel) e.getSource()).getRowCount();
-            removalColumn.setVisible(rowCnt > 0);
-        });
+        bindRemovalColumnVisibility(removalColumn, tableModel);
 
         // add listener for removal
         table.addMouseMotionListener(new TableCellMouseMotionListener(table, removalColHeader));
