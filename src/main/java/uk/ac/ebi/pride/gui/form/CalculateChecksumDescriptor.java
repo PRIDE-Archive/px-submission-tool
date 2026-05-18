@@ -90,15 +90,26 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
             nextButton.setEnabled(true);
         } else {
             File checksumFileRef = checksumDataFile != null ? checksumDataFile.getFile() : null;
+            boolean checksumProvided = isChecksumFilePresent(checksumFileRef);
             ChecksumValidationResult existingValidation = null;
-            try {
-                existingValidation = validateChecksumFile(dataFiles, checksumFileRef);
-            } catch (IOException e) {
-                logger.warn("Could not validate existing {}", Constant.CHECKSUM_FILE_NAME, e);
+            if (checksumProvided) {
+                try {
+                    existingValidation = validateChecksumFile(dataFiles, checksumFileRef);
+                } catch (IOException e) {
+                    logger.warn("Could not validate existing {}", Constant.CHECKSUM_FILE_NAME, e);
+                    JOptionPane.showMessageDialog(
+                            app.getMainFrame(),
+                            "Could not read the checksum file.\n\n" + e.getMessage(),
+                            "Checksum file",
+                            JOptionPane.ERROR_MESSAGE);
+                    navigateBackToFileSelectionPage();
+                    firePropertyChange(DISPLAYING_PANEL_PROPERTY, false, true);
+                    return;
+                }
             }
 
             // Tool-generated or existing checksum file that already covers all files: no provide/calculate popup.
-            if (checksumDataFile != null && existingValidation != null && existingValidation.isValid()) {
+            if (checksumProvided && existingValidation != null && existingValidation.isValid()) {
                 SummaryItemPanel.checksumFile = checksumFileRef;
                 dontCalculateChecksum = true;
                 usingProvidedChecksumFile = false;
@@ -106,9 +117,9 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
                 calculateChecksumForm.setProgressMessage(appContext.getProperty("checksum.complete.ready.message"));
                 nextButton.setEnabled(true);
             } else if (confirmChecksumChoice(checksumFileRef,
-                    existingValidation == null || existingValidation.isValid()
-                            ? null
-                            : existingValidation)) {
+                    checksumProvided && existingValidation != null && !existingValidation.isValid()
+                            ? existingValidation
+                            : null)) {
                 try {
                     ensureChecksumFile(dataFiles);
                     startChecksumCalculation();
@@ -139,8 +150,21 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
     public void beforeHidingForNextPanel() {
         try {
             if (usingProvidedChecksumFile) {
+                File checksumFile = SummaryItemPanel.checksumFile;
+                if (!isChecksumFilePresent(checksumFile)) {
+                    if (confirmChecksumChoice(checksumFile, null)) {
+                        usingProvidedChecksumFile = false;
+                        ensureChecksumFile(appContext.getSubmissionRecord().getSubmission().getDataFiles());
+                        startChecksumCalculation();
+                        firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, true, false);
+                    } else {
+                        navigateBackToFileSelectionPage();
+                        firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, true, false);
+                    }
+                    return;
+                }
                 ChecksumValidationResult validationResult =
-                        validateChecksumFile(appContext.getSubmissionRecord().getSubmission().getDataFiles(), SummaryItemPanel.checksumFile);
+                        validateChecksumFile(appContext.getSubmissionRecord().getSubmission().getDataFiles(), checksumFile);
                 if (validationResult.isValid()) {
                     firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, false, true);
                 } else if (confirmChecksumChoice(validationResult.getChecksumFile(), validationResult)) {
@@ -300,12 +324,17 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
         return null;
     }
 
+    private static boolean isChecksumFilePresent(File checksumFile) {
+        return checksumFile != null && checksumFile.exists() && checksumFile.canRead();
+    }
+
     private ChecksumValidationResult validateChecksumFile(List<DataFile> dataFiles, File checksumFile) throws IOException {
         ChecksumSubmissionValidator.Result r =
                 ChecksumSubmissionValidator.validate(dataFiles, checksumFile, Constant.CHECKSUM_FILE_NAME);
         return new ChecksumValidationResult(checksumFile,
                 new ArrayList<>(r.getMissingInChecksum()),
-                new ArrayList<>(r.getExtraInChecksum()));
+                new ArrayList<>(r.getExtraInChecksum()),
+                r.wasContentValidated());
     }
 
     private boolean isChecksumDataFile(DataFile dataFile) {
@@ -316,7 +345,11 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
         StringBuilder html = new StringBuilder();
         html.append("<html><body style=\"width:420px;font-family:sans-serif;font-size:11pt;\">");
         if (invalidDetailOrNull == null) {
-            html.append("<p>").append(htmlEscape("Please provide the checksum file for this submission.")).append("</p>");
+            if (checksumFile != null && checksumFile.exists() && !checksumFile.canRead()) {
+                html.append("<p>").append(htmlEscape("The checksum file cannot be read.")).append("</p>");
+            } else {
+                html.append("<p>").append(htmlEscape("The checksum file is not provided.")).append("</p>");
+            }
         } else {
             html.append("<p>").append(htmlEscape("The provided " + Constant.CHECKSUM_FILE_NAME + " is not valid for the selected files.")).append("</p>");
             if (checksumFile != null) {
@@ -452,15 +485,22 @@ public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDesc
         private final File checksumFile;
         private final List<String> missingFileNames;
         private final List<String> extraInChecksum;
+        private final boolean contentValidated;
 
-        private ChecksumValidationResult(File checksumFile, List<String> missingFileNames, List<String> extraInChecksum) {
+        private ChecksumValidationResult(File checksumFile, List<String> missingFileNames, List<String> extraInChecksum,
+                boolean contentValidated) {
             this.checksumFile = checksumFile;
             this.missingFileNames = missingFileNames;
             this.extraInChecksum = extraInChecksum;
+            this.contentValidated = contentValidated;
         }
 
         private boolean isValid() {
-            return missingFileNames.isEmpty() && extraInChecksum.isEmpty();
+            return contentValidated && missingFileNames.isEmpty() && extraInChecksum.isEmpty();
+        }
+
+        private boolean wasContentValidated() {
+            return contentValidated;
         }
 
         private File getChecksumFile() {

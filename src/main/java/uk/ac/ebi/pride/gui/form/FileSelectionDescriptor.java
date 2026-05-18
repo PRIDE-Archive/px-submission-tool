@@ -143,6 +143,10 @@ public class FileSelectionDescriptor extends ContextAwareNavigationPanelDescript
             if (r.isValid()) {
                 return true;
             }
+            if (!r.wasContentValidated()) {
+                showChecksumFileNotProvidedOrUnreadable(checksumDataFile == null ? null : checksumDataFile.getFile());
+                return false;
+            }
 
             showInvalidChecksumFileError(checksumDataFile == null ? null : checksumDataFile.getFile(), r);
         } catch (IOException e) {
@@ -162,6 +166,20 @@ public class FileSelectionDescriptor extends ContextAwareNavigationPanelDescript
             }
         }
         return null;
+    }
+
+    private void showChecksumFileNotProvidedOrUnreadable(File checksumFile) {
+        String message;
+        if (checksumFile != null && checksumFile.exists() && !checksumFile.canRead()) {
+            message = "The checksum file cannot be read.";
+        } else {
+            message = "The checksum file is not provided.";
+        }
+        JOptionPane.showMessageDialog(
+                ((App) App.getInstance()).getMainFrame(),
+                message,
+                "Checksum file",
+                JOptionPane.WARNING_MESSAGE);
     }
 
     private void showInvalidChecksumFileError(File checksumFile, ChecksumSubmissionValidator.Result result) {

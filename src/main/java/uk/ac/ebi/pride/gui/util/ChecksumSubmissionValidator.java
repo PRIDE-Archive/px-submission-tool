@@ -20,14 +20,24 @@ public final class ChecksumSubmissionValidator {
     public static final class Result {
         private final List<String> missingInChecksum;
         private final List<String> extraInChecksum;
+        private final boolean contentValidated;
 
-        public Result(List<String> missingInChecksum, List<String> extraInChecksum) {
+        public Result(List<String> missingInChecksum, List<String> extraInChecksum, boolean contentValidated) {
             this.missingInChecksum = Collections.unmodifiableList(new ArrayList<>(missingInChecksum));
             this.extraInChecksum = Collections.unmodifiableList(new ArrayList<>(extraInChecksum));
+            this.contentValidated = contentValidated;
+        }
+
+        /**
+         * True when the checksum file was read and compared to the selected files.
+         * When false, {@link #isValid()} is false and missing/extra lists are empty (no line-by-line validation ran).
+         */
+        public boolean wasContentValidated() {
+            return contentValidated;
         }
 
         public boolean isValid() {
-            return missingInChecksum.isEmpty() && extraInChecksum.isEmpty();
+            return contentValidated && missingInChecksum.isEmpty() && extraInChecksum.isEmpty();
         }
 
         public List<String> getMissingInChecksum() {
@@ -49,11 +59,7 @@ public final class ChecksumSubmissionValidator {
         }
 
         if (checksumFile == null || !checksumFile.exists() || !checksumFile.canRead()) {
-            List<String> missing = new ArrayList<>();
-            for (DataFile df : payloadFiles) {
-                missing.add(df.getFileName());
-            }
-            return new Result(missing, Collections.emptyList());
+            return new Result(Collections.emptyList(), Collections.emptyList(), false);
         }
 
         List<String> lineTokens = readFirstColumnTokens(checksumFile);
@@ -88,7 +94,7 @@ public final class ChecksumSubmissionValidator {
                 extras.add(token);
             }
         }
-        return new Result(missing, new ArrayList<>(extras));
+        return new Result(missing, new ArrayList<>(extras), true);
     }
 
     private static List<String> readFirstColumnTokens(File checksumFile) throws IOException {
