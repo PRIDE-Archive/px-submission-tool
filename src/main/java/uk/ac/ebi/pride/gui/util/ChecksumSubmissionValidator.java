@@ -7,9 +7,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Validates that the checksum manifest file ({@link Constant#CHECKSUM_FILE_NAME}) lists exactly
@@ -63,12 +61,14 @@ public final class ChecksumSubmissionValidator {
         }
 
         List<String> lineTokens = readFirstColumnTokens(checksumFile);
+        boolean[] claimed = new boolean[lineTokens.size()];
 
         List<String> missing = new ArrayList<>();
         for (DataFile df : payloadFiles) {
             boolean matched = false;
-            for (String token : lineTokens) {
-                if (matchesToken(token, df)) {
+            for (int i = 0; i < lineTokens.size(); i++) {
+                if (!claimed[i] && matchesToken(lineTokens.get(i), df)) {
+                    claimed[i] = true;
                     matched = true;
                     break;
                 }
@@ -78,51 +78,64 @@ public final class ChecksumSubmissionValidator {
             }
         }
 
-        Set<String> extras = new LinkedHashSet<>();
-        for (String token : lineTokens) {
-            if (token == null || token.isEmpty()) {
-                continue;
-            }
-            boolean matched = false;
-            for (DataFile df : payloadFiles) {
-                if (matchesToken(token, df)) {
-                    matched = true;
-                    break;
+        List<String> extras = new ArrayList<>();
+        for (int i = 0; i < lineTokens.size(); i++) {
+            if (!claimed[i]) {
+                String token = lineTokens.get(i);
+                if (token != null && !token.isEmpty()) {
+                    extras.add(token);
                 }
             }
-            if (!matched) {
-                extras.add(token);
-            }
         }
-        return new Result(missing, new ArrayList<>(extras), true);
+        return new Result(missing, extras, true);
     }
 
     private static List<String> readFirstColumnTokens(File checksumFile) throws IOException {
         List<String> tokens = new ArrayList<>();
         List<String> lines = java.nio.file.Files.readAllLines(checksumFile.toPath(), Charset.defaultCharset());
-        for (String line : lines) {
-            String trimmed = line.trim();
+        for (int lineNumber = 0; lineNumber < lines.size(); lineNumber++) {
+            String trimmed = lines.get(lineNumber).trim();
             if (trimmed.isEmpty() || trimmed.startsWith("#")) {
                 continue;
             }
-            String firstColumn = extractFirstColumn(trimmed);
-            if (firstColumn != null && !firstColumn.isEmpty()) {
-                tokens.add(firstColumn);
+            String[] columns = extractColumns(trimmed);
+            String path = columns[0];
+            String digest = columns[1];
+            if (path.isEmpty()) {
+                throw new IOException("Invalid " + Constant.CHECKSUM_FILE_NAME + " at line " + (lineNumber + 1)
+                        + ": missing file path.");
             }
+            if (digest.isEmpty()) {
+                throw new IOException("Invalid " + Constant.CHECKSUM_FILE_NAME + " at line " + (lineNumber + 1)
+                        + ": missing or empty checksum digest for \"" + path + "\".");
+            }
+            tokens.add(path);
         }
         return tokens;
     }
 
     /**
-     * First column is path/hash prefix. Tool-written lines use TAB before the checksum; paths may contain spaces.
+     * Parses path and checksum digest columns. TAB-separated lines are preferred; otherwise splits on whitespace
+     * with the last token as the digest (paths may contain spaces only when TAB-separated).
      */
-    private static String extractFirstColumn(String line) {
+    private static String[] extractColumns(String line) {
         int tab = line.indexOf('\t');
         if (tab >= 0) {
-            return line.substring(0, tab).trim();
+            return new String[] {
+                    line.substring(0, tab).trim(),
+                    line.substring(tab + 1).trim()
+            };
         }
         String[] parts = line.split("\\s+");
-        return parts.length > 0 ? parts[0] : null;
+        if (parts.length < 2) {
+            return new String[] {parts.length > 0 ? parts[0] : "", ""};
+        }
+        String digest = parts[parts.length - 1];
+        StringBuilder path = new StringBuilder(parts[0]);
+        for (int i = 1; i < parts.length - 1; i++) {
+            path.append(' ').append(parts[i]);
+        }
+        return new String[] {path.toString(), digest};
     }
 
     static boolean matchesToken(String token, DataFile df) {
