@@ -416,6 +416,7 @@ summary.dataset.accept.license.text=<html><body>Please accept <a href="http://ww
 checksum.submit.button.title = Next
 checksum.large.icon = icon/64x64/sha1.png
 checksum.default.message = Calculating checksum
+checksum.complete.ready.message = Your checksum.txt already lists all selected files. Click Next to continue.
 
 # Help
 help.main.set=help/MainHelp.hs

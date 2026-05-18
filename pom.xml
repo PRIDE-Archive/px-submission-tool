@@ -112,17 +112,17 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
-            <groupId>uk.ac.ebi.pride.sdrf</groupId>
-            <artifactId>jsdrf</artifactId>
-            <version>${uk.ac.ebi.pride.sdrf.jsdrf.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>uk.ac.ebi.pride.utilities</groupId>
-                    <artifactId>ols-client</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>uk.ac.ebi.pride.sdrf</groupId>-->
+<!--            <artifactId>jsdrf</artifactId>-->
+<!--            <version>${uk.ac.ebi.pride.sdrf.jsdrf.version}</version>-->
+<!--            <exclusions>-->
+<!--                <exclusion>-->
+<!--                    <groupId>uk.ac.ebi.pride.utilities</groupId>-->
+<!--                    <artifactId>ols-client</artifactId>-->
+<!--                </exclusion>-->
+<!--            </exclusions>-->
+<!--        </dependency>-->
         <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jdk8 -->
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>

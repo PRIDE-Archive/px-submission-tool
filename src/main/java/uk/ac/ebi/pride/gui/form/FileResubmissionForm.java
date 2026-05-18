@@ -294,9 +294,8 @@ public class FileResubmissionForm extends Form implements TaskListener<DataFileV
             List<DataFile> previouslySubmittedFiles = appContext.getResubmissionRecord().getResubmission().getDataFiles();
             appContext.getResubmissionRecord().getResubmission().getResubmission().clear();
             // remove from newly added files(Submission)
-            for (DataFile dataFile: appContext.getSubmissionRecord().getSubmission().getDataFiles()) {
-                if(!dataFile.getFileName().equals("checksum.txt"))
-                    appContext.removeDatafile(dataFile);
+            for (DataFile dataFile : new java.util.ArrayList<>(appContext.getSubmissionRecord().getSubmission().getDataFiles())) {
+                appContext.removeDatafile(dataFile);
             }
             // update resubmission file summary
             for (DataFile dataFile: previouslySubmittedFiles) {

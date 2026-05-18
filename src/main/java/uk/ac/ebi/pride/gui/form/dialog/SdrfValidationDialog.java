@@ -1,0 +1,520 @@
+package uk.ac.ebi.pride.gui.form.dialog;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.data.model.DataFile;
+import uk.ac.ebi.pride.gui.form.comp.ContextAwareDialog;
+import uk.ac.ebi.pride.gui.form.comp.NonOpaquePanel;
+import uk.ac.ebi.pride.gui.navigation.NavigationControlPanel;
+import uk.ac.ebi.pride.gui.util.DataFileValidationMessage;
+import uk.ac.ebi.pride.gui.util.SdrfValidatorClient;
+import uk.ac.ebi.pride.gui.util.ValidationState;
+import uk.ac.ebi.pride.gui.util.WarningMessageGenerator;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+
+public class SdrfValidationDialog extends ContextAwareDialog {
+    private static final Logger logger = LoggerFactory.getLogger(SdrfValidationDialog.class);
+    private static final String SDRF_VALIDATOR_PORTAL_URL = "https://www.ebi.ac.uk/pride/services/sdrf-validator";
+
+    private final DataFile dataFile;
+    private final SdrfValidatorClient validatorClient;
+    private final JButton templateDropdownButton;
+    private final JPopupMenu templatePopupMenu;
+    private final JPanel templateSelectionPanel;
+    private final List<JCheckBox> templateCheckBoxes;
+    private final JCheckBox skipOntologyCheckBox;
+    private final JCheckBox useOlsCacheOnlyCheckBox;
+    private final JButton validateButton;
+    private final JButton closeButton;
+    private final JTextArea resultTextArea;
+    private final JLabel statusLabel;
+
+    private SdrfValidatorClient.ValidationResult validationResult;
+    private boolean cancelled = true;
+    private boolean templatesLoading;
+    private boolean validationInProgress;
+
+    public static SdrfValidatorClient.ValidationResult showDialog(Frame owner, DataFile dataFile)
+            throws Exception {
+        SdrfValidatorClient validatorClient = new SdrfValidatorClient();
+        AtomicReference<SdrfValidationDialog> dialogReference = new AtomicReference<>();
+
+        runOnEventDispatchThread(() -> {
+            SdrfValidationDialog dialog = new SdrfValidationDialog(owner, dataFile, validatorClient);
+            dialog.setLocationRelativeTo(owner);
+            dialogReference.set(dialog);
+            dialog.setVisible(true);
+        });
+
+        SdrfValidationDialog dialog = dialogReference.get();
+        if (dialog == null || dialog.cancelled) {
+            return null;
+        }
+        return dialog.validationResult;
+    }
+
+    /**
+     * Runs SDRF validation via the PRIDE API dialog and maps the outcome to {@link DataFileValidationMessage}.
+     *
+     * @return {@code null} if validation succeeded; otherwise a non-null error message
+     */
+    public static DataFileValidationMessage validateSdrf(Frame parent, DataFile dataFile) {
+        try {
+            SdrfValidatorClient.ValidationResult validationResult = showDialog(parent, dataFile);
+            if (validationResult == null) {
+                logger.warn("SDRF API validation cancelled for file {}", dataFile.getFileName());
+                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getCancelledSDRFValidationWarning());
+            }
+            if (!validationResult.isValid() || validationResult.getError_count() > 0) {
+                logger.error("Error in SDRF file {}. PRIDE SDRF Validator API reported {} errors and {} warnings.",
+                        dataFile.getFileName(), validationResult.getError_count(), validationResult.getWarning_count());
+                validationResult.getErrors().forEach(error -> logger.error(error.format()));
+                validationResult.getWarnings().forEach(warning -> logger.warn(warning.format()));
+                return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSDRFFileWarning(validationResult));
+            }
+        } catch (Exception e) {
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            } else if (e instanceof InvocationTargetException) {
+                Throwable cause = ((InvocationTargetException) e).getCause();
+                if (cause instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+            logger.error("Error validating SDRF file {} with PRIDE SDRF Validator API", dataFile.getFileName(), e);
+            return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSDRFFileWarning());
+        }
+        return null;
+    }
+
+    private static void runOnEventDispatchThread(Runnable runnable) throws InvocationTargetException, InterruptedException {
+        if (SwingUtilities.isEventDispatchThread()) {
+            runnable.run();
+        } else {
+            SwingUtilities.invokeAndWait(runnable);
+        }
+    }
+
+    private SdrfValidationDialog(Frame owner,
+                                 DataFile dataFile,
+                                 SdrfValidatorClient validatorClient) {
+        super(owner, "SDRF validation", true);
+        this.dataFile = dataFile;
+        this.validatorClient = validatorClient;
+        this.templateDropdownButton = new JButton("Select templates");
+        this.templatePopupMenu = new JPopupMenu();
+        this.templateSelectionPanel = new JPanel();
+        this.templateCheckBoxes = new ArrayList<>();
+        this.skipOntologyCheckBox = new JCheckBox("Skip ontology term validation");
+        this.useOlsCacheOnlyCheckBox = new JCheckBox("Use OLS cache only", true);
+        this.validateButton = new JButton("Validate");
+        this.closeButton = new JButton(appContext.getProperty("close.button.label"));
+        this.resultTextArea = new JTextArea();
+        this.statusLabel = new JLabel("Loading SDRF validation templates...");
+        configureTemplateDropdown();
+        initComponents();
+    }
+
+    private void configureTemplateDropdown() {
+        templateDropdownButton.setHorizontalAlignment(SwingConstants.LEFT);
+        templateDropdownButton.setToolTipText("Select one or more SDRF validation templates");
+        templateDropdownButton.addActionListener(e -> showTemplatePopup());
+
+        templateSelectionPanel.setLayout(new BoxLayout(templateSelectionPanel, BoxLayout.Y_AXIS));
+        JScrollPane templateScrollPane = new JScrollPane(templateSelectionPanel);
+        templateScrollPane.setBorder(BorderFactory.createEmptyBorder());
+        templateScrollPane.setPreferredSize(new Dimension(520, 220));
+
+        templatePopupMenu.setLayout(new BorderLayout());
+        templatePopupMenu.add(templateScrollPane, BorderLayout.CENTER);
+    }
+
+    private void showTemplatePopup() {
+        if (!templateCheckBoxes.isEmpty()) {
+            templatePopupMenu.show(templateDropdownButton, 0, templateDropdownButton.getHeight());
+        }
+    }
+
+    private void initComponents() {
+        setSize(new Dimension(760, 560));
+        setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                closeIfAllowed();
+            }
+
+            @Override
+            public void windowOpened(WindowEvent e) {
+                loadTemplates();
+            }
+        });
+
+        JPanel contentPanel = new JPanel(new BorderLayout(10, 10));
+        contentPanel.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        setContentPane(contentPanel);
+
+        contentPanel.add(createDetailsPanel(), BorderLayout.NORTH);
+        contentPanel.add(createResultPanel(), BorderLayout.CENTER);
+        contentPanel.add(createControlPanel(), BorderLayout.SOUTH);
+
+        validateButton.addActionListener(e -> validateSdrf());
+        closeButton.addActionListener(e -> closeIfAllowed());
+        setTemplateLoadingInProgress(true);
+    }
+
+    private void refreshValidateButtonEnabled() {
+        boolean idle = !templatesLoading && !validationInProgress;
+        validateButton.setEnabled(idle && !getSelectedTemplateNames().isEmpty());
+    }
+
+    private JPanel createDetailsPanel() {
+        JPanel detailsPanel = new JPanel(new GridBagLayout());
+        detailsPanel.setBorder(BorderFactory.createTitledBorder("SDRF details"));
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.insets = new Insets(4, 4, 4, 4);
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.fill = GridBagConstraints.HORIZONTAL;
+
+        addDetailsRow(detailsPanel, constraints, 0, "File:", dataFile.getFileName());
+        File validationFile = getValidationFile();
+        addDetailsRow(detailsPanel, constraints, 1, "Path:", validationFile.getAbsolutePath());
+        addDetailsRow(detailsPanel, constraints, 2, "Size:", formatFileSize(validationFile));
+
+        constraints.gridx = 0;
+        constraints.gridy = 3;
+        constraints.weightx = 0;
+        detailsPanel.add(new JLabel("Templates:"), constraints);
+
+        constraints.gridx = 1;
+        constraints.gridy = 3;
+        constraints.weightx = 1;
+        detailsPanel.add(templateDropdownButton, constraints);
+
+        constraints.gridx = 1;
+        constraints.gridy = 4;
+        detailsPanel.add(skipOntologyCheckBox, constraints);
+
+        constraints.gridy = 5;
+        detailsPanel.add(useOlsCacheOnlyCheckBox, constraints);
+
+        constraints.gridx = 0;
+        constraints.gridy = 6;
+        constraints.gridwidth = 2;
+        constraints.weightx = 1;
+        statusLabel.setBorder(BorderFactory.createEmptyBorder(6, 0, 0, 0));
+        detailsPanel.add(statusLabel, constraints);
+
+        constraints.gridx = 0;
+        constraints.gridy = 7;
+        constraints.gridwidth = 2;
+        constraints.weightx = 1;
+        detailsPanel.add(createSdrfValidatorLinkLabel(), constraints);
+
+        return detailsPanel;
+    }
+
+    private void addDetailsRow(JPanel detailsPanel, GridBagConstraints constraints, int row, String label, String value) {
+        constraints.gridx = 0;
+        constraints.gridy = row;
+        constraints.gridwidth = 1;
+        constraints.weightx = 0;
+        detailsPanel.add(new JLabel(label), constraints);
+
+        constraints.gridx = 1;
+        constraints.gridy = row;
+        constraints.weightx = 1;
+        detailsPanel.add(new JLabel(value), constraints);
+    }
+
+    private JComponent createSdrfValidatorLinkLabel() {
+        JLabel linkLabel = new JLabel("<html><a href=\"" + SDRF_VALIDATOR_PORTAL_URL + "\">SDRF Validator</a></html>");
+        linkLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        linkLabel.setBorder(BorderFactory.createEmptyBorder(2, 0, 0, 0));
+        linkLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                try {
+                    if (!Desktop.isDesktopSupported()) {
+                        JOptionPane.showMessageDialog(
+                                SdrfValidationDialog.this,
+                                "Opening links is not supported on this system.\nPlease open this URL manually:\n" + SDRF_VALIDATOR_PORTAL_URL,
+                                "SDRF validation",
+                                JOptionPane.INFORMATION_MESSAGE);
+                        return;
+                    }
+                    Desktop.getDesktop().browse(URI.create(SDRF_VALIDATOR_PORTAL_URL));
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(
+                            SdrfValidationDialog.this,
+                            "Could not open the SDRF Validator portal.\nPlease open this URL manually:\n" + SDRF_VALIDATOR_PORTAL_URL,
+                            "SDRF validation",
+                            JOptionPane.WARNING_MESSAGE);
+                }
+            }
+        });
+        return linkLabel;
+    }
+
+    private JPanel createResultPanel() {
+        JPanel resultPanel = new JPanel(new BorderLayout());
+        resultPanel.setBorder(BorderFactory.createTitledBorder("Validation errors and warnings"));
+
+        resultTextArea.setEditable(false);
+        resultTextArea.setLineWrap(true);
+        resultTextArea.setWrapStyleWord(true);
+        resultTextArea.setText("Validation has not run yet.");
+        resultPanel.add(new JScrollPane(resultTextArea), BorderLayout.CENTER);
+        return resultPanel;
+    }
+
+    private JPanel createControlPanel() {
+        JPanel controlPanel = new NavigationControlPanel();
+        controlPanel.setLayout(new BorderLayout());
+
+        JPanel ctrlPane = new NonOpaquePanel(new FlowLayout(FlowLayout.RIGHT));
+        ctrlPane.add(validateButton);
+        ctrlPane.add(closeButton);
+        controlPanel.add(ctrlPane, BorderLayout.EAST);
+        return controlPanel;
+    }
+
+    private void loadTemplates() {
+        SwingWorker<List<SdrfValidatorClient.TemplateInfo>, Void> worker = new SwingWorker<>() {
+            @Override
+            protected List<SdrfValidatorClient.TemplateInfo> doInBackground() throws Exception {
+                return validatorClient.getTemplates();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    setTemplates(get());
+                    statusLabel.setText("Choose one or more validation templates, then validate the SDRF file.");
+                    resultTextArea.setText("Validation has not run yet.");
+                } catch (Exception e) {
+                    setTemplates(SdrfValidatorClient.getFallbackTemplates());
+                    statusLabel.setText("Could not load templates from API. Using the bundled template list.");
+                    resultTextArea.setText("Template loading failed:\n" + e.getMessage()
+                            + "\n\nThe bundled template list is available for validation.");
+                } finally {
+                    setTemplateLoadingInProgress(false);
+                }
+            }
+        };
+        worker.execute();
+    }
+
+    private void setTemplates(List<SdrfValidatorClient.TemplateInfo> templates) {
+        templateSelectionPanel.removeAll();
+        templateCheckBoxes.clear();
+        for (SdrfValidatorClient.TemplateInfo template : templates) {
+            JCheckBox templateCheckBox = new JCheckBox(template.toString());
+            templateCheckBox.putClientProperty("template", template);
+            templateCheckBox.addItemListener(e -> {
+                updateTemplateDropdownLabel();
+                refreshValidateButtonEnabled();
+            });
+            templateCheckBoxes.add(templateCheckBox);
+            templateSelectionPanel.add(templateCheckBox);
+        }
+        templateSelectionPanel.revalidate();
+        templateSelectionPanel.repaint();
+        updateTemplateDropdownLabel();
+        refreshValidateButtonEnabled();
+    }
+
+    private List<String> getSelectedTemplateNames() {
+        List<String> selectedTemplateNames = new ArrayList<>();
+        for (JCheckBox templateCheckBox : templateCheckBoxes) {
+            if (templateCheckBox.isSelected()) {
+                SdrfValidatorClient.TemplateInfo template =
+                        (SdrfValidatorClient.TemplateInfo) templateCheckBox.getClientProperty("template");
+                selectedTemplateNames.add(template.getName());
+            }
+        }
+        return selectedTemplateNames;
+    }
+
+    private void updateTemplateDropdownLabel() {
+        List<String> selectedTemplateNames = getSelectedTemplateNames();
+        if (selectedTemplateNames.isEmpty()) {
+            templateDropdownButton.setText("Select templates");
+            templateDropdownButton.setToolTipText("Select one or more SDRF validation templates");
+            return;
+        }
+
+        String selectedTemplatesText = String.join(", ", selectedTemplateNames);
+        templateDropdownButton.setToolTipText(selectedTemplatesText);
+        if (selectedTemplateNames.size() <= 2) {
+            templateDropdownButton.setText(selectedTemplatesText);
+        } else {
+            templateDropdownButton.setText(selectedTemplateNames.get(0) + ", "
+                    + selectedTemplateNames.get(1) + " +" + (selectedTemplateNames.size() - 2) + " more");
+        }
+    }
+
+    private void validateSdrf() {
+        List<String> selectedTemplateNames = getSelectedTemplateNames();
+        if (selectedTemplateNames.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Please select at least one SDRF validation template.", "SDRF validation", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        setValidationInProgress(true);
+        SwingWorker<SdrfValidatorClient.ValidationResult, Void> worker = new SwingWorker<>() {
+            @Override
+            protected SdrfValidatorClient.ValidationResult doInBackground() throws Exception {
+                return validatorClient.validate(
+                        getValidationFile(),
+                        selectedTemplateNames,
+                        skipOntologyCheckBox.isSelected(),
+                        useOlsCacheOnlyCheckBox.isSelected());
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    validationResult = get();
+                    cancelled = false;
+                    resultTextArea.setText(formatValidationResult(validationResult));
+                    resultTextArea.setCaretPosition(0);
+                    statusLabel.setText(validationResult.isValid()
+                            ? "SDRF validation completed successfully."
+                            : "SDRF validation completed with errors.");
+                } catch (Exception e) {
+                    validationResult = buildFailedValidationResult(e);
+                    cancelled = false;
+                    resultTextArea.setText(formatValidationResult(validationResult));
+                    resultTextArea.setCaretPosition(0);
+                    statusLabel.setText("SDRF validation failed.");
+                } finally {
+                    setValidationInProgress(false);
+                }
+            }
+        };
+        worker.execute();
+    }
+
+    private void setTemplateLoadingInProgress(boolean inProgress) {
+        this.templatesLoading = inProgress;
+        templateDropdownButton.setEnabled(!inProgress);
+        skipOntologyCheckBox.setEnabled(!inProgress);
+        useOlsCacheOnlyCheckBox.setEnabled(!inProgress);
+        if (inProgress) {
+            resultTextArea.setText("Loading templates from PRIDE SDRF Validator API...");
+        }
+        refreshValidateButtonEnabled();
+    }
+
+    private SdrfValidatorClient.ValidationResult buildFailedValidationResult(Exception exception) {
+        SdrfValidatorClient.ValidationResult result = new SdrfValidatorClient.ValidationResult();
+        SdrfValidatorClient.ValidationIssue issue = new SdrfValidatorClient.ValidationIssue();
+        issue.setMsg("Unable to validate SDRF with PRIDE SDRF Validator API: " + exception.getMessage());
+        result.setValid(false);
+        result.setErrors(List.of(issue));
+        result.setError_count(1);
+        return result;
+    }
+
+    private void setValidationInProgress(boolean inProgress) {
+        this.validationInProgress = inProgress;
+        templateDropdownButton.setEnabled(!inProgress);
+        skipOntologyCheckBox.setEnabled(!inProgress);
+        useOlsCacheOnlyCheckBox.setEnabled(!inProgress);
+        closeButton.setEnabled(!inProgress);
+        if (inProgress) {
+            statusLabel.setText("Validating SDRF with PRIDE SDRF Validator API...");
+            resultTextArea.setText("Validation is running. Please wait...");
+        }
+        refreshValidateButtonEnabled();
+    }
+
+    private String formatValidationResult(SdrfValidatorClient.ValidationResult result) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("Valid: ").append(result.isValid() ? "yes" : "no").append('\n');
+        builder.append("Templates used: ").append(String.join(", ", result.getTemplates_used())).append('\n');
+        if (result.getSdrf_pipelines_version() != null) {
+            builder.append("sdrf-pipelines version: ").append(result.getSdrf_pipelines_version()).append('\n');
+        }
+        builder.append('\n');
+
+        builder.append("Errors (").append(result.getError_count()).append(")\n");
+        if (result.getErrors().isEmpty()) {
+            builder.append(result.getError_count() > 0
+                    ? "The API reported errors but did not return error message details.\n"
+                    : "No errors reported.\n");
+        } else {
+            appendIssues(builder, result.getErrors());
+        }
+        builder.append('\n');
+
+        builder.append("Warnings (").append(result.getWarning_count()).append(")\n");
+        if (result.getWarnings().isEmpty()) {
+            builder.append(result.getWarning_count() > 0
+                    ? "The API reported warnings but did not return warning message details.\n"
+                    : "No warnings reported.\n");
+        } else {
+            appendIssues(builder, result.getWarnings());
+        }
+
+        return builder.toString();
+    }
+
+    private void appendIssues(StringBuilder builder, List<SdrfValidatorClient.ValidationIssue> issues) {
+        for (SdrfValidatorClient.ValidationIssue issue : issues) {
+            builder.append("- ").append(issue.format()).append('\n');
+        }
+    }
+
+    private String formatFileSize(File file) {
+        long bytes = file.length();
+        if (bytes < 1024) {
+            return bytes + " bytes";
+        }
+        long kilobytes = bytes / 1024;
+        if (kilobytes < 1024) {
+            return kilobytes + " KB";
+        }
+        return (kilobytes / 1024) + " MB";
+    }
+
+    private File getValidationFile() {
+        if (dataFile.getFilePath() != null) {
+            return Paths.get(dataFile.getFilePath().toString()).toFile();
+        }
+        return dataFile.getFile();
+    }
+
+    private void closeIfAllowed() {
+        if (validationResult == null && !cancelled) {
+            dispose();
+            return;
+        }
+        if (validationResult == null) {
+            int option = JOptionPane.showConfirmDialog(
+                    this,
+                    "SDRF validation has not completed. Do you want to cancel it?",
+                    "SDRF validation",
+                    JOptionPane.YES_NO_OPTION,
+                    JOptionPane.WARNING_MESSAGE);
+            if (option != JOptionPane.YES_OPTION) {
+                return;
+            }
+        }
+        dispose();
+    }
+}

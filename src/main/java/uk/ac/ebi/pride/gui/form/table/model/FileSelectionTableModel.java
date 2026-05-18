@@ -67,12 +67,9 @@ public class FileSelectionTableModel extends PxTableModel implements PropertyCha
     }
 
     public void removeAllRows(){
-        // Remove all files except checksum.txt
-        List<DataFile> files = appContext.getSubmissionRecord().getSubmission().getDataFiles();
+        List<DataFile> files = new java.util.ArrayList<>(appContext.getSubmissionRecord().getSubmission().getDataFiles());
         for (DataFile file : files) {
-            if (!file.getFileName().equals("checksum.txt")) {
-                appContext.removeDatafile(file);
-            }
+            appContext.removeDatafile(file);
         }
     }
 
@@ -128,7 +125,8 @@ public class FileSelectionTableModel extends PxTableModel implements PropertyCha
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         String propName = evt.getPropertyName();
-        if (AppContext.ADD_NEW_DATA_FILE.equals(propName) || AppContext.REMOVE_DATA_FILE.equals(propName) || AppContext.NEW_SUBMISSION_FILE.equals(propName)) {
+        if (AppContext.ADD_NEW_DATA_FILE.equals(propName) || AppContext.REMOVE_DATA_FILE.equals(propName)
+                || AppContext.CHANGE_DATA_FILE_PATH.equals(propName) || AppContext.NEW_SUBMISSION_FILE.equals(propName)) {
             fireTableDataChanged();
         }
     }

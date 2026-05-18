@@ -2,6 +2,7 @@ package uk.ac.ebi.pride.gui.form;
 
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
+import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.gui.form.table.TableFactory;
 import uk.ac.ebi.pride.toolsuite.gui.blocker.DefaultGUIBlocker;
@@ -12,12 +13,17 @@ import uk.ac.ebi.pride.gui.task.FileScanAndValidationTask;
 import uk.ac.ebi.pride.toolsuite.gui.task.Task;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskEvent;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskListener;
+import uk.ac.ebi.pride.gui.util.ChecksumSubmissionValidator;
+import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.gui.util.DataFileValidationMessage;
 import uk.ac.ebi.pride.gui.util.ValidationState;
 
 import javax.help.HelpBroker;
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -112,9 +118,106 @@ public class FileSelectionDescriptor extends ContextAwareNavigationPanelDescript
         if (message.getState().equals(ValidationState.SUCCESS)) {
             FileSelectionForm form = (FileSelectionForm) getNavigationPanel();
             form.hideWarnings();
+            if (!validateCustomChecksumFileIfProvided()) {
+                firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, true, false);
+                return;
+            }
             firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, false, true);
         } else {
             firePropertyChange(BEFORE_HIDING_FOR_NEXT_PANEL_PROPERTY, true, false);
+        }
+    }
+
+    private boolean validateCustomChecksumFileIfProvided() {
+        if (!appContext.isCustomChecksumFileProvided()) {
+            return true;
+        }
+
+        Submission submission = appContext.getSubmissionRecord().getSubmission();
+        DataFile checksumDataFile = getChecksumDataFile(submission);
+        try {
+            ChecksumSubmissionValidator.Result r = ChecksumSubmissionValidator.validate(
+                    submission.getDataFiles(),
+                    checksumDataFile == null ? null : checksumDataFile.getFile(),
+                    Constant.CHECKSUM_FILE_NAME);
+            if (r.isValid()) {
+                return true;
+            }
+            if (!r.wasContentValidated()) {
+                showChecksumFileNotProvidedOrUnreadable(checksumDataFile == null ? null : checksumDataFile.getFile());
+                return false;
+            }
+
+            showInvalidChecksumFileError(checksumDataFile == null ? null : checksumDataFile.getFile(), r);
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(
+                    ((App) App.getInstance()).getMainFrame(),
+                    "Could not read the checksum file.\n\n" + e.getMessage(),
+                    "Invalid checksum file",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+        return false;
+    }
+
+    private DataFile getChecksumDataFile(Submission submission) {
+        for (DataFile dataFile : submission.getDataFiles()) {
+            if (Constant.CHECKSUM_FILE_NAME.equals(dataFile.getFileName())) {
+                return dataFile;
+            }
+        }
+        return null;
+    }
+
+    private void showChecksumFileNotProvidedOrUnreadable(File checksumFile) {
+        String message;
+        if (checksumFile != null && checksumFile.exists() && !checksumFile.canRead()) {
+            message = "The checksum file cannot be read.";
+        } else {
+            message = "The checksum file is not provided.";
+        }
+        JOptionPane.showMessageDialog(
+                ((App) App.getInstance()).getMainFrame(),
+                message,
+                "Checksum file",
+                JOptionPane.WARNING_MESSAGE);
+    }
+
+    private void showInvalidChecksumFileError(File checksumFile, ChecksumSubmissionValidator.Result result) {
+        String name = Constant.CHECKSUM_FILE_NAME;
+        StringBuilder message = new StringBuilder("The provided " + name + " is not valid for the selected files.");
+        if (checksumFile != null) {
+            message.append("\n\nChecksum file:\n").append(checksumFile.getAbsolutePath());
+        }
+        if (!result.getMissingInChecksum().isEmpty()) {
+            message.append("\n\nSelected files not listed in ").append(name).append(":");
+            appendLimitedLines(message, result.getMissingInChecksum());
+        }
+        if (!result.getExtraInChecksum().isEmpty()) {
+            message.append("\n\nEntries in ").append(name).append(" that do not match any selected file:");
+            appendLimitedLines(message, result.getExtraInChecksum());
+        }
+
+        JTextArea messageArea = new JTextArea(message.toString());
+        messageArea.setEditable(false);
+        messageArea.setOpaque(false);
+        messageArea.setLineWrap(true);
+        messageArea.setWrapStyleWord(true);
+        messageArea.setColumns(72);
+
+        JOptionPane.showMessageDialog(
+                ((App) App.getInstance()).getMainFrame(),
+                messageArea,
+                "Invalid checksum file",
+                JOptionPane.ERROR_MESSAGE);
+    }
+
+    private void appendLimitedLines(StringBuilder message, List<String> items) {
+        int limit = Math.min(items.size(), 20);
+        for (int i = 0; i < limit; i++) {
+            message.append("\n- ").append(items.get(i));
+        }
+        if (items.size() > limit) {
+            message.append("\n... and ").append(items.size() - limit).append(" more");
         }
     }
 

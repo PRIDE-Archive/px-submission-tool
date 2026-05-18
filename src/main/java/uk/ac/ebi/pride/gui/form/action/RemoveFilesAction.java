@@ -44,12 +44,10 @@ public class RemoveFilesAction extends AbstractAction {
 
         @Override
         protected Void doInBackground() throws Exception {
-            List<DataFile> files = ((AppContext) App.getInstance().getDesktopContext()).getSubmissionRecord().getSubmission().getDataFiles();
-            for (DataFile file: files){
-                // Don't remove checksum.txt files
-                if (!file.getFileName().equals("checksum.txt")) {
-                    ((AppContext) App.getInstance().getDesktopContext()).removeDatafile(file);
-                }
+            AppContext context = (AppContext) App.getInstance().getDesktopContext();
+            List<DataFile> files = new java.util.ArrayList<>(context.getSubmissionRecord().getSubmission().getDataFiles());
+            for (DataFile file : files) {
+                context.removeDatafile(file);
             }
             return null;
         }

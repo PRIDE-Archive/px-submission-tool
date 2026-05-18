@@ -21,6 +21,7 @@ import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
 import uk.ac.ebi.pride.data.validation.SubmissionValidator;
 import uk.ac.ebi.pride.data.validation.ValidationMessage;
 import uk.ac.ebi.pride.data.validation.ValidationReport;
+import uk.ac.ebi.pride.gui.form.dialog.SdrfValidationDialog;
 import uk.ac.ebi.pride.gui.util.Constant;
 import uk.ac.ebi.pride.gui.util.DataFileValidationMessage;
 import uk.ac.ebi.pride.gui.util.PrideConverterSupport;
@@ -30,8 +31,6 @@ import uk.ac.ebi.pride.jaxb.model.CvParam;
 import uk.ac.ebi.pride.jaxb.model.SampleDescription;
 import uk.ac.ebi.pride.jaxb.xml.unmarshaller.PrideXmlUnmarshaller;
 import uk.ac.ebi.pride.jaxb.xml.unmarshaller.PrideXmlUnmarshallerFactory;
-import uk.ac.ebi.pride.sdrf.validate.Main;
-import uk.ac.ebi.pride.sdrf.validate.model.ValidationError;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 
 import javax.swing.*;
@@ -332,10 +331,10 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
         for (DataFile dataFile : submission.getDataFiles()) {
             if (dataFile.getFileType().equals(ProjectFileType.EXPERIMENTAL_DESIGN)) {
                 isSdrfFound = true;
-                Set<ValidationError> errors = Main.validate(dataFile.getFilePath(), true);
-                if (errors.size() != 0) {
-                    logger.error("Error in file " + dataFile.getFileName());
-                    return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSDRFFileWarning());
+                DataFileValidationMessage sdrfValidationMessage =
+                        SdrfValidationDialog.validateSdrf(((App) App.getInstance()).getMainFrame(), dataFile);
+                if (sdrfValidationMessage != null) {
+                    return sdrfValidationMessage;
                 }
             }
         }
@@ -409,7 +408,7 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
 
     private boolean hasNoChanges() {
         boolean hasNewFiles = submission.getDataFiles().stream()
-                .anyMatch(f -> !f.getFileName().equals("checksum.txt"));
+                .anyMatch(f -> !f.getFileName().equals(Constant.CHECKSUM_FILE_NAME));
         boolean hasStateChanges = resubmission.getResubmission().values().stream()
                 .anyMatch(state -> !state.equals(ResubmissionFileChangeState.NONE));
         return !hasNewFiles && !hasStateChanges;
@@ -463,7 +462,7 @@ public class ResubmissionFileScanAndValidationTask extends TaskAdapter<DataFileV
                 .filter(f -> f.getValue().equals(ResubmissionFileChangeState.NONE))
                 .map(f -> f.getKey().getFileName()).collect(Collectors.toList());
         List<String> duplicateFileNames = submission.getDataFiles().stream().map(DataFile::getFileName)
-                .filter(fileName -> !fileName.equals("checksum.txt"))
+                .filter(fileName -> !fileName.equals(Constant.CHECKSUM_FILE_NAME))
                 .filter(alreadyPresentFiles::contains)
                 .collect(Collectors.toList());
 

@@ -42,6 +42,11 @@ public final class Constant {
 
     public static final String PX_SUBMISSION_SUMMARY_FILE = "submission.px";
 
+    /**
+     * Basename of the submission checksum manifest. Must match {@code checksum.filename} in {@code setting.prop}.
+     */
+    public static final String CHECKSUM_FILE_NAME = "checksum.txt";
+
     public static final Pattern PUBMED_PATTERN = Pattern.compile("^\\d[\\d, ]+\\d$");
 
     public static final Pattern REANALYSIS_PX_ACC_PATTERN = Pattern.compile("^(PXD\\d{6}[, ]*)+$");

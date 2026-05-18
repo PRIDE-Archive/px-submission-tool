@@ -16,13 +16,12 @@ import uk.ac.ebi.pride.data.util.MassSpecFileFormat;
 import uk.ac.ebi.pride.data.validation.SubmissionValidator;
 import uk.ac.ebi.pride.data.validation.ValidationMessage;
 import uk.ac.ebi.pride.data.validation.ValidationReport;
+import uk.ac.ebi.pride.gui.form.dialog.SdrfValidationDialog;
 import uk.ac.ebi.pride.gui.util.*;
 import uk.ac.ebi.pride.jaxb.model.CvParam;
 import uk.ac.ebi.pride.jaxb.model.SampleDescription;
 import uk.ac.ebi.pride.jaxb.xml.unmarshaller.PrideXmlUnmarshaller;
 import uk.ac.ebi.pride.jaxb.xml.unmarshaller.PrideXmlUnmarshallerFactory;
-import uk.ac.ebi.pride.sdrf.validate.Main;
-import uk.ac.ebi.pride.sdrf.validate.model.ValidationError;
 import uk.ac.ebi.pride.toolsuite.gui.task.TaskAdapter;
 
 import javax.swing.*;
@@ -362,20 +361,10 @@ public class FileScanAndValidationTask extends TaskAdapter<DataFileValidationMes
         for (DataFile dataFile : submission.getDataFiles()) {
             if (dataFile.getFileType().equals(ProjectFileType.EXPERIMENTAL_DESIGN)) {
                 isSdrfFound = true;
-                try {
-                    Set<ValidationError> validationErrors = Main.validate(dataFile.getFilePath(), true);
-                    if (validationErrors != null && validationErrors.size() > 0) {
-                        logger.error("Error in file " + dataFile.getFileName() + "Please make sure you upload proper EXPERIMENTAL_DESIGN file sdrf.tsv");
-                        validationErrors.stream().forEach(
-                                error -> logger.error(error.getMessage())
-                        );
-                        return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSDRFFileWarning());
-                    }
-
-                } catch (Exception e) {
-                    logger.error("Error in file " + dataFile.getFileName() + "Please make sure you upload proper Experimental design file sdrf.tsv");
-                    logger.error(e.getMessage());
-                    return new DataFileValidationMessage(ValidationState.ERROR, WarningMessageGenerator.getInvalidSDRFFileWarning());
+                DataFileValidationMessage sdrfValidationMessage =
+                        SdrfValidationDialog.validateSdrf(((App) App.getInstance()).getMainFrame(), dataFile);
+                if (sdrfValidationMessage != null) {
+                    return sdrfValidationMessage;
                 }
             }
         }
