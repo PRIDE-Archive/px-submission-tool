@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.Map;
 
 public class CalculateChecksumDescriptor extends ContextAwareNavigationPanelDescriptor implements TaskListener<DataFile, ChecksumMessage> {
-    private static final Logger logger = LoggerFactory.getLogger(SubmissionTypeDescriptor.class);
+    private static final Logger logger = LoggerFactory.getLogger(CalculateChecksumDescriptor.class);
     private static final String PRIDE_CHECKSUM_GUIDE_URL = "https://www.ebi.ac.uk/pride/markdownpage/checksum";
 
     public static Map<String, Tuple<String, String>> checksumCalculatedFiles = new HashMap<>();
