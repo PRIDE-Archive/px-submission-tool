@@ -1,11 +1,17 @@
 package uk.ac.ebi.pride.pxsubmit.controller;
 
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableMap;
+import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.layout.*;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -659,7 +665,7 @@ public class FileSelectionStep extends AbstractWizardStep {
 
         if (hasSdrf) {
             validationFeedback.addInfo("SDRF/experimental design file included - metadata will be auto-populated");
-            validationFeedback.addInfo("Click Next to open SDRF template/validation popup");
+            validationFeedback.addInfo("Click Next to open SDRF template selection and validation popup");
         }
 
         // Success messages
@@ -733,12 +739,22 @@ public class FileSelectionStep extends AbstractWizardStep {
         }
     }
 
+    private String buildSdrfValidateUri(List<String> templates) {
+        StringBuilder uri = new StringBuilder(SDRF_VALIDATOR_URL);
+        uri.append("?skip_ontology=false&use_ols_cache_only=true");
+        for (String template : templates) {
+            uri.append("&template=")
+                    .append(URLEncoder.encode(template, StandardCharsets.UTF_8));
+        }
+        return uri.toString();
+    }
+
     /**
-     * Validate an SDRF file using the PRIDE SDRF Validator REST API (called when the user selects a template).
+     * Validate an SDRF file using the PRIDE SDRF Validator REST API.
      * Sends the file as multipart/form-data and displays results as non-blocking feedback.
      * Runs asynchronously to avoid blocking the UI.
      */
-    private void validateSdrfFile(File file, String template) {
+    private void validateSdrfFile(File file, List<String> templates) {
         validationFeedback.addInfo("SDRF: Validating " + file.getName() + "...");
 
         Thread.startVirtualThread(() -> {
@@ -746,13 +762,8 @@ public class FileSelectionStep extends AbstractWizardStep {
                 String boundary = "----SdrfBoundary" + System.currentTimeMillis();
                 byte[] fileBytes = Files.readAllBytes(file.toPath());
 
-                // Build multipart body
                 byte[] body = buildMultipartBody(boundary, file.getName(), fileBytes);
-
-                String templateParam = URLEncoder.encode(template, StandardCharsets.UTF_8);
-                String validateUri = SDRF_VALIDATOR_URL
-                        + "?template=" + templateParam
-                        + "&skip_ontology=false&use_ols_cache_only=true";
+                String validateUri = buildSdrfValidateUri(templates);
 
                 HttpClient client = HttpClient.newBuilder()
                         .version(HttpClient.Version.HTTP_1_1)
@@ -776,18 +787,13 @@ public class FileSelectionStep extends AbstractWizardStep {
         });
     }
 
-    private ValidationOutcome validateSdrfFileSync(File file, String template) {
+    private ValidationOutcome validateSdrfFileSync(File file, List<String> templates) {
         try {
             String boundary = "----SdrfBoundary" + System.currentTimeMillis();
             byte[] fileBytes = Files.readAllBytes(file.toPath());
 
-            // Build multipart body
             byte[] body = buildMultipartBody(boundary, file.getName(), fileBytes);
-
-            String templateParam = URLEncoder.encode(template, StandardCharsets.UTF_8);
-            String validateUri = SDRF_VALIDATOR_URL
-                    + "?template=" + templateParam
-                    + "&skip_ontology=false&use_ols_cache_only=true";
+            String validateUri = buildSdrfValidateUri(templates);
 
             HttpClient client = HttpClient.newBuilder()
                     .version(HttpClient.Version.HTTP_1_1)
@@ -856,12 +862,22 @@ public class FileSelectionStep extends AbstractWizardStep {
         List<String> templateNames = sdrfTemplateNames.isEmpty()
                 ? List.of("ms-proteomics")
                 : sdrfTemplateNames;
+        List<String> filteredTemplates = templateNames.stream()
+                .filter(name -> !"base".equalsIgnoreCase(name))
+                .toList();
+        final List<String> selectableTemplates = filteredTemplates.isEmpty()
+                ? List.of("ms-proteomics")
+                : filteredTemplates;
 
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("SDRF file detected");
-        dialog.setHeaderText("Select SDRF template and run validation");
-        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dialog.setHeaderText("Select SDRF template(s) and run validation");
+        ButtonType validateButtonType = new ButtonType("Validate", ButtonBar.ButtonData.APPLY);
+        dialog.getDialogPane().getButtonTypes().setAll(validateButtonType, ButtonType.CLOSE);
         dialog.setResizable(true);
+
+        Button validateButton = (Button) dialog.getDialogPane().lookupButton(validateButtonType);
+        validateButton.addEventFilter(ActionEvent.ACTION, event -> event.consume());
 
         VBox content = new VBox(10);
         content.setPadding(new Insets(10));
@@ -870,64 +886,63 @@ public class FileSelectionStep extends AbstractWizardStep {
                 sdrfFiles.stream().map(File::getName).collect(Collectors.joining(", ")));
         fileLabel.setWrapText(true);
 
-        HBox templateRow = new HBox(8);
-        templateRow.setAlignment(Pos.CENTER_LEFT);
-        Label templateLabel = new Label("Template:");
-        ComboBox<String> templateCombo = new ComboBox<>();
-        templateCombo.getItems().setAll(templateNames);
-        templateCombo.setPrefWidth(260);
-        String preferred = templateNames.contains("ms-proteomics") ? "ms-proteomics" : templateNames.get(0);
-        templateCombo.getSelectionModel().select(preferred);
-        templateRow.getChildren().addAll(templateLabel, templateCombo);
+        Label templateHint = new Label(
+                "Select one or more compatible templates (e.g. ms-proteomics + human + dia-acquisition):");
+        templateHint.setWrapText(true);
+        templateHint.setStyle("-fx-text-fill: #555;");
 
-        Label status = new Label("Choose template and click Validate.");
+        ListView<String> templateList = new ListView<>();
+        templateList.getItems().setAll(selectableTemplates);
+        templateList.setPrefHeight(Math.min(220, 28 + selectableTemplates.size() * 26));
+        templateList.setPrefWidth(400);
+
+        ObservableMap<String, BooleanProperty> templateSelection = FXCollections.observableMap(new HashMap<>());
+        for (String name : selectableTemplates) {
+            templateSelection.put(name, new SimpleBooleanProperty("ms-proteomics".equals(name)));
+        }
+        templateList.setCellFactory(CheckBoxListCell.forListView(templateSelection::get));
+
+        Label status = new Label("Choose template(s) and click Validate.");
         status.setStyle("-fx-text-fill: #555;");
 
         Label resultSummary = new Label("No validation result yet.");
         resultSummary.setWrapText(true);
         resultSummary.setStyle("-fx-text-fill: #555;");
 
-        Label errorTitle = new Label("Errors:");
-        errorTitle.setStyle("-fx-font-weight: bold; -fx-text-fill: #dc3545;");
-        TextArea errorArea = new TextArea();
-        errorArea.setEditable(false);
-        errorArea.setWrapText(true);
-        errorArea.setPrefRowCount(8);
-        errorArea.setPromptText("No errors");
-        errorArea.setStyle("-fx-control-inner-background: #fff5f5;");
+        Label issuesTitle = new Label("Errors and warnings:");
+        issuesTitle.setStyle("-fx-font-weight: bold;");
 
-        Label warningTitle = new Label("Warnings:");
-        warningTitle.setStyle("-fx-font-weight: bold; -fx-text-fill: #856404;");
-        TextArea warningArea = new TextArea();
-        warningArea.setEditable(false);
-        warningArea.setWrapText(true);
-        warningArea.setPrefRowCount(6);
-        warningArea.setPromptText("No warnings");
-        warningArea.setStyle("-fx-control-inner-background: #fffbf0;");
+        TextArea issuesArea = new TextArea();
+        issuesArea.setEditable(false);
+        issuesArea.setWrapText(true);
+        issuesArea.setPrefRowCount(12);
+        issuesArea.setPromptText("No errors or warnings");
+        issuesArea.setStyle("-fx-control-inner-background: #fafafa;");
 
-        Button validateButton = new Button("Validate");
-        validateButton.setOnAction(evt -> {
-            String template = templateCombo.getValue();
-            if (template == null || template.isBlank()) {
-                status.setText("Please select a template.");
+        Runnable runValidation = () -> {
+            List<String> selectedTemplates = selectableTemplates.stream()
+                    .filter(name -> templateSelection.containsKey(name) && templateSelection.get(name).get())
+                    .toList();
+            if (selectedTemplates.isEmpty()) {
+                status.setText("Please select at least one template.");
                 status.setStyle("-fx-text-fill: #dc3545;");
                 return;
             }
-            status.setText("Validating SDRF file(s)...");
+            status.setText("Validating SDRF file(s) with: " + String.join(", ", selectedTemplates) + "...");
             status.setStyle("-fx-text-fill: #555;");
             validateButton.setDisable(true);
-            errorArea.clear();
-            warningArea.clear();
+            issuesArea.clear();
             resultSummary.setText("Validation in progress...");
             resultSummary.setStyle("-fx-text-fill: #555;");
 
+            final List<String> templatesToValidate = selectedTemplates;
             Thread.startVirtualThread(() -> {
                 List<String> allErrors = new ArrayList<>();
                 List<String> allWarnings = new ArrayList<>();
                 boolean allValid = true;
 
                 for (File file : sdrfFiles) {
-                    ValidationOutcome outcome = validateSdrfFileSync(file, template);
+                    ValidationOutcome outcome = validateSdrfFileSync(file, templatesToValidate);
                     if (!outcome.valid) {
                         allValid = false;
                     }
@@ -941,8 +956,7 @@ public class FileSelectionStep extends AbstractWizardStep {
                     status.setText("Validation completed.");
                     status.setStyle("-fx-text-fill: #555;");
 
-                    errorArea.setText(joinLines(allErrors));
-                    warningArea.setText(joinLines(allWarnings));
+                    issuesArea.setText(formatValidationIssues(allErrors, allWarnings));
 
                     if (finalAllValid && allErrors.isEmpty() && allWarnings.isEmpty()) {
                         resultSummary.setText("SDRF validation passed. No errors or warnings.");
@@ -951,26 +965,41 @@ public class FileSelectionStep extends AbstractWizardStep {
                         resultSummary.setText("SDRF validation passed with warnings.");
                         resultSummary.setStyle("-fx-text-fill: #856404; -fx-font-weight: bold;");
                     } else {
-                        resultSummary.setText("SDRF validation failed. Please review errors below.");
+                        resultSummary.setText("SDRF validation failed. Please review issues below.");
                         resultSummary.setStyle("-fx-text-fill: #dc3545; -fx-font-weight: bold;");
                     }
                 });
             });
-        });
+        };
+
+        validateButton.setOnAction(evt -> runValidation.run());
 
         content.getChildren().addAll(
                 fileLabel,
-                templateRow,
-                validateButton,
+                templateHint,
+                templateList,
                 status,
                 resultSummary,
-                errorTitle,
-                errorArea,
-                warningTitle,
-                warningArea
+                issuesTitle,
+                issuesArea
         );
         dialog.getDialogPane().setContent(content);
+        dialog.getDialogPane().setPrefWidth(520);
         dialog.showAndWait();
+    }
+
+    private String formatValidationIssues(List<String> errors, List<String> warnings) {
+        StringBuilder text = new StringBuilder();
+        if (errors != null && !errors.isEmpty()) {
+            text.append("Errors:\n").append(joinLines(errors));
+        }
+        if (warnings != null && !warnings.isEmpty()) {
+            if (!text.isEmpty()) {
+                text.append("\n\n");
+            }
+            text.append("Warnings:\n").append(joinLines(warnings));
+        }
+        return text.toString();
     }
 
     private String joinLines(List<String> messages) {
