@@ -1,17 +1,12 @@
 package uk.ac.ebi.pride.pxsubmit.controller;
 
 import javafx.application.Platform;
-import javafx.beans.property.BooleanProperty;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableMap;
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.CheckBoxListCell;
 import javafx.scene.layout.*;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -20,9 +15,11 @@ import javafx.stage.Stage;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
+import uk.ac.ebi.pride.pxsubmit.service.PrideCommonsFileValidationService;
 import uk.ac.ebi.pride.pxsubmit.service.SdrfParserService;
 import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
 import uk.ac.ebi.pride.pxsubmit.service.ValidationService;
+import uk.ac.ebi.pride.submissions.commons.exceptions.SubValidationException;
 import uk.ac.ebi.pride.pxsubmit.util.FileTypeDetector;
 import uk.ac.ebi.pride.pxsubmit.view.component.FileClassificationPanel;
 import uk.ac.ebi.pride.pxsubmit.view.component.FileTableView;
@@ -43,10 +40,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.StringJoiner;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -66,10 +66,13 @@ public class FileSelectionStep extends AbstractWizardStep {
     private ProgressBar validationProgress;
     private Label validationStatus;
 
-    private volatile boolean sdrfTemplatesFetchStarted;
+    private volatile CompletableFuture<List<String>> sdrfTemplatesLoadFuture;
     private List<String> sdrfTemplateNames = new ArrayList<>();
     private String sdrfPopupSignature;
     private boolean sdrfPopupShownForCurrentFiles;
+
+    private final PrideCommonsFileValidationService prideFileValidationService =
+            ServiceFactory.getInstance().createPrideCommonsFileValidationService();
 
     public FileSelectionStep(SubmissionModel model) {
         super("file-selection",
@@ -208,12 +211,14 @@ public class FileSelectionStep extends AbstractWizardStep {
         });
 
         ensureSdrfTemplatesLoaded();
+        preloadPrideValidationRules();
         updateSummary();
     }
 
     @Override
     protected void onStepEntering() {
         ensureSdrfTemplatesLoaded();
+        preloadPrideValidationRules();
         updateSummary();
     }
 
@@ -222,6 +227,10 @@ public class FileSelectionStep extends AbstractWizardStep {
         if (model.getFiles().isEmpty()) {
             return false;
         }
+
+//        if (!runPrideCommonsFileValidation()) {
+//            return false;
+//        }
 
         List<File> sdrfFiles = getSdrfFiles();
         if (sdrfFiles.isEmpty()) {
@@ -691,15 +700,133 @@ public class FileSelectionStep extends AbstractWizardStep {
     private static final String SDRF_TEMPLATES_URL =
             "https://www.ebi.ac.uk/pride/services/sdrf-validator/templates";
 
-    private void ensureSdrfTemplatesLoaded() {
-        if (sdrfTemplatesFetchStarted) {
-            return;
-        }
-        sdrfTemplatesFetchStarted = true;
-        Thread.startVirtualThread(this::fetchAndApplySdrfTemplates);
+    /** Preloads templates from the validator API in the background. */
+    private void preloadPrideValidationRules() {
+        Thread.startVirtualThread(() -> {
+            try {
+                prideFileValidationService.preloadConfig();
+            } catch (SubValidationException e) {
+                logger.warn("Could not preload PRIDE submission validation rules: {}", e.getMessage());
+            }
+        });
     }
 
-    private void fetchAndApplySdrfTemplates() {
+    /**
+     * Runs pride-submissions-commons validation when the user clicks Next (modal progress dialog).
+     */
+    private boolean runPrideCommonsFileValidation() {
+        AtomicBoolean passed = new AtomicBoolean(false);
+        AtomicReference<String> failureMessage = new AtomicReference<>();
+
+        Stage progressStage = new Stage();
+        progressStage.initModality(Modality.APPLICATION_MODAL);
+        progressStage.setTitle("Validating Files");
+        progressStage.setResizable(false);
+
+        VBox progressBox = new VBox(15);
+        progressBox.setAlignment(Pos.CENTER);
+        progressBox.setPadding(new Insets(20));
+        progressBox.setStyle("-fx-background-color: white;");
+
+        Label messageLabel = new Label("Checking files against PRIDE submission rules...");
+        messageLabel.setWrapText(true);
+        messageLabel.setStyle("-fx-font-size: 13px;");
+
+        ProgressIndicator progressIndicator = new ProgressIndicator();
+        progressIndicator.setMaxSize(50, 50);
+
+        progressBox.getChildren().addAll(messageLabel, progressIndicator);
+        progressStage.setScene(new Scene(progressBox, 360, 150));
+
+        Thread.startVirtualThread(() -> {
+            try {
+                PrideCommonsFileValidationService.ValidationResult result =
+                        prideFileValidationService.validate(new ArrayList<>(model.getFiles()));
+                Platform.runLater(() -> {
+                    applyPrideValidationResult(result);
+                    passed.set(result.valid());
+                    if (!result.valid()) {
+                        failureMessage.set(result.formattedDetails());
+                    }
+                    progressStage.close();
+                });
+            } catch (SubValidationException e) {
+                logger.error("PRIDE commons file validation failed", e);
+                Platform.runLater(() -> {
+                    validationFeedback.clear();
+                    validationFeedback.addError("Could not load PRIDE validation rules: " + e.getMessage());
+                    validationFeedback.addInfo("Check your network connection and try again.");
+                    failureMessage.set(e.getMessage());
+                    progressStage.close();
+                });
+            } catch (Exception e) {
+                logger.error("Unexpected error during PRIDE file validation", e);
+                Platform.runLater(() -> {
+                    validationFeedback.addError("Validation error: " + e.getMessage());
+                    failureMessage.set(e.getMessage());
+                    progressStage.close();
+                });
+            }
+        });
+
+        progressStage.showAndWait();
+
+        if (!passed.get() && failureMessage.get() != null) {
+            showError("File Validation Failed", failureMessage.get());
+        }
+        return passed.get();
+    }
+
+    private void applyPrideValidationResult(PrideCommonsFileValidationService.ValidationResult result) {
+        validationFeedback.clear();
+        if (result.valid()) {
+            validationFeedback.addInfo(result.summaryMessage());
+            for (String warning : result.warnings()) {
+                validationFeedback.addWarning(warning);
+            }
+            validationStatus.setText("PRIDE validation passed"
+                    + (result.warnings().isEmpty() ? "" : " (with warnings)"));
+            validationStatus.setStyle("-fx-text-fill: #28a745;");
+        } else {
+            for (String error : result.errors()) {
+                validationFeedback.addError(error);
+            }
+            for (String warning : result.warnings()) {
+                validationFeedback.addWarning(warning);
+            }
+            if (result.errors().isEmpty() && result.summaryMessage() != null) {
+                validationFeedback.addError(result.summaryMessage());
+            }
+            validationStatus.setText("PRIDE validation failed");
+            validationStatus.setStyle("-fx-text-fill: #dc3545;");
+        }
+    }
+
+    private void ensureSdrfTemplatesLoaded() {
+        startSdrfTemplatesLoad();
+    }
+
+    private CompletableFuture<List<String>> startSdrfTemplatesLoad() {
+        if (!sdrfTemplateNames.isEmpty()) {
+            return CompletableFuture.completedFuture(List.copyOf(sdrfTemplateNames));
+        }
+        CompletableFuture<List<String>> inFlight = sdrfTemplatesLoadFuture;
+        if (inFlight != null) {
+            return inFlight;
+        }
+        CompletableFuture<List<String>> future = CompletableFuture.supplyAsync(this::fetchSdrfTemplatesFromApi);
+        sdrfTemplatesLoadFuture = future;
+        future.whenComplete((names, error) -> {
+            if (error != null) {
+                logger.warn("SDRF templates load failed", error);
+                sdrfTemplatesLoadFuture = null;
+            }
+        });
+        return future;
+    }
+
+    /** Fetches template names from the SDRF validator /templates API (no local filtering). */
+    private List<String> fetchSdrfTemplatesFromApi() {
         try {
             HttpClient client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
             HttpRequest request = HttpRequest.newBuilder()
@@ -710,11 +837,9 @@ public class FileSelectionStep extends AbstractWizardStep {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {
                 logger.warn("SDRF templates API returned status {}", response.statusCode());
-                sdrfTemplatesFetchStarted = false;
-                Platform.runLater(() -> {
-                    validationFeedback.addWarning("SDRF: Could not load validator templates (HTTP " + response.statusCode() + ")");
-                });
-                return;
+                Platform.runLater(() -> validationFeedback.addWarning(
+                        "SDRF: Could not load validator templates (HTTP " + response.statusCode() + ")"));
+                return List.of();
             }
             ObjectMapper mapper = new ObjectMapper();
             JsonNode root = mapper.readTree(response.body());
@@ -730,12 +855,13 @@ public class FileSelectionStep extends AbstractWizardStep {
             }
             Collections.sort(names, String.CASE_INSENSITIVE_ORDER);
             sdrfTemplateNames = names;
+            logger.info("Loaded {} SDRF validator templates from API", names.size());
+            return List.copyOf(names);
         } catch (Exception e) {
             logger.warn("Failed to fetch SDRF validator templates", e);
-            sdrfTemplatesFetchStarted = false;
-            Platform.runLater(() -> {
-                validationFeedback.addWarning("SDRF: Could not load validator templates - " + e.getMessage());
-            });
+            Platform.runLater(() ->
+                    validationFeedback.addWarning("SDRF: Could not load validator templates - " + e.getMessage()));
+            return List.of();
         }
     }
 
@@ -859,25 +985,32 @@ public class FileSelectionStep extends AbstractWizardStep {
     }
 
     private void showSdrfValidationDialog(List<File> sdrfFiles) {
-        List<String> templateNames = sdrfTemplateNames.isEmpty()
+        List<String> templateNames;
+        try {
+            templateNames = startSdrfTemplatesLoad().get(30, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            logger.warn("Timed out loading SDRF templates from API");
+            templateNames = List.of();
+        } catch (Exception e) {
+            logger.warn("Failed waiting for SDRF templates", e);
+            templateNames = List.of();
+        }
+        if (templateNames.isEmpty() && !sdrfTemplateNames.isEmpty()) {
+            templateNames = List.copyOf(sdrfTemplateNames);
+        }
+        final List<String> selectableTemplates = templateNames.isEmpty()
                 ? List.of("ms-proteomics")
-                : sdrfTemplateNames;
-        List<String> filteredTemplates = templateNames.stream()
-                .filter(name -> !"base".equalsIgnoreCase(name))
-                .toList();
-        final List<String> selectableTemplates = filteredTemplates.isEmpty()
-                ? List.of("ms-proteomics")
-                : filteredTemplates;
+                : templateNames;
 
         Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("SDRF file detected");
+        dialog.setTitle("SDRF Validation");
         dialog.setHeaderText("Select SDRF template(s) and run validation");
         ButtonType validateButtonType = new ButtonType("Validate", ButtonBar.ButtonData.APPLY);
         dialog.getDialogPane().getButtonTypes().setAll(validateButtonType, ButtonType.CLOSE);
         dialog.setResizable(true);
 
         Button validateButton = (Button) dialog.getDialogPane().lookupButton(validateButtonType);
-        validateButton.addEventFilter(ActionEvent.ACTION, event -> event.consume());
+        // Consume APPLY so the dialog does not close; still run validation here (consume runs before setOnAction).
 
         VBox content = new VBox(10);
         content.setPadding(new Insets(10));
@@ -887,20 +1020,46 @@ public class FileSelectionStep extends AbstractWizardStep {
         fileLabel.setWrapText(true);
 
         Label templateHint = new Label(
-                "Select one or more compatible templates (e.g. ms-proteomics + human + dia-acquisition):");
+                "Templates are loaded from the PRIDE SDRF validator API. Combine compatible ones "
+                        + "(e.g. ms-proteomics + human + dia-acquisition). Avoid using \"base\" alone — it is an internal template.");
         templateHint.setWrapText(true);
         templateHint.setStyle("-fx-text-fill: #555;");
 
-        ListView<String> templateList = new ListView<>();
-        templateList.getItems().setAll(selectableTemplates);
-        templateList.setPrefHeight(Math.min(220, 28 + selectableTemplates.size() * 26));
-        templateList.setPrefWidth(400);
-
-        ObservableMap<String, BooleanProperty> templateSelection = FXCollections.observableMap(new HashMap<>());
+        MenuButton templateMenu = new MenuButton("Select templates…");
+        templateMenu.setMinWidth(280);
+        templateMenu.setMaxWidth(Double.MAX_VALUE);
+        List<CheckMenuItem> templateCheckItems = new ArrayList<>();
+        Label templateSelectionDetail = new Label();
+        templateSelectionDetail.setWrapText(true);
+        templateSelectionDetail.setStyle("-fx-text-fill: #555;");
+        Runnable refreshTemplateSelectionUi = () -> {
+            List<String> sel = templateCheckItems.stream()
+                    .filter(CheckMenuItem::isSelected)
+                    .map(CheckMenuItem::getText)
+                    .toList();
+            if (sel.isEmpty()) {
+                templateMenu.setText("Select templates…");
+                templateSelectionDetail.setText("0 templates selected.");
+            } else {
+                templateMenu.setText(String.join(", ", sel));
+                templateSelectionDetail.setText(sel.size() + " template" + (sel.size() == 1 ? "" : "s") + " selected.");
+            }
+        };
         for (String name : selectableTemplates) {
-            templateSelection.put(name, new SimpleBooleanProperty("ms-proteomics".equals(name)));
+            CheckMenuItem item = new CheckMenuItem(name);
+            item.setSelected("ms-proteomics".equals(name));
+            item.selectedProperty().addListener((obs, was, now) -> refreshTemplateSelectionUi.run());
+            templateCheckItems.add(item);
+            templateMenu.getItems().add(item);
         }
-        templateList.setCellFactory(CheckBoxListCell.forListView(templateSelection::get));
+        refreshTemplateSelectionUi.run();
+
+        HBox templateRow = new HBox(8);
+        templateRow.setAlignment(Pos.CENTER_LEFT);
+        Label templateFieldLabel = new Label("Templates:");
+        templateFieldLabel.setMinWidth(Region.USE_PREF_SIZE);
+        HBox.setHgrow(templateMenu, Priority.ALWAYS);
+        templateRow.getChildren().addAll(templateFieldLabel, templateMenu);
 
         Label status = new Label("Choose template(s) and click Validate.");
         status.setStyle("-fx-text-fill: #555;");
@@ -920,8 +1079,9 @@ public class FileSelectionStep extends AbstractWizardStep {
         issuesArea.setStyle("-fx-control-inner-background: #fafafa;");
 
         Runnable runValidation = () -> {
-            List<String> selectedTemplates = selectableTemplates.stream()
-                    .filter(name -> templateSelection.containsKey(name) && templateSelection.get(name).get())
+            List<String> selectedTemplates = templateCheckItems.stream()
+                    .filter(CheckMenuItem::isSelected)
+                    .map(CheckMenuItem::getText)
                     .toList();
             if (selectedTemplates.isEmpty()) {
                 status.setText("Please select at least one template.");
@@ -953,7 +1113,9 @@ public class FileSelectionStep extends AbstractWizardStep {
 
                 Platform.runLater(() -> {
                     validateButton.setDisable(false);
-                    status.setText("Validation completed.");
+                    status.setText("Validation completed (" + templatesToValidate.size() + " template"
+                            + (templatesToValidate.size() == 1 ? "" : "s") + ": "
+                            + String.join(", ", templatesToValidate) + ").");
                     status.setStyle("-fx-text-fill: #555;");
 
                     issuesArea.setText(formatValidationIssues(allErrors, allWarnings));
@@ -972,12 +1134,16 @@ public class FileSelectionStep extends AbstractWizardStep {
             });
         };
 
-        validateButton.setOnAction(evt -> runValidation.run());
+        validateButton.addEventFilter(ActionEvent.ACTION, event -> {
+            event.consume();
+            runValidation.run();
+        });
 
         content.getChildren().addAll(
                 fileLabel,
                 templateHint,
-                templateList,
+                templateRow,
+                templateSelectionDetail,
                 status,
                 resultSummary,
                 issuesTitle,

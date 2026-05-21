@@ -1,5 +1,6 @@
 package uk.ac.ebi.pride.pxsubmit.controller;
 
+import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -15,7 +16,7 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.regex.Pattern;
 
-import javafx.application.Platform;
+import uk.ac.ebi.pride.pxsubmit.view.component.CountrySearchField;
 
 /**
  * Step for collecting Lab Head / Principal Investigator information.
@@ -66,7 +67,7 @@ public class LabHeadStep extends AbstractWizardStep {
     private TextField nameField;
     private TextField emailField;
     private TextArea affiliationField;
-    private ComboBox<String> countryComboBox;
+    private CountrySearchField countrySearchField;
     private TextField orcidField;
     private Label orcidStatusLabel;
     private ProgressIndicator orcidSpinner;
@@ -147,13 +148,9 @@ public class LabHeadStep extends AbstractWizardStep {
         // Country
         VBox countrySection = createFieldSection("Country *",
             "Country of the lab head's institution", true);
-        countryComboBox = new ComboBox<>();
-        countryComboBox.getItems().addAll(COUNTRY_LIST);
-        countryComboBox.setPromptText("Select country...");
-        countryComboBox.setPrefWidth(400);
-        countryComboBox.setEditable(true);
+        countrySearchField = new CountrySearchField(COUNTRY_LIST);
 
-        countrySection.getChildren().add(countryComboBox);
+        countrySection.getChildren().add(countrySearchField);
 
         // ORCID
         VBox orcidSection = createFieldSection("ORCID iD",
@@ -202,6 +199,10 @@ public class LabHeadStep extends AbstractWizardStep {
         return scrollPane;
     }
 
+    private String resolveCountrySelection() {
+        return countrySearchField.getResolvedCountry();
+    }
+
     private VBox createFieldSection(String title, String description, boolean required) {
         VBox section = new VBox(5);
 
@@ -235,13 +236,9 @@ public class LabHeadStep extends AbstractWizardStep {
         affiliationField.textProperty().bindBidirectional(model.labHeadAffiliationProperty());
         orcidField.textProperty().bindBidirectional(model.labHeadOrcidProperty());
 
-        // Bind country ComboBox to model
-        countryComboBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-            model.setLabHeadCountry(newVal);
-        });
-        // Pre-fill from model if available
+        countrySearchField.setOnCountrySelected(model::setLabHeadCountry);
         if (model.getLabHeadCountry() != null) {
-            countryComboBox.setValue(model.getLabHeadCountry());
+            countrySearchField.selectCountry(model.getLabHeadCountry());
         }
 
         // Validation: name, email, affiliation, and country required
@@ -249,16 +246,16 @@ public class LabHeadStep extends AbstractWizardStep {
                 String name = nameField.getText();
                 String email = emailField.getText();
                 String affiliation = affiliationField.getText();
-                String country = countryComboBox.getValue();
+                String country = resolveCountrySelection();
                 return name != null && !name.trim().isEmpty()
                     && email != null && EMAIL_PATTERN.matcher(email.trim()).matches()
                     && affiliation != null && !affiliation.trim().isEmpty()
-                    && country != null && !country.trim().isEmpty();
+                    && country != null;
             },
             nameField.textProperty(),
             emailField.textProperty(),
             affiliationField.textProperty(),
-            countryComboBox.valueProperty()
+            countrySearchField.getSearchField().textProperty()
         ));
 
         valid.addListener((obs, oldVal, newVal) -> updateValidationLabel());
@@ -299,7 +296,7 @@ public class LabHeadStep extends AbstractWizardStep {
                 nameField.setText("John Smith");
                 emailField.setText("john.smith@example.org");
                 affiliationField.setText("Department of Proteomics, Test University, Test City, UK");
-                countryComboBox.setValue("United Kingdom");
+                countrySearchField.selectCountry("United Kingdom");
                 orcidField.setText("0000-0002-1825-0097");
             }
         }
@@ -315,7 +312,7 @@ public class LabHeadStep extends AbstractWizardStep {
         boolean hasName = nameField.getText() != null && !nameField.getText().trim().isEmpty();
         boolean hasEmail = emailField.getText() != null && EMAIL_PATTERN.matcher(emailField.getText().trim()).matches();
         boolean hasAffiliation = affiliationField.getText() != null && !affiliationField.getText().trim().isEmpty();
-        boolean hasCountry = countryComboBox.getValue() != null && !countryComboBox.getValue().trim().isEmpty();
+        boolean hasCountry = resolveCountrySelection() != null;
 
         if (hasName && hasEmail && hasAffiliation && hasCountry) {
             validationLabel.setText("\u2714 All required fields completed");
@@ -359,12 +356,13 @@ public class LabHeadStep extends AbstractWizardStep {
             return false;
         }
 
-        String country = countryComboBox.getValue();
-        if (country == null || country.trim().isEmpty()) {
-            showError("Please select the lab head's country");
-            countryComboBox.requestFocus();
+        String country = resolveCountrySelection();
+        if (country == null) {
+            showError("Please select a country from the list (type to search, e.g. \"Uni\" for United Kingdom)");
+            countrySearchField.getSearchField().requestFocus();
             return false;
         }
+        model.setLabHeadCountry(country);
 
         // Validate ORCID format and existence if provided
         String orcid = orcidField.getText();

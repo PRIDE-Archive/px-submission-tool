@@ -542,11 +542,7 @@ public class ProjectMetadataStep extends AbstractWizardStep {
 
         // MenuButton acts as a multi-select dropdown
         projectTagsMenuButton = new MenuButton("Select project tags...");
-        projectTagsMenuButton.setStyle(
-            "-fx-background-color: white; " +
-            "-fx-border-color: #ccc; " +
-            "-fx-border-radius: 4; " +
-            "-fx-background-radius: 4;");
+        projectTagsMenuButton.getStyleClass().add("form-dropdown");
         projectTagsMenuButton.setPrefWidth(400);
 
         // Load tags from CV file and add as CheckMenuItems
