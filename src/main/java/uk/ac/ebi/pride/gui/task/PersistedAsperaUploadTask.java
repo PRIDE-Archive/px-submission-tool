@@ -1,13 +1,11 @@
 package uk.ac.ebi.pride.gui.task;
 
-import com.asperasoft.faspmanager.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.archive.submission.model.submission.DropBoxDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
-import uk.ac.ebi.pride.gui.aspera.AsperaFileUploader;
-import uk.ac.ebi.pride.gui.aspera.FaspManagerSingleton;
+import uk.ac.ebi.pride.gui.aspera.*;
 import uk.ac.ebi.pride.gui.data.SubmissionRecord;
 import uk.ac.ebi.pride.gui.task.ftp.UploadErrorMessage;
 import uk.ac.ebi.pride.gui.task.ftp.UploadProgressMessage;
@@ -23,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Uploads data via Aspera.
  */
 
-public class PersistedAsperaUploadTask extends AsperaGeneralTask implements TransferListener {
+public class PersistedAsperaUploadTask extends AsperaGeneralTask implements AscpTransferListener {
 
     public static final Logger logger = LoggerFactory.getLogger(AsperaUploadTask.class);
 
@@ -80,10 +78,10 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
     /**
      * Handles uploading of files using Asopera
      *
-     * @throws FaspManagerException         problems using the Aspera API to perform the upload
+     * @throws AscpTransferException         problems using ascp CLI to perform the upload
      * @throws UnsupportedEncodingException problems creating a temporary file
      */
-    void asperaUpload() throws FaspManagerException, UnsupportedEncodingException {
+    void asperaUpload() throws AscpTransferException, UnsupportedEncodingException {
         // Prepare submission to calculate totalFileSize and set up filesToSubmitIter
         prepareSubmission();
 
@@ -99,9 +97,8 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
         String cleanPassword = dropBox.getPassword() != null ? dropBox.getPassword().trim() : null;
         logger.info("Cleaned credentials - Username: '{}', Password: '{}'", cleanUsername, cleanPassword != null ? "[PROVIDED]" : "[NULL]");
         uploader.setRemoteLocation(uploadDetail.getHost(), cleanUsername, cleanPassword);
-        XferParams params = AsperaFileUploader.defaultTransferParams();
-        params.createPath = true;
-        uploader.setTransferParameters(params);
+        AscpTransferConfig config = AsperaFileUploader.defaultTransferConfig();
+        uploader.setTransferConfig(config);
         uploader.setListener(this);
 
         // Log connection details
@@ -131,7 +128,7 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
         try {
             String transferId = uploader.uploadFiles(filesToSubmit, folder);
             logger.info("Transfer started with ID: {}", transferId);
-        } catch (FaspManagerException e) {
+        } catch (AscpTransferException e) {
             logger.error("Aspera upload failed: {}", e.getMessage(), e);
             throw e;
         } catch (Exception e) {
@@ -247,30 +244,6 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
     }
 
     /**
-     * Monitor FaspManager resource usage
-     */
-    private void monitorFaspManagerResources() {
-        try {
-            Runtime runtime = Runtime.getRuntime();
-            long totalMemory = runtime.totalMemory();
-            long freeMemory = runtime.freeMemory();
-            long usedMemory = totalMemory - freeMemory;
-
-            logger.debug("Memory usage - Used: {} MB, Free: {} MB, Total: {} MB",
-                    usedMemory / (1024 * 1024),
-                    freeMemory / (1024 * 1024),
-                    totalMemory / (1024 * 1024));
-
-            // If memory usage is high, consider cleanup
-            if (usedMemory > (totalMemory * 0.8)) {
-                logger.warn("High memory usage detected - consider FaspManager cleanup");
-            }
-        } catch (Exception e) {
-            logger.debug("Error monitoring memory usage", e);
-        }
-    }
-
-    /**
      * Checks if transfer monitoring is enabled
      */
     private boolean isMonitoringEnabled() {
@@ -291,23 +264,10 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
      * @param fileInfo      the file information
      */
     @Override
-    public void fileSessionEvent(TransferEvent transferEvent, SessionStats sessionStats, FileInfo fileInfo) {
+    public void fileSessionEvent(AscpTransferEvent transferEvent, AscpSessionStats sessionStats, AscpFileInfo fileInfo) {
         logger.info("Received file session event: {} with stats: {}", transferEvent, sessionStats);
         if (transferCompleted.get()) {
             logger.debug("Transfer already completed, ignoring event: {}", transferEvent);
-            return;
-        }
-        FaspManager faspManager;
-        try {
-            faspManager = FaspManagerSingleton.getInstance().getFaspManager();
-        } catch (FaspManagerException e) {
-            String initErrorMsg = "Failed to initialize Aspera transfer manager" +
-                    "\n\nThis could be due to network restrictions, firewall settings, or network instability." +
-                    "\n\nAlternative options:" +
-                    "\n1. Go back one step and select FTP upload instead" +
-                    "\n2. Use Globus for file transfer: https://www.ebi.ac.uk/pride/markdownpage/globus" +
-                    "\n3. Contact your system administrator to enable Aspera ports (TCP & UDP 33001)";
-            publish(new UploadErrorMessage(this, null, initErrorMsg));
             return;
         }
         // Calculate total files - use filesToSubmit.size() which includes submission file
@@ -356,14 +316,16 @@ public class PersistedAsperaUploadTask extends AsperaGeneralTask implements Tran
                 publish(new UploadProgressMessage(this, null, totalNumOfFiles, uploadedNumOfFiles, totalNumOfFiles, uploadedNumOfFiles));
                 break;
             case FILE_ERROR:
-                logger.info("File " + fileInfo.getName() + "Failed to submit" + fileInfo.getErrDescription());
-                String fileErrorMsg = "Failed to upload file via Aspera: " + fileInfo.getName() +
+                String failedFile = fileInfo != null ? fileInfo.getName() : "unknown";
+                logger.info("File {} failed to submit: {}", failedFile,
+                        fileInfo != null ? fileInfo.getErrDescription() : transferEvent.getDescription());
+                String fileErrorMsg = "Failed to upload file via Aspera: " + failedFile +
                         "\n\nAlternative: Consider using Globus for file transfer." +
                         "\nVisit: https://www.ebi.ac.uk/pride/markdownpage/globus";
                 publish(new UploadErrorMessage(this, null, fileErrorMsg));
                 break;
             case FILE_STOP:
-                if (fileInfo.getState().equals(FileState.FINISHED)) {
+                if (fileInfo != null && fileInfo.getState() == AscpFileState.FINISHED) {
                     finishedFileCount++;
                     String[] fileNameArray = fileInfo.getName().split("/");
                     logger.info("=== FILE TRANSFER COMPLETED ===");

@@ -45,7 +45,7 @@ px.submission.summary.file.format.url = http://www.proteomexchange.org/docs/Subm
 # url for resubmission
 px.submission.detail.url = http://www.proteomexchange.org/archive-submission-ws/resubmission/projects
 
-# aspera client binary (using ascp)
+# aspera client binary (ascp 4.x CLI — no FaspManager Java SDK required)
 aspera.client.mac.binary = aspera/bin/mac-intel/ascp
 aspera.client.linux32.binary = aspera/bin/linux-32/ascp
 aspera.client.linux64.binary = aspera/bin/linux-64/ascp

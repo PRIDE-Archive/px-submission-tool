@@ -193,11 +193,11 @@
             <version>${uk.ac.ebi.pride.toolsuite-ols-dialog.version}</version>
         </dependency>
         <!--Aspera manager-->
-        <dependency>
-            <groupId>com.aspera</groupId>
-            <artifactId>faspmanager</artifactId>
-            <version>3.7.2.0</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.aspera</groupId>-->
+<!--            <artifactId>faspmanager</artifactId>-->
+<!--            <version>3.7.2.0</version>-->
+<!--        </dependency>-->
         <!-- PRIDE Reporting library -->
         <dependency>
             <groupId>uk.ac.ebi.pride.px</groupId>
@@ -334,6 +334,14 @@
                 <version>2.8.2</version>
                 <configuration>
                     <skip>true</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.0</version>
+                <configuration>
+                    <classpathScope>test</classpathScope>
                 </configuration>
             </plugin>
             <plugin>

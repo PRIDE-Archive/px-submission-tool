@@ -1,6 +1,5 @@
 package uk.ac.ebi.pride.gui.form;
 
-import com.asperasoft.faspmanager.FaspManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;

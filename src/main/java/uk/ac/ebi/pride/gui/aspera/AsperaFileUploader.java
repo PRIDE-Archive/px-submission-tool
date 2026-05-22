@@ -1,6 +1,5 @@
 package uk.ac.ebi.pride.gui.aspera;
 
-import com.asperasoft.faspmanager.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
@@ -10,170 +9,79 @@ import java.io.File;
 import java.util.Collection;
 
 /**
- * Class to perform a file upload using Aspera.
- *
- * @author Florian Reisinger
- * @since 0.1
+ * Performs Aspera uploads via the bundled ascp CLI (ascp 4.x).
  */
 public class AsperaFileUploader {
 
     private static final Logger logger = LoggerFactory.getLogger(AsperaFileUploader.class);
     private static final DesktopContext appContext = App.getInstance().getDesktopContext();
 
-    /**
-     * The default TransferListener to listen to transfer events raised by the FaspManager during a
-     * transfer.
-     */
-    private TransferListener listener;
-    /**
-     * The server settings: host + user + password
-     */
-    private RemoteLocation remoteLocation;
+    private AscpTransferListener listener;
+    private final AscpCliUploader cliUploader;
+    private String host;
+    private String user;
+    private String password;
+    private AscpTransferConfig transferConfig;
 
-    private final String ebiHost = appContext.getProperty("aspera.EBI.host");
-    private final String ebiUser = appContext.getProperty("aspera.EBI.user");
-    private final String ebiPass = appContext.getProperty("aspera.EBI.password");
-
-    // Pride's public location for downloading data, not used in uploading
-    private final RemoteLocation pridePublicLocation = new RemoteLocation(ebiHost, ebiUser, ebiPass);
-
-    /**
-     * The default parameters to use for a file transfer.
-     */
-    private XferParams transferParameters;
-
-    /**
-     * Set the default transfer parameters for this transfer. For supported parameters see class
-     * #XferParams For additional descriptions see the Aspera documentation of the command line tool.
-     * For example at http://download.asperasoft.com/download/docs/ascp/2.7/html/index.html
-     *
-     * <p>
-     *
-     * @return the default transfer parameters.
-     */
-    public static XferParams defaultTransferParams() {
-        var xferParams = new XferParams();
-        xferParams.tcpPort = Integer.parseInt(appContext.getProperty("aspera.xfer.tcpPort"));
-        xferParams.udpPort =
-                Integer.parseInt(
-                        appContext.getProperty("aspera.xfer.udpPort")); // port used for data transfer
-        xferParams.targetRateKbps =
-                Integer.parseInt(
-                        appContext.getProperty("aspera.xfer.targetRateKbps")); // 10000000 Kbps (= 10 Gbps)
-        xferParams.minimumRateKbps =
-                Integer.parseInt(appContext.getProperty("aspera.xfer.minimumRateKbps")); //    100 Kbps
-        xferParams.encryption = Encryption.DEFAULT;
-        xferParams.overwrite = Overwrite.DIFFERENT;
-        xferParams.generateManifest = Manifest.NONE;
-        xferParams.policy = Policy.FAIR;
-        xferParams.resumeCheck = Resume.FILE_ATTRIBUTES;
-        xferParams.preCalculateJobSize =
-                Boolean.parseBoolean(appContext.getProperty("aspera.xfer.preCalculateJobSize"));
-        xferParams.createPath = Boolean.parseBoolean(appContext.getProperty("aspera.xfer.createPath"));
-        return xferParams;
+    public AsperaFileUploader(File ascpExecutable) {
+        this.listener = new DefaultAscpTransferListener();
+        this.transferConfig = AscpTransferConfig.fromAppContext();
+        this.cliUploader = new AscpCliUploader(ascpExecutable, transferConfig);
+        this.cliUploader.setListener(listener);
+        logger.info("Aspera CLI uploader initialized with: {}", ascpExecutable.getAbsolutePath());
     }
 
-    /**
-     * Configure the fasp Manager with the path to the Aspera executable contained in this
-     * distribution.
-     *
-     * @param ascpExecutable the ascp executable file.
-     * @throws InitializationException if the initialization with the provided path failed.
-     */
-    public AsperaFileUploader(File ascpExecutable) throws FaspManagerException {
-        this.listener = new DefaultAsperaTransferListener(); // set default listener
-        this.transferParameters = defaultTransferParams(); // set default transfer parameters
-        Environment.setFasp2ScpPath(getAscpPath(ascpExecutable)); // set the location of the ascp executable
-        FaspManagerSingleton.getInstance().addListener(listener);// set the default listener
+    public static AscpTransferConfig defaultTransferConfig() {
+        return AscpTransferConfig.fromAppContext();
     }
 
-    private String getAscpPath(File executable) {
-        logger.info("Aspera executable location: {}", executable);
-        if (executable == null || !executable.exists()) {
-            throw new IllegalArgumentException("Specified ascp executable does not exist.");
-        }
-        return executable.getAbsolutePath();
-    }
-
-    public TransferListener getListener() {
+    public AscpTransferListener getListener() {
         return listener;
     }
 
-    /**
-     * Set the TransferListener. This will also set the listener on the FaspManager used to control
-     * the transfer.
-     *
-     * @param listener the TransferListener used to monitor the transfer (listen to the FaspManagerS
-     *                 events).
-     * @throws FaspManagerException if the addition of the listener to the FaspManager did not
-     *                              succeed.
-     */
-    public void setListener(TransferListener listener) throws FaspManagerException {
-        // overwrite the default listener
-        FaspManagerSingleton.getInstance().removeListener(this.listener);
+    public void setListener(AscpTransferListener listener) {
         this.listener = listener;
-        FaspManagerSingleton.getInstance().addListener(listener);
+        cliUploader.setListener(listener);
     }
 
-    public XferParams getTransferParameters() {
-        return transferParameters;
+    public AscpTransferConfig getTransferConfig() {
+        return transferConfig;
     }
 
-    public void setTransferParameters(XferParams transferParameters) {
-        this.transferParameters = transferParameters;
-    }
-
-    public String getRemoteLocation() {
-        return remoteLocation.toString();
+    public void setTransferConfig(AscpTransferConfig transferConfig) {
+        this.transferConfig = transferConfig != null ? transferConfig : AscpTransferConfig.fromAppContext();
     }
 
     public void setRemoteLocation(String server, String user, String pass) {
-        logger.info("Setting RemoteLocation - Server: {}, User: {}, Pass: {}", server, user, pass != null ? "[PROVIDED]" : "[NULL]");
-        this.remoteLocation = new RemoteLocation(server, user, pass);
-        logger.info("RemoteLocation created successfully");
+        logger.info(
+                "Setting remote location - Server: {}, User: {}, Pass: {}",
+                server,
+                user,
+                pass != null ? "[PROVIDED]" : "[NULL]");
+        this.host = server;
+        this.user = user;
+        this.password = pass;
+    }
+
+    public String getRemoteLocation() {
+        return user + "@" + host;
     }
 
     /**
-     * Method to perform a Aspera file upload. To override the server and the transfer parameters see
-     * the respective getters and setters.
+     * Upload files to the remote directory using ascp CLI.
      *
-     * @param filesToUpload        the List of Files that should be uploaded.
-     * @param destinationDirectory the destination directory on the server where to put the files.
-     * @return the Job ID of this transfer job.
-     * @throws FaspManagerException in case of errors in the initialisation process or during the
-     *                              transfer.
-     * @see #setRemoteLocation(String, String, String)
-     * @see #setTransferParameters(com.asperasoft.faspmanager.XferParams)
+     * @return session id for the started transfer
      */
     public String uploadFiles(Collection<File> filesToUpload, String destinationDirectory)
-            throws FaspManagerException {
-        logger.info("Starting uploadFiles - Destination: {}", destinationDirectory);
-        logger.info("Original RemoteLocation - Host: {}, User: {}, Pass: {}", 
-            remoteLocation.getHost(), remoteLocation.getUser(), 
-            remoteLocation.getPassword() != null ? "[PROVIDED]" : "[NULL]");
-        
-        // set all Files as local resources to be uploaded
-        var localFiles = new LocalLocation();
-        for (File file : filesToUpload) {
-            localFiles.addPath(file.getAbsolutePath());
+            throws AscpTransferException {
+        if (host == null || user == null) {
+            throw new AscpTransferException("Remote host and user must be set before upload");
         }
-        // define the destination on the server
-        // Create a new RemoteLocation to preserve authentication info
-        var destinationLocation = new RemoteLocation(remoteLocation.getHost(), remoteLocation.getUser(), remoteLocation.getPassword());
-        destinationLocation.addPath(destinationDirectory);
-        
-        logger.info("New RemoteLocation - Host: {}, User: {}, Pass: {}, Path: {}", 
-            destinationLocation.getHost(), destinationLocation.getUser(), 
-            destinationLocation.getPassword() != null ? "[PROVIDED]" : "[NULL]",
-            destinationDirectory);
-        
-        // compile the transfer order
-        var order = new TransferOrder(localFiles, destinationLocation, transferParameters);
-        logger.info("TransferOrder created successfully");
-        
-        // Submit the job for transfer
-        String transferId = FaspManagerSingleton.getInstance().startTransfer(order);
-        logger.info("Transfer started with ID: {}", transferId);
-        return transferId;
+        logger.info("Starting CLI upload to {}:{} ({})", user, host, destinationDirectory);
+        return cliUploader.startTransfer(filesToUpload, host, user, password, destinationDirectory);
+    }
+
+    public void cancel() {
+        cliUploader.cancel();
     }
 }

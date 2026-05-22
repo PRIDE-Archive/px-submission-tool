@@ -1,9 +1,8 @@
 package uk.ac.ebi.pride.gui.task;
 
-import com.asperasoft.faspmanager.FaspManager;
-import com.asperasoft.faspmanager.FaspManagerException;
-import com.asperasoft.faspmanager.InitializationException;
 import org.slf4j.Logger;
+import uk.ac.ebi.pride.gui.aspera.AscpTransferException;
+import uk.ac.ebi.pride.gui.aspera.AscpTransferManager;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.App;
 import uk.ac.ebi.pride.AppContext;
@@ -115,10 +114,10 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
   /**
    * Handles uploading of files using Asopera
    *
-   * @throws FaspManagerException problems using the Aspera API to perform the upload
+   * @throws AscpTransferException problems using ascp CLI to perform the upload
    * @throws UnsupportedEncodingException problems creating a temporary file
    */
-  abstract void asperaUpload() throws FaspManagerException, UnsupportedEncodingException;
+  abstract void asperaUpload() throws AscpTransferException, UnsupportedEncodingException;
 
   /**
    * Gets the root path of Aspera binary
@@ -214,14 +213,12 @@ public abstract class AsperaGeneralTask extends TaskAdapter<Void, UploadMessage>
   /**
    * Waits fo the Aspera upload to complete.
    *
-   * @throws InitializationException Problems starting the transfer.
-   * @throws InterruptedException Problems sleepging the method.
+   * @throws InterruptedException if the wait is interrupted
    */
-  private void waitUpload() throws InitializationException, InterruptedException {
-    FaspManager faspManager = FaspManager.getSingleton();
-    while (faspManager.isRunning()) {
-      Thread.sleep(30000);
-    } // wait for Aspera transfer to finish
+  private void waitUpload() throws InterruptedException {
+    while (AscpTransferManager.getInstance().isRunning()) {
+      Thread.sleep(1000);
+    }
   }
 
   /** Serializes the submission record. */
