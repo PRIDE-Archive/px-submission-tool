@@ -2,7 +2,9 @@ package uk.ac.ebi.pride.pxsubmit.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.data.model.DataFile;
+import uk.ac.ebi.pride.pxsubmit.util.FileTypeDetector;
 import uk.ac.ebi.pride.submissions.commons.dtos.ValidationRequestDTO;
 import uk.ac.ebi.pride.submissions.commons.dtos.ValidationResponseDTO;
 import uk.ac.ebi.pride.submissions.commons.exceptions.SubValidationException;
@@ -14,9 +16,13 @@ import uk.ac.ebi.pride.submissions.commons.types.ValidateRunState;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Validates submission files using {@code pride-submissions-commons} 1.0.5+
@@ -57,23 +63,53 @@ public class PrideCommonsFileValidationService {
         request.setTicketId(ticketId);
         request.setPerformFileReads(false);
 
-        SubmissionQueuedRequestsService queueService = new ModelFilesQueuedRequestsService(files);
+        List<DataFile> filesForPrideValidation = files.stream()
+                .filter(f -> !isSdrfDataFile(f))
+                .toList();
+
+        if (filesForPrideValidation.isEmpty()) {
+            return ValidationResult.skippedSdrfOnly(files);
+        }
+
+        List<String> filePaths = filesForPrideValidation.stream()
+                .map(DataFile::getFilePath)
+                .filter(path -> path != null && !path.isBlank())
+                .collect(Collectors.toList());
 
         try {
-            validationService.queueValidation(request, queueService, null);
-            validationService.runValidationJob(ticketId, queueService, files.size());
-            ValidationResponseDTO response = validationService.checkValidation(queueService, ticketId);
-            return ValidationResult.from(response);
+            ValidationResponseDTO response = validationService.startValidation(request, filePaths);
+            return ValidationResult.from(response, filesForPrideValidation);
         } catch (JsonProcessingException e) {
             throw new SubValidationException(e);
         }
     }
 
-    public record ValidationResult(boolean valid, List<String> errors, List<String> warnings, String summaryMessage) {
+    /** SDRF files are validated separately via the SDRF validator API. */
+    private static boolean isSdrfDataFile(DataFile dataFile) {
+        if (dataFile == null) {
+            return false;
+        }
+        if (dataFile.getFileType() == ProjectFileType.EXPERIMENTAL_DESIGN) {
+            return true;
+        }
+        if (dataFile.getFile() != null && FileTypeDetector.isSdrfFile(dataFile.getFile().getName())) {
+            return true;
+        }
+        return dataFile.getFileName() != null && FileTypeDetector.isSdrfFile(dataFile.getFileName());
+    }
 
-        public static ValidationResult from(ValidationResponseDTO response) {
+    public record ValidationResult(
+            boolean valid,
+            List<String> errors,
+            List<String> warnings,
+            String summaryMessage,
+            Map<String, Boolean> fileValidByPath
+    ) {
+
+        public static ValidationResult from(ValidationResponseDTO response, List<DataFile> files) {
             List<String> errors = new ArrayList<>();
             List<String> warnings = new ArrayList<>();
+            Map<String, Boolean> fileValidByPath = buildFileValidityMap(files);
 
             if (response.getMessage() != null && !response.getMessage().isBlank()) {
                 if (response.getSeverity() == SeverityLevel.ERROR) {
@@ -86,6 +122,10 @@ public class PrideCommonsFileValidationService {
             List<ValidationResponseDTO.FileValidateProgress> processed = response.getProcessedFiles();
             if (processed != null) {
                 for (ValidationResponseDTO.FileValidateProgress entry : processed) {
+                    String path = resolveAbsolutePath(files, entry);
+                    if (path != null) {
+                        fileValidByPath.put(path, entry.isValid());
+                    }
                     if (!entry.isValid()) {
                         errors.add(describeProgress(entry));
                     }
@@ -106,12 +146,73 @@ public class PrideCommonsFileValidationService {
             if (summary == null || summary.isBlank()) {
                 summary = valid ? "PRIDE file validation passed." : "PRIDE file validation failed.";
             }
-            return new ValidationResult(valid, List.copyOf(errors), List.copyOf(warnings), summary);
+            return new ValidationResult(
+                    valid,
+                    List.copyOf(errors),
+                    List.copyOf(warnings),
+                    summary,
+                    Map.copyOf(fileValidByPath)
+            );
         }
 
         public static ValidationResult failure(List<String> errors) {
-            return new ValidationResult(false, List.copyOf(errors), List.of(),
-                    errors.isEmpty() ? "Validation failed." : errors.get(0));
+            return new ValidationResult(
+                    false,
+                    List.copyOf(errors),
+                    List.of(),
+                    errors.isEmpty() ? "Validation failed." : errors.get(0),
+                    Map.of()
+            );
+        }
+
+        /** No PRIDE commons validation when the selection contains only SDRF files. */
+        public static ValidationResult skippedSdrfOnly(List<DataFile> files) {
+            return new ValidationResult(
+                    true,
+                    List.of(),
+                    List.of(),
+                    "PRIDE file validation skipped (SDRF validated separately).",
+                    Map.of()
+            );
+        }
+
+        private static Map<String, Boolean> buildFileValidityMap(List<DataFile> files) {
+            Map<String, Boolean> map = new LinkedHashMap<>();
+            if (files == null) {
+                return map;
+            }
+            for (DataFile file : files) {
+                File path = file.getFile();
+                if (path != null) {
+                    map.put(path.getAbsolutePath(), true);
+                }
+            }
+            return map;
+        }
+
+        private static String resolveAbsolutePath(
+                List<DataFile> files,
+                ValidationResponseDTO.FileValidateProgress entry
+        ) {
+            String name = entry.getName();
+            if ((name == null || name.isBlank()) && entry.getFileEntry() != null) {
+                name = entry.getFileEntry().getName();
+            }
+            if (name == null || name.isBlank()) {
+                return null;
+            }
+            for (DataFile file : files) {
+                if (file.getFile() == null) {
+                    continue;
+                }
+                if (name.equals(file.getFileName())
+                        || name.equals(file.getFilePath())
+                        || name.equals(file.getFile().getName())
+                        || name.equals(file.getFile().getAbsolutePath())) {
+                    return file.getFile().getAbsolutePath();
+                }
+            }
+            return null;
         }
 
         public String formattedDetails() {

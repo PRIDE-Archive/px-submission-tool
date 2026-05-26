@@ -63,8 +63,10 @@ public class ChecksumComputationStep extends AbstractWizardStep {
 
     @Override
     protected Parent createContent() {
-        VBox root = new VBox(20);
+        BorderPane root = new BorderPane();
         root.setPadding(new Insets(20));
+        root.setMinSize(0, 0);
+        root.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
 
         // Header
         VBox header = new VBox(10);
@@ -106,10 +108,18 @@ public class ChecksumComputationStep extends AbstractWizardStep {
 
         searchBar.getChildren().addAll(searchIcon, searchField);
 
-        // File table
+        VBox topSection = new VBox(12, header, classificationPanel, searchBar);
+        root.setTop(topSection);
+
+        // File table — center region fills remaining height and scrolls internally
         fileTable = new TableView<>();
         fileTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        VBox.setVgrow(fileTable, Priority.ALWAYS);
+        fileTable.setFixedCellSize(32);
+        fileTable.setMinHeight(150);
+        fileTable.setMaxHeight(Double.MAX_VALUE);
+        fileTable.setMaxWidth(Double.MAX_VALUE);
+        BorderPane.setMargin(fileTable, new Insets(8, 0, 8, 0));
+        root.setCenter(fileTable);
 
         // Status column (icon)
         TableColumn<FileChecksumRow, Region> statusCol = new TableColumn<>("");
@@ -184,7 +194,8 @@ public class ChecksumComputationStep extends AbstractWizardStep {
             buttonBox
         );
 
-        root.getChildren().addAll(header, classificationPanel, searchBar, fileTable, progressSection);
+        BorderPane.setMargin(progressSection, new Insets(8, 0, 0, 0));
+        root.setBottom(progressSection);
 
         return root;
     }

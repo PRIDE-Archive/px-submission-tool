@@ -80,17 +80,21 @@ public class FileClassificationPanel extends VBox {
 
         // Listen to file changes
         files.addListener((ListChangeListener.Change<? extends DataFile> c) -> updateDisplay());
+
+        initializeFilesByType();
+    }
+
+    private void initializeFilesByType() {
+        for (ProjectFileType type : ProjectFileType.values()) {
+            filesByType.put(type, new ArrayList<>());
+        }
     }
 
     /**
      * Update the display based on current files
      */
     private void updateDisplay() {
-        // Clear and recategorize
-        filesByType.clear();
-        for (ProjectFileType type : ProjectFileType.values()) {
-            filesByType.put(type, new ArrayList<>());
-        }
+        initializeFilesByType();
 
         long total = 0;
         for (DataFile df : files) {
@@ -478,7 +482,8 @@ public class FileClassificationPanel extends VBox {
      */
     public boolean hasAllMandatoryFiles() {
         for (ProjectFileType type : ProjectFileType.values()) {
-            if (FileTypeDetector.isMandatory(type) && filesByType.get(type).isEmpty()) {
+            if (FileTypeDetector.isMandatory(type)
+                    && filesByType.getOrDefault(type, Collections.emptyList()).isEmpty()) {
                 return false;
             }
         }

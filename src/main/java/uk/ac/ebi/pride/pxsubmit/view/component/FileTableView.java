@@ -11,14 +11,13 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.ComboBoxTableCell;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.util.Callback;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,6 +80,12 @@ public class FileTableView extends TableView<DataFile> {
 
     // Checksum lookup for search
     private Function<DataFile, String> checksumLookup;
+
+    /** PRIDE commons validation: {@code true} passed, {@code false} failed, {@code null} not run yet. */
+    private Function<DataFile, Boolean> prideValidationLookup;
+
+    /** SDRF validation: {@code true} passed, {@code false} failed, {@code null} not validated / not SDRF. */
+    private Function<DataFile, Boolean> sdrfValidationLookup;
 
     // Pagination state
     private final BooleanProperty paginationEnabled = new SimpleBooleanProperty(false);
@@ -177,8 +182,8 @@ public class FileTableView extends TableView<DataFile> {
         statusColumn.setCellValueFactory(param ->
             new ReadOnlyObjectWrapper<>(param.getValue()));
         statusColumn.setCellFactory(col -> new ValidationStatusCell());
-        statusColumn.setPrefWidth(80);
-        statusColumn.setMinWidth(60);
+        statusColumn.setPrefWidth(90);
+        statusColumn.setMinWidth(70);
         statusColumn.setSortable(false);
 
         // Actions column (remove button)
@@ -259,11 +264,7 @@ public class FileTableView extends TableView<DataFile> {
      * Cell for displaying validation status with icon
      */
     private class ValidationStatusCell extends TableCell<DataFile, DataFile> {
-        private final ImageView iconView = new ImageView();
-
         public ValidationStatusCell() {
-            iconView.setFitWidth(16);
-            iconView.setFitHeight(16);
             setAlignment(Pos.CENTER);
         }
 
@@ -274,24 +275,69 @@ public class FileTableView extends TableView<DataFile> {
                 setGraphic(null);
                 setText(null);
                 setTooltip(null);
+                return;
+            }
+
+            Boolean prideValid = prideValidationLookup != null ? prideValidationLookup.apply(dataFile) : null;
+            Boolean sdrfValid = sdrfValidationLookup != null ? sdrfValidationLookup.apply(dataFile) : null;
+
+            if (Boolean.FALSE.equals(prideValid)) {
+                setText(null);
+                setGraphic(createStatusIcon("#dc3545", "\u2717"));
+                setTooltip(new Tooltip("PRIDE file validation failed"));
+                return;
+            }
+            if (Boolean.FALSE.equals(sdrfValid)) {
+                setText(null);
+                setGraphic(createStatusIcon("#dc3545", "\u2717"));
+                setTooltip(new Tooltip("SDRF validation failed"));
+                return;
+            }
+            if (Boolean.TRUE.equals(sdrfValid)) {
+                setText(null);
+                setGraphic(createStatusIcon("#69cb7e", "\u2713"));
+                setTooltip(new Tooltip("PRIDE and SDRF validation passed"));
+                return;
+            }
+            if (Boolean.TRUE.equals(prideValid)) {
+                setText(null);
+                setGraphic(createStatusIcon("#69cb7e", "\u2713"));
+                setTooltip(new Tooltip("PRIDE file validation passed"));
+                return;
+            }
+
+            File file = dataFile.getFile();
+            setGraphic(null);
+            if (file == null || !file.exists()) {
+                setStyle("-fx-text-fill: #dc3545;");
+                setText("!");
+                setTooltip(new Tooltip("File not found"));
+            } else if (!file.canRead()) {
+                setStyle("-fx-text-fill: #ffc107;");
+                setText("!");
+                setTooltip(new Tooltip("File not readable"));
             } else {
-                // Check file validity
-                File file = dataFile.getFile();
-                if (file == null || !file.exists()) {
-                    setStyle("-fx-text-fill: #dc3545;");
-                    setText("!");
-                    setTooltip(new Tooltip("File not found"));
-                } else if (!file.canRead()) {
-                    setStyle("-fx-text-fill: #ffc107;");
-                    setText("!");
-                    setTooltip(new Tooltip("File not readable"));
-                } else {
-                    setStyle("-fx-text-fill: #28a745;");
-                    setText("\u2713"); // Check mark
-                    setTooltip(new Tooltip("File OK"));
-                }
+                setStyle("-fx-text-fill: #28a745;");
+                setText("\u2713");
+                setTooltip(new Tooltip("File OK"));
             }
         }
+    }
+
+    private static StackPane createStatusIcon(String backgroundColor, String symbol) {
+        StackPane pane = new StackPane();
+        pane.setAlignment(Pos.CENTER);
+        pane.setMinSize(22, 22);
+        pane.setPrefSize(22, 22);
+        pane.setMaxSize(22, 22);
+        pane.setStyle(
+                "-fx-background-color: " + backgroundColor + "; " +
+                "-fx-background-radius: 11;");
+
+        Label label = new Label(symbol);
+        label.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 12px;");
+        pane.getChildren().add(label);
+        return pane;
     }
 
     /**
@@ -355,6 +401,28 @@ public class FileTableView extends TableView<DataFile> {
      */
     public void setChecksumLookup(Function<DataFile, String> lookup) {
         this.checksumLookup = lookup;
+    }
+
+    /**
+     * Lookup PRIDE commons validation result for table status icons.
+     */
+    public void setPrideValidationLookup(Function<DataFile, Boolean> lookup) {
+        this.prideValidationLookup = lookup;
+        refresh();
+    }
+
+    /**
+     * Lookup SDRF validation result for table status icons.
+     * Return {@code null} when the row is not an SDRF file or validation has not been run.
+     */
+    public void setSdrfValidationLookup(Function<DataFile, Boolean> lookup) {
+        this.sdrfValidationLookup = lookup;
+        refresh();
+    }
+
+    /** Refreshes status column cells (e.g. after SDRF validation completes). */
+    public void refreshValidationStatus() {
+        refresh();
     }
 
     // ==================== Utility Methods ====================

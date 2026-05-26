@@ -17,6 +17,8 @@ import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 import uk.ac.ebi.pride.pxsubmit.service.PrideCommonsFileValidationService;
 import uk.ac.ebi.pride.pxsubmit.service.SdrfParserService;
+import uk.ac.ebi.pride.pxsubmit.service.SdrfValidationOptions;
+import uk.ac.ebi.pride.pxsubmit.service.SdrfValidatorApi;
 import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
 import uk.ac.ebi.pride.pxsubmit.service.ValidationService;
 import uk.ac.ebi.pride.submissions.commons.exceptions.SubValidationException;
@@ -31,7 +33,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -40,8 +41,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.StringJoiner;
+import java.util.HashSet;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -68,8 +74,14 @@ public class FileSelectionStep extends AbstractWizardStep {
 
     private volatile CompletableFuture<List<String>> sdrfTemplatesLoadFuture;
     private List<String> sdrfTemplateNames = new ArrayList<>();
+    /** Signature of the SDRF file set currently tracked. */
     private String sdrfPopupSignature;
-    private boolean sdrfPopupShownForCurrentFiles;
+    /** Signature last known to have passed SDRF validation (cleared when SDRF files change). */
+    private String sdrfValidatedSignature;
+    /** Absolute file path → PRIDE commons validation passed (table status column). */
+    private final Map<String, Boolean> prideValidationByPath = new HashMap<>();
+    /** Absolute file path → SDRF validation passed (shown in file table status column). */
+    private final Map<String, Boolean> sdrfValidationByPath = new HashMap<>();
 
     private final PrideCommonsFileValidationService prideFileValidationService =
             ServiceFactory.getInstance().createPrideCommonsFileValidationService();
@@ -145,6 +157,8 @@ public class FileSelectionStep extends AbstractWizardStep {
         fileTable.setOnFileRemoved(this::removeFile);
         fileTable.setOnFileTypeChanged(this::onFileTypeChanged);
         fileTable.setChecksumLookup(df -> model.getChecksum(df));
+        fileTable.setPrideValidationLookup(this::lookupPrideValidationForTable);
+        fileTable.setSdrfValidationLookup(this::lookupSdrfValidationForTable);
 
         // Enable remove button when selection changes
         fileTable.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
@@ -224,32 +238,31 @@ public class FileSelectionStep extends AbstractWizardStep {
 
     @Override
     public boolean validate() {
-        if (model.getFiles().isEmpty()) {
+        classificationPanel.setFiles(model.getFiles());
+        if (model.getFiles().isEmpty() || !classificationPanel.hasAllMandatoryFiles()) {
             return false;
         }
 
-//        if (!runPrideCommonsFileValidation()) {
-//            return false;
-//        }
+        if (!runPrideCommonsFileValidation()) {
+            updateSummary();
+            return false;
+        }
 
         List<File> sdrfFiles = getSdrfFiles();
         if (sdrfFiles.isEmpty()) {
+            updateSummary();
             return true;
         }
 
+        ensureSdrfSignatureSynced();
         String signature = buildSdrfPopupSignature(sdrfFiles);
-        if (!signature.equals(sdrfPopupSignature)) {
-            sdrfPopupSignature = signature;
-            sdrfPopupShownForCurrentFiles = false;
+
+        if (signature.equals(sdrfValidatedSignature) && allSdrfFilesPassedValidation()) {
+            return true;
         }
 
-        if (!sdrfPopupShownForCurrentFiles) {
-            sdrfPopupShownForCurrentFiles = true;
-            showSdrfValidationDialog(sdrfFiles);
-            return false;
-        }
-
-        return true;
+        showSdrfValidationDialog(sdrfFiles);
+        return false;
     }
 
     /**
@@ -403,6 +416,15 @@ public class FileSelectionStep extends AbstractWizardStep {
         }
     }
 
+    private void openUrl(String url) {
+        try {
+            java.awt.Desktop.getDesktop().browse(new java.net.URI(url));
+        } catch (Exception e) {
+            logger.warn("Could not open URL: {}", url, e);
+            showInfo("Open in browser", "Please open this link in your browser:\n" + url);
+        }
+    }
+
     /**
      * Show error dialog
      */
@@ -505,7 +527,7 @@ public class FileSelectionStep extends AbstractWizardStep {
         }
 
         updateSummary();
-        resetSdrfPopupState();
+        syncValidationStatusWithCurrentFiles();
     }
 
     /**
@@ -543,7 +565,7 @@ public class FileSelectionStep extends AbstractWizardStep {
         }
         fileTable.getSelectionModel().clearSelection();
         updateSummary();
-        resetSdrfPopupState();
+        syncValidationStatusWithCurrentFiles();
     }
 
     /**
@@ -552,7 +574,7 @@ public class FileSelectionStep extends AbstractWizardStep {
     private void removeFile(DataFile file) {
         model.removeFile(file);
         updateSummary();
-        resetSdrfPopupState();
+        syncValidationStatusWithCurrentFiles();
     }
 
     /**
@@ -561,7 +583,7 @@ public class FileSelectionStep extends AbstractWizardStep {
     private void onFileTypeChanged(DataFile file) {
         logger.debug("File type changed for {}: {}", file.getFileName(), file.getFileType());
         updateSummary();
-        resetSdrfPopupState();
+        syncValidationStatusWithCurrentFiles();
     }
 
     /**
@@ -634,14 +656,12 @@ public class FileSelectionStep extends AbstractWizardStep {
         // Clear and update validation feedback
         validationFeedback.clear();
 
-        boolean hasSdrf = model.getFiles().stream()
-            .anyMatch(f -> f.getFileType() == ProjectFileType.EXPERIMENTAL_DESIGN);
-        boolean hasRaw = model.getFiles().stream()
-            .anyMatch(f -> f.getFileType() == ProjectFileType.RAW);
+        boolean hasSdrf = !getSdrfFiles().isEmpty();
         int total = model.getFiles().size();
+        boolean sdrfValidationPassed = allSdrfFilesPassedValidation();
 
-        // Keep Next disabled when SDRF is present but RAW files are missing.
-        setValid(total > 0 && (!hasSdrf || hasRaw));
+        setValid(classificationPanel.hasAllMandatoryFiles());
+
         if (total == 0) {
             summaryLabel.setText("No files added - drag and drop files or use the buttons above");
             summaryLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #666;");
@@ -674,7 +694,14 @@ public class FileSelectionStep extends AbstractWizardStep {
 
         if (hasSdrf) {
             validationFeedback.addInfo("SDRF/experimental design file included - metadata will be auto-populated");
-            validationFeedback.addInfo("Click Next to open SDRF template selection and validation popup");
+            if (!sdrfValidationPassed && hasAnyInvalidSdrfValidation()) {
+                validationFeedback.addError(
+                        "SDRF validation failed for one or more files - fix errors and re-validate before proceeding");
+            } else if (!sdrfValidationPassed) {
+                validationFeedback.addInfo("Click Next to open SDRF validation");
+            } else {
+                validationFeedback.addInfo("SDRF validation passed - you can proceed to the next step");
+            }
         }
 
         // Success messages
@@ -694,11 +721,6 @@ public class FileSelectionStep extends AbstractWizardStep {
             summaryLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #ffc107;");
         }
     }
-
-    private static final String SDRF_VALIDATOR_URL =
-            "https://www.ebi.ac.uk/pride/services/sdrf-validator/validate";
-    private static final String SDRF_TEMPLATES_URL =
-            "https://www.ebi.ac.uk/pride/services/sdrf-validator/templates";
 
     /** Preloads templates from the validator API in the background. */
     private void preloadPrideValidationRules() {
@@ -778,6 +800,7 @@ public class FileSelectionStep extends AbstractWizardStep {
     }
 
     private void applyPrideValidationResult(PrideCommonsFileValidationService.ValidationResult result) {
+        applyPrideValidationToTable(result.fileValidByPath());
         validationFeedback.clear();
         if (result.valid()) {
             validationFeedback.addInfo(result.summaryMessage());
@@ -830,7 +853,7 @@ public class FileSelectionStep extends AbstractWizardStep {
         try {
             HttpClient client = HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).build();
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(SDRF_TEMPLATES_URL))
+                    .uri(URI.create(SdrfValidatorApi.TEMPLATES_URL))
                     .header("Accept", "application/json")
                     .GET()
                     .build();
@@ -865,22 +888,12 @@ public class FileSelectionStep extends AbstractWizardStep {
         }
     }
 
-    private String buildSdrfValidateUri(List<String> templates) {
-        StringBuilder uri = new StringBuilder(SDRF_VALIDATOR_URL);
-        uri.append("?skip_ontology=false&use_ols_cache_only=true");
-        for (String template : templates) {
-            uri.append("&template=")
-                    .append(URLEncoder.encode(template, StandardCharsets.UTF_8));
-        }
-        return uri.toString();
-    }
-
     /**
      * Validate an SDRF file using the PRIDE SDRF Validator REST API.
      * Sends the file as multipart/form-data and displays results as non-blocking feedback.
      * Runs asynchronously to avoid blocking the UI.
      */
-    private void validateSdrfFile(File file, List<String> templates) {
+    private void validateSdrfFile(File file, SdrfValidationOptions options) {
         validationFeedback.addInfo("SDRF: Validating " + file.getName() + "...");
 
         Thread.startVirtualThread(() -> {
@@ -889,7 +902,7 @@ public class FileSelectionStep extends AbstractWizardStep {
                 byte[] fileBytes = Files.readAllBytes(file.toPath());
 
                 byte[] body = buildMultipartBody(boundary, file.getName(), fileBytes);
-                String validateUri = buildSdrfValidateUri(templates);
+                String validateUri = SdrfValidatorApi.buildValidateUri(options);
 
                 HttpClient client = HttpClient.newBuilder()
                         .version(HttpClient.Version.HTTP_1_1)
@@ -913,13 +926,13 @@ public class FileSelectionStep extends AbstractWizardStep {
         });
     }
 
-    private ValidationOutcome validateSdrfFileSync(File file, List<String> templates) {
+    private ValidationOutcome validateSdrfFileSync(File file, SdrfValidationOptions options) {
         try {
             String boundary = "----SdrfBoundary" + System.currentTimeMillis();
             byte[] fileBytes = Files.readAllBytes(file.toPath());
 
             byte[] body = buildMultipartBody(boundary, file.getName(), fileBytes);
-            String validateUri = buildSdrfValidateUri(templates);
+            String validateUri = SdrfValidatorApi.buildValidateUri(options);
 
             HttpClient client = HttpClient.newBuilder()
                     .version(HttpClient.Version.HTTP_1_1)
@@ -1021,11 +1034,21 @@ public class FileSelectionStep extends AbstractWizardStep {
 
         Label templateHint = new Label(
                 "Templates are loaded from the PRIDE SDRF validator API. Combine compatible ones "
-                        + "(e.g. ms-proteomics + human + dia-acquisition). Avoid using \"base\" alone — it is an internal template.");
+                        + "(e.g. ms-proteomics + human + dia-acquisition).");
         templateHint.setWrapText(true);
         templateHint.setStyle("-fx-text-fill: #555;");
 
-        MenuButton templateMenu = new MenuButton("Select templates…");
+        Label sdrfWebHint = new Label(
+                "For more detail (all templates, options, and full validation output), use the online tool:");
+        sdrfWebHint.setWrapText(true);
+        sdrfWebHint.setStyle("-fx-text-fill: #555;");
+
+        Hyperlink sdrfValidatorLink = new Hyperlink("PRIDE SDRF Validator");
+        sdrfValidatorLink.setOnAction(e -> openUrl("https://www.ebi.ac.uk/pride/services/sdrf-validator"));
+        sdrfValidatorLink.setTooltip(new Tooltip("https://www.ebi.ac.uk/pride/services/sdrf-validator"));
+
+        final String templatePlaceholder = "Select template";
+        MenuButton templateMenu = new MenuButton(templatePlaceholder);
         templateMenu.setMinWidth(280);
         templateMenu.setMaxWidth(Double.MAX_VALUE);
         List<CheckMenuItem> templateCheckItems = new ArrayList<>();
@@ -1038,16 +1061,19 @@ public class FileSelectionStep extends AbstractWizardStep {
                     .map(CheckMenuItem::getText)
                     .toList();
             if (sel.isEmpty()) {
-                templateMenu.setText("Select templates…");
-                templateSelectionDetail.setText("0 templates selected.");
+                templateMenu.setText(templatePlaceholder);
+                templateSelectionDetail.setText("No template selected.");
             } else {
                 templateMenu.setText(String.join(", ", sel));
                 templateSelectionDetail.setText(sel.size() + " template" + (sel.size() == 1 ? "" : "s") + " selected.");
             }
         };
+        MenuItem templateMenuHeader = new MenuItem(templatePlaceholder);
+        templateMenuHeader.setDisable(true);
+        templateMenu.getItems().add(templateMenuHeader);
+        templateMenu.getItems().add(new SeparatorMenuItem());
         for (String name : selectableTemplates) {
             CheckMenuItem item = new CheckMenuItem(name);
-            item.setSelected("ms-proteomics".equals(name));
             item.selectedProperty().addListener((obs, was, now) -> refreshTemplateSelectionUi.run());
             templateCheckItems.add(item);
             templateMenu.getItems().add(item);
@@ -1060,6 +1086,30 @@ public class FileSelectionStep extends AbstractWizardStep {
         templateFieldLabel.setMinWidth(Region.USE_PREF_SIZE);
         HBox.setHgrow(templateMenu, Priority.ALWAYS);
         templateRow.getChildren().addAll(templateFieldLabel, templateMenu);
+
+        Label optionsTitle = new Label("Validation options:");
+        optionsTitle.setStyle("-fx-font-weight: bold;");
+
+        CheckBox skipOntologyCheck = new CheckBox("Skip ontology term validation");
+        skipOntologyCheck.setSelected(false);
+        skipOntologyCheck.setTooltip(new Tooltip(
+                "When enabled, ontology terms are not checked (skip_ontology=true). Faster but less strict."));
+
+        CheckBox useOlsCacheOnlyCheck = new CheckBox("Use only OLS cache for ontology validation");
+        useOlsCacheOnlyCheck.setSelected(true);
+        useOlsCacheOnlyCheck.setTooltip(new Tooltip(
+                "When enabled, ontology lookup uses the local OLS cache only (use_ols_cache_only=true). "
+                        + "Faster and works offline; disable for live OLS lookups."));
+
+        skipOntologyCheck.selectedProperty().addListener((obs, was, now) -> {
+            if (now) {
+                useOlsCacheOnlyCheck.setDisable(true);
+            } else {
+                useOlsCacheOnlyCheck.setDisable(false);
+            }
+        });
+
+        VBox optionsBox = new VBox(6, optionsTitle, skipOntologyCheck, useOlsCacheOnlyCheck);
 
         Label status = new Label("Choose template(s) and click Validate.");
         status.setStyle("-fx-text-fill: #555;");
@@ -1095,27 +1145,32 @@ public class FileSelectionStep extends AbstractWizardStep {
             resultSummary.setText("Validation in progress...");
             resultSummary.setStyle("-fx-text-fill: #555;");
 
+            SdrfValidationOptions validationOptions = new SdrfValidationOptions(
+                    List.copyOf(selectedTemplates),
+                    skipOntologyCheck.isSelected(),
+                    useOlsCacheOnlyCheck.isSelected()
+            );
             final List<String> templatesToValidate = selectedTemplates;
+            final String signature = buildSdrfPopupSignature(sdrfFiles);
             Thread.startVirtualThread(() -> {
-                List<String> allErrors = new ArrayList<>();
-                List<String> allWarnings = new ArrayList<>();
-                boolean allValid = true;
-
-                for (File file : sdrfFiles) {
-                    ValidationOutcome outcome = validateSdrfFileSync(file, templatesToValidate);
-                    if (!outcome.valid) {
-                        allValid = false;
-                    }
-                    allErrors.addAll(outcome.errors);
-                    allWarnings.addAll(outcome.warnings);
-                }
-                final boolean finalAllValid = allValid;
+                SdrfBatchResult batchResult = executeSdrfValidation(sdrfFiles, validationOptions);
+                final boolean finalAllValid = batchResult.allPassed();
+                final Map<String, Boolean> resultsForTable = batchResult.resultsByPath();
+                final List<String> allErrors = batchResult.errors();
+                final List<String> allWarnings = batchResult.warnings();
 
                 Platform.runLater(() -> {
+                    applySdrfValidationResultsToTable(resultsForTable);
+                    if (finalAllValid) {
+                        markSdrfValidationSucceeded(signature, resultsForTable);
+                    }
                     validateButton.setDisable(false);
+                    String optionsSummary = validationOptions.skipOntology()
+                            ? ", skip ontology"
+                            : (validationOptions.useOlsCacheOnly() ? ", OLS cache only" : ", live OLS");
                     status.setText("Validation completed (" + templatesToValidate.size() + " template"
                             + (templatesToValidate.size() == 1 ? "" : "s") + ": "
-                            + String.join(", ", templatesToValidate) + ").");
+                            + String.join(", ", templatesToValidate) + optionsSummary + ").");
                     status.setStyle("-fx-text-fill: #555;");
 
                     issuesArea.setText(formatValidationIssues(allErrors, allWarnings));
@@ -1130,6 +1185,7 @@ public class FileSelectionStep extends AbstractWizardStep {
                         resultSummary.setText("SDRF validation failed. Please review issues below.");
                         resultSummary.setStyle("-fx-text-fill: #dc3545; -fx-font-weight: bold;");
                     }
+                    updateSummary();
                 });
             });
         };
@@ -1142,15 +1198,18 @@ public class FileSelectionStep extends AbstractWizardStep {
         content.getChildren().addAll(
                 fileLabel,
                 templateHint,
+                sdrfWebHint,
+                sdrfValidatorLink,
                 templateRow,
                 templateSelectionDetail,
+                optionsBox,
                 status,
                 resultSummary,
                 issuesTitle,
                 issuesArea
         );
         dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().setPrefWidth(520);
+        dialog.getDialogPane().setPrefWidth(560);
         dialog.showAndWait();
     }
 
@@ -1207,6 +1266,14 @@ public class FileSelectionStep extends AbstractWizardStep {
         }
     }
 
+    private record SdrfBatchResult(
+            boolean allPassed,
+            Map<String, Boolean> resultsByPath,
+            List<String> errors,
+            List<String> warnings
+    ) {
+    }
+
     private List<File> getSdrfFiles() {
         List<File> sdrfFiles = new ArrayList<>();
         for (DataFile df : model.getFiles()) {
@@ -1229,9 +1296,122 @@ public class FileSelectionStep extends AbstractWizardStep {
         return String.join("|", ids);
     }
 
-    private void resetSdrfPopupState() {
-        sdrfPopupSignature = null;
-        sdrfPopupShownForCurrentFiles = false;
+    private void openSdrfValidationDialog() {
+        List<File> sdrfFiles = getSdrfFiles();
+        if (!sdrfFiles.isEmpty()) {
+            showSdrfValidationDialog(sdrfFiles);
+        }
+    }
+
+    /**
+     * Drops validation status for removed files only; keeps status for files still in the list.
+     */
+    private void syncValidationStatusWithCurrentFiles() {
+        Set<String> currentPaths = new HashSet<>();
+        for (DataFile dataFile : model.getFiles()) {
+            if (dataFile.getFile() != null) {
+                currentPaths.add(dataFile.getFile().getAbsolutePath());
+            }
+        }
+        prideValidationByPath.keySet().removeIf(path -> !currentPaths.contains(path));
+        sdrfValidationByPath.keySet().removeIf(path -> !currentPaths.contains(path));
+        ensureSdrfSignatureSynced();
+        fileTable.refreshValidationStatus();
+    }
+
+    /**
+     * Clears saved SDRF validation status when the SDRF file set changes (new upload, remove, or edit).
+     */
+    private void ensureSdrfSignatureSynced() {
+        List<File> sdrfFiles = getSdrfFiles();
+        String newSignature = sdrfFiles.isEmpty() ? null : buildSdrfPopupSignature(sdrfFiles);
+        if (Objects.equals(newSignature, sdrfPopupSignature)) {
+            return;
+        }
+        sdrfPopupSignature = newSignature;
+        sdrfValidatedSignature = null;
+        sdrfValidationByPath.clear();
+    }
+
+    private void applyPrideValidationToTable(Map<String, Boolean> resultsByPath) {
+        prideValidationByPath.clear();
+        if (resultsByPath != null) {
+            prideValidationByPath.putAll(resultsByPath);
+        }
+        fileTable.refreshValidationStatus();
+    }
+
+    private Boolean lookupPrideValidationForTable(DataFile dataFile) {
+        if (dataFile == null || dataFile.getFile() == null) {
+            return null;
+        }
+        return prideValidationByPath.get(dataFile.getFile().getAbsolutePath());
+    }
+
+    private SdrfBatchResult executeSdrfValidation(List<File> sdrfFiles, SdrfValidationOptions options) {
+        Map<String, Boolean> resultsByPath = new HashMap<>();
+        List<String> allErrors = new ArrayList<>();
+        List<String> allWarnings = new ArrayList<>();
+        boolean allPassed = true;
+
+        for (File file : sdrfFiles) {
+            ValidationOutcome outcome = validateSdrfFileSync(file, options);
+            boolean filePassed = outcome.valid && outcome.errors.isEmpty();
+            resultsByPath.put(file.getAbsolutePath(), filePassed);
+            if (!filePassed) {
+                allPassed = false;
+            }
+            allErrors.addAll(outcome.errors);
+            allWarnings.addAll(outcome.warnings);
+        }
+        return new SdrfBatchResult(allPassed, Map.copyOf(resultsByPath), allErrors, allWarnings);
+    }
+
+    private void markSdrfValidationSucceeded(String signature, Map<String, Boolean> resultsByPath) {
+        sdrfPopupSignature = signature;
+        sdrfValidatedSignature = signature;
+        applySdrfValidationResultsToTable(resultsByPath);
+    }
+
+    /** All SDRF files must have passed validation (or there are no SDRF files). */
+    private boolean allSdrfFilesPassedValidation() {
+        List<File> sdrfFiles = getSdrfFiles();
+        if (sdrfFiles.isEmpty()) {
+            return true;
+        }
+        for (File file : sdrfFiles) {
+            if (!Boolean.TRUE.equals(sdrfValidationByPath.get(file.getAbsolutePath()))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** True when at least one SDRF file failed validation (red status in the table). */
+    private boolean hasAnyInvalidSdrfValidation() {
+        for (File file : getSdrfFiles()) {
+            if (Boolean.FALSE.equals(sdrfValidationByPath.get(file.getAbsolutePath()))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Boolean lookupSdrfValidationForTable(DataFile dataFile) {
+        if (dataFile == null || dataFile.getFile() == null) {
+            return null;
+        }
+        if (dataFile.getFileType() != ProjectFileType.EXPERIMENTAL_DESIGN
+                && !SdrfParserService.isSdrfFile(dataFile.getFile())) {
+            return null;
+        }
+        return sdrfValidationByPath.get(dataFile.getFile().getAbsolutePath());
+    }
+
+    private void applySdrfValidationResultsToTable(Map<String, Boolean> resultsByPath) {
+        sdrfValidationByPath.clear();
+        sdrfValidationByPath.putAll(resultsByPath);
+        fileTable.refreshValidationStatus();
     }
 
     private byte[] buildMultipartBody(String boundary, String fileName, byte[] fileBytes) {
