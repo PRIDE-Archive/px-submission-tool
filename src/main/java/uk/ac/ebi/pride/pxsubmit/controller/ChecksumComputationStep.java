@@ -121,15 +121,6 @@ public class ChecksumComputationStep extends AbstractWizardStep {
         BorderPane.setMargin(fileTable, new Insets(8, 0, 8, 0));
         root.setCenter(fileTable);
 
-        // Status column (icon)
-        TableColumn<FileChecksumRow, Region> statusCol = new TableColumn<>("");
-        statusCol.setCellValueFactory(new PropertyValueFactory<>("statusIcon"));
-        statusCol.setPrefWidth(50);
-        statusCol.setMaxWidth(50);
-        statusCol.setMinWidth(50);
-        statusCol.setResizable(false);
-        statusCol.setSortable(false);
-
         // Filename column
         TableColumn<FileChecksumRow, String> nameCol = new TableColumn<>("Filename");
         nameCol.setCellValueFactory(new PropertyValueFactory<>("fileName"));
@@ -145,7 +136,7 @@ public class ChecksumComputationStep extends AbstractWizardStep {
         checksumCol.setCellValueFactory(new PropertyValueFactory<>("checksum"));
         checksumCol.setPrefWidth(280);
 
-        fileTable.getColumns().addAll(statusCol, nameCol, sizeCol, checksumCol);
+        fileTable.getColumns().addAll(nameCol, sizeCol, checksumCol);
 
         // Progress section
         VBox progressSection = new VBox(10);

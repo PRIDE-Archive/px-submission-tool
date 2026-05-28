@@ -803,13 +803,11 @@ public class FileSelectionStep extends AbstractWizardStep {
         applyPrideValidationToTable(result.fileValidByPath());
         validationFeedback.clear();
         if (result.valid()) {
-            validationFeedback.addInfo(result.summaryMessage());
             for (String warning : result.warnings()) {
                 validationFeedback.addWarning(warning);
             }
-            validationStatus.setText("PRIDE validation passed"
-                    + (result.warnings().isEmpty() ? "" : " (with warnings)"));
-            validationStatus.setStyle("-fx-text-fill: #28a745;");
+            validationStatus.setText("");
+            validationStatus.setStyle("-fx-text-fill: #666;");
         } else {
             for (String error : result.errors()) {
                 validationFeedback.addError(error);

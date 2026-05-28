@@ -58,7 +58,9 @@ public class ProjectMetadataStep extends AbstractWizardStep {
     private VBox crosslinkBanner;
     private VBox form; // reference for banner insertion
 
-    // AI keyword suggestion UI
+    // AI keyword suggestion UI — set to true to show "Suggest Keywords with AI" again
+    private static final boolean SHOW_AI_KEYWORD_SUGGESTIONS = false;
+
     private Button suggestKeywordsButton;
     private ProgressIndicator aiProgressIndicator;
     private Label aiStatusLabel;
@@ -220,9 +222,13 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         keywordsHint.setStyle("-fx-text-fill: #999; -fx-font-size: 11px; -fx-font-style: italic;");
         keywordsSection.getChildren().addAll(keywordsInput, keywordsHint);
 
-        // AI keyword suggestion UI
+        // AI keyword suggestion UI (hidden when SHOW_AI_KEYWORD_SUGGESTIONS is false)
         aiSuggestionBox = createAiSuggestionBox();
         keywordsSection.getChildren().add(aiSuggestionBox);
+        if (!SHOW_AI_KEYWORD_SUGGESTIONS) {
+            aiSuggestionBox.setVisible(false);
+            aiSuggestionBox.setManaged(false);
+        }
 
         // Validation feedback
         validationFeedback = new ValidationFeedback();
@@ -518,6 +524,11 @@ public class ProjectMetadataStep extends AbstractWizardStep {
     }
 
     private void updateAiSuggestionVisibility() {
+        if (!SHOW_AI_KEYWORD_SUGGESTIONS) {
+            aiSuggestionBox.setVisible(false);
+            aiSuggestionBox.setManaged(false);
+            return;
+        }
         boolean aiEnabled = SettingsDialog.getBooleanPreference("ai.enabled", true);
         if (!aiEnabled) {
             aiSuggestionBox.setVisible(false);
