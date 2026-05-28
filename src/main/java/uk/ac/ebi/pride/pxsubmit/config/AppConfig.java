@@ -139,6 +139,12 @@ public class AppConfig {
         }
         return defaultValue;
     }
+    public int getIntProperty(String key) {
+        String value = properties.getProperty(key);
+        return Integer.parseInt(value.trim());
+
+
+    }
 
     /**
      * Get a boolean property

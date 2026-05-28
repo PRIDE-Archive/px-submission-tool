@@ -135,9 +135,19 @@ public class LoginStep extends AbstractWizardStep {
             model.setPassword(newVal);
         });
 
+        // Let Enter in login fields behave like clicking Next.
+        usernameField.setOnAction(event -> triggerNextFromEnter());
+        passwordField.setOnAction(event -> triggerNextFromEnter());
+
         // Pre-fill from model if available
         if (model.getUserName() != null) {
             usernameField.setText(model.getUserName());
+        }
+    }
+
+    private void triggerNextFromEnter() {
+        if (wizardController != null && valid.get()) {
+            wizardController.triggerNext();
         }
     }
 

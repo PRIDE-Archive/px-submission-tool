@@ -139,13 +139,23 @@ public class SubmissionStep extends AbstractWizardStep {
         ftpRadio.setToggleGroup(uploadToggle);
         ftpRadio.setUserData(UploadMethod.FTP);
 
-        // Set current selection (Aspera is default)
-        if (model.getUploadMethod() == UploadMethod.FTP) {
+        // Hide Aspera option in this step UI (keep implementation code intact).
+        // If you want to re-enable later, flip this flag.
+        final boolean hideAsperaOptionInUi = true;
+        if (hideAsperaOptionInUi) {
+            asperaRadio.setVisible(false);
+            asperaRadio.setManaged(false);
             ftpRadio.setSelected(true);
+            model.setUploadMethod(UploadMethod.FTP);
         } else {
-            asperaRadio.setSelected(true);
-            if (model.getUploadMethod() == null) {
-                model.setUploadMethod(UploadMethod.ASPERA);
+            // Set current selection (Aspera is default)
+            if (model.getUploadMethod() == UploadMethod.FTP) {
+                ftpRadio.setSelected(true);
+            } else {
+                asperaRadio.setSelected(true);
+                if (model.getUploadMethod() == null) {
+                    model.setUploadMethod(UploadMethod.ASPERA);
+                }
             }
         }
 

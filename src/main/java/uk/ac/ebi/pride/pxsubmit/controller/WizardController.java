@@ -689,4 +689,11 @@ public class WizardController implements Initializable {
             goToStep(nextIndex);
         }
     }
+
+    /**
+     * Trigger the same behavior as clicking the Next button.
+     */
+    public void triggerNext() {
+        handleNext();
+    }
 }

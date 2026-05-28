@@ -89,6 +89,10 @@ aspera.timeout.progress = 120000
 aspera.timeout.monitoring = 60000
 aspera.timeout.enableMonitoring = false
 
+# Aspera transfer start retry settings
+aspera.xfer.retryCount = 10
+aspera.xfer.retryDelayMs = 300000
+
 # Report subsystem parameters
 libpxreport.keyfile.path = keyfiles/pride-submission-reports-e963f29e8d2a.p12
 libpxreport.client.service.name = libpxreport

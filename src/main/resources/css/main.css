@@ -230,6 +230,70 @@
     -fx-border-width: 2;
 }
 
+/* Project Tags MenuButton, Country picker, and similar dropdowns */
+.form-dropdown {
+    -fx-background-color: white;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-padding: 0;
+    -fx-alignment: center-left;
+}
+
+.form-dropdown:focused {
+    -fx-border-color: #0066cc;
+    -fx-border-width: 2;
+}
+
+.menu-button.form-dropdown {
+    -fx-padding: 8 12;
+    -fx-text-fill: #333333;
+}
+
+.form-dropdown .country-search-field {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+    -fx-background-insets: 0;
+    -fx-border-insets: 0;
+    -fx-padding: 8;
+}
+
+.form-dropdown .country-dropdown-arrow {
+    -fx-background-color: transparent;
+    -fx-border-width: 0;
+    -fx-padding: 4 10;
+    -fx-cursor: hand;
+}
+
+.form-dropdown-popup {
+    -fx-background-color: white;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.12), 4, 0, 0, 2);
+    -fx-padding: 2;
+}
+
+.form-dropdown-popup .list-view {
+    -fx-background-color: white;
+    -fx-border-width: 0;
+}
+
+.form-dropdown-popup .list-cell {
+    -fx-padding: 6 10;
+}
+
+.form-dropdown-popup .list-cell:filled:selected {
+    -fx-background-color: #0066cc;
+    -fx-text-fill: white;
+}
+
+.form-dropdown-popup .list-cell:filled:hover {
+    -fx-background-color: #e7f3ff;
+}
+
 .text-area {
     -fx-pref-height: 100;
 }

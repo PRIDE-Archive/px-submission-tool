@@ -8,6 +8,7 @@ import javafx.scene.layout.*;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -35,7 +36,34 @@ public class ProjectReferencesStep extends AbstractWizardStep {
         OMICS_SOURCES.put("ProteomeXchange", "px");
         OMICS_SOURCES.put("EGA Study", "ega.study");
         OMICS_SOURCES.put("EGA Dataset", "ega.dataset");
-        OMICS_SOURCES.put("PeptideAtlas", "peptideatlas.dataset");
+        OMICS_SOURCES.put("GWAS Catalog", "gcst");
+        OMICS_SOURCES.put("PeptideAtlas Dataset", "peptideatlas.dataset");
+    }
+
+    /** Display name -> accession regex patterns (full-string or embedded ID). */
+    private static final Map<String, List<Pattern>> OMICS_ACCESSION_PATTERNS = new LinkedHashMap<>();
+    static {
+        int flags = Pattern.CASE_INSENSITIVE;
+        addOmicsPatterns("GEO", flags, "^(GSE\\d+)$", "^(GSM\\d+)$", "^(GPL\\d+)$");
+        addOmicsPatterns("ArrayExpress", flags, "^(E-[A-Z]+-\\d+)$");
+        addOmicsPatterns("SRA", flags, "^(SRP\\d+)$", "^(SRX\\d+)$", "^(SRR\\d+)$", "^(SRS\\d+)$");
+        addOmicsPatterns("BioProject", flags, "^(PRJNA\\d+)$", "^(PRJEB\\d+)$", "^(PRJDB\\d+)$");
+        addOmicsPatterns("ENA", flags, "^(ERP\\d+)$", "^(ERR\\d+)$", "^(ERS\\d+)$");
+        addOmicsPatterns("dbGaP", flags, "^(phs\\d+)$");
+        addOmicsPatterns("MetaboLights", flags, "^(MTBLS\\d+)$");
+        addOmicsPatterns("ProteomeXchange", flags, "^(PXD\\d+)$");
+        addOmicsPatterns("EGA Study", flags, "^(EGAS\\d+)$");
+        addOmicsPatterns("EGA Dataset", flags, "^(EGAD\\d+)$");
+        addOmicsPatterns("GWAS Catalog", flags, "^(GCST\\d+)$");
+        addOmicsPatterns("PeptideAtlas Dataset", flags, "^(PASS\\d+)$");
+    }
+
+    private static void addOmicsPatterns(String source, int flags, String... regexes) {
+        List<Pattern> patterns = new ArrayList<>();
+        for (String regex : regexes) {
+            patterns.add(Pattern.compile(regex, flags));
+        }
+        OMICS_ACCESSION_PATTERNS.put(source, patterns);
     }
 
     private TextField pubmedField;
@@ -243,6 +271,10 @@ public class ProjectReferencesStep extends AbstractWizardStep {
                 return entry.getKey();
             }
         }
+        // Legacy display name
+        if ("peptideatlas.dataset".equals(value)) {
+            return "PeptideAtlas Dataset";
+        }
         return null;
     }
 
@@ -280,7 +312,8 @@ public class ProjectReferencesStep extends AbstractWizardStep {
                     if (omicsBuilder.length() > 0) {
                         omicsBuilder.append(",");
                     }
-                    omicsBuilder.append(sourceValue).append(":").append(accession.trim());
+                    omicsBuilder.append(sourceValue).append(":")
+                            .append(normalizeOmicsAccession(sourceKey, accession));
                 }
             }
         }
@@ -309,17 +342,99 @@ public class ProjectReferencesStep extends AbstractWizardStep {
             String accession = row.getAccession();
             if (sourceKey != null && accession.isEmpty()) {
                 showError("Please enter an accession for the selected source '" + sourceKey + "', or remove the entry.");
+                row.requestFocus();
                 return false;
             }
             if (sourceKey == null && !accession.isEmpty()) {
                 showError("Please select a source for the accession '" + accession + "', or remove the entry.");
+                row.requestFocus();
                 return false;
+            }
+            if (sourceKey != null && !accession.isEmpty()) {
+                Optional<String> accessionError = validateOmicsAccession(sourceKey, accession);
+                if (accessionError.isPresent()) {
+                    showError(accessionError.get());
+                    row.requestFocus();
+                    return false;
+                }
             }
         }
 
         // Save to model before leaving
         saveToModel();
         return true;
+    }
+
+    /**
+     * Validates an omics accession for the given repository source.
+     * Returns empty if valid; otherwise a user-facing error message.
+     */
+    private Optional<String> validateOmicsAccession(String sourceKey, String accession) {
+        List<Pattern> patterns = OMICS_ACCESSION_PATTERNS.get(sourceKey);
+        if (patterns == null || patterns.isEmpty()) {
+            // PRIDE and any source without patterns: require non-empty text only
+            return accession.isBlank()
+                    ? Optional.of("Please enter a PRIDE project accession.")
+                    : Optional.empty();
+        }
+
+        String trimmed = accession.trim();
+        for (Pattern pattern : patterns) {
+            Matcher matcher = pattern.matcher(trimmed);
+            if (matcher.matches()) {
+                return Optional.empty();
+            }
+        }
+
+        // Allow a single embedded ID when the field contains only that token
+        for (Pattern pattern : patterns) {
+            Matcher matcher = pattern.matcher(trimmed);
+            if (matcher.find() && matcher.group().equalsIgnoreCase(trimmed)) {
+                return Optional.empty();
+            }
+        }
+
+        return Optional.of(formatOmicsAccessionError(sourceKey));
+    }
+
+    /** Returns the canonical accession token when it matches a repository pattern. */
+    private String normalizeOmicsAccession(String sourceKey, String accession) {
+        List<Pattern> patterns = OMICS_ACCESSION_PATTERNS.get(sourceKey);
+        String trimmed = accession.trim();
+        if (patterns == null || patterns.isEmpty()) {
+            return trimmed;
+        }
+        for (Pattern pattern : patterns) {
+            Matcher matcher = pattern.matcher(trimmed);
+            if (matcher.matches()) {
+                return matcher.group();
+            }
+        }
+        for (Pattern pattern : patterns) {
+            Matcher matcher = pattern.matcher(trimmed);
+            if (matcher.find()) {
+                return matcher.group();
+            }
+        }
+        return trimmed;
+    }
+
+    private static String formatOmicsAccessionError(String sourceKey) {
+        return switch (sourceKey) {
+            case "GEO" -> "Invalid GEO accession. Expected GSE, GSM, or GPL followed by digits (e.g. GSE123456).";
+            case "ArrayExpress" -> "Invalid ArrayExpress accession. Expected format E-XXXX-N (e.g. E-MTAB-1234).";
+            case "SRA" -> "Invalid SRA accession. Expected SRP, SRX, SRR, or SRS followed by digits.";
+            case "BioProject" -> "Invalid BioProject accession. Expected PRJNA, PRJEB, or PRJDB followed by digits.";
+            case "ENA" -> "Invalid ENA accession. Expected ERP, ERR, or ERS followed by digits.";
+            case "dbGaP" -> "Invalid dbGaP accession. Expected phs followed by digits (e.g. phs000001).";
+            case "MetaboLights" -> "Invalid MetaboLights accession. Expected MTBLS followed by digits.";
+            case "ProteomeXchange" -> "Invalid ProteomeXchange accession. Expected PXD followed by digits.";
+            case "EGA Study" -> "Invalid EGA Study accession. Expected EGAS followed by digits.";
+            case "EGA Dataset" -> "Invalid EGA Dataset accession. Expected EGAD followed by digits.";
+            case "GWAS Catalog" -> "Invalid GWAS Catalog accession. Expected GCST followed by digits.";
+            case "PeptideAtlas Dataset" -> "Invalid PeptideAtlas accession. Expected PASS followed by digits.";
+            default -> "Invalid accession for " + sourceKey + ".";
+        };
     }
 
     private void showError(String message) {
@@ -360,7 +475,30 @@ public class ProjectReferencesStep extends AbstractWizardStep {
             removeBtn.setTooltip(new Tooltip("Remove this entry"));
             removeBtn.setOnAction(e -> removeOmicsEntryRow(this));
 
+            Runnable refreshValidation = () -> updateAccessionValidationStyle();
+            sourceCombo.valueProperty().addListener((obs, oldVal, newVal) -> refreshValidation.run());
+            accessionField.textProperty().addListener((obs, oldVal, newVal) -> refreshValidation.run());
+
             container.getChildren().addAll(sourceCombo, accessionField, removeBtn);
+        }
+
+        private void updateAccessionValidationStyle() {
+            String sourceKey = getSelectedSourceKey();
+            String accession = getAccession();
+            if (sourceKey == null || accession.isEmpty()) {
+                accessionField.setStyle("");
+                return;
+            }
+            Optional<String> error = validateOmicsAccession(sourceKey, accession);
+            if (error.isPresent()) {
+                accessionField.setStyle("-fx-border-color: #dc3545;");
+            } else {
+                accessionField.setStyle("-fx-border-color: #28a745;");
+            }
+        }
+
+        void requestFocus() {
+            accessionField.requestFocus();
         }
 
         HBox getNode() {

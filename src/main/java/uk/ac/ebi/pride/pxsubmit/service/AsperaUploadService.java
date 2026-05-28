@@ -7,11 +7,13 @@ import javafx.concurrent.Task;
 import uk.ac.ebi.pride.archive.submission.model.submission.DropBoxDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.data.model.DataFile;
+import uk.ac.ebi.pride.pxsubmit.config.AppConfig;
 import uk.ac.ebi.pride.pxsubmit.model.TransferStatistics;
 import uk.ac.ebi.pride.pxsubmit.model.TransferStatistics.FileTransferStat;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -33,8 +35,9 @@ import java.util.concurrent.atomic.AtomicLong;
 public class AsperaUploadService extends AbstractUploadService {
 
     // Configuration constants
-    private static final long TRANSFER_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
-    private static final long PROGRESS_TIMEOUT_MS = 2 * 60 * 1000;  // 2 minutes
+    private static final long TRANSFER_TIMEOUT_MS = 60 * 60 * 1000; // 60 minutes
+    private static final long PROGRESS_TIMEOUT_MS = 30 * 60 * 1000;  // 30 minutes
+    private static final int MAX_RETRIES = 3;
     private static final int TCP_PORT = 33001;
     private static final int UDP_PORT = 33001;
     private static final int TARGET_RATE_KBPS = 100000; // 100 Mbps
@@ -243,60 +246,64 @@ public class AsperaUploadService extends AbstractUploadService {
 
             DropBoxDetail dropBox = uploadDetail.getDropBox();
 
-            // Set up local files
             LocalLocation localFiles = new LocalLocation();
             for (File file : transferFiles) {
-                if (!file.exists()) {
-                    logger.warn("File does not exist, skipping: {}", file.getAbsolutePath());
-                    continue;
-                }
-                if (!file.canRead()) {
-                    logger.warn("File is not readable, skipping: {}", file.getAbsolutePath());
-                    continue;
-                }
+                if (!file.exists() || !file.canRead()) continue;
                 localFiles.addPath(file.getAbsolutePath());
-                AsperaUploadService.this.log("Adding file: " + file.getName() + " (" + formatSize(file.length()) + ")");
             }
 
-            // Set up remote location
-            String username = dropBox.getUserName() != null ? dropBox.getUserName().trim() : null;
-            String password = dropBox.getPassword() != null ? dropBox.getPassword().trim() : null;
-
-            logger.info("Setting up Aspera transfer - Host: {}, User: {}, Folder: {}",
-                uploadDetail.getHost(), username, uploadDetail.getFolder());
+            String username = dropBox.getUserName();
+            String password = dropBox.getPassword();
 
             RemoteLocation remoteLocation = new RemoteLocation(uploadDetail.getHost(), username, password);
             remoteLocation.addPath(uploadDetail.getFolder());
 
-            // Set up transfer parameters
             XferParams params = createTransferParams();
-
-            // Create transfer order
             TransferOrder order = new TransferOrder(localFiles, remoteLocation, params);
 
-            // Start transfer
-            AsperaUploadService.this.log("Starting Aspera transfer to: " + uploadDetail.getFolder());
-            updateStatus("Connecting to server...");
-            transferStartTime.set(System.currentTimeMillis());
-            lastProgressTime.set(System.currentTimeMillis());
-
-            String transferId = FaspManager.getSingleton().startTransfer(order);
-            currentTransferId = transferId;
-            AsperaUploadService.this.log("Transfer started with ID: " + transferId);
+            int attempt = 0;
+            while (attempt < MAX_RETRIES) {
+                try {
+                    String transferId = FaspManager.getSingleton().startTransfer(order);
+                    currentTransferId = transferId;
+                    log("Transfer started with ID: " + transferId);
+                    return;
+                } catch (Exception e) {
+                    attempt++;
+                    log("Transfer attempt failed (" + attempt + "): " + e.getMessage());
+                    if (attempt >= MAX_RETRIES) {
+                        throw e;
+                    }
+                    try {
+                        Thread.sleep(10000); // wait 10s before retry
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    }
+                }
+            }
         }
+
+
 
         private XferParams createTransferParams() {
             XferParams params = new XferParams();
             params.tcpPort = TCP_PORT;
             params.udpPort = UDP_PORT;
+
             params.targetRateKbps = TARGET_RATE_KBPS;
             params.minimumRateKbps = MIN_RATE_KBPS;
+
             params.encryption = Encryption.DEFAULT;
             params.overwrite = Overwrite.DIFFERENT;
             params.generateManifest = Manifest.NONE;
             params.policy = Policy.FAIR;
+
+            // FIX 1: Use stable resume
             params.resumeCheck = Resume.FILE_ATTRIBUTES;
-            params.preCalculateJobSize = false;
+
+            // FIX 2: Enable pre-calculation (important for large files)
+            params.preCalculateJobSize = true;
+
             params.createPath = true;
 
             return params;
@@ -307,41 +314,41 @@ public class AsperaUploadService extends AbstractUploadService {
                 try {
                     while (!transferComplete.await(60, TimeUnit.SECONDS)) {
                         long now = System.currentTimeMillis();
-                        long sinceStart = now - transferStartTime.get();
-                        long sinceProgress = now - lastProgressTime.get();
 
-                        if (sinceStart > TRANSFER_TIMEOUT_MS) {
-                            logger.error("Transfer timeout after {}ms", sinceStart);
-                            transferTimedOut.set(true);
-                            errorMessage = "Transfer timed out after " + (sinceStart / 60000) + " minutes";
-                            transferComplete.countDown();
-                            break;
+                        long startTime = transferStartTime.get();
+                        long lastProgress = lastProgressTime.get();
+
+                        if (startTime <= 0 || lastProgress <= 0) {
+                            continue;
                         }
 
-                        if (sinceProgress > PROGRESS_TIMEOUT_MS) {
-                            logger.error("No progress for {}ms", sinceProgress);
-                            transferTimedOut.set(true);
-                            errorMessage = "Transfer stuck - no progress for " + (sinceProgress / 60000) + " minutes";
-                            transferComplete.countDown();
-                            break;
+                        long sinceStart = now - startTime;
+                        long sinceProgress = now - lastProgress;
+
+                        // Only logging — NEVER kill transfer
+                        if (sinceProgress > 15 * 60 * 1000) { // 15 min
+                            logger.warn("Slow transfer: no progress for {} min", sinceProgress / 60000);
                         }
 
-                        logger.debug("Monitoring: {}s elapsed, {}s since last progress",
-                                sinceStart / 1000, sinceProgress / 1000);
+                        if (sinceStart > 6 * 60 * 60 * 1000) { // 6 hours
+                            logger.info("Long running transfer: {} hours", sinceStart / (1000 * 60 * 60));
+                        }
                     }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
             });
+
             monitorThread.setDaemon(true);
             monitorThread.setName("Aspera-Monitor");
             monitorThread.start();
         }
 
         // TransferListener implementation
+
         @Override
         public void fileSessionEvent(TransferEvent event, SessionStats stats, FileInfo fileInfo) {
-            logger.debug("Aspera event: {} stats={}", event, stats);
+            long now = System.currentTimeMillis();
 
             switch (event) {
                 case CONNECTING:
@@ -394,31 +401,30 @@ public class AsperaUploadService extends AbstractUploadService {
                 case FILE_STOP:
                     if (fileInfo != null && fileInfo.getState() == FileState.FINISHED) {
                         finishedFileCount++;
-                        String fileName = extractFileName(fileInfo.getName());
-                        AsperaUploadService.this.log("Completed: " + fileName);
+                        logger.info("Completed file: {}", fileInfo.getName());
 
-                        // Track file completion in statistics
-                        FileTransferStat fileStat = activeFileStats.get(fileName);
-                        if (transferStatistics != null && fileStat != null) {
-                            long fileSize = fileStat.getFileSize();
-                            transferStatistics.completeFile(fileName, fileSize);
-                            StatisticsLogger.logFileComplete(fileStat);
-                            activeFileStats.remove(fileName);
-                        }
-
-                        Platform.runLater(() -> {
-                            uploadedFilesProperty().set(finishedFileCount);
-                            currentFileNameProperty().set(fileName);
-
-                            double progress = (double) finishedFileCount / totalFilesProperty().get();
-                            overallProgress.set(progress);
-                        });
-
-                        // Check if all files complete
                         if (finishedFileCount >= files.size()) {
                             transferSuccess.set(true);
                             transferComplete.countDown();
-                        }
+                            String fileName = extractFileName(fileInfo.getName());
+                            AsperaUploadService.this.log("Completed: " + fileName);
+
+                            // Track file completion in statistics
+                            FileTransferStat fileStat = activeFileStats.get(fileName);
+                            if (transferStatistics != null && fileStat != null) {
+                                long fileSize = fileStat.getFileSize();
+                                transferStatistics.completeFile(fileName, fileSize);
+                                StatisticsLogger.logFileComplete(fileStat);
+                                activeFileStats.remove(fileName);
+                            }
+
+                            Platform.runLater(() -> {
+                                uploadedFilesProperty().set(finishedFileCount);
+                                currentFileNameProperty().set(fileName);
+
+                                double progress = (double) finishedFileCount / totalFilesProperty().get();
+                                overallProgress.set(progress);
+                            });           }
                     }
                     break;
 
@@ -428,9 +434,9 @@ public class AsperaUploadService extends AbstractUploadService {
                     // Log session stop event
                     if (transferStatistics != null) {
                         StatisticsLogger.logEvent(
-                            transferStatistics.getSessionId(),
-                            "SESSION_STOP",
-                            "Transfer session completed normally"
+                                transferStatistics.getSessionId(),
+                                "SESSION_STOP",
+                                "Transfer session completed normally"
                         );
                     }
 
@@ -464,9 +470,9 @@ public class AsperaUploadService extends AbstractUploadService {
                     // Log session error event
                     if (transferStatistics != null) {
                         StatisticsLogger.logEvent(
-                            transferStatistics.getSessionId(),
-                            "SESSION_ERROR",
-                            event.getDescription()
+                                transferStatistics.getSessionId(),
+                                "SESSION_ERROR",
+                                event.getDescription()
                         );
                     }
 
@@ -477,7 +483,6 @@ public class AsperaUploadService extends AbstractUploadService {
                     logger.debug("Unhandled event: {}", event);
             }
         }
-
         private String extractFileName(String path) {
             if (path == null) return "unknown";
             String[] parts = path.split("[/\\\\]");
@@ -508,25 +513,69 @@ public class AsperaUploadService extends AbstractUploadService {
         return ascpFile.exists() && ascpFile.canExecute();
     }
 
+
+
     /**
      * Find Aspera binary path
      */
     public static String findAscpPath() {
-        // Check common locations
-        String[] commonPaths = {
-                System.getProperty("user.home") + "/Applications/Aspera Connect.app/Contents/Resources/ascp",
-                "/Applications/Aspera Connect.app/Contents/Resources/ascp",
-                System.getenv("ASPERA_SCP_PATH"),
-                System.getProperty("user.home") + "/.aspera/connect/bin/ascp",
-                "/usr/local/bin/ascp"
-        };
-
-        for (String path : commonPaths) {
-            if (path != null && isAsperaAvailable(path)) {
-                return path;
-            }
+        String ascpLocation = resolveConfiguredAscpLocation();
+        if (ascpLocation == null || ascpLocation.isEmpty()) {
+//            logger.error("No Aspera binary configured for current platform");
+            return null;
         }
 
+        String ascpPath = getApplicationBasePath() + File.separator + ascpLocation;
+        if (isAsperaAvailable(ascpPath)) {
+            return ascpPath;
+        }
+
+//        logger.error("Configured Aspera binary not found or not executable: {}", ascpPath);
         return null;
+    }
+
+    private static String resolveConfiguredAscpLocation() {
+        String osName = System.getProperty("os.name", "").toLowerCase();
+        String arch = System.getProperty("os.arch", "").toLowerCase();
+
+        String configKey;
+        if (osName.contains("mac")) {
+            configKey = "aspera.client.mac.binary";
+        } else if (osName.contains("win")) {
+            configKey = arch.contains("64") ? "aspera.client.windows64.binary" : "aspera.client.windows32.binary";
+        } else if (osName.contains("nux") || osName.contains("nix")) {
+            configKey = arch.contains("64") ? "aspera.client.linux64.binary" : "aspera.client.linux32.binary";
+        } else {
+//            logger.error("Unsupported platform detected: {} arch: {}", osName, arch);
+            return null;
+        }
+
+        return AppConfig.getInstance().getProperty(configKey);
+    }
+
+    private static String getApplicationBasePath() {
+        try {
+            File location = new File(AsperaUploadService.class.getProtectionDomain().getCodeSource()
+                    .getLocation().toURI());
+            File baseDir = location.isFile() ? location.getParentFile() : location;
+            if (baseDir == null) {
+                return new File(".").getAbsolutePath();
+            }
+
+            // In local dev runs classes are typically under target/classes or target/test-classes.
+            // Move up to the project root so bundled "aspera/..." resolves correctly.
+            String path = baseDir.getAbsolutePath().replace('\\', '/');
+            if (path.endsWith("/target/classes") || path.endsWith("/target/test-classes")) {
+                File projectRoot = baseDir.getParentFile() != null ? baseDir.getParentFile().getParentFile() : null;
+                if (projectRoot != null) {
+                    return projectRoot.getAbsolutePath();
+                }
+            }
+
+            return baseDir.getAbsolutePath();
+        } catch (Exception e) {
+//            logger.warn("Failed to resolve application base path, using working directory", e);
+            return new File(".").getAbsolutePath();
+        }
     }
 }
