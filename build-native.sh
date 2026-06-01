@@ -72,8 +72,9 @@ echo "jpackage: available"
 echo
 
 # Step 1: Build the fat JAR
+# -Pdist bundles x64 JavaFX natives for all OSes (required for distribution).
 echo "Step 1/3: Building fat JAR..."
-mvn clean package -DskipTests -q
+mvn -Pdist clean package -DskipTests -q
 
 JAR_FILE=$(find target -name "px-submission-tool-*.jar" -not -name "*-sources*" -not -name "*-javadoc*" | head -1)
 if [ -z "$JAR_FILE" ]; then

@@ -42,8 +42,9 @@ echo jpackage: available
 echo.
 
 REM Step 1: Build the fat JAR
+REM -Pdist bundles x64 JavaFX natives for all OSes (required for distribution).
 echo Step 1/3: Building fat JAR...
-call mvn clean package -DskipTests -q
+call mvn -Pdist clean package -DskipTests -q
 if %errorlevel% neq 0 (
     echo Error: Maven build failed
     pause

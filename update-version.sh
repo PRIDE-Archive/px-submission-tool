@@ -86,6 +86,6 @@ echo
 echo -e "${YELLOW}💡 Next steps:${NC}"
 echo -e "  1. Review the changes: git diff"
 echo -e "  2. Commit the changes: git commit -am \"Update version to ${NEW_VERSION}\""
-echo -e "  3. Build the distribution: mvn clean package assembly:single"
+echo -e "  3. Build the distribution: mvn -Pdist clean package assembly:single"
 echo -e "  4. Test the new distribution"
 echo

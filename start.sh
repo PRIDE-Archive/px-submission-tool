@@ -22,7 +22,7 @@ fi
 echo
 
 # Check if JAR file exists
-JAR_FILE="px-submission-tool-2.11.2.jar"
+JAR_FILE="px-submission-tool-${project.version}.jar"
 if [ ! -f "$JAR_FILE" ]; then
     echo "❌ Error: Could not find $JAR_FILE"
     echo "Current directory: $(pwd)"

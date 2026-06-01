@@ -89,6 +89,23 @@ mvn package -DskipTests
 mvn clean package
 ```
 
+> **Note on JavaFX native libraries (important for releases)**
+>
+> A plain `mvn package` uses the default `dev` profile, which bundles JavaFX
+> natives **only for your local machine's architecture** (e.g. arm64 on Apple
+> Silicon). That is correct for local/IDE runs, but such a JAR will fail on other
+> architectures with `UnsatisfiedLinkError: ... incompatible architecture`.
+>
+> To build the **distributable** cross-platform fat JAR (x64 natives for macOS,
+> Windows and Linux — matching the x64 JRE the launchers download), always use the
+> `dist` profile:
+>
+> ```bash
+> mvn -Pdist clean package
+> ```
+>
+> The CI workflows and `build-native.*` scripts already pass `-Pdist`.
+
 ### Run the Application
 
 #### Option 1: Using Maven (Development)
@@ -276,6 +293,21 @@ chmod +x start.sh
 ```bash
 xattr -cr .
 ```
+
+#### "Graphics Device initialization failed" / `UnsatisfiedLinkError: ... incompatible architecture`
+This means the JavaFX native libraries in the JAR don't match the CPU
+architecture of the Java runtime loading them (e.g. `have 'arm64', need
+'x86_64'`).
+
+- **Running the distributed app:** make sure the JAR was built with the `dist`
+  profile (`mvn -Pdist clean package`). The launchers (`start.sh` / `start.bat`)
+  use an x64 JRE, so the JAR must contain x64 JavaFX natives.
+- **Running locally from the IDE:** use a plain build (default `dev` profile),
+  which resolves JavaFX natives for your own machine's architecture.
+- If you switched profiles, clear the stale native cache and re-run:
+  ```bash
+  rm -rf ~/.openjfx/cache
+  ```
 
 #### Transfer failures (Aspera/FTP)
 - Try the alternative transfer method suggested by the tool

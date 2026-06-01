@@ -104,7 +104,7 @@ echo.
 echo 💡 Next steps:
 echo   1. Review the changes: git diff
 echo   2. Commit the changes: git commit -am "Update version to %NEW_VERSION%"
-echo   3. Build the distribution: mvn clean package assembly:single
+echo   3. Build the distribution: mvn -Pdist clean package assembly:single
 echo   4. Test the new distribution
 echo.
 pause
