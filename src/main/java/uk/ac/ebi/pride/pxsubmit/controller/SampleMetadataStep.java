@@ -101,13 +101,19 @@ public class SampleMetadataStep extends AbstractWizardStep {
         tissueField.setOnTermSelected(term -> model.addTissue(term));
         tissueField.setOnTermRemoved(term -> model.removeTissue(term));
         tissueSection.getChildren().add(tissueField);
-        tissueSection.getChildren().add(createQuickSelectPane(OlsService.getCommonTissues(), tissueField));
+        // Tissue allows a "Not applicable" value (PRIDE:0000442) for datasets where
+        // an organism part is not applicable. The display name shows "Not applicable"
+        // so the selected chip reads cleanly (matches the cv/tissue.cv display value).
+        CvParam tissueNotApplicable = new CvParam("PRIDE", "PRIDE:0000442",
+                "Not applicable", null);
+        tissueSection.getChildren().add(
+                createQuickSelectPane(OlsService.getCommonTissues(), tissueField, tissueNotApplicable));
 
-        // Cell Type (Mandatory)
+        // Cell Type (Optional)
         VBox cellTypeSection = createFieldSection(
-                "Cell Type / Cell Line *",
-                "Search for cell type or cell line if applicable. You can add more after SDRF loading.",
-                true);
+                "Cell Type / Cell Line",
+                "Optional. Search for cell type or cell line if applicable. You can add more after SDRF loading.",
+                false);
         cellTypeField = new OlsAutocomplete(OlsOntology.CL);
         cellTypeField.setPromptText("Search cell type (e.g., T cell, HeLa)...");
         cellTypeField.setCommonTerms(OlsService.getCommonCellTypes());
@@ -116,11 +122,11 @@ public class SampleMetadataStep extends AbstractWizardStep {
         cellTypeSection.getChildren().add(cellTypeField);
         cellTypeSection.getChildren().add(createQuickSelectPane(OlsService.getCommonCellTypes(), cellTypeField));
 
-        // Disease (Mandatory)
+        // Disease (Optional)
         VBox diseaseSection = createFieldSection(
-                "Disease *",
-                "Search for disease if studying a pathological condition. You can add more after SDRF loading.",
-                true);
+                "Disease",
+                "Optional. Search for disease if studying a pathological condition. You can add more after SDRF loading.",
+                false);
         diseaseField = new OlsAutocomplete(OlsOntology.DOID);
         diseaseField.setPromptText("Search disease (e.g., cancer, diabetes)...");
         diseaseField.setCommonTerms(OlsService.getCommonDiseases());
@@ -153,7 +159,12 @@ public class SampleMetadataStep extends AbstractWizardStep {
         modificationField.setOnTermSelected(term -> model.addModification(term));
         modificationField.setOnTermRemoved(term -> model.removeModification(term));
         modificationSection.getChildren().add(modificationField);
-        modificationSection.getChildren().add(createQuickSelectPane(OlsService.getCommonModifications(), modificationField));
+        // Modifications allow a "No PTMs" value (PRIDE:0000398) for datasets with no
+        // post-translational modifications. Display name shows "No PTMs" so the option
+        // and the selected chip read cleanly.
+        CvParam noPtms = new CvParam("PRIDE", "PRIDE:0000398", "No PTMs", null);
+        modificationSection.getChildren().add(
+                createQuickSelectPane(OlsService.getCommonModifications(), modificationField, noPtms));
 
         // Validation status
         validationLabel = new Label();
@@ -225,6 +236,17 @@ public class SampleMetadataStep extends AbstractWizardStep {
      * Creates a pane with clickable quick-select buttons for common terms.
      */
     private FlowPane createQuickSelectPane(List<CvParam> terms, OlsAutocomplete targetField) {
+        return createQuickSelectPane(terms, targetField, null);
+    }
+
+    /**
+     * Creates a pane with clickable quick-select buttons for common terms.
+     *
+     * @param notApplicableTerm if non-null, an extra "Not applicable" chip is added
+     *                          that selects this term exclusively (for cases where
+     *                          the characteristic is not applicable to the dataset).
+     */
+    private FlowPane createQuickSelectPane(List<CvParam> terms, OlsAutocomplete targetField, CvParam notApplicableTerm) {
         FlowPane pane = new FlowPane();
         pane.setHgap(6);
         pane.setVgap(4);
@@ -263,23 +285,50 @@ public class SampleMetadataStep extends AbstractWizardStep {
             pane.getChildren().add(chip);
         }
 
+        if (notApplicableTerm != null) {
+            String naBase =
+                "-fx-font-size: 11px; " +
+                "-fx-padding: 2 8; " +
+                "-fx-background-color: #fff3cd; " +
+                "-fx-text-fill: #856404; " +
+                "-fx-border-color: #ffc107; " +
+                "-fx-border-radius: 10; " +
+                "-fx-background-radius: 10; " +
+                "-fx-cursor: hand;";
+            String naHover =
+                "-fx-font-size: 11px; " +
+                "-fx-padding: 2 8; " +
+                "-fx-background-color: #ffc107; " +
+                "-fx-text-fill: white; " +
+                "-fx-border-color: #ffc107; " +
+                "-fx-border-radius: 10; " +
+                "-fx-background-radius: 10; " +
+                "-fx-cursor: hand;";
+            Label naChip = new Label(notApplicableTerm.getName());
+            naChip.setStyle(naBase);
+            naChip.setTooltip(new Tooltip(
+                "Mark as not applicable to this dataset (" + notApplicableTerm.getAccession() + ").\n"
+                + "This replaces any other selections in this field."));
+            naChip.setOnMouseEntered(e -> naChip.setStyle(naHover));
+            naChip.setOnMouseExited(e -> naChip.setStyle(naBase));
+            naChip.setOnMouseClicked(e -> targetField.selectExclusive(notApplicableTerm));
+            pane.getChildren().add(naChip);
+        }
+
         return pane;
     }
 
     @Override
     protected void initializeStep() {
         // Validation: all fields are mandatory
+        // Cell type and disease are optional, so they are not part of validity.
         valid.bind(Bindings.createBooleanBinding(() ->
             speciesField.hasSelection() &&
             tissueField.hasSelection() &&
-            cellTypeField.hasSelection() &&
-            diseaseField.hasSelection() &&
             instrumentField.hasSelection() &&
             modificationField.hasSelection(),
             speciesField.getSelectedTerms(),
             tissueField.getSelectedTerms(),
-            cellTypeField.getSelectedTerms(),
-            diseaseField.getSelectedTerms(),
             instrumentField.getSelectedTerms(),
             modificationField.getSelectedTerms()
         ));
@@ -467,20 +516,16 @@ public class SampleMetadataStep extends AbstractWizardStep {
     private void updateValidationLabel() {
         boolean hasSpecies = speciesField.hasSelection();
         boolean hasTissue = tissueField.hasSelection();
-        boolean hasCellType = cellTypeField.hasSelection();
-        boolean hasDisease = diseaseField.hasSelection();
         boolean hasInstrument = instrumentField.hasSelection();
         boolean hasModification = modificationField.hasSelection();
 
-        if (hasSpecies && hasTissue && hasCellType && hasDisease && hasInstrument && hasModification) {
+        if (hasSpecies && hasTissue && hasInstrument && hasModification) {
             validationLabel.setText("\u2714 All required fields completed");
             validationLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #28a745;");
         } else {
             StringBuilder missing = new StringBuilder("Missing: ");
             if (!hasSpecies) missing.append("Species, ");
             if (!hasTissue) missing.append("Tissue, ");
-            if (!hasCellType) missing.append("Cell Type, ");
-            if (!hasDisease) missing.append("Disease, ");
             if (!hasInstrument) missing.append("Instrument, ");
             if (!hasModification) missing.append("Modifications, ");
             // Remove trailing comma and space
@@ -504,17 +549,7 @@ public class SampleMetadataStep extends AbstractWizardStep {
             return false;
         }
 
-        if (!cellTypeField.hasSelection()) {
-            showError("Please select at least one cell type/cell line");
-            cellTypeField.requestFocus();
-            return false;
-        }
-
-        if (!diseaseField.hasSelection()) {
-            showError("Please select at least one disease (use 'healthy' if not applicable)");
-            diseaseField.requestFocus();
-            return false;
-        }
+        // Cell type and disease are optional - no validation required.
 
         if (!instrumentField.hasSelection()) {
             showError("Please select at least one mass spectrometry instrument");

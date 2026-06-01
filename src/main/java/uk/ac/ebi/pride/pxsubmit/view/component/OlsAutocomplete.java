@@ -531,6 +531,23 @@ public class OlsAutocomplete extends VBox {
     }
 
     /**
+     * Replace all current selections with a single term.
+     *
+     * <p>Removal and selection callbacks are fired so the underlying model stays
+     * in sync. Used by the "Not applicable" quick-select, which is mutually
+     * exclusive with any real ontology terms.
+     */
+    public void selectExclusive(CvParam term) {
+        if (term == null) {
+            return;
+        }
+        for (CvParam existing : new java.util.ArrayList<>(selectedTerms)) {
+            removeTerm(existing);
+        }
+        selectTerm(term);
+    }
+
+    /**
      * Request focus on the search field
      */
     @Override
