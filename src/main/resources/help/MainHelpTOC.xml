@@ -18,7 +18,6 @@
     <tocitem text="Additional Dataset Details" target="help.additional.dataset.details"/>
     <tocitem text="Submission Summary" target="help.submission.summary"/>
     <tocitem text="Submission" target="help.submission"/>
-    <tocitem text="Resubmission" target="help.resubmission"/>
     <tocitem text="Experimental Factor" target="help.experimental.factor"/>
     <tocitem text="Result File Validation" target="help.fast.validation"/>
     <tocitem text="FAQ" target="help.faq"/>

@@ -167,20 +167,18 @@ public class PxSubmitApplication extends Application {
         // 1. Welcome - Introduction and guidelines
         // 2. Login - PRIDE authentication
         // 3. Submission Type - Choose submission type
-        // 4. File Resubmission - Manage existing/new files (skipped for normal submissions)
-        // 5. Project Metadata - Title, description, keywords (skipped for resubmission)
-        // 6. File Selection - Add files (drag-drop) (skipped for resubmission)
-        // 7. Sample Metadata - Species, tissue, instrument, etc. (skipped for resubmission)
-        // 8. Lab Head - PI contact details (skipped for resubmission)
-        // 9. Project References - PubMed IDs, project tags (skipped for resubmission)
-        // 10. Summary - Review before upload
-        // 11. Checksum Computation - Compute checksums for all files
-        // 12. Submission - Upload and complete
+        // 4. Project Metadata - Title, description, keywords
+        // 5. File Selection - Add files (drag-drop)
+        // 6. Sample Metadata - Species, tissue, instrument, etc.
+        // 7. Lab Head - PI contact details
+        // 8. Project References - PubMed IDs, project tags
+        // 9. Summary - Review before upload
+        // 10. Checksum Computation - Compute checksums for all files
+        // 11. Submission - Upload and complete
 
         wizardController.addStep(new WelcomeStep(model));
         wizardController.addStep(new LoginStep(model));
         wizardController.addStep(new SubmissionTypeStep(model));
-        wizardController.addStep(new FileResubmissionStep(model));  // Resubmission file management (skipped for normal)
         wizardController.addStep(new ProjectMetadataStep(model));
         wizardController.addStep(new FileSelectionStep(model));
         wizardController.addStep(new SampleMetadataStep(model));
@@ -240,9 +238,6 @@ public class PxSubmitApplication extends Application {
 
         // Set username (user will need to re-enter password)
         model.setUserName(checkpoint.getUserName());
-
-        // Restore resubmission mode
-        model.setResubmissionMode(checkpoint.isResubmissionMode());
 
         // Restore upload method
         if (checkpoint.getUploadMethod() != null) {

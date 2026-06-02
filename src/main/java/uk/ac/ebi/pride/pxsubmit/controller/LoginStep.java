@@ -112,7 +112,6 @@ public class LoginStep extends AbstractWizardStep {
         // Skip login entirely in test mode
         if (model.isTrainingMode()) {
             model.setLoggedIn(true);
-            model.setResubmissionMode(false);
             return true;
         }
         return false;
@@ -185,7 +184,6 @@ public class LoginStep extends AbstractWizardStep {
         if (model.isTrainingMode()) {
             logger.info("Test mode - skipping authentication, no login required");
             model.setLoggedIn(true);
-            model.setResubmissionMode(false);
             return true;
         }
 

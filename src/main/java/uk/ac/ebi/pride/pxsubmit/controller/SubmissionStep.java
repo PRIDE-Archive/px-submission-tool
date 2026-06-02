@@ -460,7 +460,6 @@ public class SubmissionStep extends AbstractWizardStep {
         // Create UploadManager with real upload services
         uploadManager = ServiceFactory.getInstance().createUploadManager(
                 model.getSubmission(),
-                model.isResubmissionMode() ? model.getResubmission() : null,
                 uploadDetail,
                 method,
                 model.isTrainingMode()
@@ -626,36 +625,20 @@ public class SubmissionStep extends AbstractWizardStep {
             return;
         }
 
-        // Call the appropriate WS endpoint to complete and get the ticket/reference ID
-        if (model.isResubmissionMode()) {
-            addLog("Submitting resubmission to PRIDE server...");
-            apiService.completeResubmission(model.getUploadDetail())
-                .thenAccept(referenceDetail -> {
-                    String reference = referenceDetail.getReference();
-                    addLog("Resubmission reference received: " + reference);
-                    finishSubmission(reference);
-                })
-                .exceptionally(ex -> {
-                    logger.error("Failed to complete resubmission", ex);
-                    addLog("ERROR: Failed to finalize resubmission: " + ex.getMessage());
-                    handleError("Failed to finalize resubmission: " + ex.getMessage());
-                    return null;
-                });
-        } else {
-            addLog("Submitting to PRIDE server...");
-            apiService.completeSubmission(model.getUploadDetail())
-                .thenAccept(referenceDetail -> {
-                    String reference = referenceDetail.getReference();
-                    addLog("Submission reference received: " + reference);
-                    finishSubmission(reference);
-                })
-                .exceptionally(ex -> {
-                    logger.error("Failed to complete submission", ex);
-                    addLog("ERROR: Failed to finalize submission: " + ex.getMessage());
-                    handleError("Failed to finalize submission: " + ex.getMessage());
-                    return null;
-                });
-        }
+        // Call the WS endpoint to complete and get the ticket/reference ID
+        addLog("Submitting to PRIDE server...");
+        apiService.completeSubmission(model.getUploadDetail())
+            .thenAccept(referenceDetail -> {
+                String reference = referenceDetail.getReference();
+                addLog("Submission reference received: " + reference);
+                finishSubmission(reference);
+            })
+            .exceptionally(ex -> {
+                logger.error("Failed to complete submission", ex);
+                addLog("ERROR: Failed to finalize submission: " + ex.getMessage());
+                handleError("Failed to finalize submission: " + ex.getMessage());
+                return null;
+            });
     }
 
     private void finishSubmission(String submissionId) {
@@ -758,7 +741,6 @@ public class SubmissionStep extends AbstractWizardStep {
             UploadCheckpoint checkpoint = new UploadCheckpoint();
             checkpoint.setUserName(model.getUserName());
             checkpoint.setTimestamp(System.currentTimeMillis());
-            checkpoint.setResubmissionMode(model.isResubmissionMode());
 
             // Upload method
             UploadMethod method = model.getUploadMethod();

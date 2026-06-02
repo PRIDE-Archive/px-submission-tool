@@ -31,7 +31,6 @@ public class SubmissionModel {
     // ==================== Submission Data ====================
 
     private final ObjectProperty<Submission> submission = new SimpleObjectProperty<>(new Submission());
-    private final ObjectProperty<Resubmission> resubmission = new SimpleObjectProperty<>(new Resubmission());
 
     // Files - observable list for direct table binding
     private final ObservableList<DataFile> files = FXCollections.observableArrayList();
@@ -54,7 +53,6 @@ public class SubmissionModel {
 
     // ==================== Mode Flags ====================
 
-    private final BooleanProperty resubmissionMode = new SimpleBooleanProperty(false);
     private final BooleanProperty trainingMode = new SimpleBooleanProperty(false);
     private final BooleanProperty controlledAccessMode = new SimpleBooleanProperty(false);
     private final BooleanProperty loggedIn = new SimpleBooleanProperty(false);
@@ -137,13 +135,6 @@ public class SubmissionModel {
             // Always add to submission (UploadManager reads submission.getDataFiles())
             submission.get().addDataFile(dataFile);
 
-            // Set resubmission state BEFORE adding to files list, because
-            // the files list listener reads the resubmission map to filter by ADD state
-            if (resubmissionMode.get()) {
-                resubmission.get().addDataFile(dataFile);
-                resubmission.get().getResubmission().put(dataFile, ResubmissionFileChangeState.ADD);
-            }
-
             files.add(dataFile);
         }
     }
@@ -161,12 +152,6 @@ public class SubmissionModel {
 
         // Always remove from submission (keeps upload pipeline consistent)
         submission.get().removeDataFile(dataFile);
-
-        // Additionally clean up resubmission tracking
-        if (resubmissionMode.get()) {
-            resubmission.get().removeDataFile(dataFile);
-            resubmission.get().getResubmission().remove(dataFile);
-        }
     }
 
     /**
@@ -384,7 +369,6 @@ public class SubmissionModel {
         } catch (Exception ignored) {}
 
         submission.set(new Submission());
-        resubmission.set(new Resubmission());
         files.clear();
         uploadedFiles.clear();
         checksums.clear();
@@ -420,7 +404,6 @@ public class SubmissionModel {
         labHeadCountry.set(null);
 
         submissionType.set(null);
-        resubmissionMode.set(false);
         bulkMode.set(false);
         pendingCheckpoint = null;
     }
@@ -535,11 +518,6 @@ public class SubmissionModel {
     public Submission getSubmission() { return submission.get(); }
     public void setSubmission(Submission value) { submission.set(value); syncMetadataFromSubmission(); }
 
-    // Resubmission
-    public ObjectProperty<Resubmission> resubmissionProperty() { return resubmission; }
-    public Resubmission getResubmission() { return resubmission.get(); }
-    public void setResubmission(Resubmission value) { resubmission.set(value); }
-
     // Files
     public ObservableList<DataFile> getFiles() { return files; }
     public ObservableSet<DataFile> getUploadedFiles() { return uploadedFiles; }
@@ -581,10 +559,6 @@ public class SubmissionModel {
     public void setSummaryFileUploaded(boolean value) { summaryFileUploaded.set(value); }
 
     // Mode flags
-    public BooleanProperty resubmissionModeProperty() { return resubmissionMode; }
-    public boolean isResubmissionMode() { return resubmissionMode.get(); }
-    public void setResubmissionMode(boolean value) { resubmissionMode.set(value); }
-
     public BooleanProperty trainingModeProperty() { return trainingMode; }
     public boolean isTrainingMode() { return trainingMode.get(); }
     public void setTrainingMode(boolean value) { trainingMode.set(value); }

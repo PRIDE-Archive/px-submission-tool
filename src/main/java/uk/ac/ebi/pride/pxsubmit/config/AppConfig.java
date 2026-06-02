@@ -27,10 +27,7 @@ public class AppConfig {
     private String reuploadDetailUrl;
     private String uploadVerifyUrl;
     private String submissionCompleteUrl;
-    private String resubmissionCompleteUrl;
-    private String submissionDetailUrl;
     private String submissionWsBaseUrl;
-    private String projectFilesUrl;
 
     // Tool info
     private String toolName;
@@ -85,19 +82,13 @@ public class AppConfig {
         uploadDetailUrl = getProperty("px.upload.detail.url",
             "https://www.proteomexchange.org/archive-submission-ws/submission/upload/{method}");
         reuploadDetailUrl = getProperty("px.reupload.detail.url",
-            "https://www.proteomexchange.org/archive-submission-ws/resubmission/upload/{method}/{ticketId}");
+            "https://www.proteomexchange.org/archive-submission-ws/submission/reupload/{method}/{ticketId}");
         uploadVerifyUrl = getProperty("px.upload.verify.url",
             "https://www.proteomexchange.org/archive-submission-ws/submission/fileListAndSize");
         submissionCompleteUrl = getProperty("px.submission.complete.url",
             "https://www.proteomexchange.org/archive-submission-ws/submission/submit");
-        resubmissionCompleteUrl = getProperty("px.resubmission.complete.url",
-            "https://www.proteomexchange.org/archive-submission-ws/resubmission/resubmit");
-        submissionDetailUrl = getProperty("px.submission.detail.url",
-            "https://www.proteomexchange.org/archive-submission-ws/resubmission/projects");
         submissionWsBaseUrl = getProperty("px.submission.ws.base.url",
             "https://www.proteomexchange.org/archive-submission-ws/");
-        projectFilesUrl = getProperty("px.project.files.url",
-            "resubmission/files/{accession}");
 
         // Tool info
         toolName = getProperty("px.submission.tool.name", "PX Submission Tool");
@@ -179,14 +170,6 @@ public class AppConfig {
         return submissionCompleteUrl;
     }
 
-    public String getResubmissionCompleteUrl() {
-        return resubmissionCompleteUrl;
-    }
-
-    public String getSubmissionDetailUrl() {
-        return submissionDetailUrl;
-    }
-
     public String getSubmissionWsBaseUrl() {
         return submissionWsBaseUrl;
     }
@@ -222,9 +205,5 @@ public class AppConfig {
         return reuploadDetailUrl
             .replace("{method}", method)
             .replace("{ticketId}", ticketId);
-    }
-
-    public String getProjectFilesUrl(String accession) {
-        return submissionWsBaseUrl + projectFilesUrl.replace("{accession}", accession);
     }
 }

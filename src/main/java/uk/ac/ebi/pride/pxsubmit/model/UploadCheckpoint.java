@@ -19,8 +19,6 @@ public class UploadCheckpoint {
     private String uploadHost;
     private int uploadPort;
     private String uploadFolder;
-    private boolean resubmissionMode;
-    private String resubmissionAccession;
     private List<FileEntry> files = new ArrayList<>();
     private Set<String> uploadedFileNames = new HashSet<>();
     private Map<String, String> checksums = new HashMap<>();
@@ -47,12 +45,6 @@ public class UploadCheckpoint {
 
     public String getUploadFolder() { return uploadFolder; }
     public void setUploadFolder(String uploadFolder) { this.uploadFolder = uploadFolder; }
-
-    public boolean isResubmissionMode() { return resubmissionMode; }
-    public void setResubmissionMode(boolean resubmissionMode) { this.resubmissionMode = resubmissionMode; }
-
-    public String getResubmissionAccession() { return resubmissionAccession; }
-    public void setResubmissionAccession(String resubmissionAccession) { this.resubmissionAccession = resubmissionAccession; }
 
     public List<FileEntry> getFiles() { return files; }
     public void setFiles(List<FileEntry> files) { this.files = files; }

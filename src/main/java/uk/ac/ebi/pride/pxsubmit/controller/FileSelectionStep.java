@@ -94,12 +94,6 @@ public class FileSelectionStep extends AbstractWizardStep {
     }
 
     @Override
-    public boolean canSkip() {
-        // Skip this step during resubmission - files are managed in FileResubmissionStep
-        return model.isResubmissionMode();
-    }
-
-    @Override
     protected Parent createContent() {
         ScrollPane scrollPane = new ScrollPane();
         scrollPane.setFitToWidth(true);

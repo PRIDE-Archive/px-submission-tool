@@ -85,11 +85,6 @@ public class LabHeadStep extends AbstractWizardStep {
     }
 
     @Override
-    public boolean canSkip() {
-        return model.isResubmissionMode();
-    }
-
-    @Override
     protected Parent createContent() {
         ScrollPane scrollPane = new ScrollPane();
         scrollPane.setFitToWidth(true);

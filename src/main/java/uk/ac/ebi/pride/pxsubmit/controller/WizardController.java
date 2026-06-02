@@ -203,11 +203,6 @@ public class WizardController implements Initializable {
             logoutButton.managedProperty().bind(model.loggedInProperty());
             logoutButton.setOnAction(e -> handleLogout());
         }
-        // Rebuild step indicator when resubmission mode changes
-        model.resubmissionModeProperty().addListener((obs, wasResub, isResub) -> {
-            refreshStepIndicator();
-        });
-
         if (userLabel != null) {
             userLabel.visibleProperty().bind(model.loggedInProperty());
             userLabel.managedProperty().bind(model.loggedInProperty());
@@ -365,8 +360,6 @@ public class WizardController implements Initializable {
         logger.info("Logout requested");
         model.setLoggedIn(false);
         model.setPassword((char[]) null);
-        model.setResubmissionMode(false);
-        model.getSubmission().getProjectMetaData().setResubmissionPxAccession(null);
         goToStep("login");
     }
 
@@ -557,7 +550,6 @@ public class WizardController implements Initializable {
 
     /**
      * Rebuild the step indicator to reflect current skip states.
-     * Call this after submission type changes (e.g., switching to/from resubmission).
      */
     public void refreshStepIndicator() {
         buildStepIndicator();
