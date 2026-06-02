@@ -70,9 +70,22 @@ public class ChipInput extends VBox {
     private static final String CONTAINER_STYLE =
             "-fx-background-color: white; " +
             "-fx-border-color: #ced4da; " +
+            "-fx-border-width: 1; " +
             "-fx-border-radius: 4; " +
             "-fx-background-radius: 4; " +
             "-fx-padding: 8;";
+
+    // Applied when focus leaves the field while there is typed-but-not-added text,
+    // to warn the user the keyword has not been added (Enter/comma not pressed).
+    private static final String CONTAINER_STYLE_PENDING =
+            "-fx-background-color: #fffbe6; " +
+            "-fx-border-color: #ffc107; " +
+            "-fx-border-width: 2; " +
+            "-fx-border-radius: 4; " +
+            "-fx-background-radius: 4; " +
+            "-fx-padding: 7;";
+
+    private final HBox mainContainer;
 
     private boolean updatingFromProperty = false;
 
@@ -91,7 +104,7 @@ public class ChipInput extends VBox {
         HBox.setHgrow(inputField, Priority.ALWAYS);
 
         // Main container (chips + input)
-        HBox mainContainer = new HBox(6);
+        mainContainer = new HBox(6);
         mainContainer.setAlignment(Pos.CENTER_LEFT);
         mainContainer.setStyle(CONTAINER_STYLE);
         mainContainer.getChildren().addAll(chipContainer, inputField);
@@ -155,8 +168,39 @@ public class ChipInput extends VBox {
             }
         });
 
+        // Highlight the field when focus is lost while text has been typed but not
+        // yet added as a chip (user forgot to press Enter/comma).
+        inputField.focusedProperty().addListener((obs, wasFocused, isFocused) -> {
+            if (isFocused) {
+                mainContainer.setStyle(CONTAINER_STYLE);
+            } else {
+                updatePendingHighlight();
+            }
+        });
+
+        // Clear the highlight as soon as the pending text is added/removed.
+        inputField.textProperty().addListener((obs, oldVal, newVal) -> {
+            if (inputField.isFocused()) {
+                mainContainer.setStyle(CONTAINER_STYLE);
+            } else {
+                updatePendingHighlight();
+            }
+        });
+
         // Focus input when clicking on container
         setOnMouseClicked(e -> inputField.requestFocus());
+    }
+
+    /**
+     * Applies the warning highlight if the input field holds typed-but-not-added
+     * text while it is not focused; otherwise restores the normal style.
+     */
+    private void updatePendingHighlight() {
+        boolean hasPendingText = inputField.getText() != null
+                && !inputField.getText().trim().isEmpty();
+        mainContainer.setStyle(hasPendingText && !inputField.isFocused()
+                ? CONTAINER_STYLE_PENDING
+                : CONTAINER_STYLE);
     }
 
     private void addCurrentInput() {
