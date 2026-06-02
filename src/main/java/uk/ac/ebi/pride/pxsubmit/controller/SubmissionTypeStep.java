@@ -79,7 +79,12 @@ public class SubmissionTypeStep extends AbstractWizardStep {
 
         root.getChildren().addAll(prideBox, affinityBox, linksBox);
 
-        return root;
+        // Wrap in a scroll pane so the options remain reachable on short windows.
+        ScrollPane scrollPane = new ScrollPane(root);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background-color: transparent;");
+
+        return scrollPane;
     }
 
     private VBox createSubmissionOption(String title, String badge, String description,

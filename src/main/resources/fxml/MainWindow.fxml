@@ -6,6 +6,7 @@
 <?import javafx.scene.control.ProgressBar?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
@@ -88,12 +89,20 @@
                        styleClass="wizard-description"/>
             </VBox>
 
-            <!-- Step Progress Indicator (built dynamically) -->
-            <HBox fx:id="stepIndicatorContainer" alignment="CENTER" styleClass="step-indicator-bar">
-                <padding>
-                    <Insets top="12" bottom="2"/>
-                </padding>
-            </HBox>
+            <!-- Step Progress Indicator (built dynamically).
+                 Wrapped in a horizontal ScrollPane so it degrades gracefully
+                 (scrolls instead of clipping) on very narrow windows. -->
+            <ScrollPane fx:id="stepIndicatorScroll"
+                        styleClass="step-indicator-scroll"
+                        fitToHeight="true"
+                        hbarPolicy="AS_NEEDED"
+                        vbarPolicy="NEVER">
+                <HBox fx:id="stepIndicatorContainer" alignment="CENTER" styleClass="step-indicator-bar">
+                    <padding>
+                        <Insets top="12" bottom="2"/>
+                    </padding>
+                </HBox>
+            </ScrollPane>
 
             <!-- Global activity progress bar (shown during background tasks) -->
             <ProgressBar fx:id="globalProgressBar"

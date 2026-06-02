@@ -44,6 +44,7 @@ public class ProjectReferencesStep extends AbstractWizardStep {
     private static final Map<String, List<Pattern>> OMICS_ACCESSION_PATTERNS = new LinkedHashMap<>();
     static {
         int flags = Pattern.CASE_INSENSITIVE;
+        addOmicsPatterns("PRIDE", flags, "^((PXD|PAD)\\d+)$");
         addOmicsPatterns("GEO", flags, "^(GSE\\d+)$", "^(GSM\\d+)$", "^(GPL\\d+)$");
         addOmicsPatterns("ArrayExpress", flags, "^(E-[A-Z]+-\\d+)$");
         addOmicsPatterns("SRA", flags, "^(SRP\\d+)$", "^(SRX\\d+)$", "^(SRR\\d+)$", "^(SRS\\d+)$");
@@ -416,6 +417,7 @@ public class ProjectReferencesStep extends AbstractWizardStep {
 
     private static String formatOmicsAccessionError(String sourceKey) {
         return switch (sourceKey) {
+            case "PRIDE" -> "Invalid PRIDE accession. Expected PXD or PAD followed by digits (e.g. PXD012345).";
             case "GEO" -> "Invalid GEO accession. Expected GSE, GSM, or GPL followed by digits (e.g. GSE123456).";
             case "ArrayExpress" -> "Invalid ArrayExpress accession. Expected format E-XXXX-N (e.g. E-MTAB-1234).";
             case "SRA" -> "Invalid SRA accession. Expected SRP, SRX, SRR, or SRS followed by digits.";

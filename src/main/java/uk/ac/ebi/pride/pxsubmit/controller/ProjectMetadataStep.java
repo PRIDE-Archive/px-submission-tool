@@ -27,6 +27,7 @@ import java.util.Set;
 import uk.ac.ebi.pride.pxsubmit.service.OlsService.OlsOntology;
 import uk.ac.ebi.pride.pxsubmit.view.component.ChipInput;
 import uk.ac.ebi.pride.pxsubmit.view.component.OlsAutocomplete;
+import uk.ac.ebi.pride.pxsubmit.view.component.ProjectTagsSearchField;
 import uk.ac.ebi.pride.pxsubmit.view.component.ValidationFeedback;
 
 /**
@@ -49,9 +50,7 @@ public class ProjectMetadataStep extends AbstractWizardStep {
     private Label descriptionCounter;
 
     // Project Tags
-    private MenuButton projectTagsMenuButton;
-    private FlowPane selectedTagsPane;
-    private final List<CheckMenuItem> tagMenuItems = new ArrayList<>();
+    private ProjectTagsSearchField projectTagsField;
 
     // Crosslinking warning banner
     private static final String CROSSLINK_ACCESSION = "PRIDE:0000430";
@@ -545,27 +544,10 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         VBox section = createFieldSection("Project Tags",
             "Select any applicable project affiliations (optional)", false);
 
-        // MenuButton acts as a multi-select dropdown
-        projectTagsMenuButton = new MenuButton("Select project tags...");
-        projectTagsMenuButton.getStyleClass().add("form-dropdown");
-        projectTagsMenuButton.setPrefWidth(400);
+        projectTagsField = new ProjectTagsSearchField(
+            loadProjectTags().toArray(new String[0]));
 
-        // Load tags from CV file and add as CheckMenuItems
-        List<String> tags = loadProjectTags();
-        for (String tag : tags) {
-            CheckMenuItem item = new CheckMenuItem(tag);
-            item.setOnAction(e -> updateTagChips());
-            tagMenuItems.add(item);
-        }
-        projectTagsMenuButton.getItems().addAll(tagMenuItems);
-
-        // FlowPane to display selected tags as removable chips
-        selectedTagsPane = new FlowPane();
-        selectedTagsPane.setHgap(6);
-        selectedTagsPane.setVgap(4);
-        selectedTagsPane.setPadding(new Insets(4, 0, 0, 0));
-
-        section.getChildren().addAll(projectTagsMenuButton, selectedTagsPane);
+        section.getChildren().add(projectTagsField);
         return section;
     }
 
@@ -590,38 +572,11 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         return tags;
     }
 
-    private void updateTagChips() {
-        selectedTagsPane.getChildren().clear();
-        for (CheckMenuItem item : tagMenuItems) {
-            if (item.isSelected()) {
-                Label chip = new Label(item.getText() + "  \u2715");
-                chip.setStyle(
-                    "-fx-background-color: #0066cc; " +
-                    "-fx-text-fill: white; " +
-                    "-fx-padding: 3 8; " +
-                    "-fx-background-radius: 12; " +
-                    "-fx-font-size: 11px; " +
-                    "-fx-cursor: hand;");
-                chip.setOnMouseClicked(e -> {
-                    item.setSelected(false);
-                    updateTagChips();
-                });
-                selectedTagsPane.getChildren().add(chip);
-            }
-        }
-        // Update button text to show count
-        long count = tagMenuItems.stream().filter(CheckMenuItem::isSelected).count();
-        projectTagsMenuButton.setText(count > 0 ? count + " tag(s) selected" : "Select project tags...");
-    }
-
     private void saveProjectTags() {
         var meta = model.getSubmission().getProjectMetaData();
         if (meta == null) return;
         meta.clearProjectTags();
-        List<String> selected = tagMenuItems.stream()
-            .filter(CheckMenuItem::isSelected)
-            .map(CheckMenuItem::getText)
-            .toList();
+        List<String> selected = projectTagsField.getSelectedTags();
         if (!selected.isEmpty()) {
             meta.addProjectTags(selected.toArray(new String[0]));
         }
@@ -853,10 +808,7 @@ public class ProjectMetadataStep extends AbstractWizardStep {
         if (meta != null) {
             Set<String> selectedTags = meta.getProjectTags();
             if (selectedTags != null) {
-                for (CheckMenuItem item : tagMenuItems) {
-                    item.setSelected(selectedTags.contains(item.getText()));
-                }
-                updateTagChips();
+                projectTagsField.setSelectedTags(selectedTags);
             }
         }
 

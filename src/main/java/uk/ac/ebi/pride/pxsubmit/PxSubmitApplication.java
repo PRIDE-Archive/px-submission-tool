@@ -50,8 +50,13 @@ public class PxSubmitApplication extends Application {
     // Application constants
     private static final String APP_TITLE = "PX Submission Tool";
     private static final String APP_VERSION = "3.0.0";
-    private static final int MIN_WIDTH = 900;
-    private static final int MIN_HEIGHT = 700;
+    // Preferred (default) window size on screens large enough to accommodate it
+    private static final int PREF_WIDTH = 1000;
+    private static final int PREF_HEIGHT = 760;
+    // Absolute minimum window size - kept small so the tool fits on low-resolution
+    // or heavily-scaled displays without pushing the navigation buttons off-screen
+    private static final int MIN_WIDTH = 760;
+    private static final int MIN_HEIGHT = 540;
 
     // Global instances
     private static PxSubmitApplication instance;
@@ -111,8 +116,15 @@ public class PxSubmitApplication extends Application {
             wizardController.setModel(model);
             configureWizard();
 
+            // Determine an initial window size that fits the current screen.
+            // Using the visual bounds excludes OS chrome (taskbar/dock/menu bar)
+            // so the window never opens larger than the usable screen area.
+            javafx.geometry.Rectangle2D screenBounds = javafx.stage.Screen.getPrimary().getVisualBounds();
+            double initWidth = Math.min(PREF_WIDTH, screenBounds.getWidth());
+            double initHeight = Math.min(PREF_HEIGHT, screenBounds.getHeight());
+
             // Create scene with CSS
-            Scene scene = new Scene(root, MIN_WIDTH, MIN_HEIGHT);
+            Scene scene = new Scene(root, initWidth, initHeight);
             scene.getStylesheets().add(
                     Objects.requireNonNull(getClass().getResource("/css/main.css")).toExternalForm()
             );
@@ -120,11 +132,13 @@ public class PxSubmitApplication extends Application {
             // Initialize theme manager with scene (applies saved theme + color style)
             uk.ac.ebi.pride.pxsubmit.view.ThemeManager.getInstance().initialize(scene);
 
-            // Configure stage
+            // Configure stage - clamp the minimum size to the screen so the
+            // minimum can never exceed the available space on small displays
             stage.setTitle(getWindowTitle());
             stage.setScene(scene);
-            stage.setMinWidth(MIN_WIDTH);
-            stage.setMinHeight(MIN_HEIGHT);
+            stage.setMinWidth(Math.min(MIN_WIDTH, screenBounds.getWidth()));
+            stage.setMinHeight(Math.min(MIN_HEIGHT, screenBounds.getHeight()));
+            stage.centerOnScreen();
 
             // Set application icon
             loadAppIcon(stage);

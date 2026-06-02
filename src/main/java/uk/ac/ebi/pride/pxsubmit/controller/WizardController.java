@@ -11,6 +11,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.layout.HBox;
@@ -56,6 +57,7 @@ public class WizardController implements Initializable {
     @FXML private Label userLabel;
     @FXML private Button logoutButton;
     @FXML private Button settingsButton;
+    @FXML private ScrollPane stepIndicatorScroll;
     @FXML private HBox stepIndicatorContainer;
     @FXML private ProgressBar globalProgressBar;
 
@@ -92,7 +94,7 @@ public class WizardController implements Initializable {
 
     // Short labels for the step indicator bar (indexed by step registration order)
     private static final String[] STEP_SHORT_LABELS = {
-        "Welcome", "Login", "Type", "Resub", "Project",
+        "Welcome", "Login", "Type", "Project",
         "Files", "Metadata", "Lab Head", "Reference", "Summary", "Checksum", "Upload"
     };
 
@@ -122,6 +124,20 @@ public class WizardController implements Initializable {
         clip.widthProperty().bind(contentPane.widthProperty());
         clip.heightProperty().bind(contentPane.heightProperty());
         contentPane.setClip(clip);
+
+        // Keep the step indicator centered when the window is wide enough, but let
+        // it scroll horizontally (instead of clipping) when the window is too narrow.
+        // Setting the bar's preferred width to the viewport width makes the hgrow
+        // connectors fill the space and center the steps. We deliberately leave the
+        // computed minimum width untouched, so when the steps need more room than the
+        // viewport the bar overflows its preferred width and the ScrollPane scrolls.
+        if (stepIndicatorScroll != null && stepIndicatorContainer != null) {
+            stepIndicatorScroll.viewportBoundsProperty().addListener((obs, oldB, newB) -> {
+                if (newB != null) {
+                    stepIndicatorContainer.setPrefWidth(newB.getWidth());
+                }
+            });
+        }
 
         // Bind header labels to current step
         titleLabel.textProperty().bind(Bindings.createStringBinding(() -> {
