@@ -20,6 +20,7 @@ import java.util.List;
 public class ServiceFactory {
 
     private static ServiceFactory instance = new ServiceFactory();
+    private SdrfValidationService sdrfValidationService;
 
     public static ServiceFactory getInstance() { return instance; }
 
@@ -50,6 +51,13 @@ public class ServiceFactory {
 
     public SdrfParserService createSdrfParserService(File sdrfFile) {
         return new SdrfParserService(sdrfFile);
+    }
+
+    public SdrfValidationService createSdrfValidationService() {
+        if (sdrfValidationService == null) {
+            sdrfValidationService = new SdrfValidationService();
+        }
+        return sdrfValidationService;
     }
 
     public UploadManager createUploadManager(Submission submission, UploadDetail detail,

@@ -43,6 +43,9 @@ public class SubmissionModel {
     // File ID counter
     private final IntegerProperty fileIdCounter = new SimpleIntegerProperty(0);
 
+    // SDRF validator results (shared between file selection and SDRF validation steps)
+    private final SdrfValidationTracker sdrfValidation = new SdrfValidationTracker();
+
     // ==================== Credentials & Upload ====================
 
     private final StringProperty userName = new SimpleStringProperty();
@@ -520,6 +523,8 @@ public class SubmissionModel {
 
     // Files
     public ObservableList<DataFile> getFiles() { return files; }
+
+    public SdrfValidationTracker getSdrfValidation() { return sdrfValidation; }
     public ObservableSet<DataFile> getUploadedFiles() { return uploadedFiles; }
 
     // Credentials

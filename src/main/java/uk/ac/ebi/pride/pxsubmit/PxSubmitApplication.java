@@ -183,18 +183,20 @@ public class PxSubmitApplication extends Application {
         // 3. Submission Type - Choose submission type
         // 4. Project Metadata - Title, description, keywords
         // 5. File Selection - Add files (drag-drop)
-        // 6. Sample Metadata - Species, tissue, instrument, etc.
-        // 7. Lab Head - PI contact details
-        // 8. Project References - PubMed IDs, project tags
-        // 9. Summary - Review before upload
-        // 10. Checksum Computation - Compute checksums for all files
-        // 11. Submission - Upload and complete
+        // 6. SDRF Validation - Validate SDRF files (skipped if none)
+        // 7. Sample Metadata - Species, tissue, instrument, etc.
+        // 8. Lab Head - PI contact details
+        // 9. Project References - PubMed IDs, project tags
+        // 10. Summary - Review before upload
+        // 11. Checksum Computation - Compute checksums for all files
+        // 12. Submission - Upload and complete
 
         wizardController.addStep(new WelcomeStep(model));
         wizardController.addStep(new LoginStep(model));
         wizardController.addStep(new SubmissionTypeStep(model));
         wizardController.addStep(new ProjectMetadataStep(model));
         wizardController.addStep(new FileSelectionStep(model));
+        wizardController.addStep(new SdrfValidationStep(model));
         wizardController.addStep(new SampleMetadataStep(model));
         wizardController.addStep(new LabHeadStep(model));
         wizardController.addStep(new ProjectReferencesStep(model));
@@ -365,19 +367,7 @@ public class PxSubmitApplication extends Application {
         alert.initOwner(primaryStage);
         alert.showAndWait();
 
-        // Ask to start new submission or exit
-        Alert newSubmissionAlert = new Alert(Alert.AlertType.CONFIRMATION);
-        newSubmissionAlert.setTitle("New Submission");
-        newSubmissionAlert.setHeaderText("Start a new submission?");
-        newSubmissionAlert.initOwner(primaryStage);
-
-        newSubmissionAlert.showAndWait().ifPresent(response -> {
-            if (response == ButtonType.OK) {
-                restart();
-            } else {
-                shutdown();
-            }
-        });
+        shutdown();
     }
 
     /**
@@ -434,6 +424,7 @@ public class PxSubmitApplication extends Application {
 
         // Close stage
         if (primaryStage != null) {
+            primaryStage.setOnCloseRequest(null);
             primaryStage.close();
         }
 
