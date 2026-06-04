@@ -134,28 +134,19 @@ public class SubmissionStep extends AbstractWizardStep {
         RadioButton asperaRadio = new RadioButton("Aspera - High-speed transfer (recommended)");
         asperaRadio.setToggleGroup(uploadToggle);
         asperaRadio.setUserData(UploadMethod.ASPERA);
+        asperaRadio.setTooltip(new Tooltip("Use Aspera for faster uploads. If Aspera is unavailable, the upload falls back to FTP."));
 
         RadioButton ftpRadio = new RadioButton("FTP - Standard file transfer");
         ftpRadio.setToggleGroup(uploadToggle);
         ftpRadio.setUserData(UploadMethod.FTP);
 
-        // Hide Aspera option in this step UI (keep implementation code intact).
-        // If you want to re-enable later, flip this flag.
-        final boolean hideAsperaOptionInUi = true;
-        if (hideAsperaOptionInUi) {
-            asperaRadio.setVisible(false);
-            asperaRadio.setManaged(false);
+        // Set current selection (Aspera is default)
+        if (model.getUploadMethod() == UploadMethod.FTP) {
             ftpRadio.setSelected(true);
-            model.setUploadMethod(UploadMethod.FTP);
         } else {
-            // Set current selection (Aspera is default)
-            if (model.getUploadMethod() == UploadMethod.FTP) {
-                ftpRadio.setSelected(true);
-            } else {
-                asperaRadio.setSelected(true);
-                if (model.getUploadMethod() == null) {
-                    model.setUploadMethod(UploadMethod.ASPERA);
-                }
+            asperaRadio.setSelected(true);
+            if (model.getUploadMethod() == null) {
+                model.setUploadMethod(UploadMethod.ASPERA);
             }
         }
 
