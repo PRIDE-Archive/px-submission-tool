@@ -50,8 +50,13 @@ public class PxSubmitApplication extends Application {
     // Application constants
     private static final String APP_TITLE = "PX Submission Tool";
     private static final String APP_VERSION = "3.0.0";
-    private static final int MIN_WIDTH = 900;
-    private static final int MIN_HEIGHT = 700;
+    // Preferred (default) window size on screens large enough to accommodate it
+    private static final int PREF_WIDTH = 1000;
+    private static final int PREF_HEIGHT = 760;
+    // Absolute minimum window size - kept small so the tool fits on low-resolution
+    // or heavily-scaled displays without pushing the navigation buttons off-screen
+    private static final int MIN_WIDTH = 760;
+    private static final int MIN_HEIGHT = 540;
 
     // Global instances
     private static PxSubmitApplication instance;
@@ -111,8 +116,15 @@ public class PxSubmitApplication extends Application {
             wizardController.setModel(model);
             configureWizard();
 
+            // Determine an initial window size that fits the current screen.
+            // Using the visual bounds excludes OS chrome (taskbar/dock/menu bar)
+            // so the window never opens larger than the usable screen area.
+            javafx.geometry.Rectangle2D screenBounds = javafx.stage.Screen.getPrimary().getVisualBounds();
+            double initWidth = Math.min(PREF_WIDTH, screenBounds.getWidth());
+            double initHeight = Math.min(PREF_HEIGHT, screenBounds.getHeight());
+
             // Create scene with CSS
-            Scene scene = new Scene(root, MIN_WIDTH, MIN_HEIGHT);
+            Scene scene = new Scene(root, initWidth, initHeight);
             scene.getStylesheets().add(
                     Objects.requireNonNull(getClass().getResource("/css/main.css")).toExternalForm()
             );
@@ -120,11 +132,13 @@ public class PxSubmitApplication extends Application {
             // Initialize theme manager with scene (applies saved theme + color style)
             uk.ac.ebi.pride.pxsubmit.view.ThemeManager.getInstance().initialize(scene);
 
-            // Configure stage
+            // Configure stage - clamp the minimum size to the screen so the
+            // minimum can never exceed the available space on small displays
             stage.setTitle(getWindowTitle());
             stage.setScene(scene);
-            stage.setMinWidth(MIN_WIDTH);
-            stage.setMinHeight(MIN_HEIGHT);
+            stage.setMinWidth(Math.min(MIN_WIDTH, screenBounds.getWidth()));
+            stage.setMinHeight(Math.min(MIN_HEIGHT, screenBounds.getHeight()));
+            stage.centerOnScreen();
 
             // Set application icon
             loadAppIcon(stage);
@@ -167,12 +181,12 @@ public class PxSubmitApplication extends Application {
         // 1. Welcome - Introduction and guidelines
         // 2. Login - PRIDE authentication
         // 3. Submission Type - Choose submission type
-        // 4. File Resubmission - Manage existing/new files (skipped for normal submissions)
-        // 5. Project Metadata - Title, description, keywords (skipped for resubmission)
-        // 6. File Selection - Add files (drag-drop) (skipped for resubmission)
-        // 7. Sample Metadata - Species, tissue, instrument, etc. (skipped for resubmission)
-        // 8. Lab Head - PI contact details (skipped for resubmission)
-        // 9. Project References - PubMed IDs, project tags (skipped for resubmission)
+        // 4. Project Metadata - Title, description, keywords
+        // 5. File Selection - Add files (drag-drop)
+        // 6. SDRF Validation - Validate SDRF files (skipped if none)
+        // 7. Sample Metadata - Species, tissue, instrument, etc.
+        // 8. Lab Head - PI contact details
+        // 9. Project References - PubMed IDs, project tags
         // 10. Summary - Review before upload
         // 11. Checksum Computation - Compute checksums for all files
         // 12. Submission - Upload and complete
@@ -180,9 +194,9 @@ public class PxSubmitApplication extends Application {
         wizardController.addStep(new WelcomeStep(model));
         wizardController.addStep(new LoginStep(model));
         wizardController.addStep(new SubmissionTypeStep(model));
-        wizardController.addStep(new FileResubmissionStep(model));  // Resubmission file management (skipped for normal)
         wizardController.addStep(new ProjectMetadataStep(model));
         wizardController.addStep(new FileSelectionStep(model));
+        wizardController.addStep(new SdrfValidationStep(model));
         wizardController.addStep(new SampleMetadataStep(model));
         wizardController.addStep(new LabHeadStep(model));
         wizardController.addStep(new ProjectReferencesStep(model));
@@ -240,9 +254,6 @@ public class PxSubmitApplication extends Application {
 
         // Set username (user will need to re-enter password)
         model.setUserName(checkpoint.getUserName());
-
-        // Restore resubmission mode
-        model.setResubmissionMode(checkpoint.isResubmissionMode());
 
         // Restore upload method
         if (checkpoint.getUploadMethod() != null) {
@@ -356,19 +367,7 @@ public class PxSubmitApplication extends Application {
         alert.initOwner(primaryStage);
         alert.showAndWait();
 
-        // Ask to start new submission or exit
-        Alert newSubmissionAlert = new Alert(Alert.AlertType.CONFIRMATION);
-        newSubmissionAlert.setTitle("New Submission");
-        newSubmissionAlert.setHeaderText("Start a new submission?");
-        newSubmissionAlert.initOwner(primaryStage);
-
-        newSubmissionAlert.showAndWait().ifPresent(response -> {
-            if (response == ButtonType.OK) {
-                restart();
-            } else {
-                shutdown();
-            }
-        });
+        shutdown();
     }
 
     /**
@@ -425,6 +424,7 @@ public class PxSubmitApplication extends Application {
 
         // Close stage
         if (primaryStage != null) {
+            primaryStage.setOnCloseRequest(null);
             primaryStage.close();
         }
 

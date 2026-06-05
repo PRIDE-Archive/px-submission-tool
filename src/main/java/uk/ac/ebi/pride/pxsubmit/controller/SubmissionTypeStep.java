@@ -1,6 +1,5 @@
 package uk.ac.ebi.pride.pxsubmit.controller;
 
-import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -8,14 +7,11 @@ import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
-import uk.ac.ebi.pride.archive.submission.model.project.ProjectDetail;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
-import uk.ac.ebi.pride.pxsubmit.service.ApiService;
-import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
 
 /**
  * Step for selecting the submission type.
- * Options: PRIDE (mass spectrometry), Affinity Proteomics, or Resubmission.
+ * Options: PRIDE (mass spectrometry) or Affinity Proteomics.
  *
  * Note: The COMPLETE/PARTIAL distinction is handled automatically based on file types.
  * If the submission includes STANDARD file formats (mzIdentML, mzTab),
@@ -26,14 +22,6 @@ public class SubmissionTypeStep extends AbstractWizardStep {
     private ToggleGroup submissionTypeGroup;
     private RadioButton prideRadio;
     private RadioButton affinityRadio;
-    private RadioButton resubmissionRadio;
-
-    // Resubmission UI
-    private VBox resubmissionDetailBox;
-    private ComboBox<String> projectComboBox;
-    private HBox projectLoadingBox;
-    private Label resubmissionErrorLabel;
-    private boolean projectsLoaded = false;
 
     public SubmissionTypeStep(SubmissionModel model) {
         super("submission-type",
@@ -76,9 +64,6 @@ public class SubmissionTypeStep extends AbstractWizardStep {
             false
         );
 
-        // Resubmission
-        VBox resubmissionBox = createResubmissionOption();
-
         // Links section
         HBox linksBox = new HBox(20);
         linksBox.setAlignment(Pos.CENTER);
@@ -92,9 +77,14 @@ public class SubmissionTypeStep extends AbstractWizardStep {
 
         linksBox.getChildren().addAll(guidelinesLink, prideLink);
 
-        root.getChildren().addAll(prideBox, affinityBox, resubmissionBox, linksBox);
+        root.getChildren().addAll(prideBox, affinityBox, linksBox);
 
-        return root;
+        // Wrap in a scroll pane so the options remain reachable on short windows.
+        ScrollPane scrollPane = new ScrollPane(root);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background-color: transparent;");
+
+        return scrollPane;
     }
 
     private VBox createSubmissionOption(String title, String badge, String description,
@@ -171,97 +161,6 @@ public class SubmissionTypeStep extends AbstractWizardStep {
         return optionBox;
     }
 
-    private VBox createResubmissionOption() {
-        VBox optionBox = new VBox(8);
-        optionBox.setPadding(new Insets(15));
-        optionBox.setStyle(
-            "-fx-background-color: #f8f9fa; " +
-            "-fx-border-color: #dee2e6; " +
-            "-fx-border-radius: 8; " +
-            "-fx-background-radius: 8;"
-        );
-
-        // Header
-        HBox header = new HBox(10);
-        header.setAlignment(Pos.CENTER_LEFT);
-
-        resubmissionRadio = new RadioButton();
-        resubmissionRadio.setToggleGroup(submissionTypeGroup);
-        resubmissionRadio.setUserData("resubmission");
-
-        Label titleLabel = new Label("Resubmission");
-        titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-
-        Label badgeLabel = new Label("Resub");
-        badgeLabel.setStyle(
-            "-fx-background-color: #28a745; " +
-            "-fx-text-fill: white; " +
-            "-fx-padding: 2 8; " +
-            "-fx-background-radius: 4; " +
-            "-fx-font-size: 11px; " +
-            "-fx-font-weight: bold;"
-        );
-
-        header.getChildren().addAll(resubmissionRadio, titleLabel, badgeLabel);
-
-        // Description
-        Label descLabel = new Label("Resubmit files to an existing private PRIDE project");
-        descLabel.setStyle("-fx-text-fill: #666; -fx-padding: 5 0 0 28;");
-        descLabel.setWrapText(true);
-
-        // Project selection detail (hidden until resubmission radio selected)
-        resubmissionDetailBox = new VBox(8);
-        resubmissionDetailBox.setPadding(new Insets(10, 0, 0, 28));
-        resubmissionDetailBox.setVisible(false);
-        resubmissionDetailBox.setManaged(false);
-
-        Label projectLabel = new Label("Select project:");
-        projectComboBox = new ComboBox<>();
-        projectComboBox.setPromptText("Select a project...");
-        projectComboBox.setPrefWidth(300);
-        projectComboBox.setDisable(true);
-
-        projectLoadingBox = new HBox(8);
-        projectLoadingBox.setAlignment(Pos.CENTER_LEFT);
-        ProgressIndicator projectSpinner = new ProgressIndicator();
-        projectSpinner.setPrefSize(16, 16);
-        Label loadingLabel = new Label("Loading your projects...");
-        loadingLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 12px;");
-        projectLoadingBox.getChildren().addAll(projectSpinner, loadingLabel);
-        projectLoadingBox.setVisible(false);
-        projectLoadingBox.setManaged(false);
-
-        resubmissionErrorLabel = new Label();
-        resubmissionErrorLabel.setStyle("-fx-text-fill: #dc3545; -fx-font-size: 12px;");
-        resubmissionErrorLabel.setVisible(false);
-        resubmissionErrorLabel.setManaged(false);
-
-        resubmissionDetailBox.getChildren().addAll(projectLabel, projectComboBox, projectLoadingBox, resubmissionErrorLabel);
-
-        optionBox.getChildren().addAll(header, descLabel, resubmissionDetailBox);
-
-        // Click anywhere in box to select
-        optionBox.setOnMouseClicked(e -> resubmissionRadio.setSelected(true));
-
-        optionBox.setOnMouseEntered(e ->
-            optionBox.setStyle(
-                "-fx-background-color: #e9ecef; " +
-                "-fx-border-color: #28a745; " +
-                "-fx-border-radius: 8; " +
-                "-fx-background-radius: 8; " +
-                "-fx-cursor: hand;"
-            ));
-        optionBox.setOnMouseExited(e ->
-            optionBox.setStyle(
-                "-fx-background-color: #f8f9fa; " +
-                "-fx-border-color: #dee2e6; " +
-                "-fx-border-radius: 8; " +
-                "-fx-background-radius: 8;"
-            ));
-
-        return optionBox;
-    }
-
     @Override
     protected void initializeStep() {
         // Listen for selection changes to update model
@@ -272,9 +171,6 @@ public class SubmissionTypeStep extends AbstractWizardStep {
             }
             updateValidity();
         });
-
-        // Listen for project selection changes in resubmission combo
-        projectComboBox.valueProperty().addListener((obs, oldVal, newVal) -> updateValidity());
 
         // Set initial value in model
         Toggle selected = submissionTypeGroup.getSelectedToggle();
@@ -287,172 +183,39 @@ public class SubmissionTypeStep extends AbstractWizardStep {
 
     private void updateValidity() {
         Toggle selected = submissionTypeGroup.getSelectedToggle();
-        if (selected == null) {
-            valid.set(false);
-            return;
-        }
-        String optionId = (String) selected.getUserData();
-        if ("resubmission".equals(optionId)) {
-            // Require a project to be selected
-            String project = projectComboBox.getValue();
-            valid.set(project != null && !project.isEmpty());
-        } else {
-            valid.set(true);
-        }
+        valid.set(selected != null);
     }
 
     private void handleOptionChange(String optionId) {
         switch (optionId) {
             case "pride" -> {
                 model.setSubmissionType(SubmissionTypeConstants.PRIDE);
-                model.setResubmissionMode(false);
-                model.getSubmission().getProjectMetaData().setResubmissionPxAccession(null);
-                resubmissionDetailBox.setVisible(false);
-                resubmissionDetailBox.setManaged(false);
                 logger.info("Submission type selected: PRIDE");
             }
             case "affinity" -> {
                 model.setSubmissionType(SubmissionTypeConstants.AFFINITY);
-                model.setResubmissionMode(false);
-                model.getSubmission().getProjectMetaData().setResubmissionPxAccession(null);
-                resubmissionDetailBox.setVisible(false);
-                resubmissionDetailBox.setManaged(false);
                 logger.info("Submission type selected: AFFINITY");
             }
-            case "resubmission" -> {
-                model.setSubmissionType(SubmissionTypeConstants.PRIDE);
-                model.setResubmissionMode(true);
-                resubmissionDetailBox.setVisible(true);
-                resubmissionDetailBox.setManaged(true);
-                if (!projectsLoaded) {
-                    loadProjects();
-                }
-                logger.info("Submission type selected: Resubmission");
-            }
         }
-    }
-
-    private void loadProjects() {
-        projectLoadingBox.setVisible(true);
-        projectLoadingBox.setManaged(true);
-        projectComboBox.setDisable(true);
-        projectComboBox.getItems().clear();
-        resubmissionErrorLabel.setVisible(false);
-        resubmissionErrorLabel.setManaged(false);
-
-        String currentUser = model.getUserName();
-        String currentPass = model.getPassword();
-        if (currentUser == null || currentPass == null) {
-            resubmissionErrorLabel.setText("Not logged in. Please go back and log in first.");
-            resubmissionErrorLabel.setVisible(true);
-            resubmissionErrorLabel.setManaged(true);
-            projectLoadingBox.setVisible(false);
-            projectLoadingBox.setManaged(false);
-            return;
-        }
-
-        logger.debug("Loading projects for user: {}", currentUser);
-        ApiService apiService = ServiceFactory.getInstance().createApiService(currentUser, currentPass);
-        apiService.getSubmissionDetails()
-            .thenAccept(projectDetailList -> Platform.runLater(() -> {
-                projectLoadingBox.setVisible(false);
-                projectLoadingBox.setManaged(false);
-
-                if (projectDetailList.getProjectDetails().isEmpty()) {
-                    resubmissionErrorLabel.setText(
-                        "You do not have any private datasets available for resubmission, " +
-                        "or you already have a pending resubmission ticket.");
-                    resubmissionErrorLabel.setStyle("-fx-text-fill: #856404; -fx-font-size: 12px; " +
-                        "-fx-background-color: #fff3cd; -fx-padding: 8 12; -fx-background-radius: 4;");
-                    resubmissionErrorLabel.setVisible(true);
-                    resubmissionErrorLabel.setManaged(true);
-                    projectComboBox.setVisible(false);
-                    projectComboBox.setManaged(false);
-                } else {
-                    projectComboBox.setVisible(true);
-                    projectComboBox.setManaged(true);
-                    for (ProjectDetail pd : projectDetailList.getProjectDetails()) {
-                        projectComboBox.getItems().add(pd.getAccession());
-                    }
-                    projectComboBox.setPromptText("Select a project...");
-                    projectComboBox.setDisable(false);
-                    projectsLoaded = true;
-                }
-                apiService.shutdown();
-            }))
-            .exceptionally(ex -> {
-                logger.error("Failed to load projects for resubmission", ex);
-                Platform.runLater(() -> {
-                    projectLoadingBox.setVisible(false);
-                    projectLoadingBox.setManaged(false);
-                    String msg = "Could not load projects. Please check your credentials and try again.";
-                    Throwable cause = ex.getCause() != null ? ex.getCause() : ex;
-                    if (cause.getMessage() != null && cause.getMessage().contains("403")) {
-                        msg = "Access denied. Please verify your account has resubmission permissions.";
-                    } else if (cause.getMessage() != null && cause.getMessage().contains("401")) {
-                        msg = "Authentication failed. Please go back and re-enter your credentials.";
-                    }
-                    resubmissionErrorLabel.setText(msg);
-                    resubmissionErrorLabel.setVisible(true);
-                    resubmissionErrorLabel.setManaged(true);
-                });
-                apiService.shutdown();
-                return null;
-            });
     }
 
     @Override
     protected void onStepEntering() {
-        // Block resubmission in test mode
-        if (model.isTrainingMode()) {
-            resubmissionRadio.setDisable(true);
-        }
-
         // Restore previous selection if any
-        if (model.isResubmissionMode() && !model.isTrainingMode()) {
-            resubmissionRadio.setSelected(true);
-        } else {
-            SubmissionTypeConstants currentType = model.getSubmissionType();
-            if (currentType != null) {
-                switch (currentType) {
-                    case PRIDE, PARTIAL, COMPLETE -> prideRadio.setSelected(true);
-                    case AFFINITY -> affinityRadio.setSelected(true);
-                }
+        SubmissionTypeConstants currentType = model.getSubmissionType();
+        if (currentType != null) {
+            switch (currentType) {
+                case PRIDE, PARTIAL, COMPLETE -> prideRadio.setSelected(true);
+                case AFFINITY -> affinityRadio.setSelected(true);
             }
-        }
-
-        // Reset project loading if coming back after logout
-        if (!model.isLoggedIn()) {
-            projectsLoaded = false;
-            projectComboBox.getItems().clear();
-            projectComboBox.setDisable(true);
+        } else {
+            prideRadio.setSelected(true);
         }
     }
 
     @Override
     public boolean validate() {
-        Toggle selected = submissionTypeGroup.getSelectedToggle();
-        if (selected == null) return false;
-
-        String optionId = (String) selected.getUserData();
-        if ("resubmission".equals(optionId)) {
-            // Block if no projects are available (combo is hidden)
-            if (!projectComboBox.isVisible()) {
-                return false;
-            }
-            String selectedAccession = projectComboBox.getValue();
-            if (selectedAccession == null || selectedAccession.isEmpty()) {
-                resubmissionErrorLabel.setText("Please select a project for resubmission");
-                resubmissionErrorLabel.setStyle("-fx-text-fill: #dc3545; -fx-font-size: 12px;");
-                resubmissionErrorLabel.setVisible(true);
-                resubmissionErrorLabel.setManaged(true);
-                return false;
-            }
-            model.setResubmissionMode(true);
-            model.getSubmission().getProjectMetaData().setResubmissionPxAccession(selectedAccession);
-            logger.info("Resubmission mode enabled for project: {}", selectedAccession);
-        }
-        return true;
+        return submissionTypeGroup.getSelectedToggle() != null;
     }
 
     private void openUrl(String url) {

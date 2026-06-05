@@ -104,7 +104,16 @@ public class LoginStep extends AbstractWizardStep {
             linksBox
         );
 
-        return root;
+        // Wrap in a scroll pane so the form stays reachable (rather than being
+        // clipped) on very short windows, while remaining centered when there's room.
+        VBox centeringWrapper = new VBox(root);
+        centeringWrapper.setAlignment(Pos.TOP_CENTER);
+
+        ScrollPane scrollPane = new ScrollPane(centeringWrapper);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background-color: transparent;");
+
+        return scrollPane;
     }
 
     @Override
@@ -112,7 +121,6 @@ public class LoginStep extends AbstractWizardStep {
         // Skip login entirely in test mode
         if (model.isTrainingMode()) {
             model.setLoggedIn(true);
-            model.setResubmissionMode(false);
             return true;
         }
         return false;
@@ -162,6 +170,8 @@ public class LoginStep extends AbstractWizardStep {
             return;
         }
 
+        usernameField.setText(model.getUserName() != null ? model.getUserName() : "");
+
         // Focus username field
         usernameField.requestFocus();
 
@@ -185,7 +195,6 @@ public class LoginStep extends AbstractWizardStep {
         if (model.isTrainingMode()) {
             logger.info("Test mode - skipping authentication, no login required");
             model.setLoggedIn(true);
-            model.setResubmissionMode(false);
             return true;
         }
 

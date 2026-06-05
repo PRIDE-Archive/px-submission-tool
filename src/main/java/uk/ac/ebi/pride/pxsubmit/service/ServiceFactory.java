@@ -5,7 +5,6 @@ import uk.ac.ebi.pride.archive.dataprovider.utils.SubmissionTypeConstants;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadDetail;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
 import uk.ac.ebi.pride.data.model.DataFile;
-import uk.ac.ebi.pride.data.model.Resubmission;
 import uk.ac.ebi.pride.data.model.Submission;
 
 import uk.ac.ebi.pride.pxsubmit.service.ai.KeywordSuggestionService;
@@ -21,6 +20,7 @@ import java.util.List;
 public class ServiceFactory {
 
     private static ServiceFactory instance = new ServiceFactory();
+    private SdrfValidationService sdrfValidationService;
 
     public static ServiceFactory getInstance() { return instance; }
 
@@ -53,15 +53,16 @@ public class ServiceFactory {
         return new SdrfParserService(sdrfFile);
     }
 
+    public SdrfValidationService createSdrfValidationService() {
+        if (sdrfValidationService == null) {
+            sdrfValidationService = new SdrfValidationService();
+        }
+        return sdrfValidationService;
+    }
+
     public UploadManager createUploadManager(Submission submission, UploadDetail detail,
                                              UploadMethod method, boolean trainingMode) {
         return new UploadManager(submission, detail, method, trainingMode);
-    }
-
-    public UploadManager createUploadManager(Submission submission, Resubmission resubmission,
-                                             UploadDetail detail,
-                                             UploadMethod method, boolean trainingMode) {
-        return new UploadManager(submission, resubmission, detail, method, trainingMode);
     }
 
     public FtpUploadService createFtpUploadService(List<DataFile> files, UploadDetail detail) {

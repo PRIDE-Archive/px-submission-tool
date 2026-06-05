@@ -59,12 +59,6 @@ public class FileReviewStep extends AbstractWizardStep {
     }
 
     @Override
-    public boolean canSkip() {
-        // Skip this step during resubmission - files are managed in FileResubmissionStep
-        return model.isResubmissionMode();
-    }
-
-    @Override
     protected Parent createContent() {
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(10));

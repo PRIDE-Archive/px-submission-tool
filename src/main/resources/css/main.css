@@ -97,6 +97,39 @@
     -fx-alignment: center;
 }
 
+/* Transparent scroll wrapper around the step indicator so it blends into the
+   header and only shows a thin scrollbar on very narrow windows. */
+.step-indicator-scroll,
+.step-indicator-scroll > .viewport {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+}
+
+.step-indicator-scroll {
+    -fx-border-color: transparent;
+}
+
+.step-indicator-scroll > .scroll-bar:horizontal {
+    -fx-pref-height: 6px;
+}
+
+.step-indicator-scroll > .scroll-bar:horizontal .thumb {
+    -fx-background-color: rgba(255, 255, 255, 0.35);
+    -fx-background-radius: 3;
+}
+
+.step-indicator-scroll > .scroll-bar:horizontal .track,
+.step-indicator-scroll > .scroll-bar:horizontal .track-background {
+    -fx-background-color: transparent;
+}
+
+.step-indicator-scroll > .scroll-bar:horizontal .increment-button,
+.step-indicator-scroll > .scroll-bar:horizontal .decrement-button {
+    -fx-pref-width: 0;
+    -fx-padding: 0;
+}
+
 .step-dot {
     -fx-background-color: rgba(255, 255, 255, 0.3);
     -fx-background-radius: 13;

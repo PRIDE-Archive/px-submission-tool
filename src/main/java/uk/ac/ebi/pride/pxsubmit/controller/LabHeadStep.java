@@ -85,11 +85,6 @@ public class LabHeadStep extends AbstractWizardStep {
     }
 
     @Override
-    public boolean canSkip() {
-        return model.isResubmissionMode();
-    }
-
-    @Override
     protected Parent createContent() {
         ScrollPane scrollPane = new ScrollPane();
         scrollPane.setFitToWidth(true);
@@ -290,6 +285,13 @@ public class LabHeadStep extends AbstractWizardStep {
 
     @Override
     protected void onStepEntering() {
+        String country = model.getLabHeadCountry();
+        if (country != null && !country.isBlank()) {
+            countrySearchField.selectCountry(country);
+        } else {
+            countrySearchField.setText("");
+        }
+
         // Populate test mode examples
         if (model.isTrainingMode()) {
             if (nameField.getText() == null || nameField.getText().isEmpty()) {

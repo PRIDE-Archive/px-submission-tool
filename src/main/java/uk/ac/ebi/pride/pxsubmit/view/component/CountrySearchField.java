@@ -60,7 +60,7 @@ public class CountrySearchField extends HBox {
         suggestionList = new ListView<>(suggestions);
         suggestionList.setPrefHeight(POPUP_MAX_HEIGHT);
         suggestionList.setMaxHeight(POPUP_MAX_HEIGHT);
-        Label emptyLabel = new Label("No matching countries");
+        Label emptyLabel = new Label("No matching country");
         emptyLabel.setPadding(new Insets(8));
         emptyLabel.setStyle("-fx-text-fill: #666;");
         suggestionList.setPlaceholder(emptyLabel);
@@ -218,7 +218,7 @@ public class CountrySearchField extends HBox {
         suggestions.setAll(Arrays.stream(allCountries)
                 .filter(country -> country.toLowerCase().startsWith(filter))
                 .toList());
-        if (openDropdown && !suggestions.isEmpty()) {
+        if (openDropdown) {
             showDropdown();
         } else if (suggestions.isEmpty()) {
             hideDropdown();
@@ -226,9 +226,6 @@ public class CountrySearchField extends HBox {
     }
 
     private void showDropdown() {
-        if (suggestions.isEmpty()) {
-            return;
-        }
         double width = getWidth() > 0 ? getWidth() : searchField.getPrefWidth() + dropdownButton.getPrefWidth();
         suggestionList.setPrefWidth(width);
         Bounds screenBounds = localToScreen(getBoundsInLocal());

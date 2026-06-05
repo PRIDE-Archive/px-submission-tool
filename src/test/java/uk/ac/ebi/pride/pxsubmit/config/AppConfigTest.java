@@ -37,8 +37,6 @@ class AppConfigTest {
         assertThat(config.getReuploadDetailUrl()).startsWith("https://");
         assertThat(config.getUploadVerifyUrl()).startsWith("https://");
         assertThat(config.getSubmissionCompleteUrl()).startsWith("https://");
-        assertThat(config.getResubmissionCompleteUrl()).startsWith("https://");
-        assertThat(config.getSubmissionDetailUrl()).startsWith("https://");
         assertThat(config.getSubmissionWsBaseUrl()).startsWith("https://");
     }
 
