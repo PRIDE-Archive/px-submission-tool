@@ -489,16 +489,13 @@ public class SampleMetadataStep extends AbstractWizardStep {
     }
 
     private void loadFromModel() {
-        // Load existing selections from model
-        if (!model.getSpecies().isEmpty()) {
-            speciesField.setSelectedTerms(model.getSpecies());
-        }
-        if (!model.getInstruments().isEmpty()) {
-            instrumentField.setSelectedTerms(model.getInstruments());
-        }
-        if (!model.getModifications().isEmpty()) {
-            modificationField.setSelectedTerms(model.getModifications());
-        }
+        // Load existing selections from model, clearing stale test-mode selections.
+        speciesField.setSelectedTerms(model.getSpecies());
+        tissueField.setSelectedTerms(model.getTissues());
+        cellTypeField.setSelectedTerms(model.getCellTypes());
+        diseaseField.setSelectedTerms(model.getDiseases());
+        instrumentField.setSelectedTerms(model.getInstruments());
+        modificationField.setSelectedTerms(model.getModifications());
     }
 
     private void syncToModel() {

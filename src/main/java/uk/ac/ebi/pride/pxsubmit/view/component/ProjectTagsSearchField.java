@@ -13,7 +13,7 @@ import java.util.function.Consumer;
 public class ProjectTagsSearchField extends SearchableMultiSelectField {
 
     public ProjectTagsSearchField(String[] tags) {
-        super("Search project tags...", "No matching tags", List.of(tags));
+        super("Search project tags...", "No matching project tags found", List.of(tags));
     }
 
     public void setOnSelectionChanged(Consumer<Set<String>> handler) {

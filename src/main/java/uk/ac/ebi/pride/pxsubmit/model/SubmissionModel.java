@@ -53,6 +53,9 @@ public class SubmissionModel {
     private final ObjectProperty<UploadDetail> uploadDetail = new SimpleObjectProperty<>();
     private final ObjectProperty<UploadMethod> uploadMethod = new SimpleObjectProperty<>();
     private final BooleanProperty summaryFileUploaded = new SimpleBooleanProperty(false);
+    private final ObjectProperty<Boolean> asperaAvailable = new SimpleObjectProperty<>();
+    private final BooleanProperty asperaAvailabilityChecking = new SimpleBooleanProperty(false);
+    private final StringProperty asperaAvailabilityMessage = new SimpleStringProperty();
 
     // ==================== Mode Flags ====================
 
@@ -382,7 +385,12 @@ public class SubmissionModel {
         clearPasswordArray();
         password.set(null);
         uploadDetail.set(null);
+        uploadMethod.set(null);
+        asperaAvailable.set(null);
+        asperaAvailabilityChecking.set(false);
+        asperaAvailabilityMessage.set(null);
         summaryFileUploaded.set(false);
+        loggedIn.set(false);
 
         species.clear();
         tissues.clear();
@@ -407,7 +415,9 @@ public class SubmissionModel {
         labHeadCountry.set(null);
 
         submissionType.set(null);
+        controlledAccessMode.set(false);
         bulkMode.set(false);
+        sdrfValidation.clear();
         pendingCheckpoint = null;
     }
 
@@ -558,6 +568,18 @@ public class SubmissionModel {
     public ObjectProperty<UploadMethod> uploadMethodProperty() { return uploadMethod; }
     public UploadMethod getUploadMethod() { return uploadMethod.get(); }
     public void setUploadMethod(UploadMethod value) { uploadMethod.set(value); }
+
+    public ObjectProperty<Boolean> asperaAvailableProperty() { return asperaAvailable; }
+    public Boolean getAsperaAvailable() { return asperaAvailable.get(); }
+    public void setAsperaAvailable(Boolean value) { asperaAvailable.set(value); }
+
+    public BooleanProperty asperaAvailabilityCheckingProperty() { return asperaAvailabilityChecking; }
+    public boolean isAsperaAvailabilityChecking() { return asperaAvailabilityChecking.get(); }
+    public void setAsperaAvailabilityChecking(boolean value) { asperaAvailabilityChecking.set(value); }
+
+    public StringProperty asperaAvailabilityMessageProperty() { return asperaAvailabilityMessage; }
+    public String getAsperaAvailabilityMessage() { return asperaAvailabilityMessage.get(); }
+    public void setAsperaAvailabilityMessage(String value) { asperaAvailabilityMessage.set(value); }
 
     public BooleanProperty summaryFileUploadedProperty() { return summaryFileUploaded; }
     public boolean isSummaryFileUploaded() { return summaryFileUploaded.get(); }

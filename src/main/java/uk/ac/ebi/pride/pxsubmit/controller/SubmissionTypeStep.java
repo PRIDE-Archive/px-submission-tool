@@ -208,6 +208,8 @@ public class SubmissionTypeStep extends AbstractWizardStep {
                 case PRIDE, PARTIAL, COMPLETE -> prideRadio.setSelected(true);
                 case AFFINITY -> affinityRadio.setSelected(true);
             }
+        } else {
+            prideRadio.setSelected(true);
         }
     }
 

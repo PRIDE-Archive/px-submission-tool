@@ -372,6 +372,12 @@ public class WelcomeStep extends AbstractWizardStep {
     protected void initializeStep() {
         // Bind training mode checkbox to model
         trainingModeCheckbox.selectedProperty().bindBidirectional(model.trainingModeProperty());
+        model.trainingModeProperty().addListener((obs, wasTraining, isTraining) -> {
+            if (Boolean.TRUE.equals(wasTraining) && !Boolean.TRUE.equals(isTraining)) {
+                logger.info("Test mode disabled - clearing test submission data");
+                model.reset();
+            }
+        });
 
         // Valid only when license is accepted
         valid.bind(licenseCheckBox.selectedProperty());

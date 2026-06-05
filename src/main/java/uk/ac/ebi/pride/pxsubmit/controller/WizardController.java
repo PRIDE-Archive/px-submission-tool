@@ -95,7 +95,7 @@ public class WizardController implements Initializable {
     // Short labels for the step indicator bar (indexed by step registration order)
     private static final String[] STEP_SHORT_LABELS = {
         "Welcome", "Login", "Type", "Project",
-        "Files", "SDRF", "Metadata", "Lab Head", "Reference", "Summary", "Checksum", "Upload"
+        "Files", "SDRF Validation", "Metadata", "Lab Head", "Reference", "Summary", "Checksum", "Upload"
     };
 
     // Animation duration

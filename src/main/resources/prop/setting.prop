@@ -16,6 +16,7 @@ px.submission.ws.base.url=https://www.proteomexchange.org/archive-submission-ws/
 px.upload.detail.url = https://www.proteomexchange.org/archive-submission-ws/submission/upload/{method}
 px.reupload.detail.url = https://www.proteomexchange.org/archive-submission-ws/submission/reupload/{method}/{ticketId}
 px.upload.verify.url = https://www.proteomexchange.org/archive-submission-ws/submission/fileListAndSize
+px.aspera.available.url = https://www.proteomexchange.org/archive-submission-ws/submission/asperaAvailable
 
 # url for completing px submission
 px.submission.complete.url = https://www.proteomexchange.org/archive-submission-ws/submission/submit

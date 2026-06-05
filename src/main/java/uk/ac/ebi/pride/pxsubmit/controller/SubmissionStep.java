@@ -4,6 +4,7 @@ import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.property.*;
+import javafx.beans.value.ChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -48,6 +49,11 @@ public class SubmissionStep extends AbstractWizardStep {
     private Button cancelButton;
     private Button retryButton;
     private Button pauseButton;
+    private RadioButton asperaRadio;
+    private RadioButton ftpRadio;
+    private Label asperaAvailabilityLabel;
+    private ChangeListener<Boolean> asperaAvailabilityCheckingListener;
+    private boolean usingFtpBecauseAsperaUnavailable;
 
     // Live statistics labels
     private Label elapsedTimeLabel;
@@ -131,36 +137,39 @@ public class SubmissionStep extends AbstractWizardStep {
 
         ToggleGroup uploadToggle = new ToggleGroup();
 
-        RadioButton asperaRadio = new RadioButton("Aspera - High-speed transfer (recommended)");
+        asperaRadio = new RadioButton("Aspera - High-speed transfer (recommended)");
         asperaRadio.setToggleGroup(uploadToggle);
         asperaRadio.setUserData(UploadMethod.ASPERA);
         asperaRadio.setTooltip(new Tooltip("Use Aspera for faster uploads. If Aspera is unavailable, the upload falls back to FTP."));
 
-        RadioButton ftpRadio = new RadioButton("FTP - Standard file transfer");
+        ftpRadio = new RadioButton("FTP - Standard file transfer");
         ftpRadio.setToggleGroup(uploadToggle);
         ftpRadio.setUserData(UploadMethod.FTP);
 
-        // Set current selection (Aspera is default)
-        if (model.getUploadMethod() == UploadMethod.FTP) {
-            ftpRadio.setSelected(true);
-        } else {
-            asperaRadio.setSelected(true);
-            if (model.getUploadMethod() == null) {
-                model.setUploadMethod(UploadMethod.ASPERA);
-            }
-        }
+        restoreUploadMethodSelection();
 
         // Update model on selection change
         uploadToggle.selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal != null && newVal.getUserData() instanceof UploadMethod) {
-                model.setUploadMethod((UploadMethod) newVal.getUserData());
+                UploadMethod selectedMethod = (UploadMethod) newVal.getUserData();
+                model.setUploadMethod(selectedMethod);
+                if (selectedMethod == UploadMethod.ASPERA || !asperaRadio.isDisabled()) {
+                    usingFtpBecauseAsperaUnavailable = false;
+                }
             }
         });
 
         VBox radioBox = new VBox(5, asperaRadio, ftpRadio);
         radioBox.setPadding(new Insets(0, 0, 0, 10));
 
-        uploadMethodBox.getChildren().addAll(uploadMethodLabel, radioBox);
+        asperaAvailabilityLabel = new Label();
+        asperaAvailabilityLabel.setWrapText(true);
+        asperaAvailabilityLabel.setVisible(false);
+        asperaAvailabilityLabel.setManaged(false);
+        asperaAvailabilityLabel.setStyle("-fx-text-fill: #856404; -fx-font-size: 12px;");
+        asperaAvailabilityLabel.setPadding(new Insets(0, 0, 0, 10));
+
+        uploadMethodBox.getChildren().addAll(uploadMethodLabel, radioBox, asperaAvailabilityLabel);
 
         // Buttons
         HBox buttonBox = new HBox(15);
@@ -239,9 +248,12 @@ public class SubmissionStep extends AbstractWizardStep {
 
     @Override
     protected void onStepEntering() {
+        restoreUploadMethodSelection();
+
         // Reset state
         uploading.set(false);
         completed.set(false);
+        startButton.setDisable(false);
         overallProgress.setProgress(0);
         currentFileProgress.setProgress(0);
         logListView.getItems().clear();
@@ -266,6 +278,11 @@ public class SubmissionStep extends AbstractWizardStep {
 
         // Initialize API service
         apiService = ServiceFactory.getInstance().createApiService(model.getUserName(), model.getPassword());
+        if (model.isTrainingMode()) {
+            applyAsperaAvailability(true, false);
+        } else {
+            refreshAsperaAvailability();
+        }
 
         // Resume from checkpoint: pre-set ticketId so we reuse the same upload folder
         UploadCheckpoint pending = model.getPendingCheckpoint();
@@ -275,9 +292,182 @@ public class SubmissionStep extends AbstractWizardStep {
         }
     }
 
+    private void restoreUploadMethodSelection() {
+        if (asperaRadio == null || ftpRadio == null) {
+            return;
+        }
+
+        if (asperaRadio.isDisabled()) {
+            ftpRadio.setSelected(true);
+            if (model.getUploadMethod() != UploadMethod.FTP) {
+                model.setUploadMethod(UploadMethod.FTP);
+            }
+            return;
+        }
+
+        // Aspera is the default when no upload method is stored.
+        if (model.getUploadMethod() == UploadMethod.FTP) {
+            ftpRadio.setSelected(true);
+        } else {
+            asperaRadio.setSelected(true);
+            if (model.getUploadMethod() == null) {
+                model.setUploadMethod(UploadMethod.ASPERA);
+            }
+        }
+    }
+
+    private void refreshAsperaAvailability() {
+        if (apiService == null || asperaRadio == null || ftpRadio == null) {
+            return;
+        }
+
+        UploadMethod preferredMethod = model.getUploadMethod();
+        boolean shouldRestoreAspera = preferredMethod == null || preferredMethod == UploadMethod.ASPERA;
+
+        Boolean cachedAvailability = model.getAsperaAvailable();
+        if (cachedAvailability != null && !model.isAsperaAvailabilityChecking()) {
+            applyAsperaAvailability(cachedAvailability, shouldRestoreAspera);
+            addLog(cachedAvailability ? "Aspera upload is available" : "Aspera upload is currently unavailable; using FTP");
+            return;
+        }
+
+        if (model.isAsperaAvailabilityChecking()) {
+            applyAsperaAvailabilityPending(shouldRestoreAspera);
+            waitForAsperaAvailabilityCheck(shouldRestoreAspera);
+            addLog("Aspera availability check is already in progress...");
+            return;
+        }
+
+        model.setAsperaAvailable(null);
+        model.setAsperaAvailabilityMessage(null);
+        model.setAsperaAvailabilityChecking(true);
+        applyAsperaAvailabilityPending(shouldRestoreAspera);
+        addLog("Checking Aspera availability...");
+
+        apiService.isAsperaAvailable()
+            .thenAccept(available -> Platform.runLater(() -> {
+                model.setAsperaAvailable(available);
+                model.setAsperaAvailabilityMessage(available ? null :
+                    "Aspera upload is currently unavailable from the submission service. FTP has been selected automatically, so you can continue with the submission.");
+                applyAsperaAvailability(available, shouldRestoreAspera);
+                model.setAsperaAvailabilityChecking(false);
+                addLog(available ? "Aspera upload is available" : "Aspera upload is currently unavailable; using FTP");
+            }))
+            .exceptionally(ex -> {
+                logger.warn("Aspera availability check failed", ex);
+                Platform.runLater(() -> {
+                    model.setAsperaAvailable(false);
+                    model.setAsperaAvailabilityMessage(
+                        "Unable to confirm Aspera availability right now. FTP has been selected automatically, so you can continue with the submission.");
+                    applyAsperaAvailability(false, shouldRestoreAspera);
+                    model.setAsperaAvailabilityChecking(false);
+                    addLog("Aspera availability check failed; using FTP");
+                });
+                return null;
+            });
+    }
+
+    private void waitForAsperaAvailabilityCheck(boolean shouldRestoreAspera) {
+        removeAsperaAvailabilityCheckingListener();
+        asperaAvailabilityCheckingListener = (obs, wasChecking, isChecking) -> {
+            if (Boolean.TRUE.equals(isChecking)) {
+                return;
+            }
+
+            removeAsperaAvailabilityCheckingListener();
+            Boolean available = model.getAsperaAvailable();
+            if (available == null) {
+                refreshAsperaAvailability();
+                return;
+            }
+
+            applyAsperaAvailability(available, shouldRestoreAspera);
+            addLog(available ? "Aspera upload is available" : "Aspera upload is currently unavailable; using FTP");
+        };
+        model.asperaAvailabilityCheckingProperty().addListener(asperaAvailabilityCheckingListener);
+    }
+
+    private void removeAsperaAvailabilityCheckingListener() {
+        if (asperaAvailabilityCheckingListener != null) {
+            model.asperaAvailabilityCheckingProperty().removeListener(asperaAvailabilityCheckingListener);
+            asperaAvailabilityCheckingListener = null;
+        }
+    }
+
+    private void applyAsperaAvailabilityPending(boolean shouldRestoreAspera) {
+        asperaRadio.setDisable(true);
+        asperaRadio.setTooltip(new Tooltip("Checking Aspera availability..."));
+        showAsperaAvailabilityMessage("Checking Aspera availability...", false);
+        if (!uploading.get()) {
+            startButton.setDisable(true);
+        }
+        if (shouldRestoreAspera || asperaRadio.isSelected()) {
+            usingFtpBecauseAsperaUnavailable = true;
+            ftpRadio.setSelected(true);
+            model.setUploadMethod(UploadMethod.FTP);
+        }
+    }
+
+    private void applyAsperaAvailability(boolean available, boolean shouldRestoreAspera) {
+        if (!uploading.get()) {
+            startButton.setDisable(false);
+        }
+
+        if (available) {
+            asperaRadio.setDisable(false);
+            asperaRadio.setTooltip(new Tooltip("Use Aspera for faster uploads. If Aspera is unavailable, the upload falls back to FTP."));
+            hideAsperaAvailabilityMessage();
+            if (shouldRestoreAspera || usingFtpBecauseAsperaUnavailable) {
+                asperaRadio.setSelected(true);
+                model.setUploadMethod(UploadMethod.ASPERA);
+            }
+            usingFtpBecauseAsperaUnavailable = false;
+        } else {
+            asperaRadio.setDisable(true);
+            asperaRadio.setTooltip(new Tooltip("Aspera upload is currently unavailable. FTP upload will be used."));
+            showAsperaAvailabilityMessage(
+                getAsperaUnavailableMessage(),
+                true);
+            if (shouldRestoreAspera || asperaRadio.isSelected() || model.getUploadMethod() == UploadMethod.ASPERA) {
+                usingFtpBecauseAsperaUnavailable = true;
+                ftpRadio.setSelected(true);
+                model.setUploadMethod(UploadMethod.FTP);
+            }
+        }
+    }
+
+    private String getAsperaUnavailableMessage() {
+        String message = model.getAsperaAvailabilityMessage();
+        return message != null && !message.isBlank()
+            ? message
+            : "Aspera upload is currently unavailable from the submission service. FTP has been selected automatically, so you can continue with the submission.";
+    }
+
+    private void showAsperaAvailabilityMessage(String message, boolean warning) {
+        if (asperaAvailabilityLabel == null) {
+            return;
+        }
+
+        asperaAvailabilityLabel.setText(message);
+        asperaAvailabilityLabel.setStyle("-fx-text-fill: " + (warning ? "#856404" : "#666") + "; -fx-font-size: 12px;");
+        asperaAvailabilityLabel.setVisible(true);
+        asperaAvailabilityLabel.setManaged(true);
+    }
+
+    private void hideAsperaAvailabilityMessage() {
+        if (asperaAvailabilityLabel == null) {
+            return;
+        }
+
+        asperaAvailabilityLabel.setText("");
+        asperaAvailabilityLabel.setVisible(false);
+        asperaAvailabilityLabel.setManaged(false);
+    }
+
     @Override
     protected void onStepLeaving() {
         stopStatsTimeline();
+        removeAsperaAvailabilityCheckingListener();
 
         // Cancel any running upload
         if (uploadManager != null && uploadManager.isRunning()) {
@@ -292,6 +482,13 @@ public class SubmissionStep extends AbstractWizardStep {
     }
 
     private void startUpload() {
+        if (model.getUploadMethod() == UploadMethod.ASPERA && asperaRadio != null && asperaRadio.isDisabled()) {
+            model.setUploadMethod(UploadMethod.FTP);
+            if (ftpRadio != null) {
+                ftpRadio.setSelected(true);
+            }
+        }
+
         uploading.set(true);
         startButton.setDisable(true);
         cancelButton.setVisible(true);
@@ -728,6 +925,11 @@ public class SubmissionStep extends AbstractWizardStep {
      * Save checkpoint before upload starts. Captures all model state needed to resume.
      */
     private void saveCheckpoint() {
+        if (model.isTrainingMode()) {
+            logger.debug("Skipping upload checkpoint in test mode");
+            return;
+        }
+
         try {
             UploadCheckpoint checkpoint = new UploadCheckpoint();
             checkpoint.setUserName(model.getUserName());

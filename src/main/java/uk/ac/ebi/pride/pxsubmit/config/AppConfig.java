@@ -26,6 +26,7 @@ public class AppConfig {
     private String uploadDetailUrl;
     private String reuploadDetailUrl;
     private String uploadVerifyUrl;
+    private String asperaAvailableUrl;
     private String submissionCompleteUrl;
     private String submissionWsBaseUrl;
 
@@ -85,6 +86,8 @@ public class AppConfig {
             "https://www.proteomexchange.org/archive-submission-ws/submission/reupload/{method}/{ticketId}");
         uploadVerifyUrl = getProperty("px.upload.verify.url",
             "https://www.proteomexchange.org/archive-submission-ws/submission/fileListAndSize");
+        asperaAvailableUrl = getProperty("px.aspera.available.url",
+            "https://www.proteomexchange.org/archive-submission-ws/submission/aspera/available");
         submissionCompleteUrl = getProperty("px.submission.complete.url",
             "https://www.proteomexchange.org/archive-submission-ws/submission/submit");
         submissionWsBaseUrl = getProperty("px.submission.ws.base.url",
@@ -164,6 +167,10 @@ public class AppConfig {
 
     public String getUploadVerifyUrl() {
         return uploadVerifyUrl;
+    }
+
+    public String getAsperaAvailableUrl() {
+        return asperaAvailableUrl;
     }
 
     public String getSubmissionCompleteUrl() {

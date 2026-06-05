@@ -34,6 +34,12 @@ public class SdrfValidationTracker {
         validationByPath.clear();
     }
 
+    public void clear() {
+        fileSetSignature = null;
+        validatedSignature = null;
+        validationByPath.clear();
+    }
+
     public boolean isValidatedForCurrentFiles(List<File> sdrfFiles) {
         if (sdrfFiles.isEmpty()) {
             return true;

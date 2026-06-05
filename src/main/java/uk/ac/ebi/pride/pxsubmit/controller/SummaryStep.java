@@ -221,8 +221,6 @@ public class SummaryStep extends AbstractWizardStep {
             .filter(f -> f.getFileType() == ProjectFileType.SEARCH).count();
         long standardCount = model.getFiles().stream()
             .filter(f -> f.getFileType() == ProjectFileType.RESULT).count();
-        boolean hasFasta = model.getFiles().stream()
-            .anyMatch(f -> FileTypeDetector.isFastaFile(f.getFile()));
 
         // File validation
         if (rawCount == 0) {
@@ -231,16 +229,8 @@ public class SummaryStep extends AbstractWizardStep {
         if (analysisCount == 0 && standardCount == 0) {
             feedback.addWarning("No analysis or standard result files included");
         }
-        if (!hasFasta) {
-            feedback.addInfo("Recommended: Add a FASTA database file for sequence validation");
-        }
-
-        // Check for SDRF
-        boolean hasSdrf = model.getFiles().stream()
-            .anyMatch(f -> f.getFileType() == ProjectFileType.EXPERIMENTAL_DESIGN ||
-                          (f.getFile() != null && f.getFile().getName().toLowerCase().contains("sdrf")));
-        if (!hasSdrf) {
-            feedback.addInfo("Recommended: Add an SDRF file for sample metadata");
+        for (String missingFile : getMissingRecommendedFiles()) {
+            feedback.addWarning("Recommended file missing: " + missingFile);
         }
 
         // Metadata validation
@@ -461,35 +451,6 @@ public class SummaryStep extends AbstractWizardStep {
 
     @Override
     public boolean validate() {
-        // Check for missing recommended files
-        List<String> missingRecommended = getMissingRecommendedFiles();
-
-        if (!missingRecommended.isEmpty()) {
-            // Show confirmation dialog
-            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-            alert.setTitle("Missing Recommended Files");
-            alert.setHeaderText("Some recommended files are missing");
-
-            StringBuilder content = new StringBuilder();
-            content.append("The following recommended files were not found:\n\n");
-            for (String item : missingRecommended) {
-                content.append("• ").append(item).append("\n");
-            }
-            content.append("\nThese files are recommended for better data reuse and reproducibility.\n");
-            content.append("Do you want to proceed without them?");
-
-            alert.setContentText(content.toString());
-
-            ButtonType proceedButton = new ButtonType("Proceed Anyway");
-            ButtonType goBackButton = new ButtonType("Go Back", ButtonBar.ButtonData.CANCEL_CLOSE);
-            alert.getButtonTypes().setAll(proceedButton, goBackButton);
-
-            var result = alert.showAndWait();
-            if (result.isEmpty() || result.get() == goBackButton) {
-                return false; // User chose to go back
-            }
-        }
-
         // Checksum computation is now handled in the next step (ChecksumComputationStep)
         return true;
     }

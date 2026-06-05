@@ -10,10 +10,12 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ContentDisplay;
+import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
@@ -40,11 +42,14 @@ import java.util.function.Consumer;
 public class SearchableMultiSelectField extends VBox {
 
     private static final double POPUP_MAX_HEIGHT = 220;
+    private static final String ISSUE_URL = "https://github.com/PRIDE-Archive/px-submission-tool/issues/new";
     private static final PseudoClass FOCUSED = PseudoClass.getPseudoClass("focused");
 
     private final TextField searchField;
     private final Button dropdownButton;
     private final ListView<String> suggestionList;
+    private final Label emptyLabel;
+    private final String emptyMessage;
     private final ObservableList<String> suggestions = FXCollections.observableArrayList();
     private final Popup dropdownPopup;
     private final FlowPane chipsPane;
@@ -54,6 +59,9 @@ public class SearchableMultiSelectField extends VBox {
     private Consumer<Set<String>> onSelectionChanged;
 
     public SearchableMultiSelectField(String searchPrompt, String emptyMessage, Collection<String> items) {
+        this.emptyMessage = emptyMessage == null || emptyMessage.isBlank()
+                ? "No matching results"
+                : emptyMessage;
         setSpacing(6);
 
         HBox searchRow = new HBox();
@@ -75,10 +83,20 @@ public class SearchableMultiSelectField extends VBox {
         suggestionList.setPrefHeight(POPUP_MAX_HEIGHT);
         suggestionList.setMaxHeight(POPUP_MAX_HEIGHT);
         suggestionList.setCellFactory(list -> new ItemListCell());
-        Label emptyLabel = new Label(emptyMessage);
-        emptyLabel.setPadding(new Insets(8));
+        emptyLabel = new Label(this.emptyMessage);
+        emptyLabel.setWrapText(true);
         emptyLabel.setStyle("-fx-text-fill: #666;");
-        suggestionList.setPlaceholder(emptyLabel);
+
+        Hyperlink issueLink = new Hyperlink("Create a ticket");
+        issueLink.setStyle("-fx-font-size: 12px;");
+        issueLink.setTooltip(new Tooltip(ISSUE_URL));
+        issueLink.setOnAction(e -> openIssueLink());
+
+        VBox emptyPlaceholder = new VBox(4, emptyLabel, issueLink);
+        emptyPlaceholder.setPadding(new Insets(8));
+        emptyPlaceholder.setAlignment(Pos.CENTER_LEFT);
+        suggestionList.setPlaceholder(emptyPlaceholder);
+        updateEmptyMessage("");
 
         VBox popupRoot = new VBox(suggestionList);
         popupRoot.getStyleClass().add("form-dropdown-popup");
@@ -264,6 +282,7 @@ public class SearchableMultiSelectField extends VBox {
 
     private void showAllItems() {
         suggestions.setAll(Arrays.asList(allItems));
+        updateEmptyMessage("");
         showDropdown();
     }
 
@@ -280,11 +299,27 @@ public class SearchableMultiSelectField extends VBox {
         suggestions.setAll(Arrays.stream(allItems)
                 .filter(item -> item.toLowerCase().startsWith(filter))
                 .toList());
+        updateEmptyMessage(text);
         if (openDropdown) {
             showDropdown();
         } else if (suggestions.isEmpty()) {
             hideDropdown();
         }
+    }
+
+    private void updateEmptyMessage(String searchText) {
+        String query = searchText == null ? "" : searchText.trim();
+        if (query.isEmpty()) {
+            emptyLabel.setText(emptyMessage + ". You can create a ticket for that.");
+        } else {
+            emptyLabel.setText(emptyMessage + " for \"" + query + "\". You can create a ticket for that.");
+        }
+    }
+
+    private void openIssueLink() {
+        try {
+            java.awt.Desktop.getDesktop().browse(new java.net.URI(ISSUE_URL));
+        } catch (Exception ignored) {}
     }
 
     private void showDropdown() {

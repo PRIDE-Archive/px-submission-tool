@@ -170,6 +170,8 @@ public class LoginStep extends AbstractWizardStep {
             return;
         }
 
+        usernameField.setText(model.getUserName() != null ? model.getUserName() : "");
+
         // Focus username field
         usernameField.requestFocus();
 

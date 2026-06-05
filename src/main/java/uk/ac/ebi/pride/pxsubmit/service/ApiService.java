@@ -74,6 +74,34 @@ public class ApiService {
     }
 
     /**
+     * Check whether Aspera upload is currently available on the submission service.
+     */
+    public CompletableFuture<Boolean> isAsperaAvailable() {
+        return CompletableFuture.supplyAsync(() -> {
+            String url = config.getAsperaAvailableUrl();
+            logger.info("Checking Aspera availability");
+            logger.debug("Using Aspera availability URL: {}", url);
+
+            try {
+                RestTemplate restTemplate = createRestTemplate();
+                HttpHeaders headers = createHeaders();
+                HttpEntity<String> entity = new HttpEntity<>(headers);
+
+                ResponseEntity<String> response = restTemplate.exchange(
+                    url, HttpMethod.GET, entity, String.class);
+
+                boolean available = parseBooleanResponse(response.getBody());
+                logger.info("Aspera availability: {}", available);
+                return available;
+
+            } catch (Exception e) {
+                logger.warn("Failed to check Aspera availability: {}", e.getMessage(), e);
+                throw new ApiException("Failed to check Aspera availability: " + e.getMessage(), e);
+            }
+        }, executor);
+    }
+
+    /**
      * Get upload details, optionally using an existing ticket for resume scenarios
      */
     public CompletableFuture<UploadDetail> getUploadDetails(UploadMethod method, String ticketId) {
@@ -235,6 +263,18 @@ public class ApiService {
     private static String createBasicAuthHeader(String username, String password) {
         String credentials = username + ":" + password;
         return "Basic " + Base64.getEncoder().encodeToString(credentials.getBytes());
+    }
+
+    private static boolean parseBooleanResponse(String body) {
+        if (body == null) {
+            return false;
+        }
+
+        String normalized = body.trim();
+        if (normalized.length() >= 2 && normalized.startsWith("\"") && normalized.endsWith("\"")) {
+            normalized = normalized.substring(1, normalized.length() - 1).trim();
+        }
+        return Boolean.parseBoolean(normalized);
     }
 
     /**

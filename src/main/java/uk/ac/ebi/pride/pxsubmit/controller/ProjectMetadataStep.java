@@ -803,13 +803,20 @@ public class ProjectMetadataStep extends AbstractWizardStep {
 
     @Override
     protected void onStepEntering() {
-        // Load existing project tags from model
+        // Load existing custom-control selections from model, clearing stale test data
+        experimentTypeField.setSelectedTerms(model.getExperimentMethods());
+        softwareField.setSelectedTerms(model.getSoftware());
+
         var meta = model.getSubmission().getProjectMetaData();
         if (meta != null) {
             Set<String> selectedTags = meta.getProjectTags();
             if (selectedTags != null) {
                 projectTagsField.setSelectedTags(selectedTags);
+            } else {
+                projectTagsField.setSelectedTags(Set.of());
             }
+        } else {
+            projectTagsField.setSelectedTags(Set.of());
         }
 
         // Update AI suggestion visibility based on settings

@@ -216,6 +216,10 @@ public class ProjectReferencesStep extends AbstractWizardStep {
 
     @Override
     protected void onStepEntering() {
+        pubmedField.clear();
+        omicsEntries.clear();
+        omicsEntriesContainer.getChildren().clear();
+
         // Load existing values from model's ProjectMetaData
         var meta = model.getSubmission().getProjectMetaData();
         if (meta != null) {
@@ -227,9 +231,6 @@ public class ProjectReferencesStep extends AbstractWizardStep {
             // Other omics links - parse from stored format "source:accession,source:accession"
             if (meta.hasOtherOmicsLink()) {
                 String link = meta.getOtherOmicsLink();
-                // Clear existing rows
-                omicsEntries.clear();
-                omicsEntriesContainer.getChildren().clear();
                 // Parse entries
                 if (link != null && !link.trim().isEmpty()) {
                     String[] parts = link.split(",");

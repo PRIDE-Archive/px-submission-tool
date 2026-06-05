@@ -285,6 +285,13 @@ public class LabHeadStep extends AbstractWizardStep {
 
     @Override
     protected void onStepEntering() {
+        String country = model.getLabHeadCountry();
+        if (country != null && !country.isBlank()) {
+            countrySearchField.selectCountry(country);
+        } else {
+            countrySearchField.setText("");
+        }
+
         // Populate test mode examples
         if (model.isTrainingMode()) {
             if (nameField.getText() == null || nameField.getText().isEmpty()) {
