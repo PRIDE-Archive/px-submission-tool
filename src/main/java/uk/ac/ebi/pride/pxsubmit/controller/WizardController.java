@@ -218,6 +218,9 @@ public class WizardController implements Initializable {
             logoutButton.visibleProperty().bind(model.loggedInProperty());
             logoutButton.managedProperty().bind(model.loggedInProperty());
             logoutButton.setOnAction(e -> handleLogout());
+            // Show an info box (tooltip) with the logged-in user on hover
+            updateLogoutTooltip();
+            model.loggedInProperty().addListener((obs, wasLoggedIn, isLoggedIn) -> updateLogoutTooltip());
         }
         if (userLabel != null) {
             userLabel.visibleProperty().bind(model.loggedInProperty());
@@ -231,6 +234,22 @@ public class WizardController implements Initializable {
                 }
             });
         }
+    }
+
+    /**
+     * Update the logout button's hover tooltip to show the logged-in user info.
+     */
+    private void updateLogoutTooltip() {
+        if (logoutButton == null) {
+            return;
+        }
+        String userName = model.getUserName();
+        String info = (userName != null && !userName.isBlank())
+                ? "Logged in as " + userName + "\nClick to log out and return to the login screen"
+                : "Log out and return to the login screen";
+        Tooltip tooltip = new Tooltip(info);
+        tooltip.setShowDelay(javafx.util.Duration.millis(200));
+        logoutButton.setTooltip(tooltip);
     }
 
     /**

@@ -43,6 +43,7 @@ public class OlsService {
     private static final String OLS_BASE_URL = "https://www.ebi.ac.uk/ols4/api";
     private static final String SEARCH_ENDPOINT = "/search";
     private static final String SELECT_ENDPOINT = "/select";
+    private static final String SUGGEST_ENDPOINT = "/suggest";
 
     // HTTP client configuration
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
@@ -106,11 +107,41 @@ public class OlsService {
             boolean isObsolete
     ) {}
 
+    // Number of times to retry a request that fails with a transient I/O error
+    // (e.g. a stale keep-alive connection closed by the server -> EOFException).
+    private static final int MAX_RETRIES = 2;
+
     private OlsService() {
         this.httpClient = HttpClient.newBuilder()
+                // Force HTTP/1.1: the default HTTP/2 client reuses pooled connections
+                // that the OLS server may have already closed, producing intermittent
+                // "EOFException: EOF reached while reading" errors (JDK-8221395).
+                .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(TIMEOUT)
                 .build();
         this.objectMapper = new ObjectMapper();
+    }
+
+    /**
+     * Send a request, retrying transient I/O failures (such as a stale connection
+     * being closed by the server) a small number of times before giving up.
+     */
+    private CompletableFuture<HttpResponse<String>> sendWithRetry(HttpRequest request, int attemptsLeft) {
+        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .handle((response, ex) -> {
+                    if (ex == null) {
+                        return CompletableFuture.completedFuture(response);
+                    }
+                    Throwable cause = (ex instanceof java.util.concurrent.CompletionException && ex.getCause() != null)
+                            ? ex.getCause() : ex;
+                    if (attemptsLeft > 0 && cause instanceof java.io.IOException) {
+                        logger.warn("OLS request failed ({}); retrying, {} attempt(s) left",
+                                cause.getMessage(), attemptsLeft - 1);
+                        return sendWithRetry(request, attemptsLeft - 1);
+                    }
+                    return CompletableFuture.<HttpResponse<String>>failedFuture(cause);
+                })
+                .thenCompose(f -> f);
     }
 
     /**
@@ -143,25 +174,21 @@ public class OlsService {
             return CompletableFuture.completedFuture(cache.get(cacheKey));
         }
 
-        String encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8);
-        String url = String.format("%s%s?q=%s&ontology=%s&rows=%d&local=true",
-                OLS_BASE_URL, SELECT_ENDPOINT, encodedQuery, ontology.olsId,
-                Math.min(maxResults, MAX_RESULTS));
+        int rows = Math.min(maxResults, MAX_RESULTS);
 
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .timeout(TIMEOUT)
-                .header("Accept", "application/json")
-                .GET()
-                .build();
-
-        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
-                .thenApply(response -> {
-                    if (response.statusCode() != 200) {
-                        logger.warn("OLS search failed with status {}: {}", response.statusCode(), url);
-                        return Collections.<CvParam>emptyList();
+        return selectTerms(query, ontology, rows)
+                .thenCompose(results -> {
+                    // The OLS /select endpoint only matches complete words, so partial
+                    // input ("orbi", "tims", "Q Exac"...) returns nothing. In that case
+                    // use /suggest to complete the term, then re-run /select on the top
+                    // completion so the returned terms still carry their accessions.
+                    if (!results.isEmpty()) {
+                        return CompletableFuture.completedFuture(results);
                     }
-                    return parseSearchResponse(response.body(), ontology);
+                    return suggestLabels(query, ontology, rows)
+                            .thenCompose(labels -> labels.isEmpty()
+                                    ? CompletableFuture.completedFuture(Collections.<CvParam>emptyList())
+                                    : selectTerms(labels.get(0), ontology, rows));
                 })
                 .thenApply(results -> {
                     // Cache results
@@ -176,6 +203,78 @@ public class OlsService {
                     logger.error("OLS search error for query '{}': {}", query, e.getMessage());
                     return Collections.emptyList();
                 });
+    }
+
+    /**
+     * Query the OLS /select endpoint for full term objects (with accessions).
+     * Matches complete words only.
+     */
+    private CompletableFuture<List<CvParam>> selectTerms(String query, OlsOntology ontology, int rows) {
+        String encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8);
+        String url = String.format("%s%s?q=%s&ontology=%s&rows=%d&local=true",
+                OLS_BASE_URL, SELECT_ENDPOINT, encodedQuery, ontology.olsId, rows);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(TIMEOUT)
+                .header("Accept", "application/json")
+                .GET()
+                .build();
+
+        return sendWithRetry(request, MAX_RETRIES)
+                .thenApply(response -> {
+                    if (response.statusCode() != 200) {
+                        logger.warn("OLS select failed with status {}: {}", response.statusCode(), url);
+                        return Collections.<CvParam>emptyList();
+                    }
+                    return parseSearchResponse(response.body(), ontology);
+                });
+    }
+
+    /**
+     * Query the OLS /suggest endpoint for prefix completions. Returns the
+     * suggested label strings (no accessions), used to complete partial input.
+     */
+    private CompletableFuture<List<String>> suggestLabels(String query, OlsOntology ontology, int rows) {
+        String encodedQuery = URLEncoder.encode(query.trim(), StandardCharsets.UTF_8);
+        String url = String.format("%s%s?q=%s&ontology=%s&rows=%d",
+                OLS_BASE_URL, SUGGEST_ENDPOINT, encodedQuery, ontology.olsId, rows);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(TIMEOUT)
+                .header("Accept", "application/json")
+                .GET()
+                .build();
+
+        return sendWithRetry(request, MAX_RETRIES)
+                .thenApply(response -> {
+                    if (response.statusCode() != 200) {
+                        return Collections.<String>emptyList();
+                    }
+                    return parseSuggestResponse(response.body());
+                });
+    }
+
+    /**
+     * Parse OLS /suggest response into a list of completion strings.
+     */
+    private List<String> parseSuggestResponse(String json) {
+        List<String> labels = new ArrayList<>();
+        try {
+            JsonNode docs = objectMapper.readTree(json).path("response").path("docs");
+            if (docs.isArray()) {
+                for (JsonNode doc : docs) {
+                    String label = doc.path("autosuggest").asText(null);
+                    if (label != null && !label.isBlank()) {
+                        labels.add(label);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error parsing OLS suggest response: {}", e.getMessage());
+        }
+        return labels;
     }
 
     /**
@@ -198,7 +297,7 @@ public class OlsService {
                 .GET()
                 .build();
 
-        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+        return sendWithRetry(request, MAX_RETRIES)
                 .thenApply(response -> {
                     if (response.statusCode() != 200) {
                         logger.warn("OLS search failed with status {}: {}", response.statusCode(), url);
@@ -247,7 +346,7 @@ public class OlsService {
                 .GET()
                 .build();
 
-        return httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+        return sendWithRetry(request, MAX_RETRIES)
                 .thenApply(response -> {
                     if (response.statusCode() != 200) {
                         return Optional.<CvParam>empty();

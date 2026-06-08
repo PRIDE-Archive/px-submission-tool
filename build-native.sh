@@ -72,7 +72,8 @@ echo "jpackage: available"
 echo
 
 # Step 1: Build the fat JAR
-# -Pdist bundles x64 JavaFX natives for all OSes (required for distribution).
+# -Pdist builds the universal fat JAR: JavaFX natives for every OS/CPU are
+# bundled under natives/<platform>/ and selected at runtime by the Launcher.
 echo "Step 1/3: Building fat JAR..."
 mvn -Pdist clean package -DskipTests -q
 

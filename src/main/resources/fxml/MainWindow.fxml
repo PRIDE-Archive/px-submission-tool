@@ -59,10 +59,12 @@
                     </tooltip>
                 </Button>
 
-                <!-- Settings Button -->
+                <!-- Settings Button (hidden) -->
                 <Button fx:id="settingsButton"
                         text="&#x2699;"
-                        styleClass="settings-button">
+                        styleClass="settings-button"
+                        visible="false"
+                        managed="false">
                     <tooltip>
                         <Tooltip text="Settings"/>
                     </tooltip>

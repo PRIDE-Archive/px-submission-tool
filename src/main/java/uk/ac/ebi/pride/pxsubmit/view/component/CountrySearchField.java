@@ -27,7 +27,7 @@ import java.util.function.Consumer;
 
 /**
  * Searchable country dropdown: text field with a popup list (combo-style UX).
- * Filters by prefix as the user types; avoids editable ComboBox item-mutation loops.
+ * Filters by substring (case-insensitive) as the user types; avoids editable ComboBox item-mutation loops.
  */
 public class CountrySearchField extends HBox {
 
@@ -216,7 +216,7 @@ public class CountrySearchField extends HBox {
             return;
         }
         suggestions.setAll(Arrays.stream(allCountries)
-                .filter(country -> country.toLowerCase().startsWith(filter))
+                .filter(country -> country.toLowerCase().contains(filter))
                 .toList());
         if (openDropdown) {
             showDropdown();

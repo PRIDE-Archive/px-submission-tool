@@ -281,10 +281,11 @@
         <!-- JavaFX dependencies are declared in the dev/dist profiles below.
              They cannot live here because the IDE/local run needs natives for the
              developer's own CPU architecture (e.g. arm64 on Apple Silicon), while the
-             distributable fat JAR must contain x64 natives for all OSes (the launchers
-             always run an x64 JRE). A single fixed dependency set cannot satisfy both,
-             and the mac/linux natives share file names across architectures so they
-             cannot coexist in one flat JAR. See the <profiles> section. -->
+             distributable fat JAR must carry the natives for every OS/CPU. The JavaFX
+             natives share file names across architectures, so they cannot coexist at the
+             root of one flat JAR; instead the build unpacks them under natives/<platform>/
+             and the Launcher loads the matching set at runtime. See the <profiles> section
+             and the maven-dependency-plugin unpack execution. -->
         <dependency>
             <groupId>uk.ac.ebi.pride.submissions</groupId>
             <artifactId>pride-submissions-commons</artifactId>
@@ -351,6 +352,73 @@
                             <excludeTransitive>false</excludeTransitive>
                         </configuration>
                     </execution>
+                    <!-- Unpack the JavaFX native libraries for every supported OS/CPU
+                         into natives/<platform>/ inside the build output. The natives
+                         (all in the javafx-graphics classifier jars) have identical file
+                         names across architectures, so they cannot coexist at the jar
+                         root. Bundling them under per-platform folders lets the Launcher
+                         extract the matching set at runtime (see Launcher#setupJavaFxNatives),
+                         producing a single universal jar that runs natively on
+                         win-x64, linux-x64/arm64 and mac-x64/arm64. The matching natives
+                         are stripped from the jar root by the shade plugin filter below. -->
+                    <execution>
+                        <id>unpack-javafx-natives</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.openjfx</groupId>
+                                    <artifactId>javafx-graphics</artifactId>
+                                    <version>${javafx.version}</version>
+                                    <classifier>win</classifier>
+                                    <type>jar</type>
+                                    <includes>*.dll</includes>
+                                    <outputDirectory>${project.build.outputDirectory}/natives/win</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.openjfx</groupId>
+                                    <artifactId>javafx-graphics</artifactId>
+                                    <version>${javafx.version}</version>
+                                    <classifier>linux</classifier>
+                                    <type>jar</type>
+                                    <includes>*.so</includes>
+                                    <outputDirectory>${project.build.outputDirectory}/natives/linux</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.openjfx</groupId>
+                                    <artifactId>javafx-graphics</artifactId>
+                                    <version>${javafx.version}</version>
+                                    <classifier>linux-aarch64</classifier>
+                                    <type>jar</type>
+                                    <includes>*.so</includes>
+                                    <outputDirectory>${project.build.outputDirectory}/natives/linux-aarch64</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.openjfx</groupId>
+                                    <artifactId>javafx-graphics</artifactId>
+                                    <version>${javafx.version}</version>
+                                    <classifier>mac</classifier>
+                                    <type>jar</type>
+                                    <includes>*.dylib</includes>
+                                    <outputDirectory>${project.build.outputDirectory}/natives/mac</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>org.openjfx</groupId>
+                                    <artifactId>javafx-graphics</artifactId>
+                                    <version>${javafx.version}</version>
+                                    <classifier>mac-aarch64</classifier>
+                                    <type>jar</type>
+                                    <includes>*.dylib</includes>
+                                    <outputDirectory>${project.build.outputDirectory}/natives/mac-aarch64</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                            <overWriteReleases>true</overWriteReleases>
+                            <overWriteSnapshots>true</overWriteSnapshots>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
@@ -377,25 +445,6 @@
                         <id>default-jar</id>
                         <goals>
                             <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.7.1</version>
-                <configuration>
-                    <appendAssemblyId>false</appendAssemblyId>
-                    <descriptors>
-                        <descriptor>${project.basedir}/assembly.xml</descriptor>
-                    </descriptors>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>assembly</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>single</goal>
                         </goals>
                     </execution>
                 </executions>
@@ -430,6 +479,11 @@
                         <Implementation-Version>${project.version}</Implementation-Version>
                         <Implementation-Title>${project.name}</Implementation-Title>
                         <Implementation-Vendor>${project.organization.name}</Implementation-Vendor>
+                        <!-- The fat jar is self-contained; override the inherited
+                             Class-Path so it never references the build's lib/ folder.
+                             Otherwise the openjfx classifier jars there would expose
+                             wrong-architecture JavaFX natives to JavaFX's loader. -->
+                        <Class-Path>.</Class-Path>
                     </manifestEntries>
                 </transformer>
                             </transformers>
@@ -440,6 +494,19 @@
                                         <exclude>META-INF/*.SF</exclude>
                                         <exclude>META-INF/*.DSA</exclude>
                                         <exclude>META-INF/*.RSA</exclude>
+                                    </excludes>
+                                </filter>
+                                <!-- Strip JavaFX natives from the jar root. They are bundled
+                                     per-platform under natives/<platform>/ instead and loaded at
+                                     runtime by the Launcher. Leaving them at the root would let
+                                     JavaFX's loader pick a library by file name regardless of CPU
+                                     architecture (the cause of "incompatible architecture" errors). -->
+                                <filter>
+                                    <artifact>org.openjfx:*</artifact>
+                                    <excludes>
+                                        <exclude>*.dll</exclude>
+                                        <exclude>*.so</exclude>
+                                        <exclude>*.dylib</exclude>
                                     </excludes>
                                 </filter>
                             </filters>
@@ -521,17 +588,42 @@
             </dependencies>
         </profile>
 
-        <!-- DIST: used to build the distributable cross-platform fat JAR.
+        <!-- DIST: used to build the distributable universal fat JAR.
              Activate with:  mvn -Pdist clean package
-             Bundles the win/linux/mac (all x64) natives because every launcher runs an
-             x64 JRE (Apple Silicon via Rosetta, Windows-on-ARM via emulation). Each
-             classifier jar is self-contained (classes + that platform's natives). The
-             transitive openjfx deps are excluded because openjfx re-adds a native dep
-             resolved via ${javafx.platform}, which on an Apple Silicon build host would
-             drag in arm64 (mac-aarch64) natives that collide with and override the x64
-             dylibs, reintroducing the "incompatible architecture" failure. -->
+             This profile only supplies the (platform-independent) JavaFX *classes* on the
+             classpath - it declares a classifier per module purely so Maven resolves the
+             jars that contain the .class files (any classifier jar carries the full class
+             set; the natives are stripped from the jar root by the shade filter). The
+             actual per-platform native libraries are unpacked into natives/<platform>/ by
+             the maven-dependency-plugin (see the main build) and selected at runtime by the
+             Launcher, so a single jar runs natively on win-x64, linux-x64/arm64 and
+             mac-x64/arm64. The transitive openjfx deps are excluded so Maven does not pull
+             a second native dependency resolved via ${javafx.platform}. -->
         <profile>
             <id>dist</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <version>3.7.1</version>
+                        <configuration>
+                            <appendAssemblyId>false</appendAssemblyId>
+                            <descriptors>
+                                <descriptor>${project.basedir}/assembly.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>assembly</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>single</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
             <dependencies>
                 <dependency>
                     <groupId>org.openjfx</groupId>

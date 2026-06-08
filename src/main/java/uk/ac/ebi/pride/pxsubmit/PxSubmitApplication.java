@@ -5,9 +5,13 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.Hyperlink;
+import javafx.scene.control.Label;
 import javafx.scene.image.Image;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import org.slf4j.Logger;
@@ -374,19 +378,51 @@ public class PxSubmitApplication extends Application {
      * Show help
      */
     private void showHelp() {
-        // TODO: Implement help system (HTML-based or WebView)
         logger.info("Help requested");
 
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
         alert.setTitle("Help");
         alert.setHeaderText("PX Submission Tool Help");
-        alert.setContentText(
-                "For help and documentation, please visit:\n\n" +
-                "https://www.ebi.ac.uk/pride/help/archive/submission\n\n" +
-                "Or contact: pride-support@ebi.ac.uk"
-        );
+
+        Label docsLabel = new Label("For help and documentation, please visit:");
+
+        Hyperlink docsLink = new Hyperlink("https://www.ebi.ac.uk/pride/help/archive/submission");
+        docsLink.setPadding(new Insets(0));
+        docsLink.setOnAction(e -> openUrl("https://www.ebi.ac.uk/pride/help/archive/submission"));
+
+        Label contactLabel = new Label("Or contact:");
+
+        Hyperlink contactLink = new Hyperlink("pride-support@ebi.ac.uk");
+        contactLink.setPadding(new Insets(0));
+        contactLink.setOnAction(e -> openMail("pride-support@ebi.ac.uk"));
+
+        VBox content = new VBox(4, docsLabel, docsLink, new Label(), contactLabel, contactLink);
+        content.setPadding(new Insets(4));
+        alert.getDialogPane().setContent(content);
+
         alert.initOwner(primaryStage);
         alert.showAndWait();
+    }
+
+    private void openUrl(String url) {
+        try {
+            java.awt.Desktop.getDesktop().browse(new java.net.URI(url));
+        } catch (Exception e) {
+            logger.warn("Could not open URL: {}", url, e);
+        }
+    }
+
+    private void openMail(String email) {
+        try {
+            java.awt.Desktop desktop = java.awt.Desktop.getDesktop();
+            if (desktop.isSupported(java.awt.Desktop.Action.MAIL)) {
+                desktop.mail(new java.net.URI("mailto:" + email));
+            } else {
+                desktop.browse(new java.net.URI("mailto:" + email));
+            }
+        } catch (Exception e) {
+            logger.warn("Could not open mail client for: {}", email, e);
+        }
     }
 
     /**

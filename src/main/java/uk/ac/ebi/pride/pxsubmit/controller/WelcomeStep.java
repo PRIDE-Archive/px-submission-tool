@@ -233,18 +233,18 @@ public class WelcomeStep extends AbstractWizardStep {
         for (String item : items) {
             HBox itemBox = new HBox(8);
             itemBox.setAlignment(Pos.CENTER_LEFT);
-            Label checkIcon = new Label("\u2713"); // Checkmark
-            checkIcon.setStyle("-fx-font-size: 14px; -fx-text-fill: #28a745;");
+            Label bulletIcon = new Label("\u2022"); // Bullet point
+            bulletIcon.setStyle("-fx-font-size: 14px; -fx-text-fill: #333;");
             Label itemLabel = new Label(item);
-            itemBox.getChildren().addAll(checkIcon, itemLabel);
+            itemBox.getChildren().addAll(bulletIcon, itemLabel);
             checklistBox.getChildren().add(itemBox);
         }
 
         // Add PRIDE account item with registration link
         HBox accountBox = new HBox(4);
         accountBox.setAlignment(Pos.CENTER_LEFT);
-        Label accountCheckIcon = new Label("\u2713");
-        accountCheckIcon.setStyle("-fx-font-size: 14px; -fx-text-fill: #28a745;");
+        Label accountCheckIcon = new Label("\u2022");
+        accountCheckIcon.setStyle("-fx-font-size: 14px; -fx-text-fill: #333;");
         Label accountText = new Label("I have a PRIDE account -");
         Hyperlink registerLink = new Hyperlink("register here");
         registerLink.setPadding(new Insets(0));
@@ -349,10 +349,10 @@ public class WelcomeStep extends AbstractWizardStep {
         formatLink.setOnAction(e -> openUrl("https://www.ebi.ac.uk/pride/markdownpage/pridefileformats"));
 
         Hyperlink sdrfLink = new Hyperlink("SDRF Format Guide");
-        sdrfLink.setOnAction(e -> openUrl("https://github.com/bigbio/proteomics-sample-metadata"));
+        sdrfLink.setOnAction(e -> openUrl("https://sdrf.quantms.org/specification.html"));
 
         Hyperlink contactLink = new Hyperlink("Contact PRIDE Support: pride-support@ebi.ac.uk");
-        contactLink.setOnAction(e -> openUrl("mailto:pride-support@ebi.ac.uk"));
+        contactLink.setOnAction(e -> openMail("pride-support@ebi.ac.uk"));
 
         linksBox.getChildren().addAll(guidelinesLink, formatLink, sdrfLink, contactLink);
 
@@ -365,6 +365,19 @@ public class WelcomeStep extends AbstractWizardStep {
             java.awt.Desktop.getDesktop().browse(new java.net.URI(url));
         } catch (Exception e) {
             logger.warn("Could not open URL: {}", url, e);
+        }
+    }
+
+    private void openMail(String email) {
+        try {
+            java.awt.Desktop desktop = java.awt.Desktop.getDesktop();
+            if (desktop.isSupported(java.awt.Desktop.Action.MAIL)) {
+                desktop.mail(new java.net.URI("mailto:" + email));
+            } else {
+                desktop.browse(new java.net.URI("mailto:" + email));
+            }
+        } catch (Exception e) {
+            logger.warn("Could not open mail client for: {}", email, e);
         }
     }
 

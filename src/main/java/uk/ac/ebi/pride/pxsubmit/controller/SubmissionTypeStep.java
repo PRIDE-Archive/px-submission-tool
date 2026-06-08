@@ -73,7 +73,7 @@ public class SubmissionTypeStep extends AbstractWizardStep {
         guidelinesLink.setOnAction(e -> openUrl("https://www.ebi.ac.uk/pride/help/archive/submission"));
 
         Hyperlink prideLink = new Hyperlink("About PRIDE");
-        prideLink.setOnAction(e -> openUrl("https://www.ebi.ac.uk/pride"));
+        prideLink.setOnAction(e -> openUrl("https://www.ebi.ac.uk/pride/markdownpage/citationpage"));
 
         linksBox.getChildren().addAll(guidelinesLink, prideLink);
 

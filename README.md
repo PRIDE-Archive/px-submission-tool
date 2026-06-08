@@ -79,7 +79,7 @@ cd px-submission-tool
 # Compile only
 mvn compile
 
-# Build JAR with dependencies
+# Build local/dev JAR with dependencies
 mvn package
 
 # Build and skip tests
@@ -87,6 +87,9 @@ mvn package -DskipTests
 
 # Clean build
 mvn clean package
+
+# Build distributable ZIP for sharing/releases
+mvn -Pdist clean package
 ```
 
 > **Note on JavaFX native libraries (important for releases)**
@@ -96,13 +99,16 @@ mvn clean package
 > Silicon). That is correct for local/IDE runs, but such a JAR will fail on other
 > architectures with `UnsatisfiedLinkError: ... incompatible architecture`.
 >
-> To build the **distributable** cross-platform fat JAR (x64 natives for macOS,
-> Windows and Linux — matching the x64 JRE the launchers download), always use the
-> `dist` profile:
+> To build the **distributable** ZIP (including the cross-platform fat JAR with
+> x64 natives for macOS, Windows and Linux — matching the x64 JRE the launchers
+> download), always use the `dist` profile:
 >
 > ```bash
 > mvn -Pdist clean package
 > ```
+>
+> Share `target/px-submission-tool-<version>.zip`, not the plain JAR produced by
+> an IDE/default Maven cycle.
 >
 > The CI workflows and `build-native.*` scripts already pass `-Pdist`.
 
@@ -299,9 +305,10 @@ This means the JavaFX native libraries in the JAR don't match the CPU
 architecture of the Java runtime loading them (e.g. `have 'arm64', need
 'x86_64'`).
 
-- **Running the distributed app:** make sure the JAR was built with the `dist`
-  profile (`mvn -Pdist clean package`). The launchers (`start.sh` / `start.bat`)
-  use an x64 JRE, so the JAR must contain x64 JavaFX natives.
+- **Running the distributed app:** make sure the ZIP was built with the `dist`
+  profile (`mvn -Pdist clean package`) and share the ZIP, not an IDE-built JAR.
+  The launchers (`start.sh` / `start.bat`) use an x64 JRE, so the packaged JAR
+  must contain x64 JavaFX natives.
 - **Running locally from the IDE:** use a plain build (default `dev` profile),
   which resolves JavaFX natives for your own machine's architecture.
 - If you switched profiles, clear the stale native cache and re-run:

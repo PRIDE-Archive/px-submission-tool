@@ -54,20 +54,30 @@ fi
 
 echo "🖥️ Detected platform: $PLATFORM"
 
+# Detect CPU architecture so we download a JRE matching the machine.
+# The application jar bundles JavaFX natives for every OS/CPU, so running a
+# native (arm64) JRE on Apple Silicon / ARM Linux works without emulation.
+ARCH_RAW="$(uname -m)"
+case "$ARCH_RAW" in
+    arm64|aarch64) JRE_ARCH="aarch64" ;;
+    *)             JRE_ARCH="x64" ;;
+esac
+echo "🧮 Detected CPU architecture: $ARCH_RAW (JRE arch: $JRE_ARCH)"
+
 # Function to download JRE
 download_jre() {
     local platform=$1
-    echo "📥 Downloading Java 21 JRE for $platform..."
+    echo "📥 Downloading Java 21 JRE for $platform ($JRE_ARCH)..."
     
     case $platform in
         "macos")
-            JRE_URL="https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_x64_mac_hotspot_21.0.6_7.tar.gz"
+            JRE_URL="https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_${JRE_ARCH}_mac_hotspot_21.0.6_7.tar.gz"
             JRE_FILE="jre-macos.tar.gz"
             JRE_DIR="jre-macos"
             JRE_BIN="jre-macos/Contents/Home/bin/java"
             ;;
         "linux")
-            JRE_URL="https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_x64_linux_hotspot_21.0.6_7.tar.gz"
+            JRE_URL="https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.6%2B7/OpenJDK21U-jre_${JRE_ARCH}_linux_hotspot_21.0.6_7.tar.gz"
             JRE_FILE="jre-linux.tar.gz"
             JRE_DIR="jre-linux"
             JRE_BIN="jre-linux/bin/java"

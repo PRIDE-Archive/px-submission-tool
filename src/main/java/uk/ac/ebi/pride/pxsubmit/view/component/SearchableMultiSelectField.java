@@ -297,7 +297,7 @@ public class SearchableMultiSelectField extends VBox {
             return;
         }
         suggestions.setAll(Arrays.stream(allItems)
-                .filter(item -> item.toLowerCase().startsWith(filter))
+                .filter(item -> item.toLowerCase().contains(filter))
                 .toList());
         updateEmptyMessage(text);
         if (openDropdown) {
