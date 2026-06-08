@@ -42,7 +42,7 @@ import java.util.function.Consumer;
 public class SearchableMultiSelectField extends VBox {
 
     private static final double POPUP_MAX_HEIGHT = 220;
-    private static final String ISSUE_URL = "https://github.com/PRIDE-Archive/px-submission-tool/issues/new";
+    private static final String TICKET_URL = "https://github.com/PRIDE-Archive/px-submission-tool/issues/new";
     private static final PseudoClass FOCUSED = PseudoClass.getPseudoClass("focused");
 
     private final TextField searchField;
@@ -89,7 +89,7 @@ public class SearchableMultiSelectField extends VBox {
 
         Hyperlink issueLink = new Hyperlink("Create a ticket");
         issueLink.setStyle("-fx-font-size: 12px;");
-        issueLink.setTooltip(new Tooltip(ISSUE_URL));
+        issueLink.setTooltip(new Tooltip(TICKET_URL));
         issueLink.setOnAction(e -> openIssueLink());
 
         VBox emptyPlaceholder = new VBox(4, emptyLabel, issueLink);
@@ -318,7 +318,7 @@ public class SearchableMultiSelectField extends VBox {
 
     private void openIssueLink() {
         try {
-            java.awt.Desktop.getDesktop().browse(new java.net.URI(ISSUE_URL));
+            java.awt.Desktop.getDesktop().browse(new java.net.URI(TICKET_URL));
         } catch (Exception ignored) {}
     }
 

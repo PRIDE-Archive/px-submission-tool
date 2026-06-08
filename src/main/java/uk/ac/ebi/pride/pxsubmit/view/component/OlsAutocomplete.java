@@ -4,6 +4,7 @@ import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.css.PseudoClass;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
@@ -41,17 +42,22 @@ import java.util.function.Consumer;
  */
 public class OlsAutocomplete extends VBox {
 
+    private static final String TICKET_URL = "https://github.com/PRIDE-Archive/px-submission-tool/issues/new";
+    private static final PseudoClass FOCUSED = PseudoClass.getPseudoClass("focused");
+
     // Configuration
     private final OlsOntology ontology;
     private final OlsService olsService;
 
     // UI components
+    private final HBox inputArea;
     private final TextField searchField;
     private final FlowPane chipContainer;
     private final ListView<CvParam> suggestionList;
     private final ProgressIndicator loadingIndicator;
     private final VBox suggestionsPopup;
     private final Label statusLabel;
+    private final Hyperlink issueLink;
 
     // Data
     private final ObservableList<CvParam> selectedTerms = FXCollections.observableArrayList();
@@ -79,12 +85,6 @@ public class OlsAutocomplete extends VBox {
             "-fx-border-color: #dee2e6; " +
             "-fx-border-radius: 12;";
 
-    private static final String CONTAINER_STYLE =
-            "-fx-background-color: white; " +
-            "-fx-border-color: #ced4da; " +
-            "-fx-border-radius: 4; " +
-            "-fx-background-radius: 4;";
-
     public OlsAutocomplete(OlsOntology ontology) {
         this.ontology = ontology;
         this.olsService = OlsService.getInstance();
@@ -92,10 +92,10 @@ public class OlsAutocomplete extends VBox {
         setSpacing(5);
 
         // Main input area
-        HBox inputArea = new HBox(5);
+        inputArea = new HBox(5);
         inputArea.setAlignment(Pos.CENTER_LEFT);
-        inputArea.setStyle(CONTAINER_STYLE);
-        inputArea.setPadding(new Insets(5));
+        inputArea.getStyleClass().add("form-dropdown");
+        inputArea.setPadding(new Insets(0));
 
         // Chip container for selected terms
         chipContainer = new FlowPane();
@@ -105,12 +105,7 @@ public class OlsAutocomplete extends VBox {
 
         // Search field
         searchField = new TextField();
-        searchField.setStyle(
-            "-fx-background-color: white; " +
-            "-fx-border-width: 0; " +
-            "-fx-padding: 4; " +
-            "-fx-background-insets: 0; " +
-            "-fx-background-radius: 0;");
+        searchField.getStyleClass().add("country-search-field");
         searchField.setMinWidth(150);
         HBox.setHgrow(searchField, Priority.ALWAYS);
 
@@ -127,12 +122,7 @@ public class OlsAutocomplete extends VBox {
 
         // Suggestions dropdown
         suggestionsPopup = new VBox();
-        suggestionsPopup.setStyle(
-                "-fx-background-color: white; " +
-                "-fx-border-color: #ced4da; " +
-                "-fx-border-radius: 0 0 4 4; " +
-                "-fx-background-radius: 0 0 4 4; " +
-                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 4, 0, 0, 2);");
+        suggestionsPopup.getStyleClass().add("form-dropdown-popup");
         suggestionsPopup.setVisible(false);
         suggestionsPopup.setManaged(false);
 
@@ -143,13 +133,23 @@ public class OlsAutocomplete extends VBox {
         statusLabel.setVisible(false);
         statusLabel.setManaged(false);
 
+        issueLink = new Hyperlink("Create a ticket");
+        issueLink.setPadding(new Insets(0, 8, 8, 8));
+        issueLink.setTooltip(new Tooltip(TICKET_URL));
+        issueLink.setVisible(false);
+        issueLink.setManaged(false);
+        issueLink.setFocusTraversable(true);
+        issueLink.setOnMousePressed(e -> issueLink.requestFocus());
+        issueLink.setOnAction(e -> openIssueLink());
+
         // Suggestion list
         suggestionList = new ListView<>(suggestions);
         suggestionList.setMaxHeight(200);
         suggestionList.setCellFactory(lv -> new SuggestionCell());
-        suggestionList.setPlaceholder(new Label("No results found"));
+        suggestionList.setVisible(false);
+        suggestionList.setManaged(false);
 
-        suggestionsPopup.getChildren().addAll(statusLabel, suggestionList);
+        suggestionsPopup.getChildren().addAll(statusLabel, issueLink, suggestionList);
 
         getChildren().addAll(inputArea, suggestionsPopup);
 
@@ -228,12 +228,15 @@ public class OlsAutocomplete extends VBox {
             }
         });
 
-        // Hide suggestions when focus is lost
+        searchField.focusedProperty().addListener((obs, wasFocused, focused) ->
+                inputArea.pseudoClassStateChanged(FOCUSED, focused));
+
+        // Hide suggestions when focus leaves the autocomplete controls.
         searchField.focusedProperty().addListener((obs, oldVal, newVal) -> {
-            if (!newVal && !suggestionList.isFocused()) {
+            if (!newVal && !suggestionList.isFocused() && !issueLink.isFocused()) {
                 // Delay to allow click on suggestion
                 Platform.runLater(() -> {
-                    if (!suggestionList.isFocused()) {
+                    if (!suggestionList.isFocused() && !issueLink.isFocused()) {
                         hideSuggestions();
                     }
                 });
@@ -249,9 +252,11 @@ public class OlsAutocomplete extends VBox {
     private void search(String query) {
         searching.set(true);
         showSuggestions();
+        setSuggestionListVisible(false);
         statusLabel.setText("Searching...");
         statusLabel.setVisible(true);
         statusLabel.setManaged(true);
+        hideIssueLink();
 
         olsService.search(query, ontology, maxResults.get())
                 .thenAccept(results -> Platform.runLater(() -> {
@@ -259,12 +264,16 @@ public class OlsAutocomplete extends VBox {
                     suggestions.setAll(results);
 
                     if (results.isEmpty()) {
-                        statusLabel.setText("No results found for \"" + query + "\"");
+                        statusLabel.setText("No results found for \"" + query + "\". You can create a ticket for that.");
                         statusLabel.setVisible(true);
                         statusLabel.setManaged(true);
+                        setSuggestionListVisible(false);
+                        showIssueLink();
                     } else {
                         statusLabel.setVisible(false);
                         statusLabel.setManaged(false);
+                        setSuggestionListVisible(true);
+                        hideIssueLink();
                     }
                 }))
                 .exceptionally(ex -> {
@@ -273,6 +282,8 @@ public class OlsAutocomplete extends VBox {
                         statusLabel.setText("Search failed: " + ex.getMessage());
                         statusLabel.setVisible(true);
                         statusLabel.setManaged(true);
+                        setSuggestionListVisible(false);
+                        hideIssueLink();
                     });
                     return null;
                 });
@@ -289,9 +300,11 @@ public class OlsAutocomplete extends VBox {
         if (!filtered.isEmpty()) {
             suggestions.setAll(filtered);
             showSuggestions();
+            setSuggestionListVisible(true);
             statusLabel.setText("Common " + ontology.getDisplayName().toLowerCase() + ":");
             statusLabel.setVisible(true);
             statusLabel.setManaged(true);
+            hideIssueLink();
         }
     }
 
@@ -394,6 +407,29 @@ public class OlsAutocomplete extends VBox {
         suggestionsPopup.setVisible(false);
         suggestionsPopup.setManaged(false);
         suggestions.clear();
+        setSuggestionListVisible(false);
+        hideIssueLink();
+    }
+
+    private void setSuggestionListVisible(boolean visible) {
+        suggestionList.setVisible(visible);
+        suggestionList.setManaged(visible);
+    }
+
+    private void showIssueLink() {
+        issueLink.setVisible(true);
+        issueLink.setManaged(true);
+    }
+
+    private void hideIssueLink() {
+        issueLink.setVisible(false);
+        issueLink.setManaged(false);
+    }
+
+    private void openIssueLink() {
+        try {
+            java.awt.Desktop.getDesktop().browse(new java.net.URI(TICKET_URL));
+        } catch (Exception ignored) {}
     }
 
     /**
