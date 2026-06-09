@@ -149,9 +149,13 @@ public class SubmissionModel {
      * Remove a data file from the submission
      */
     public void removeFile(DataFile dataFile) {
-        // Don't allow removal of checksum.txt
-        if ("checksum.txt".equals(dataFile.getFileName())) {
+        if (dataFile == null) {
             return;
+        }
+
+        checksums.remove(dataFile);
+        if (checksums.isEmpty()) {
+            checksumsCalculated.set(false);
         }
 
         files.remove(dataFile);

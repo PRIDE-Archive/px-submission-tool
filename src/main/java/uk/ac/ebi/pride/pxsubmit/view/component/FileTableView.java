@@ -372,12 +372,7 @@ public class FileTableView extends TableView<DataFile> {
             if (empty || dataFile == null) {
                 setGraphic(null);
             } else {
-                // Don't allow removing checksum.txt
-                if ("checksum.txt".equals(dataFile.getFileName())) {
-                    setGraphic(null);
-                } else {
-                    setGraphic(removeButton);
-                }
+                setGraphic(removeButton);
             }
         }
     }
