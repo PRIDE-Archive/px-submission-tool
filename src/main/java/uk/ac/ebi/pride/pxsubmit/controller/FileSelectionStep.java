@@ -1,6 +1,7 @@
 package uk.ac.ebi.pride.pxsubmit.controller;
 
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -30,23 +31,26 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.stream.Stream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * Step for selecting and categorizing submission files.
  * Features drag-drop support and automatic file type detection.
  */
 public class FileSelectionStep extends AbstractWizardStep {
+
+    private static final int MAX_FOLDER_FILE_COUNT = 1000;
 
     private FileTableView fileTable;
     private FileClassificationPanel classificationPanel;
@@ -257,7 +261,7 @@ public class FileSelectionStep extends AbstractWizardStep {
     }
 
     /**
-     * Open folder chooser to add all files from a folder (recursively)
+     * Open folder chooser to add files from the selected folder (top level only, not subfolders).
      */
     private void addFolder() {
         DirectoryChooser dirChooser = new DirectoryChooser();
@@ -265,102 +269,202 @@ public class FileSelectionStep extends AbstractWizardStep {
 
         File directory = dirChooser.showDialog(null);
         if (directory != null && directory.isDirectory()) {
-            // Scan folder recursively in background
-            scanFolderRecursively(directory);
+            scanFolder(directory);
         }
     }
 
     /**
-     * Recursively scan a folder and add all files
+     * Scan files in the selected folder (not subfolders), show progress with cancel, then confirm.
      */
-    private void scanFolderRecursively(File directory) {
-        // Create a simple progress stage
+    private void scanFolder(File directory) {
         Stage progressStage = new Stage();
         progressStage.initModality(Modality.APPLICATION_MODAL);
         progressStage.setTitle("Scanning Folder");
         progressStage.setResizable(false);
 
-        VBox progressBox = new VBox(15);
+        VBox progressBox = new VBox(12);
         progressBox.setAlignment(Pos.CENTER);
         progressBox.setPadding(new Insets(20));
         progressBox.setStyle("-fx-background-color: white;");
 
-        Label messageLabel = new Label("Scanning folder recursively...");
+        Label messageLabel = new Label("Scanning folder...");
         messageLabel.setStyle("-fx-font-size: 14px;");
 
-        Label folderLabel = new Label(directory.getName());
+        Label folderLabel = new Label(directory.getAbsolutePath());
+        folderLabel.setWrapText(true);
+        folderLabel.setMaxWidth(420);
         folderLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #666;");
 
-        ProgressIndicator progressIndicator = new ProgressIndicator();
-        progressIndicator.setMaxSize(50, 50);
+        Label statusLabel = new Label("Starting scan...");
+        statusLabel.setWrapText(true);
+        statusLabel.setMaxWidth(420);
+        statusLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #666;");
 
-        progressBox.getChildren().addAll(messageLabel, folderLabel, progressIndicator);
+        ProgressBar progressBar = new ProgressBar();
+        progressBar.setProgress(ProgressBar.INDETERMINATE_PROGRESS);
+        progressBar.setPrefWidth(360);
 
-        Scene scene = new Scene(progressBox, 300, 150);
+        Button cancelButton = new Button("Cancel");
+        cancelButton.setDefaultButton(true);
+
+        HBox buttonBox = new HBox(cancelButton);
+        buttonBox.setAlignment(Pos.CENTER_RIGHT);
+        buttonBox.setPrefWidth(360);
+
+        progressBox.getChildren().addAll(
+            messageLabel, folderLabel, statusLabel, progressBar, buttonBox
+        );
+
+        Scene scene = new Scene(progressBox, 460, 200);
         progressStage.setScene(scene);
-        progressStage.show();
 
-        // Scan in background thread
-        Thread scanThread = new Thread(() -> {
-            try {
+        setFolderScanControlsDisabled(true);
+
+        Task<List<File>> scanTask = new Task<>() {
+            @Override
+            protected List<File> call() throws Exception {
                 List<File> foundFiles = new ArrayList<>();
-
-                // Recursively walk the directory tree
-                try (Stream<Path> paths = Files.walk(directory.toPath())) {
-                    foundFiles = paths
-                        .filter(Files::isRegularFile)
-                        .filter(path -> !isHiddenOrSystemFile(path))
-                        .map(Path::toFile)
-                        .collect(Collectors.toList());
-                } catch (IOException e) {
-                    logger.error("Error scanning folder: " + directory.getAbsolutePath(), e);
-                    Platform.runLater(() -> {
-                        progressStage.close();
-                        showError("Folder Scan Error",
-                            "Failed to scan folder: " + e.getMessage());
-                    });
-                    return;
-                }
-
-                final List<File> filesToAdd = foundFiles;
-                final int totalFiles = filesToAdd.size();
-
-                Platform.runLater(() -> {
-                    // Close progress window
-                    progressStage.close();
-
-                    if (totalFiles == 0) {
-                        showInfo("No Files Found",
-                            "No files were found in the selected folder.");
-                        return;
+                try (Stream<Path> paths = Files.list(directory.toPath())) {
+                    for (Path path : (Iterable<Path>) paths::iterator) {
+                        if (isCancelled()) {
+                            break;
+                        }
+                        if (Files.isRegularFile(path) && !isHiddenOrSystemFile(path)) {
+                            foundFiles.add(path.toFile());
+                            int count = foundFiles.size();
+                            if (count == 1 || count % 25 == 0) {
+                                updateMessage("Found " + count + " file(s)...");
+                            }
+                            if (count > MAX_FOLDER_FILE_COUNT) {
+                                break;
+                            }
+                        }
                     }
+                } catch (IOException e) {
+                    if (!isCancelled()) {
+                        throw e;
+                    }
+                }
+                return foundFiles;
+            }
+        };
 
-                    // Check for existing files
-                    List<File> newFiles = filesToAdd.stream()
-                        .filter(file -> model.getFiles().stream()
-                            .noneMatch(df -> df.getFile() != null &&
-                                df.getFile().getAbsolutePath().equals(file.getAbsolutePath())))
-                        .collect(Collectors.toList());
+        statusLabel.textProperty().bind(scanTask.messageProperty());
 
-                    int duplicateCount = totalFiles - newFiles.size();
+        Runnable finishScan = () -> {
+            statusLabel.textProperty().unbind();
+            setFolderScanControlsDisabled(false);
+        };
 
-                    // Add files directly without confirmation
-                    addFilesToModel(newFiles);
-                    logger.info("Added {} files from folder {}", newFiles.size(), directory.getName());
-                });
+        cancelButton.setOnAction(e -> {
+            scanTask.cancel();
+            cancelButton.setDisable(true);
+            statusLabel.textProperty().unbind();
+            statusLabel.setText("Cancelling scan...");
+        });
 
-            } catch (Exception e) {
-                logger.error("Error during folder scan", e);
-                Platform.runLater(() -> {
-                    progressStage.close();
-                    showError("Scan Error", "Unexpected error: " + e.getMessage());
-                });
+        progressStage.setOnCloseRequest(e -> {
+            scanTask.cancel();
+            cancelButton.setDisable(true);
+        });
+
+        scanTask.setOnSucceeded(e -> {
+            finishScan.run();
+            progressStage.close();
+            List<File> foundFiles = scanTask.getValue();
+            if (foundFiles != null && foundFiles.size() > MAX_FOLDER_FILE_COUNT) {
+                showWarning("Too Many Files",
+                    "This folder contains more than " + MAX_FOLDER_FILE_COUNT + " files.\n\n" +
+                    "You cannot select more than " + MAX_FOLDER_FILE_COUNT + " files from a folder at once. " +
+                    "Subfolders are not included — only files directly in the selected folder are counted.\n\n" +
+                    "Please choose a smaller folder or add files individually.");
+                return;
+            }
+            confirmAndAddFilesFromFolder(directory, foundFiles);
+        });
+
+        scanTask.setOnCancelled(e -> {
+            finishScan.run();
+            progressStage.close();
+            logger.info("Folder scan cancelled by user: {}", directory.getAbsolutePath());
+        });
+
+        scanTask.setOnFailed(e -> {
+            finishScan.run();
+            progressStage.close();
+            if (!scanTask.isCancelled()) {
+                Throwable ex = scanTask.getException();
+                logger.error("Error scanning folder: {}", directory.getAbsolutePath(), ex);
+                showError("Folder Scan Error",
+                    "Failed to scan folder: " + (ex != null ? ex.getMessage() : "Unknown error"));
             }
         });
 
+        Thread scanThread = new Thread(scanTask, "Folder-Scanner");
         scanThread.setDaemon(true);
-        scanThread.setName("Folder-Scanner");
         scanThread.start();
+        progressStage.show();
+    }
+
+    /**
+     * Ask the user to confirm adding scanned files (so a wrong folder can be rejected).
+     */
+    private void confirmAndAddFilesFromFolder(File directory, List<File> foundFiles) {
+        if (foundFiles == null || foundFiles.isEmpty()) {
+            showInfo("No Files Found",
+                "No files were found in the selected folder:\n" + directory.getAbsolutePath());
+            return;
+        }
+
+        List<File> newFiles = foundFiles.stream()
+            .filter(file -> model.getFiles().stream()
+                .noneMatch(df -> df.getFile() != null &&
+                    df.getFile().getAbsolutePath().equals(file.getAbsolutePath())))
+            .collect(Collectors.toList());
+
+        int duplicateCount = foundFiles.size() - newFiles.size();
+
+        StringBuilder content = new StringBuilder();
+        content.append("Folder:\n").append(directory.getAbsolutePath()).append("\n\n");
+        content.append("Found ").append(foundFiles.size()).append(" file(s)");
+        if (duplicateCount > 0) {
+            content.append(" (").append(duplicateCount).append(" already in your submission)");
+        }
+        content.append(".\n\nOnly files directly in this folder are included (not subfolders).\n\nAdd ");
+        content.append(newFiles.isEmpty() ? "these files" : newFiles.size() + " new file(s)");
+        content.append(" to your submission?");
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Add Files from Folder");
+        alert.setHeaderText("Review folder contents");
+        alert.setContentText(content.toString());
+        alert.getButtonTypes().setAll(ButtonType.OK, ButtonType.CANCEL);
+        ((Button) alert.getDialogPane().lookupButton(ButtonType.OK)).setText("Add Files");
+        ((Button) alert.getDialogPane().lookupButton(ButtonType.CANCEL)).setText("Cancel");
+
+        Optional<ButtonType> response = alert.showAndWait();
+        if (response.isEmpty() || response.get() != ButtonType.OK) {
+            logger.info("User declined to add files from folder: {}", directory.getAbsolutePath());
+            return;
+        }
+
+        if (newFiles.isEmpty()) {
+            showInfo("No New Files",
+                "All files from this folder are already in your submission.");
+            return;
+        }
+
+        addFilesToModel(newFiles);
+        logger.info("Added {} files from folder {}", newFiles.size(), directory.getName());
+    }
+
+    private void setFolderScanControlsDisabled(boolean disabled) {
+        if (addFilesButton != null) {
+            addFilesButton.setDisable(disabled);
+        }
+        if (addFolderButton != null) {
+            addFolderButton.setDisable(disabled);
+        }
     }
 
     /**
@@ -442,19 +546,19 @@ public class FileSelectionStep extends AbstractWizardStep {
         // Handle directories with confirmation
         if (!directories.isEmpty()) {
             if (directories.size() == 1) {
-                // Single directory - scan recursively with confirmation
-                scanFolderRecursively(directories.get(0));
+                scanFolder(directories.get(0));
             } else {
-                // Multiple directories - ask user
                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
                 alert.setTitle("Add Folders");
-                alert.setHeaderText("Scan " + directories.size() + " folder(s) recursively?");
-                alert.setContentText("This will add all files from these folders and their subfolders.");
+                alert.setHeaderText("Add files from " + directories.size() + " folder(s)?");
+                alert.setContentText(
+                    "This will add files directly in each folder (not from subfolders). " +
+                    "Each folder is limited to " + MAX_FOLDER_FILE_COUNT + " files.");
 
                 alert.showAndWait().ifPresent(response -> {
                     if (response == ButtonType.OK) {
                         for (File dir : directories) {
-                            scanFolderRecursively(dir);
+                            scanFolder(dir);
                         }
                     }
                 });
