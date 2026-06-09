@@ -887,8 +887,8 @@ public class FileSelectionStep extends AbstractWizardStep {
             if (result.errors().isEmpty() && result.summaryMessage() != null) {
                 validationFeedback.addError(result.summaryMessage());
             }
-            validationStatus.setText("PRIDE validation failed");
-            validationStatus.setStyle("-fx-text-fill: #dc3545;");
+            validationStatus.setText("");
+            validationStatus.setStyle("-fx-text-fill: #666;");
         }
     }
 
