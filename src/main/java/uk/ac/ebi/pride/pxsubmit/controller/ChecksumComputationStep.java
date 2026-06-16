@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -236,20 +237,18 @@ public class ChecksumComputationStep extends AbstractWizardStep {
 
         // Check if checksums are already computed and still valid
         if (model.areChecksumsCalculated() && !model.getChecksums().isEmpty()) {
-            // Count actual files (excluding checksum.txt)
-            long fileCount = model.getFiles().stream()
-                .filter(f -> !"checksum.txt".equals(f.getFileName()))
-                .count();
-            long checksumCount = model.getChecksums().size();
+            ChecksumService.ChecksumValidationResult checksumValidation =
+                    ChecksumService.validateChecksumCoverage(model.getFiles(), model.getChecksums());
 
-            if (fileCount == checksumCount) {
+            if (checksumValidation.valid()) {
                 logger.info("Checksums already computed and valid, marking all as completed");
                 markAllAsCompleted();
                 completed.set(true);
                 logger.info("Step marked as completed, but NOT auto-advancing");
                 return;
             } else {
-                logger.info("File count changed ({} files vs {} checksums), recomputing", fileCount, checksumCount);
+                logger.info("Checksum coverage changed, recomputing: {}",
+                        checksumValidation.formattedDetails());
                 model.clearChecksums();
             }
         }
@@ -343,7 +342,7 @@ public class ChecksumComputationStep extends AbstractWizardStep {
         List<DataFile> filesForPanel = new ArrayList<>();
         for (DataFile dataFile : model.getFiles()) {
             // Skip checksum.txt itself
-            if ("checksum.txt".equals(dataFile.getFileName())) {
+            if (ChecksumService.isChecksumFile(dataFile)) {
                 continue;
             }
 
@@ -364,9 +363,9 @@ public class ChecksumComputationStep extends AbstractWizardStep {
     private void markAllAsCompleted() {
         Map<DataFile, String> existingChecksums = model.getChecksums();
         for (FileChecksumRow row : fileTable.getItems()) {
-            String checksum = existingChecksums.get(row.getDataFile());
-            if (checksum != null) {
-                row.setChecksum(checksum);
+            Optional<String> checksum = ChecksumService.findChecksumForFile(existingChecksums, row.getDataFile());
+            if (checksum.isPresent()) {
+                row.setChecksum(checksum.get());
                 row.setCompleted(true);
             }
         }
@@ -433,6 +432,14 @@ public class ChecksumComputationStep extends AbstractWizardStep {
             logger.info("Checksums computed successfully for {} files", checksums.size());
 
             Platform.runLater(() -> {
+                ChecksumService.ChecksumValidationResult checksumValidation =
+                        ChecksumService.validateChecksumCoverage(model.getFiles(), checksums);
+                if (!checksumValidation.valid()) {
+                    showChecksumError("Checksum coverage validation failed",
+                            checksumValidation.formattedDetails());
+                    return;
+                }
+
                 // Update table rows with checksums
                 for (Map.Entry<DataFile, String> entry : checksums.entrySet()) {
                     String fileName = entry.getKey().getFileName();
@@ -447,7 +454,10 @@ public class ChecksumComputationStep extends AbstractWizardStep {
                 model.setChecksums(checksums);
 
                 // Write checksum.txt file
-                writeChecksumFile(checksums);
+                if (!writeChecksumFile(checksums)) {
+                    model.clearChecksums();
+                    return;
+                }
 
                 // Update UI
                 statusLabel.setText("Everything done! All checksums computed successfully.");
@@ -518,17 +528,17 @@ public class ChecksumComputationStep extends AbstractWizardStep {
         }
     }
 
-    private void writeChecksumFile(Map<DataFile, String> checksums) {
+    private boolean writeChecksumFile(Map<DataFile, String> checksums) {
         try {
             // Write checksum.txt to the current working directory
             File workingDir = new File(System.getProperty("user.dir"));
-            File checksumFile = ChecksumService.writeChecksumFile(checksums, workingDir);
+            File checksumFile = ChecksumService.writeChecksumFile(checksums, model.getFiles(), workingDir);
 
             logger.info("Checksum file written: {}", checksumFile.getAbsolutePath());
 
             // Add checksum.txt to the file list if not already present
             boolean alreadyExists = model.getFiles().stream()
-                .anyMatch(f -> "checksum.txt".equals(f.getFileName()));
+                .anyMatch(ChecksumService::isChecksumFile);
 
             if (!alreadyExists) {
                 DataFile checksumDataFile = new DataFile();
@@ -537,9 +547,31 @@ public class ChecksumComputationStep extends AbstractWizardStep {
                 model.addFile(checksumDataFile);
                 logger.info("Added checksum.txt to submission file list");
             }
+            return true;
         } catch (IOException ex) {
             logger.warn("Could not write checksum file", ex);
+            showChecksumError("Could not write checksum file", ex.getMessage());
+            return false;
         }
+    }
+
+    private void showChecksumError(String header, String message) {
+        statusLabel.setText("Error: " + header);
+        statusLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #dc3545;");
+        computing.set(false);
+        completed.set(false);
+        startButton.setDisable(false);
+        startButton.setVisible(true);
+        cancelButton.setVisible(false);
+        if (wizardController != null) {
+            wizardController.hideGlobalProgress();
+        }
+
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Checksum Error");
+        alert.setHeaderText(header);
+        alert.setContentText(message != null && !message.isBlank() ? message : "Unknown error");
+        alert.showAndWait();
     }
 
     private static String formatDuration(long millis) {
@@ -558,6 +590,18 @@ public class ChecksumComputationStep extends AbstractWizardStep {
     @Override
     public boolean validate() {
         if (!completed.get()) {
+            return false;
+        }
+
+        ChecksumService.ChecksumValidationResult checksumValidation =
+                ChecksumService.validateChecksumCoverage(model.getFiles(), model.getChecksums());
+        if (!checksumValidation.valid()) {
+            showChecksumError("Checksum coverage validation failed", checksumValidation.formattedDetails());
+            model.clearChecksums();
+            return false;
+        }
+
+        if (!writeChecksumFile(model.getChecksums())) {
             return false;
         }
 

@@ -517,7 +517,9 @@ public class SubmissionStep extends AbstractWizardStep {
         DebugMode.log("CHECKSUM", "Using pre-computed checksums from ChecksumComputationStep");
 
         // Write checksum.txt file for upload
-        writeChecksumFile(model.getChecksums());
+        if (!writeChecksumFile(model.getChecksums())) {
+            return;
+        }
 
         // Save checkpoint before starting upload
         saveCheckpoint();
@@ -532,15 +534,15 @@ public class SubmissionStep extends AbstractWizardStep {
     /**
      * Write checksum.txt file and add it to the file list for upload
      */
-    private void writeChecksumFile(Map<DataFile, String> checksums) {
+    private boolean writeChecksumFile(Map<DataFile, String> checksums) {
         try {
             // Write checksum.txt to the current working directory
             File workingDir = new File(System.getProperty("user.dir"));
-            File checksumFile = ChecksumService.writeChecksumFile(checksums, workingDir);
+            File checksumFile = ChecksumService.writeChecksumFile(checksums, model.getFiles(), workingDir);
 
             // Check if checksum.txt is already in the file list
             boolean alreadyExists = model.getFiles().stream()
-                .anyMatch(f -> "checksum.txt".equals(f.getFileName()));
+                .anyMatch(ChecksumService::isChecksumFile);
 
             if (!alreadyExists) {
                 // Add checksum.txt to the file list for upload
@@ -557,11 +559,14 @@ public class SubmissionStep extends AbstractWizardStep {
             for (Map.Entry<DataFile, String> entry : checksums.entrySet()) {
                 DebugMode.log("CHECKSUM", entry.getKey().getFileName() + " -> " + entry.getValue());
             }
+            return true;
 
         } catch (IOException ex) {
-            addLog("WARNING: Could not write checksum file - " + ex.getMessage());
+            addLog("ERROR: Could not write checksum file - " + ex.getMessage());
             logger.warn("Could not write checksum file", ex);
             DebugMode.log("CHECKSUM", "ERROR writing checksum.txt: " + ex.getMessage());
+            handleError("Could not write checksum file");
+            return false;
         }
     }
 

@@ -22,6 +22,7 @@ import uk.ac.ebi.pride.pxsubmit.service.SdrfValidationService;
 import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
 import uk.ac.ebi.pride.pxsubmit.service.ValidationService;
 import uk.ac.ebi.pride.submissions.commons.exceptions.SubValidationException;
+import uk.ac.ebi.pride.pxsubmit.util.FileNameValidator;
 import uk.ac.ebi.pride.pxsubmit.util.FileTypeDetector;
 import uk.ac.ebi.pride.pxsubmit.view.component.FileClassificationPanel;
 import uk.ac.ebi.pride.pxsubmit.view.component.FileTableView;
@@ -33,7 +34,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +51,7 @@ import java.util.stream.Collectors;
 public class FileSelectionStep extends AbstractWizardStep {
 
     private static final int MAX_FOLDER_FILE_COUNT = 1000;
+    private static final int MAX_INVALID_FILE_NAMES_TO_SHOW = 10;
 
     private FileTableView fileTable;
     private FileClassificationPanel classificationPanel;
@@ -220,6 +221,13 @@ public class FileSelectionStep extends AbstractWizardStep {
     @Override
     public boolean validate() {
         classificationPanel.setFiles(model.getFiles());
+        List<File> invalidNamedFiles = getFilesWithInvalidSubmissionNames();
+        if (!invalidNamedFiles.isEmpty()) {
+            updateSummary();
+            showInvalidFileNamesWarning("Invalid File Names", invalidNamedFiles);
+            return false;
+        }
+
         if (model.getFiles().isEmpty() || !classificationPanel.hasAllMandatoryFiles()) {
             return false;
         }
@@ -416,19 +424,37 @@ public class FileSelectionStep extends AbstractWizardStep {
             return;
         }
 
-        List<File> newFiles = foundFiles.stream()
+        List<File> invalidNamedFiles = FileNameValidator.findInvalidSubmissionFileNames(foundFiles);
+        List<File> validNamedFiles = foundFiles.stream()
+            .filter(FileNameValidator::isValidSubmissionFileName)
+            .collect(Collectors.toList());
+
+        if (validNamedFiles.isEmpty()) {
+            showInvalidFileNamesWarning("Invalid File Names", invalidNamedFiles);
+            return;
+        }
+
+        if (!invalidNamedFiles.isEmpty()) {
+            showInvalidFileNamesWarning("Some Files Were Skipped", invalidNamedFiles);
+        }
+
+        List<File> newFiles = validNamedFiles.stream()
             .filter(file -> model.getFiles().stream()
                 .noneMatch(df -> df.getFile() != null &&
                     df.getFile().getAbsolutePath().equals(file.getAbsolutePath())))
             .collect(Collectors.toList());
 
-        int duplicateCount = foundFiles.size() - newFiles.size();
+        int duplicateCount = validNamedFiles.size() - newFiles.size();
 
         StringBuilder content = new StringBuilder();
         content.append("Folder:\n").append(directory.getAbsolutePath()).append("\n\n");
-        content.append("Found ").append(foundFiles.size()).append(" file(s)");
+        content.append("Found ").append(validNamedFiles.size()).append(" valid file(s)");
         if (duplicateCount > 0) {
             content.append(" (").append(duplicateCount).append(" already in your submission)");
+        }
+        if (!invalidNamedFiles.isEmpty()) {
+            content.append(".\nSkipped ").append(invalidNamedFiles.size())
+                .append(" file(s) with invalid names");
         }
         content.append(".\n\nOnly files directly in this folder are included (not subfolders).\n\nAdd ");
         content.append(newFiles.isEmpty() ? "these files" : newFiles.size() + " new file(s)");
@@ -570,8 +596,9 @@ public class FileSelectionStep extends AbstractWizardStep {
      * Add files to the model (for regular files only, not directories)
      */
     private void addFilesToModel(List<File> files) {
+        List<File> validNamedFiles = filterFilesWithValidSubmissionNames(files);
         int addedCount = 0;
-        for (File file : files) {
+        for (File file : validNamedFiles) {
             if (file.isFile()) {
                 // Check if file already exists
                 boolean exists = model.getFiles().stream()
@@ -595,6 +622,24 @@ public class FileSelectionStep extends AbstractWizardStep {
 
         updateSummary();
         syncValidationStatusWithCurrentFiles();
+    }
+
+    /**
+     * Keep files whose names can be uploaded safely and warn for skipped files.
+     */
+    private List<File> filterFilesWithValidSubmissionNames(List<File> files) {
+        if (files == null || files.isEmpty()) {
+            return List.of();
+        }
+
+        List<File> invalidNamedFiles = FileNameValidator.findInvalidSubmissionFileNames(files);
+        if (!invalidNamedFiles.isEmpty()) {
+            showInvalidFileNamesWarning("Some Files Were Skipped", invalidNamedFiles);
+        }
+
+        return files.stream()
+            .filter(FileNameValidator::isValidSubmissionFileName)
+            .collect(Collectors.toList());
     }
 
     /**
@@ -725,11 +770,13 @@ public class FileSelectionStep extends AbstractWizardStep {
 
         List<File> sdrfFiles = getSdrfFiles();
         boolean hasSdrf = !sdrfFiles.isEmpty();
+        List<File> invalidNamedFiles = getFilesWithInvalidSubmissionNames();
+        boolean hasInvalidFileNames = !invalidNamedFiles.isEmpty();
         int total = model.getFiles().size();
         SdrfValidationTracker sdrfTracker = model.getSdrfValidation();
         boolean sdrfValidationPassed = sdrfTracker.allMarkedPassed(sdrfFiles);
 
-        setValid(classificationPanel.hasAllMandatoryFiles());
+        setValid(classificationPanel.hasAllMandatoryFiles() && !hasInvalidFileNames);
 
         if (total == 0) {
             summaryLabel.setText("No files added - drag and drop files or use the buttons above");
@@ -747,6 +794,10 @@ public class FileSelectionStep extends AbstractWizardStep {
             .filter(f -> f.getFileType() == ProjectFileType.RESULT).count();
         boolean hasFasta = model.getFiles().stream()
             .anyMatch(f -> FileTypeDetector.isFastaFile(f.getFile()));
+
+        if (hasInvalidFileNames) {
+            validationFeedback.addError(createInvalidFileNameSummary(invalidNamedFiles));
+        }
 
         // File requirement validation
         if (rawCount == 0) {
@@ -780,8 +831,13 @@ public class FileSelectionStep extends AbstractWizardStep {
 
         // Show validation status based on mandatory files
         if (classificationPanel.hasAllMandatoryFiles()) {
-            summaryLabel.setText(total + " files ready for submission");
-            summaryLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #28a745;");
+            if (hasInvalidFileNames) {
+                summaryLabel.setText(total + " files added - invalid file names");
+                summaryLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #dc3545;");
+            } else {
+                summaryLabel.setText(total + " files ready for submission");
+                summaryLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #28a745;");
+            }
             if (!validationFeedback.hasErrors()) {
                 validationFeedback.addInfo("All mandatory files present - you can proceed to the next step");
             }
@@ -939,6 +995,44 @@ public class FileSelectionStep extends AbstractWizardStep {
             return null;
         }
         return model.getSdrfValidation().lookup(dataFile.getFile().getAbsolutePath());
+    }
+
+    private List<File> getFilesWithInvalidSubmissionNames() {
+        return model.getFiles().stream()
+            .map(DataFile::getFile)
+            .filter(file -> file != null && !FileNameValidator.isValidSubmissionFileName(file))
+            .collect(Collectors.toList());
+    }
+
+    private String createInvalidFileNameSummary(List<File> invalidFiles) {
+        return invalidFiles.size() + " file(s) must be renamed before continuing. " +
+            FileNameValidator.SUBMISSION_FILE_NAME_RULE + " " +
+            "Invalid: " + formatInvalidFileNames(invalidFiles, 3);
+    }
+
+    private void showInvalidFileNamesWarning(String title, List<File> invalidFiles) {
+        if (invalidFiles == null || invalidFiles.isEmpty()) {
+            return;
+        }
+
+        String message = "These file names cannot be added:\n\n" +
+            formatInvalidFileNames(invalidFiles, MAX_INVALID_FILE_NAMES_TO_SHOW) +
+            "\n\n" + FileNameValidator.SUBMISSION_FILE_NAME_RULE +
+            "\n\nPlease rename the file(s) and select them again.";
+        showWarning(title, message);
+    }
+
+    private String formatInvalidFileNames(List<File> invalidFiles, int limit) {
+        String text = invalidFiles.stream()
+            .limit(limit)
+            .map(file -> "- " + file.getName())
+            .collect(Collectors.joining("\n"));
+
+        int remaining = invalidFiles.size() - Math.min(invalidFiles.size(), limit);
+        if (remaining > 0) {
+            text += "\n- ... and " + remaining + " more";
+        }
+        return text;
     }
 
     private String formatSize(long size) {

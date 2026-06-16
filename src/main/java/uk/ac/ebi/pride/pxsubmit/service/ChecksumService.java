@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.data.model.DataFile;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +48,8 @@ import java.util.concurrent.*;
 public class ChecksumService extends Service<Map<DataFile, String>> {
 
     private static final Logger logger = LoggerFactory.getLogger(ChecksumService.class);
+    public static final String CHECKSUM_FILE_NAME = "checksum.txt";
+    public static final String CHECKSUM_FILE_FORMAT = "<File_name><TAB><checksum>";
 
     // Number of threads for parallel processing
     private static final int DEFAULT_THREAD_COUNT = Math.max(2,
@@ -105,7 +109,7 @@ public class ChecksumService extends Service<Map<DataFile, String>> {
 
             // Filter out checksum.txt if present
             List<DataFile> filesToProcess = taskFiles.stream()
-                .filter(f -> !"checksum.txt".equals(f.getFileName()))
+                .filter(f -> !isChecksumFile(f))
                 .toList();
 
             int total = filesToProcess.size();
@@ -210,19 +214,268 @@ public class ChecksumService extends Service<Map<DataFile, String>> {
      * Write checksum.txt file for submission
      */
     public static File writeChecksumFile(Map<DataFile, String> checksums, File directory) throws IOException {
-        File checksumFile = new File(directory, "checksum.txt");
+        ChecksumValidationResult entryValidation = validateChecksumEntries(checksums);
+        if (!entryValidation.valid()) {
+            throw new IOException("Invalid checksum entries:\n" + entryValidation.formattedDetails());
+        }
 
-        try (PrintWriter writer = new PrintWriter(new FileWriter(checksumFile))) {
-            for (Map.Entry<DataFile, String> entry : checksums.entrySet()) {
+        File checksumFile = new File(directory, CHECKSUM_FILE_NAME);
+
+        try (PrintWriter writer = new PrintWriter(Files.newBufferedWriter(
+                checksumFile.toPath(), StandardCharsets.UTF_8))) {
+            for (Map.Entry<DataFile, String> entry : orderedChecksumEntries(checksums)) {
                 DataFile dataFile = entry.getKey();
                 String checksum = entry.getValue();
-                // Format: checksum TAB filename
-                writer.println(checksum + "\t" + dataFile.getFileName());
+                // Format: filename TAB checksum
+                writer.println(getFileName(dataFile) + "\t" + checksum);
             }
         }
 
         logger.info("Checksum file written: {}", checksumFile.getAbsolutePath());
         return checksumFile;
+    }
+
+    /**
+     * Write checksum.txt and verify that its contents match the selected upload files.
+     */
+    public static File writeChecksumFile(
+            Map<DataFile, String> checksums,
+            Collection<DataFile> selectedFiles,
+            File directory
+    ) throws IOException {
+        ChecksumValidationResult coverageValidation = validateChecksumCoverage(selectedFiles, checksums);
+        if (!coverageValidation.valid()) {
+            throw new IOException("Checksum coverage validation failed:\n" +
+                    coverageValidation.formattedDetails());
+        }
+
+        File checksumFile = writeChecksumFile(checksums, directory);
+        ChecksumValidationResult fileValidation =
+                validateChecksumFileCoverage(checksumFile, selectedFiles);
+        if (!fileValidation.valid()) {
+            throw new IOException("Generated checksum.txt validation failed:\n" +
+                    fileValidation.formattedDetails());
+        }
+        return checksumFile;
+    }
+
+    /**
+     * Verify that every selected upload file has one checksum entry and every
+     * checksum entry belongs to a selected upload file.
+     */
+    public static ChecksumValidationResult validateChecksumCoverage(
+            Collection<DataFile> selectedFiles,
+            Map<DataFile, String> checksums
+    ) {
+        List<String> errors = new ArrayList<>();
+        Map<String, Integer> selectedNames = countSelectedFileNames(selectedFiles, errors);
+        Map<String, Integer> checksumNames = countChecksumFileNames(checksums, errors);
+
+        for (String selectedName : selectedNames.keySet()) {
+            if (!checksumNames.containsKey(selectedName)) {
+                errors.add("Missing checksum entry for selected file: " + selectedName);
+            }
+        }
+
+        for (String checksumName : checksumNames.keySet()) {
+            if (!selectedNames.containsKey(checksumName)) {
+                errors.add("Checksum entry does not match a selected upload file: " + checksumName);
+            }
+        }
+
+        return new ChecksumValidationResult(List.copyOf(errors));
+    }
+
+    /**
+     * Verify a generated checksum.txt file against the selected upload files.
+     */
+    public static ChecksumValidationResult validateChecksumFileCoverage(
+            File checksumFile,
+            Collection<DataFile> selectedFiles
+    ) throws IOException {
+        List<String> errors = new ArrayList<>();
+        Map<String, Integer> selectedNames = countSelectedFileNames(selectedFiles, errors);
+        Map<String, Integer> checksumFileNames = new LinkedHashMap<>();
+
+        if (checksumFile == null || !checksumFile.isFile()) {
+            errors.add("checksum.txt was not created.");
+            return new ChecksumValidationResult(List.copyOf(errors));
+        }
+
+        List<String> lines = Files.readAllLines(checksumFile.toPath(), StandardCharsets.UTF_8);
+        for (int i = 0; i < lines.size(); i++) {
+            String line = lines.get(i);
+            int lineNumber = i + 1;
+            if (line == null || line.isBlank()) {
+                errors.add("Line " + lineNumber + " is blank. Expected " + CHECKSUM_FILE_FORMAT + ".");
+                continue;
+            }
+
+            String[] parts = line.split("\t", -1);
+            if (parts.length != 2) {
+                errors.add("Line " + lineNumber + " has invalid format. Expected " +
+                        CHECKSUM_FILE_FORMAT + ".");
+                continue;
+            }
+
+            String fileName = parts[0];
+            String checksum = parts[1];
+            if (fileName.isBlank()) {
+                errors.add("Line " + lineNumber + " has an empty file name.");
+                continue;
+            }
+            if (checksum.isBlank()) {
+                errors.add("Line " + lineNumber + " has an empty checksum for file: " + fileName);
+            }
+            checksumFileNames.merge(fileName, 1, Integer::sum);
+        }
+
+        addDuplicateErrors("checksum.txt", checksumFileNames, errors);
+
+        for (String selectedName : selectedNames.keySet()) {
+            if (!checksumFileNames.containsKey(selectedName)) {
+                errors.add("checksum.txt is missing selected upload file: " + selectedName);
+            }
+        }
+
+        for (String checksumName : checksumFileNames.keySet()) {
+            if (!selectedNames.containsKey(checksumName)) {
+                errors.add("checksum.txt contains a file not selected for upload: " + checksumName);
+            }
+        }
+
+        return new ChecksumValidationResult(List.copyOf(errors));
+    }
+
+    public static Optional<String> findChecksumForFile(Map<DataFile, String> checksums, DataFile dataFile) {
+        if (checksums == null || dataFile == null) {
+            return Optional.empty();
+        }
+
+        String directMatch = checksums.get(dataFile);
+        if (directMatch != null) {
+            return Optional.of(directMatch);
+        }
+
+        String targetFileName = getFileName(dataFile);
+        if (targetFileName.isBlank()) {
+            return Optional.empty();
+        }
+
+        return checksums.entrySet().stream()
+                .filter(entry -> targetFileName.equals(getFileName(entry.getKey())))
+                .map(Map.Entry::getValue)
+                .filter(value -> value != null && !value.isBlank())
+                .findFirst();
+    }
+
+    public static boolean isChecksumFile(DataFile dataFile) {
+        return CHECKSUM_FILE_NAME.equalsIgnoreCase(getFileName(dataFile));
+    }
+
+    public record ChecksumValidationResult(List<String> errors) {
+        public boolean valid() {
+            return errors.isEmpty();
+        }
+
+        public String formattedDetails() {
+            return String.join("\n", errors);
+        }
+    }
+
+    private static ChecksumValidationResult validateChecksumEntries(Map<DataFile, String> checksums) {
+        List<String> errors = new ArrayList<>();
+        countChecksumFileNames(checksums, errors);
+        return new ChecksumValidationResult(List.copyOf(errors));
+    }
+
+    private static Map<String, Integer> countSelectedFileNames(
+            Collection<DataFile> selectedFiles,
+            List<String> errors
+    ) {
+        Map<String, Integer> names = new LinkedHashMap<>();
+        if (selectedFiles == null) {
+            return names;
+        }
+
+        for (DataFile dataFile : selectedFiles) {
+            if (isChecksumFile(dataFile)) {
+                continue;
+            }
+
+            String fileName = getFileName(dataFile);
+            if (fileName.isBlank()) {
+                errors.add("Selected upload file has an empty file name.");
+                continue;
+            }
+            names.merge(fileName, 1, Integer::sum);
+        }
+
+        addDuplicateErrors("selected upload files", names, errors);
+        return names;
+    }
+
+    private static Map<String, Integer> countChecksumFileNames(
+            Map<DataFile, String> checksums,
+            List<String> errors
+    ) {
+        Map<String, Integer> names = new LinkedHashMap<>();
+        if (checksums == null || checksums.isEmpty()) {
+            return names;
+        }
+
+        for (Map.Entry<DataFile, String> entry : checksums.entrySet()) {
+            DataFile dataFile = entry.getKey();
+            String fileName = getFileName(dataFile);
+            String checksum = entry.getValue();
+
+            if (fileName.isBlank()) {
+                errors.add("Checksum entry has an empty file name.");
+                continue;
+            }
+            if (CHECKSUM_FILE_NAME.equalsIgnoreCase(fileName)) {
+                errors.add("checksum.txt must not include a checksum entry for itself.");
+                continue;
+            }
+            if (checksum == null || checksum.isBlank()) {
+                errors.add("Missing checksum value for file: " + fileName);
+            }
+            names.merge(fileName, 1, Integer::sum);
+        }
+
+        addDuplicateErrors("checksum entries", names, errors);
+        return names;
+    }
+
+    private static void addDuplicateErrors(String source, Map<String, Integer> names, List<String> errors) {
+        for (Map.Entry<String, Integer> entry : names.entrySet()) {
+            if (entry.getValue() > 1) {
+                errors.add("Duplicate file name in " + source + ": " + entry.getKey());
+            }
+        }
+    }
+
+    private static List<Map.Entry<DataFile, String>> orderedChecksumEntries(Map<DataFile, String> checksums) {
+        if (checksums == null || checksums.isEmpty()) {
+            return List.of();
+        }
+
+        return checksums.entrySet().stream()
+                .sorted(Comparator.comparing(entry -> getFileName(entry.getKey()), String.CASE_INSENSITIVE_ORDER))
+                .toList();
+    }
+
+    private static String getFileName(DataFile dataFile) {
+        if (dataFile == null) {
+            return "";
+        }
+        if (dataFile.getFileName() != null && !dataFile.getFileName().isBlank()) {
+            return dataFile.getFileName();
+        }
+        if (dataFile.getFile() != null) {
+            return dataFile.getFile().getName();
+        }
+        return "";
     }
 
     /**
