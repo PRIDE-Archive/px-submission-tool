@@ -17,6 +17,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -389,8 +390,8 @@ public class AdditionalMetaDataForm extends Form {
         }
 
         // software
-        Set<CvParam> softwares = getDiseases();
-        if (!invalid && !softwares.isEmpty() && SubmissionValidator.validateDiseases(softwares).hasError()) {
+        Set<CvParam> softwares = getSoftwares();
+        if (!invalid && !softwares.isEmpty() && SubmissionValidator.validateAdditional(new HashSet<>(softwares)).hasError()) {
             warningBalloonTip = BalloonTipUtil.createErrorBalloonTip(softwarePanel, "Please choose software");
             showWarnings();
             invalid = true;
