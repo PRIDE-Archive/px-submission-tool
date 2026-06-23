@@ -19,7 +19,11 @@ px.upload.verify.url = https://www.proteomexchange.org/archive-submission-ws/sub
 px.aspera.available.url = https://www.proteomexchange.org/archive-submission-ws/submission/asperaAvailable
 
 # url for completing px submission
+px.submission.ticket.list.url = https://www.proteomexchange.org/archive-submission-ws/submission/findInvalidTickets
 px.submission.complete.url = https://www.proteomexchange.org/archive-submission-ws/submission/submit
+
+# local submission.px loaded when resuming from a selected ticket
+px.local.submission.file.path = ~/Downloads/upload-files/submission.px
 
 # url for proteomexchange
 px.web.url = https://www.proteomexchange.org/

@@ -18,12 +18,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
-import uk.ac.ebi.pride.data.io.SubmissionFileParser;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.pxsubmit.controller.*;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
 import uk.ac.ebi.pride.pxsubmit.model.UploadCheckpoint;
+import uk.ac.ebi.pride.pxsubmit.service.SubmissionPxLoader;
 import uk.ac.ebi.pride.pxsubmit.util.DebugMode;
 import uk.ac.ebi.pride.pxsubmit.util.UploadCheckpointManager;
 
@@ -275,7 +275,7 @@ public class PxSubmitApplication extends Application {
             File submissionPxFile = new File(checkpoint.getSubmissionPxPath());
             if (submissionPxFile.exists()) {
                 try {
-                    Submission parsedSubmission = SubmissionFileParser.parse(submissionPxFile);
+                    Submission parsedSubmission = new SubmissionPxLoader().load(submissionPxFile);
                     model.setSubmission(parsedSubmission); // triggers syncMetadataFromSubmission()
                     logger.info("Restored submission metadata from: {}", submissionPxFile.getAbsolutePath());
                 } catch (Exception e) {

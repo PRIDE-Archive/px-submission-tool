@@ -1,5 +1,6 @@
 package uk.ac.ebi.pride.pxsubmit.controller;
 
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -7,10 +8,18 @@ import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import uk.ac.ebi.pride.data.model.Contact;
+import uk.ac.ebi.pride.data.model.Submission;
 
+import java.io.File;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.regex.Pattern;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
+import uk.ac.ebi.pride.pxsubmit.service.ApiService;
 import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
+import uk.ac.ebi.pride.pxsubmit.service.SubmissionPxLoader;
 
 /**
  * Login step - First step in the submission wizard.
@@ -22,7 +31,18 @@ public class LoginStep extends AbstractWizardStep {
     private PasswordField passwordField;
     private Label errorLabel;
     private HBox progressBox;
+    private Label progressLabel;
+    private VBox ticketSelectionBox;
+    private ComboBox<String> ticketCombo;
+    private Label ticketStatusLabel;
     private uk.ac.ebi.pride.pxsubmit.service.AuthService currentAuth;
+    private ApiService ticketApiService;
+    private final SubmissionPxLoader submissionPxLoader;
+    private CompletableFuture<Void> currentTicketLoad;
+    private boolean submissionLoadedFromSelectedTicket;
+    private String authenticatedSubmitterName;
+    private String authenticatedSubmitterEmail;
+    private String authenticatedSubmitterAffiliation;
     private boolean authenticated = false;
 
     private static final Pattern EMAIL_PATTERN =
@@ -33,6 +53,7 @@ public class LoginStep extends AbstractWizardStep {
               "PRIDE Login",
               "Enter your PRIDE Archive credentials to continue",
               model);
+        this.submissionPxLoader = ServiceFactory.getInstance().createSubmissionPxLoader();
     }
 
     @Override
@@ -78,11 +99,41 @@ public class LoginStep extends AbstractWizardStep {
         progressBox.setAlignment(Pos.CENTER);
         ProgressIndicator pi = new ProgressIndicator();
         pi.setPrefSize(20, 20);
-        Label progressLabel = new Label("Authenticating...");
+        progressLabel = new Label("Authenticating...");
         progressLabel.setStyle("-fx-text-fill: #666;");
         progressBox.getChildren().addAll(pi, progressLabel);
         progressBox.setVisible(false);
         progressBox.setManaged(false);
+
+        ticketSelectionBox = new VBox(8);
+        ticketSelectionBox.setAlignment(Pos.CENTER_LEFT);
+        ticketSelectionBox.setMaxWidth(360);
+        ticketSelectionBox.setVisible(false);
+        ticketSelectionBox.setManaged(false);
+
+        Label ticketLabel = new Label("Existing submission tickets:");
+        ticketLabel.setStyle("-fx-font-weight: bold;");
+
+        ticketCombo = new ComboBox<>();
+        ticketCombo.setPromptText("Select a ticket to resume");
+        ticketCombo.setPrefWidth(300);
+        ticketCombo.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) ->
+            handleTicketSelection(newVal)
+        );
+
+        Button clearTicketButton = new Button("Clear");
+        clearTicketButton.setOnAction(e -> {
+            ticketCombo.getSelectionModel().clearSelection();
+        });
+
+        HBox ticketRow = new HBox(8, ticketCombo, clearTicketButton);
+        ticketRow.setAlignment(Pos.CENTER_LEFT);
+
+        ticketStatusLabel = new Label("Choose a ticket, or click Next to start a new submission.");
+        ticketStatusLabel.setWrapText(true);
+        ticketStatusLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 12px;");
+
+        ticketSelectionBox.getChildren().addAll(ticketLabel, ticketRow, ticketStatusLabel);
 
         // Register link
         Hyperlink registerLink = new Hyperlink("Register for a PRIDE account");
@@ -101,6 +152,7 @@ public class LoginStep extends AbstractWizardStep {
             form,
             errorLabel,
             progressBox,
+            ticketSelectionBox,
             linksBox
         );
 
@@ -163,6 +215,13 @@ public class LoginStep extends AbstractWizardStep {
     protected void onStepEntering() {
         // Clear any previous error
         hideError();
+        hideTicketSelection();
+
+        if (model.isLoggedIn()
+                && model.getPendingCheckpoint() == null
+                && !model.getAvailableSubmissionTickets().isEmpty()) {
+            showTicketSelection(model.getAvailableSubmissionTickets());
+        }
 
         // Test mode - show notice that login is not required
         if (model.isTrainingMode()) {
@@ -200,6 +259,13 @@ public class LoginStep extends AbstractWizardStep {
 
         // If already authenticated, proceed
         if (authenticated) {
+            if (isTicketLoadRunning()) {
+                ticketStatusLabel.setText("Loading submission.px. Please wait...");
+                return false;
+            }
+            if (model.getSelectedSubmissionTicket() == null || model.getSelectedSubmissionTicket().isBlank()) {
+                resetTicketLoadedSubmissionForNewTicket();
+            }
             return true;
         }
 
@@ -229,7 +295,8 @@ public class LoginStep extends AbstractWizardStep {
 
         // Disable navigation and show inline progress
         hideError();
-        showProgress();
+        hideTicketSelection();
+        showProgress("Authenticating...");
         if (wizardController != null) {
             wizardController.setNavigationEnabled(false);
         }
@@ -238,7 +305,6 @@ public class LoginStep extends AbstractWizardStep {
         currentAuth.setCredentials(username, password);
 
         currentAuth.setOnSucceeded(evt -> {
-            hideProgress();
             try {
                 uk.ac.ebi.pride.archive.submission.model.user.ContactDetail contact = currentAuth.getValue();
                 model.setLoggedIn(true);
@@ -261,31 +327,22 @@ public class LoginStep extends AbstractWizardStep {
                     submitter.setAffiliation(contact.getAffiliation());
                     submitter.setUserName(username);
                     submitter.setPassword(passwordField.getText().toCharArray());
+
+                    rememberAuthenticatedSubmitter(
+                        submitterName, contact.getEmail(), contact.getAffiliation());
+                } else {
+                    rememberAuthenticatedSubmitter(null, username, null);
+                    applyAuthenticatedSubmitter(model.getSubmission());
                 }
                 logger.info("Authentication succeeded for user: {}", username);
                 authenticated = true;
-
-                // Auto-advance: skip to upload step if resuming from checkpoint
-                if (wizardController != null) {
-                    wizardController.setNavigationEnabled(true);
-                    if (model.getPendingCheckpoint() != null) {
-                        logger.info("Resuming from checkpoint - skipping to submission step");
-                        wizardController.goToStep("submission");
-                    } else {
-                        wizardController.goToNextStep();
-                    }
-                }
+                loadSubmissionTickets(username, password);
             } catch (Exception ex) {
                 logger.warn("Authentication succeeded but could not process contact details", ex);
+                rememberAuthenticatedSubmitter(null, username, null);
+                applyAuthenticatedSubmitter(model.getSubmission());
                 authenticated = true;
-                if (wizardController != null) {
-                    wizardController.setNavigationEnabled(true);
-                    if (model.getPendingCheckpoint() != null) {
-                        wizardController.goToStep("submission");
-                    } else {
-                        wizardController.goToNextStep();
-                    }
-                }
+                loadSubmissionTickets(username, password);
             }
         });
 
@@ -321,7 +378,8 @@ public class LoginStep extends AbstractWizardStep {
         errorLabel.setManaged(false);
     }
 
-    private void showProgress() {
+    private void showProgress(String message) {
+        progressLabel.setText(message);
         progressBox.setVisible(true);
         progressBox.setManaged(true);
     }
@@ -329,6 +387,224 @@ public class LoginStep extends AbstractWizardStep {
     private void hideProgress() {
         progressBox.setVisible(false);
         progressBox.setManaged(false);
+    }
+
+    private void loadSubmissionTickets(String username, String password) {
+        showProgress("Loading existing submissions...");
+
+        if (ticketApiService != null) {
+            ticketApiService.shutdown();
+        }
+
+        ticketApiService = ServiceFactory.getInstance().createApiService(username, password);
+        ticketApiService.getSubmissionTickets()
+            .thenAccept(tickets -> Platform.runLater(() -> {
+                shutdownTicketApiService();
+                hideProgress();
+                model.setAvailableSubmissionTickets(tickets);
+
+                if (tickets != null && !tickets.isEmpty() && model.getPendingCheckpoint() == null) {
+                    showTicketSelection(tickets);
+                    if (wizardController != null) {
+                        wizardController.setNavigationEnabled(true);
+                    }
+                } else {
+                    continueAfterLogin();
+                }
+            }))
+            .exceptionally(ex -> {
+                logger.warn("Could not load existing submission tickets", ex);
+                Platform.runLater(() -> {
+                    shutdownTicketApiService();
+                    hideProgress();
+                    model.setAvailableSubmissionTickets(List.of());
+                    model.setSelectedSubmissionTicket(null);
+                    continueAfterLogin();
+                });
+                return null;
+            });
+    }
+
+    private void showTicketSelection(List<String> tickets) {
+        String selectedTicket = model.getSelectedSubmissionTicket();
+        ticketCombo.getItems().setAll(tickets);
+        if (selectedTicket != null && tickets.contains(selectedTicket)) {
+            ticketCombo.getSelectionModel().select(selectedTicket);
+        } else {
+            ticketCombo.getSelectionModel().clearSelection();
+            model.setSelectedSubmissionTicket(null);
+        }
+        ticketStatusLabel.setText("Choose a ticket, or click Next to start a new submission.");
+        ticketSelectionBox.setVisible(true);
+        ticketSelectionBox.setManaged(true);
+    }
+
+    private void handleTicketSelection(String ticketId) {
+        model.setSelectedSubmissionTicket(ticketId);
+
+        if (ticketStatusLabel == null) {
+            return;
+        }
+
+        if (ticketId == null || ticketId.isBlank()) {
+            resetTicketLoadedSubmissionForNewTicket();
+            ticketStatusLabel.setText("No existing ticket selected. Click Next to create a new submission ticket.");
+            return;
+        }
+
+        loadSubmissionPxForTicket(ticketId);
+    }
+
+    private void loadSubmissionPxForTicket(String ticketId) {
+        File submissionFile = submissionPxLoader.resolveSubmissionFile(ticketId);
+        if (submissionFile == null) {
+            ticketStatusLabel.setText("No submission.px path is configured for ticket " + ticketId + ".");
+            return;
+        }
+
+        ticketStatusLabel.setText("Loading submission.px for " + ticketId + "...");
+        ticketCombo.setDisable(true);
+        if (wizardController != null) {
+            wizardController.setNavigationEnabled(false);
+        }
+
+        CompletableFuture<Void> load = CompletableFuture
+            .supplyAsync(() -> {
+                try {
+                    return submissionPxLoader.load(submissionFile);
+                } catch (Exception e) {
+                    throw new CompletionException(e);
+                }
+            })
+            .thenAccept(parsedSubmission ->
+                Platform.runLater(() -> applyLoadedSubmission(ticketId, submissionFile, parsedSubmission)))
+            .exceptionally(ex -> {
+                Platform.runLater(() -> showTicketLoadFailure(ticketId, submissionFile, ex));
+                return null;
+            });
+
+        currentTicketLoad = load;
+        load.whenComplete((ignored, ex) -> Platform.runLater(() -> {
+            if (currentTicketLoad == load) {
+                ticketCombo.setDisable(false);
+                currentTicketLoad = null;
+                if (wizardController != null) {
+                    wizardController.setNavigationEnabled(true);
+                }
+            }
+        }));
+    }
+
+    private void applyLoadedSubmission(String ticketId, File submissionFile, Submission parsedSubmission) {
+        if (!ticketId.equals(model.getSelectedSubmissionTicket())) {
+            return;
+        }
+
+        model.setSubmission(parsedSubmission);
+        clearSubmissionProgressState();
+        submissionLoadedFromSelectedTicket = true;
+        logger.info("Loaded submission metadata for ticket {} from {}", ticketId, submissionFile.getAbsolutePath());
+        ticketStatusLabel.setText("Loaded fields from " + submissionFile.getName() + " for " + ticketId + ".");
+        if (wizardController != null) {
+            wizardController.refreshStepIndicator();
+        }
+    }
+
+    private void showTicketLoadFailure(String ticketId, File submissionFile, Throwable throwable) {
+        if (!ticketId.equals(model.getSelectedSubmissionTicket())) {
+            return;
+        }
+
+        Throwable cause = unwrapCompletionException(throwable);
+        logger.warn("Could not load submission.px for ticket {} from {}", ticketId,
+            submissionFile.getAbsolutePath(), cause);
+        ticketStatusLabel.setText("Could not load submission.px: " + cause.getMessage());
+    }
+
+    private boolean isTicketLoadRunning() {
+        return currentTicketLoad != null && !currentTicketLoad.isDone();
+    }
+
+    private Throwable unwrapCompletionException(Throwable throwable) {
+        Throwable cause = throwable;
+        while (cause instanceof CompletionException && cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        return cause;
+    }
+
+    private void resetTicketLoadedSubmissionForNewTicket() {
+        if (!submissionLoadedFromSelectedTicket) {
+            return;
+        }
+
+        model.setSubmission(new Submission());
+        applyAuthenticatedSubmitter(model.getSubmission());
+        clearSubmissionProgressState();
+        submissionLoadedFromSelectedTicket = false;
+        logger.info("Cleared submission.px metadata because no existing ticket is selected");
+        if (wizardController != null) {
+            wizardController.refreshStepIndicator();
+        }
+    }
+
+    private void clearSubmissionProgressState() {
+        model.clearChecksums();
+        model.getUploadedFiles().clear();
+        model.setSummaryFileUploaded(false);
+        model.setUploadDetail(null);
+        model.getSdrfValidation().clear();
+    }
+
+    private void rememberAuthenticatedSubmitter(String name, String email, String affiliation) {
+        authenticatedSubmitterName = name;
+        authenticatedSubmitterEmail = email;
+        authenticatedSubmitterAffiliation = affiliation;
+    }
+
+    private void applyAuthenticatedSubmitter(Submission targetSubmission) {
+        if (targetSubmission == null || targetSubmission.getProjectMetaData() == null) {
+            return;
+        }
+
+        Contact submitter = targetSubmission.getProjectMetaData().getSubmitterContact();
+        if (submitter == null) {
+            submitter = new Contact();
+            targetSubmission.getProjectMetaData().setSubmitterContact(submitter);
+        }
+
+        submitter.setName(authenticatedSubmitterName);
+        submitter.setEmail(authenticatedSubmitterEmail);
+        submitter.setAffiliation(authenticatedSubmitterAffiliation);
+        submitter.setUserName(model.getUserName());
+        String password = passwordField != null ? passwordField.getText() : model.getPassword();
+        submitter.setPassword(password != null ? password.toCharArray() : new char[0]);
+    }
+
+    private void hideTicketSelection() {
+        if (ticketSelectionBox != null) {
+            ticketSelectionBox.setVisible(false);
+            ticketSelectionBox.setManaged(false);
+        }
+    }
+
+    private void continueAfterLogin() {
+        if (wizardController != null) {
+            wizardController.setNavigationEnabled(true);
+            if (model.getPendingCheckpoint() != null) {
+                logger.info("Resuming from checkpoint - skipping to submission step");
+                wizardController.goToStep("submission");
+            } else {
+                wizardController.goToNextStep();
+            }
+        }
+    }
+
+    private void shutdownTicketApiService() {
+        if (ticketApiService != null) {
+            ticketApiService.shutdown();
+            ticketApiService = null;
+        }
     }
 
     private void openRegistrationPage() {

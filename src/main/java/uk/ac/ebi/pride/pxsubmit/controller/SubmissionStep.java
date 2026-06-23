@@ -284,11 +284,16 @@ public class SubmissionStep extends AbstractWizardStep {
             refreshAsperaAvailability();
         }
 
+        ticketId.set(null);
+
         // Resume from checkpoint: pre-set ticketId so we reuse the same upload folder
         UploadCheckpoint pending = model.getPendingCheckpoint();
         if (pending != null && pending.getUploadFolder() != null) {
             ticketId.set(pending.getUploadFolder());
             addLog("Resuming interrupted upload (folder: " + pending.getUploadFolder() + ")");
+        } else if (model.getSelectedSubmissionTicket() != null && !model.getSelectedSubmissionTicket().isBlank()) {
+            ticketId.set(model.getSelectedSubmissionTicket());
+            addLog("Using selected submission ticket: " + model.getSelectedSubmissionTicket());
         }
     }
 

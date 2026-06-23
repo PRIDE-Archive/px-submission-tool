@@ -36,8 +36,19 @@ class AppConfigTest {
         assertThat(config.getUploadDetailUrl()).startsWith("https://");
         assertThat(config.getReuploadDetailUrl()).startsWith("https://");
         assertThat(config.getUploadVerifyUrl()).startsWith("https://");
+        assertThat(config.getSubmissionTicketListUrl()).startsWith("https://");
         assertThat(config.getSubmissionCompleteUrl()).startsWith("https://");
         assertThat(config.getSubmissionWsBaseUrl()).startsWith("https://");
+    }
+
+    @Test
+    void submissionTicketListUrlUsesFindInvalidTicketsEndpoint() {
+        assertThat(config.getSubmissionTicketListUrl()).endsWith("/submission/findInvalidTickets");
+    }
+
+    @Test
+    void localSubmissionFilePathDefaultsToSubmissionPx() {
+        assertThat(config.getLocalSubmissionFilePath()).endsWith("submission.px");
     }
 
     @Test

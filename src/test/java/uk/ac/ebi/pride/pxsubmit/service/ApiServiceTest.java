@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
 import java.util.Base64;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
@@ -65,9 +66,46 @@ class ApiServiceTest {
         assertThatNoException().isThrownBy(service::shutdown);
     }
 
+    @Test
+    void parseSubmissionTicketsFromArrayOfStrings() throws Exception {
+        List<String> tickets = invokeParseSubmissionTickets("[\"TICKET-1\", \"TICKET-2\"]");
+
+        assertThat(tickets).containsExactly("TICKET-1", "TICKET-2");
+    }
+
+    @Test
+    void parseSubmissionTicketsFromWrappedObjects() throws Exception {
+        String body = """
+            {
+              "projectDetails": [
+                {"accession": "PXD000001", "submissionType": "COMPLETE"},
+                {"ticketId": "TICKET-2"}
+              ]
+            }
+            """;
+
+        List<String> tickets = invokeParseSubmissionTickets(body);
+
+        assertThat(tickets).containsExactly("PXD000001", "TICKET-2");
+    }
+
+    @Test
+    void parseSubmissionTicketsFromPlainText() throws Exception {
+        List<String> tickets = invokeParseSubmissionTickets("TICKET-1");
+
+        assertThat(tickets).containsExactly("TICKET-1");
+    }
+
     private String invokeCreateBasicAuthHeader(String username, String password) throws Exception {
         Method method = ApiService.class.getDeclaredMethod("createBasicAuthHeader", String.class, String.class);
         method.setAccessible(true);
         return (String) method.invoke(null, username, password);
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> invokeParseSubmissionTickets(String body) throws Exception {
+        Method method = ApiService.class.getDeclaredMethod("parseSubmissionTickets", String.class);
+        method.setAccessible(true);
+        return (List<String>) method.invoke(null, body);
     }
 }

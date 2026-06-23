@@ -1,5 +1,8 @@
 package uk.ac.ebi.pride.pxsubmit.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import org.slf4j.Logger;
@@ -15,8 +18,13 @@ import uk.ac.ebi.pride.pxsubmit.config.AppConfig;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -47,6 +55,16 @@ import java.util.concurrent.Executors;
 public class ApiService {
 
     private static final Logger logger = LoggerFactory.getLogger(ApiService.class);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final Set<String> TICKET_FIELD_NAMES = Set.of(
+        "ticket",
+        "ticketid",
+        "ticket_id",
+        "reference",
+        "accession",
+        "submissionid",
+        "submission_id"
+    );
 
     private final AppConfig config;
     private final String username;
@@ -97,6 +115,34 @@ public class ApiService {
             } catch (Exception e) {
                 logger.warn("Failed to check Aspera availability: {}", e.getMessage(), e);
                 throw new ApiException("Failed to check Aspera availability: " + e.getMessage(), e);
+            }
+        }, executor);
+    }
+
+    /**
+     * Get existing submission tickets for the authenticated user.
+     */
+    public CompletableFuture<List<String>> getSubmissionTickets() {
+        return CompletableFuture.supplyAsync(() -> {
+            String url = config.getSubmissionTicketListUrl();
+            logger.info("Getting existing submission tickets");
+            logger.debug("Using submission ticket URL: {}", url);
+
+            try {
+                RestTemplate restTemplate = createRestTemplate();
+                HttpHeaders headers = createHeaders();
+                HttpEntity<String> entity = new HttpEntity<>(headers);
+
+                ResponseEntity<String> response = restTemplate.exchange(
+                    url, HttpMethod.GET, entity, String.class);
+
+                List<String> tickets = parseSubmissionTickets(response.getBody());
+                logger.info("Retrieved {} existing submission ticket(s)", tickets.size());
+                return tickets;
+
+            } catch (Exception e) {
+                logger.warn("Failed to get existing submission tickets: {}", e.getMessage(), e);
+                throw new ApiException("Failed to get existing submission tickets: " + e.getMessage(), e);
             }
         }, executor);
     }
@@ -236,18 +282,18 @@ public class ApiService {
 
     private RestTemplate createRestTemplate() {
         RestTemplate restTemplate = new RestTemplate();
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(30000);
+        factory.setReadTimeout(60000);
 
         if (config.isProxyEnabled()) {
-            SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
             factory.setProxy(new Proxy(
                 Proxy.Type.HTTP,
                 new InetSocketAddress(config.getProxyHost(), config.getProxyPort())
             ));
-            factory.setConnectTimeout(30000);
-            factory.setReadTimeout(60000);
-            restTemplate.setRequestFactory(factory);
         }
 
+        restTemplate.setRequestFactory(factory);
         return restTemplate;
     }
 
@@ -275,6 +321,71 @@ public class ApiService {
             normalized = normalized.substring(1, normalized.length() - 1).trim();
         }
         return Boolean.parseBoolean(normalized);
+    }
+
+    private static List<String> parseSubmissionTickets(String body) {
+        if (body == null || body.trim().isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        String normalized = body.trim();
+        LinkedHashSet<String> tickets = new LinkedHashSet<>();
+
+        try {
+            JsonNode root = OBJECT_MAPPER.readTree(normalized);
+            collectTicketValues(root, tickets);
+        } catch (JsonProcessingException e) {
+            addTicketValue(normalized, tickets);
+        }
+
+        return new ArrayList<>(tickets);
+    }
+
+    private static void collectTicketValues(JsonNode node, Set<String> tickets) {
+        if (node == null || node.isNull()) {
+            return;
+        }
+
+        if (node.isTextual() || node.isNumber()) {
+            addTicketValue(node.asText(), tickets);
+            return;
+        }
+
+        if (node.isArray()) {
+            for (JsonNode child : node) {
+                collectTicketValues(child, tickets);
+            }
+            return;
+        }
+
+        if (!node.isObject()) {
+            return;
+        }
+
+        node.fields().forEachRemaining(entry -> {
+            String normalizedName = entry.getKey()
+                .replace("-", "")
+                .replace("_", "")
+                .toLowerCase(Locale.ROOT);
+            JsonNode value = entry.getValue();
+
+            if (TICKET_FIELD_NAMES.contains(normalizedName) && (value.isTextual() || value.isNumber())) {
+                addTicketValue(value.asText(), tickets);
+            } else if (value.isArray() || value.isObject()) {
+                collectTicketValues(value, tickets);
+            }
+        });
+    }
+
+    private static void addTicketValue(String value, Set<String> tickets) {
+        if (value == null) {
+            return;
+        }
+
+        String ticket = value.trim();
+        if (!ticket.isEmpty()) {
+            tickets.add(ticket);
+        }
     }
 
     /**

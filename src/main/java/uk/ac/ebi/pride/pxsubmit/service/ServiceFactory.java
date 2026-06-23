@@ -36,6 +36,10 @@ public class ServiceFactory {
         return new AuthService();
     }
 
+    public SubmissionPxLoader createSubmissionPxLoader() {
+        return new SubmissionPxLoader();
+    }
+
     public ChecksumService createChecksumService(ObservableList<DataFile> files) {
         return new ChecksumService(files);
     }

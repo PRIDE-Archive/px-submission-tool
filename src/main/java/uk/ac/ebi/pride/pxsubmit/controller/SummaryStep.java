@@ -9,6 +9,7 @@ import javafx.stage.FileChooser;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.data.model.CvParam;
 import uk.ac.ebi.pride.data.model.DataFile;
+import uk.ac.ebi.pride.data.model.Submission;
 import uk.ac.ebi.pride.data.io.SubmissionFileWriter;
 import uk.ac.ebi.pride.pxsubmit.config.AppConfig;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
@@ -567,7 +568,19 @@ public class SummaryStep extends AbstractWizardStep {
      * Matches the format used by the old Swing tool on master branch.
      */
     public static void writeSubmissionPxFile(SubmissionModel model, File file) throws Exception {
-        SubmissionFileWriter.write(model.getSubmission(), file);
+        Submission submission = model.getSubmission();
+        List<String> originalComments = submission.getComments() != null
+            ? new ArrayList<>(submission.getComments())
+            : List.of();
+
+        try {
+            submission.setComments(originalComments.stream()
+                .filter(SummaryStep::shouldCarryCommentIntoExport)
+                .collect(Collectors.toList()));
+            SubmissionFileWriter.write(submission, file);
+        } finally {
+            submission.setComments(originalComments);
+        }
 
         // Append lab head ORCID and country (not supported by Contact model, so we add as COM lines)
         appendLabHeadOrcid(file, model);
@@ -575,6 +588,20 @@ public class SummaryStep extends AbstractWizardStep {
 
         // Append tool version and metadata
         appendToolMetadata(file);
+    }
+
+    private static boolean shouldCarryCommentIntoExport(String comment) {
+        if (comment == null) {
+            return false;
+        }
+
+        String trimmed = comment.trim();
+        return !trimmed.equals("lab_head_country")
+            && !trimmed.startsWith("lab_head_country\t")
+            && !trimmed.equals("lab_head_orcid")
+            && !trimmed.startsWith("lab_head_orcid\t")
+            && !trimmed.startsWith("Version:")
+            && !trimmed.startsWith("Operating System:");
     }
 
     /**

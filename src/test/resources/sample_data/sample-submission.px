@@ -1,0 +1,91 @@
+MTD	submitter_name	Raheela Aslam
+MTD	submitter_email	raheela@ebi.ac.uk
+MTD	submitter_affiliation	EBI
+MTD	submitter_pride_login	raheela@ebi.ac.uk
+MTD	lab_head_name	Raheela
+MTD	lab_head_email	raheela@ebi.a.cuk
+MTD	lab_head_affiliation	EBI
+MTD	project_title	A STRUBBELIG-NHL3 cell surface receptor complex mediates the response to cellulose deficiency in Arabidopsis
+MTD	project_description	A STRUBBELIG-NHL3 cell surface receptor complex mediates the response to cellulose deficiency in Arabidopsis
+MTD	project_tag	Antibodies (B/D-HPP)
+MTD	keywords	mjgmjh
+MTD	sample_processing_protocol	A STRUBBELIG-NHL3 cell surface receptor complex mediates the response to cellulose deficiency in Arabidopsis
+MTD	data_processing_protocol	A STRUBBELIG-NHL3 cell surface receptor complex mediates the response to cellulose deficiency in Arabidopsis
+MTD	experiment_type	[PRIDE, PRIDE:0000428, Bottom-up proteomics, ]
+MTD	submission_type	PRIDE
+MTD	species	[NEWT, NCBITaxon:10090, Mus musculus, ]
+MTD	tissue	[BTO, BTO:0001103, plasma, ]
+MTD	cell_type	[CL, CL:0000236, B cell, ]
+MTD	disease	[DOID, DOID:162, cancer, ]
+MTD	software	[MS, MS:1003253, DIA-NN, ]
+MTD	instrument	[MS, MS:1001911, Q Exactive, ]
+MTD	modification	[MOD, MOD:00696, phosphorylated residue, ]
+
+FMH	file_id	file_type	file_path	file_mapping
+FME	0	RESULT	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_G_02_SMC2from180328_001_UL02376-RT-03.mzid.gz
+FME	1	PEAK	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_G_04_SMC4fromOT_190104_105_MS18-241_7.mzid_Experiment_SMC2-SMC4_G_04_SMC4_from_OT_190104_105_MS18-241_7.MGF
+FME	2	RESULT	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_G_05_SMC4fromJodie_290617_AB_RT_03.mzid.gz
+FME	3	RAW	/Users/raheela/Downloads/files/maxquant/PXD016833/180328_001_UL02376-RT-02.raw
+FME	4	RAW	/Users/raheela/Downloads/files/maxquant/PXD016833/171220_003_UL02322-RT-04.raw
+FME	5	RAW	/Users/raheela/Downloads/files/maxquant/PXD016833/OT_190909_105_MS19-206_7.raw
+FME	6	RESULT	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_G_03_SMC2from180608_003_UL02407-RT-04.mzid.gz
+FME	7	PEAK	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S24_04_SMC4fromOT_191003_105_MS19-218_SMC2_4.mzid_Experiment_SMC2-SMC4_S24_04_SMC4_from_OT_191003_105_MS19-218_SMC2_4.MGF
+FME	8	RAW	/Users/raheela/Downloads/files/maxquant/PXD016833/180328_001_UL02376-RT-03.raw
+FME	9	RESULT	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_G_06_SMC4from171220_003_UL02322-RT-04.mzid.gz
+FME	10	RESULT	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_G_07_SMC4from170427_002_UL02215-RT-04.mzid.gz
+FME	11	RAW	/Users/raheela/Downloads/files/maxquant/PXD016833/OT_191018_105_MS19-222_SMC4_24h.raw
+FME	12	RESULT	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S8_05_SMC4fromOT_181121_105_MS18-222_13.mzid.gz
+FME	13	OTHER	/Users/raheela/Downloads/files/maxquant/PXD016833/PlasmoDB-39_PbergheiANKA_AnnotatedProteins.fasta
+FME	14	PEAK	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_G_02_SMC2from180328_001_UL02376-RT-03.mzid_Experiment_SMC2-SMC4_G_02_SMC2_from_180328_001_UL02376-RT-03.MGF
+FME	15	PEAK	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_G_08_WTfromOT_181121_105_MS18-222_6.mzid_Experiment_SMC2-SMC4_G_08_WT_from_OT_181121_105_MS18-222_6.MGF
+FME	16	RESULT	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S24_03_SMC4fromOT_191003_105_MS19-218_SMC2_3.mzid.gz
+FME	17	RAW	/Users/raheela/Downloads/files/maxquant/PXD016833/OT_191018_105_MS19-222_WT_24h.raw
+FME	18	RAW	/Users/raheela/Downloads/files/maxquant/PXD016833/OT_180904_MS18-174_WTGFP-Schizonts_9.raw
+FME	19	PEAK	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S8_04_SMC4from170427_002_UL02215-RT-03.mzid_Experiment_SMC2-SMC4_S8_04_SMC4_from_170427_002_UL02215-RT-03.MGF
+FME	20	RESULT	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S24_05_SMC4fromOT_190909_105_MS19-206_7.mzid.gz
+FME	21	PEAK	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S24_05_SMC4fromOT_190909_105_MS19-206_7.mzid_Experiment_SMC2-SMC4_S24_05_SMC4_from_OT_190909_105_MS19-206_7.MGF
+FME	22	RAW	/Users/raheela/Downloads/files/maxquant/PXD016833/170427_002_UL02215-RT-03.raw
+FME	23	RESULT	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S8_04_SMC4from170427_002_UL02215-RT-03.mzid.gz
+FME	24	RESULT	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S24_04_SMC4fromOT_191003_105_MS19-218_SMC2_4.mzid.gz
+FME	25	RAW	/Users/raheela/Downloads/files/maxquant/PXD016833/OT_181121_105_MS18-222_6.raw
+FME	26	PEAK	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S24_01_SMC2fromOT_191003_105_MS19-218_SMC2_1.mzid_Experiment_SMC2-SMC4_S24_01_SMC2_from_OT_191003_105_MS19-218_SMC2_1.MGF
+FME	27	RESULT	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_G_08_WTfromOT_181121_105_MS18-222_6.mzid.gz
+FME	28	RAW	/Users/raheela/Downloads/files/maxquant/PXD016833/180608_003_UL02407-RT-04.raw
+FME	29	RAW	/Users/raheela/Downloads/files/maxquant/PXD016833/170427_002_UL02215-RT-04.raw
+FME	30	PEAK	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S24_07_WTfromOT_191018_105_MS19-222_WT_24h.mzid_Experiment_SMC2-SMC4_S24_07_WT_from_OT_191018_105_MS19-222_WT_24h.MGF
+FME	31	PEAK	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_G_01_SMC2from180118_001_UL02334-RT-02.mzid_Experiment_SMC2-SMC4_G_01_SMC2_from_180118_001_UL02334-RT-02.MGF
+FME	32	PEAK	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S24_02_SMC2fromOT_191003_105_MS19-218_SMC2_2.mzid_Experiment_SMC2-SMC4_S24_02_SMC2_from_OT_191003_105_MS19-218_SMC2_2.MGF
+FME	33	PEAK	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S8_06_WTfromOT_180904_MS18-174_WTGFP-Schizonts_9.mzid_Experiment_SMC2-SMC4_S8_06_WT_from_OT_180904_MS18-174_WTGFP-Schizonts_9.MGF
+FME	34	PEAK	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S8_05_SMC4fromOT_181121_105_MS18-222_13.mzid_Experiment_SMC2-SMC4_S8_05_SMC4_from_OT_181121_105_MS18-222_13.MGF
+FME	35	PEAK	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S8_02_SMC2from180328_001_UL02376-RT-02.mzid_Experiment_SMC2-SMC4_S8_02_SMC2_from_180328_001_UL02376-RT-02.MGF
+FME	36	PEAK	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S24_06_SMC4fromOT_191018_105_MS19-222_SMC4_24h.mzid_Experiment_SMC2-SMC4_S24_06_SMC4_from_OT_191018_105_MS19-222_SMC4_24h.MGF
+FME	37	RESULT	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_G_04_SMC4fromOT_190104_105_MS18-241_7.mzid.gz
+FME	38	RESULT	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S24_07_WTfromOT_191018_105_MS19-222_WT_24h.mzid.gz
+FME	39	RAW	/Users/raheela/Downloads/files/maxquant/PXD016833/OT_181121_105_MS18-222_13.raw
+FME	40	PEAK	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_G_07_SMC4from170427_002_UL02215-RT-04.mzid_Experiment_SMC2-SMC4_G_07_SMC4_from_170427_002_UL02215-RT-04.MGF
+FME	41	RAW	/Users/raheela/Downloads/files/maxquant/PXD016833/170601_001_UL02235-RT-05.raw
+FME	42	RESULT	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S8_02_SMC2from180328_001_UL02376-RT-02.mzid.gz
+FME	43	SEARCH	/Users/raheela/Downloads/files/maxquant/PXD016833/README.txt
+FME	44	RESULT	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S24_06_SMC4fromOT_191018_105_MS19-222_SMC4_24h.mzid.gz
+FME	45	PEAK	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S8_03_SMC4from170601_001_UL02235-RT-05.mzid_Experiment_SMC2-SMC4_S8_03_SMC4_from_170601_001_UL02235-RT-05.MGF
+FME	46	RESULT	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S8_06_WTfromOT_180904_MS18-174_WTGFP-Schizonts_9.mzid.gz
+FME	47	PEAK	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_G_03_SMC2from180608_003_UL02407-RT-04.mzid_Experiment_SMC2-SMC4_G_03_SMC2_from_180608_003_UL02407-RT-04.MGF
+FME	48	RESULT	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S24_01_SMC2fromOT_191003_105_MS19-218_SMC2_1.mzid.gz
+FME	49	RAW	/Users/raheela/Downloads/files/maxquant/PXD016833/OT_191003_105_MS19-218_SMC2_4.raw
+FME	50	RESULT	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_G_01_SMC2from180118_001_UL02334-RT-02.mzid.gz
+FME	51	PEAK	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_G_06_SMC4from171220_003_UL02322-RT-04.mzid_Experiment_SMC2-SMC4_G_06_SMC4_from_171220_003_UL02322-RT-04.MGF
+FME	52	RESULT	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S8_03_SMC4from170601_001_UL02235-RT-05.mzid.gz
+FME	53	RAW	/Users/raheela/Downloads/files/maxquant/PXD016833/Jodie_290617_AB_RT_03.raw
+FME	54	RAW	/Users/raheela/Downloads/files/maxquant/PXD016833/OT_191003_105_MS19-218_SMC2_1.raw
+FME	55	PEAK	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S24_03_SMC4fromOT_191003_105_MS19-218_SMC2_3.mzid_Experiment_SMC2-SMC4_S24_03_SMC4_from_OT_191003_105_MS19-218_SMC2_3.MGF
+FME	56	RESULT	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_S24_02_SMC2fromOT_191003_105_MS19-218_SMC2_2.mzid.gz
+FME	57	RAW	/Users/raheela/Downloads/files/maxquant/PXD016833/180118_001_UL02334-RT-02.raw
+FME	58	RAW	/Users/raheela/Downloads/files/maxquant/PXD016833/OT_191003_105_MS19-218_SMC2_3.raw
+FME	59	RAW	/Users/raheela/Downloads/files/maxquant/PXD016833/OT_191003_105_MS19-218_SMC2_2.raw
+FME	60	PEAK	/Users/raheela/Downloads/files/maxquant/PXD016833/ExperimentSMC2-SMC4_G_05_SMC4fromJodie_290617_AB_RT_03.mzid_Experiment_SMC2-SMC4_G_05_SMC4_from_Jodie_290617_AB_RT_03.MGF
+FME	61	RAW	/Users/raheela/Downloads/files/maxquant/PXD016833/OT_190104_105_MS18-241_7.raw
+
+
+COM	lab_head_country	United Kingdom
+COM	Version:2.11.4
+COM	Operating System:Mac OS X 26.5.1 (aarch64)

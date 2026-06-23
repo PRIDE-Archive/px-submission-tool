@@ -27,8 +27,10 @@ public class AppConfig {
     private String reuploadDetailUrl;
     private String uploadVerifyUrl;
     private String asperaAvailableUrl;
+    private String submissionTicketListUrl;
     private String submissionCompleteUrl;
     private String submissionWsBaseUrl;
+    private String localSubmissionFilePath;
 
     // Tool info
     private String toolName;
@@ -88,10 +90,14 @@ public class AppConfig {
             "https://www.proteomexchange.org/archive-submission-ws/submission/fileListAndSize");
         asperaAvailableUrl = getProperty("px.aspera.available.url",
             "https://www.proteomexchange.org/archive-submission-ws/submission/aspera/available");
+        submissionTicketListUrl = getProperty("px.submission.ticket.list.url",
+            "https://www.proteomexchange.org/archive-submission-ws/submission/findInvalidTickets");
         submissionCompleteUrl = getProperty("px.submission.complete.url",
             "https://www.proteomexchange.org/archive-submission-ws/submission/submit");
         submissionWsBaseUrl = getProperty("px.submission.ws.base.url",
             "https://www.proteomexchange.org/archive-submission-ws/");
+        localSubmissionFilePath = getProperty("px.local.submission.file.path",
+            "~/Downloads/upload-files/submission.px");
 
         // Tool info
         toolName = getProperty("px.submission.tool.name", "PX Submission Tool");
@@ -173,12 +179,20 @@ public class AppConfig {
         return asperaAvailableUrl;
     }
 
+    public String getSubmissionTicketListUrl() {
+        return submissionTicketListUrl;
+    }
+
     public String getSubmissionCompleteUrl() {
         return submissionCompleteUrl;
     }
 
     public String getSubmissionWsBaseUrl() {
         return submissionWsBaseUrl;
+    }
+
+    public String getLocalSubmissionFilePath() {
+        return localSubmissionFilePath;
     }
 
     public String getToolName() {

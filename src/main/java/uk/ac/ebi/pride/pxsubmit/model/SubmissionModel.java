@@ -13,6 +13,7 @@ import uk.ac.ebi.pride.archive.submission.model.submission.UploadMethod;
 import uk.ac.ebi.pride.data.model.*;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -56,6 +57,8 @@ public class SubmissionModel {
     private final ObjectProperty<Boolean> asperaAvailable = new SimpleObjectProperty<>();
     private final BooleanProperty asperaAvailabilityChecking = new SimpleBooleanProperty(false);
     private final StringProperty asperaAvailabilityMessage = new SimpleStringProperty();
+    private final ObservableList<String> availableSubmissionTickets = FXCollections.observableArrayList();
+    private final StringProperty selectedSubmissionTicket = new SimpleStringProperty();
 
     // ==================== Mode Flags ====================
 
@@ -393,6 +396,8 @@ public class SubmissionModel {
         asperaAvailable.set(null);
         asperaAvailabilityChecking.set(false);
         asperaAvailabilityMessage.set(null);
+        availableSubmissionTickets.clear();
+        selectedSubmissionTicket.set(null);
         summaryFileUploaded.set(false);
         loggedIn.set(false);
 
@@ -480,6 +485,29 @@ public class SubmissionModel {
      * Load metadata from submission object to properties
      */
     public void syncMetadataFromSubmission() {
+        projectTitle.set(null);
+        projectDescription.set(null);
+        sampleProcessingProtocol.set(null);
+        dataProcessingProtocol.set(null);
+        keywords.set(null);
+        submissionType.set(null);
+
+        species.clear();
+        tissues.clear();
+        cellTypes.clear();
+        diseases.clear();
+        instruments.clear();
+        modifications.clear();
+        quantifications.clear();
+        experimentMethods.clear();
+        software.clear();
+
+        labHeadName.set(null);
+        labHeadEmail.set(null);
+        labHeadAffiliation.set(null);
+        labHeadOrcid.set(null);
+        labHeadCountry.set(null);
+
         ProjectMetaData meta = submission.get().getProjectMetaData();
         if (meta != null) {
             projectTitle.set(meta.getProjectTitle());
@@ -490,17 +518,17 @@ public class SubmissionModel {
             submissionType.set(meta.getSubmissionType());
 
             // Load lists
-            species.setAll(meta.getSpecies());
-            if (meta.getTissues() != null) tissues.setAll(meta.getTissues());
-            if (meta.getCellTypes() != null) cellTypes.setAll(meta.getCellTypes());
-            if (meta.getDiseases() != null) diseases.setAll(meta.getDiseases());
-            instruments.setAll(meta.getInstruments());
-            modifications.setAll(meta.getModifications());
-            quantifications.setAll(meta.getQuantifications());
-            experimentMethods.setAll(meta.getMassSpecExperimentMethods());
-            if (meta.getSoftwares() != null) {
-                software.setAll(meta.getSoftwares());
-            }
+            species.setAll(meta.getSpecies() != null ? meta.getSpecies() : Collections.emptyList());
+            tissues.setAll(meta.getTissues() != null ? meta.getTissues() : Collections.emptyList());
+            cellTypes.setAll(meta.getCellTypes() != null ? meta.getCellTypes() : Collections.emptyList());
+            diseases.setAll(meta.getDiseases() != null ? meta.getDiseases() : Collections.emptyList());
+            instruments.setAll(meta.getInstruments() != null ? meta.getInstruments() : Collections.emptyList());
+            modifications.setAll(meta.getModifications() != null ? meta.getModifications() : Collections.emptyList());
+            quantifications.setAll(meta.getQuantifications() != null ? meta.getQuantifications() : Collections.emptyList());
+            experimentMethods.setAll(meta.getMassSpecExperimentMethods() != null
+                ? meta.getMassSpecExperimentMethods()
+                : Collections.emptyList());
+            software.setAll(meta.getSoftwares() != null ? meta.getSoftwares() : Collections.emptyList());
 
             // Lab head
             Contact labHead = meta.getLabHeadContact();
@@ -524,7 +552,9 @@ public class SubmissionModel {
         }
 
         // Load files
-        files.setAll(submission.get().getDataFiles());
+        files.setAll(submission.get().getDataFiles() != null
+            ? submission.get().getDataFiles()
+            : Collections.emptyList());
         fileIdCounter.set(files.stream().mapToInt(DataFile::getFileId).max().orElse(0) + 1);
     }
 
@@ -584,6 +614,15 @@ public class SubmissionModel {
     public StringProperty asperaAvailabilityMessageProperty() { return asperaAvailabilityMessage; }
     public String getAsperaAvailabilityMessage() { return asperaAvailabilityMessage.get(); }
     public void setAsperaAvailabilityMessage(String value) { asperaAvailabilityMessage.set(value); }
+
+    public ObservableList<String> getAvailableSubmissionTickets() { return availableSubmissionTickets; }
+    public void setAvailableSubmissionTickets(List<String> tickets) {
+        availableSubmissionTickets.setAll(tickets != null ? tickets : List.of());
+    }
+
+    public StringProperty selectedSubmissionTicketProperty() { return selectedSubmissionTicket; }
+    public String getSelectedSubmissionTicket() { return selectedSubmissionTicket.get(); }
+    public void setSelectedSubmissionTicket(String value) { selectedSubmissionTicket.set(value); }
 
     public BooleanProperty summaryFileUploadedProperty() { return summaryFileUploaded; }
     public boolean isSummaryFileUploaded() { return summaryFileUploaded.get(); }
