@@ -395,6 +395,7 @@ public class WizardController implements Initializable {
         logger.info("Logout requested");
         model.setLoggedIn(false);
         model.setPassword((char[]) null);
+        model.setAuthToken(null);
         goToStep("login");
     }
 

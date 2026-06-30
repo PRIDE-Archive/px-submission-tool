@@ -23,6 +23,9 @@ public class AppConfig {
 
     // API URLs
     private String userLoginUrl;
+    private String webSubmissionsBaseUrl;
+    private String webSubmissionsLoginUrl;
+    private String webSubmissionsValidateIncomingFilesUrl;
     private String uploadDetailUrl;
     private String reuploadDetailUrl;
     private String uploadVerifyUrl;
@@ -80,6 +83,12 @@ public class AppConfig {
         // API URLs
         userLoginUrl = getProperty("px.user.login.url",
             "https://www.proteomexchange.org/archive-submission-ws/user/login");
+        webSubmissionsBaseUrl = getProperty("px.web.submissions.base.url",
+            "http://WEB_SUBMISSIONS_HOST/ws");
+        webSubmissionsLoginUrl = getProperty("px.web.submissions.login.url",
+            webSubmissionsBaseUrl + "/web-submissions/login");
+        webSubmissionsValidateIncomingFilesUrl = getProperty("px.web.submissions.validate.incoming.files.url",
+            webSubmissionsBaseUrl + "/web-submissions/validate-incoming-files");
         uploadDetailUrl = getProperty("px.upload.detail.url",
             "https://www.proteomexchange.org/archive-submission-ws/submission/upload/{method}");
         reuploadDetailUrl = getProperty("px.reupload.detail.url",
@@ -155,6 +164,18 @@ public class AppConfig {
 
     public String getUserLoginUrl() {
         return userLoginUrl;
+    }
+
+    public String getWebSubmissionsBaseUrl() {
+        return webSubmissionsBaseUrl;
+    }
+
+    public String getWebSubmissionsLoginUrl() {
+        return webSubmissionsLoginUrl;
+    }
+
+    public String getWebSubmissionsValidateIncomingFilesUrl() {
+        return webSubmissionsValidateIncomingFilesUrl;
     }
 
     public String getUploadDetailUrl() {

@@ -77,6 +77,7 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
     // Current service references for pause/resume
     private volatile FtpUploadService currentFtpService;
     private volatile AsperaUploadService currentAsperaService;
+    private volatile boolean uploadPaused;
 
     // Per-file upload completion callback for checkpoint updates
     private Consumer<String> fileUploadedCallback;
@@ -128,6 +129,7 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
      * Pause the current upload.
      */
     public void pauseUpload() {
+        uploadPaused = true;
         if (currentFtpService != null) {
             currentFtpService.pause();
         }
@@ -140,6 +142,7 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
      * Resume a paused upload.
      */
     public void resumeUpload() {
+        uploadPaused = false;
         if (currentFtpService != null) {
             currentFtpService.resume();
         }
@@ -152,6 +155,7 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
      * Check if the upload is currently paused.
      */
     public boolean isUploadPaused() {
+        if (uploadPaused) return true;
         if (currentFtpService != null) return currentFtpService.isPaused();
         if (currentAsperaService != null) return currentAsperaService.isPaused();
         return false;
@@ -440,6 +444,9 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
 
             FtpUploadService ftpService = ServiceFactory.getInstance().createFtpUploadService(files, uploadDetail);
             currentFtpService = ftpService;
+            if (uploadPaused) {
+                ftpService.pause();
+            }
 
             return bindAndRunService(ftpService, files, UploadMethod.FTP);
         }
@@ -457,6 +464,9 @@ public class UploadManager extends Service<UploadManager.UploadResult> {
             AsperaUploadService asperaService = ServiceFactory.getInstance().createAsperaUploadService(
                     files, uploadDetail, ascpPath);
             currentAsperaService = asperaService;
+            if (uploadPaused) {
+                asperaService.pause();
+            }
 
             // Bind Aspera-specific status message
             asperaService.statusMessageProperty().addListener((obs, oldVal, newVal) -> {

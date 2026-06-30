@@ -50,6 +50,7 @@ public class SubmissionModel {
 
     private final StringProperty userName = new SimpleStringProperty();
     private final ObjectProperty<char[]> password = new SimpleObjectProperty<>();
+    private final StringProperty authToken = new SimpleStringProperty();
     private final ObjectProperty<UploadDetail> uploadDetail = new SimpleObjectProperty<>();
     private final ObjectProperty<UploadMethod> uploadMethod = new SimpleObjectProperty<>();
     private final BooleanProperty summaryFileUploaded = new SimpleBooleanProperty(false);
@@ -388,6 +389,7 @@ public class SubmissionModel {
         userName.set(null);
         clearPasswordArray();
         password.set(null);
+        authToken.set(null);
         uploadDetail.set(null);
         uploadMethod.set(null);
         asperaAvailable.set(null);
@@ -563,6 +565,10 @@ public class SubmissionModel {
         char[] old = password.get();
         if (old != null) { Arrays.fill(old, '\0'); }
     }
+
+    public StringProperty authTokenProperty() { return authToken; }
+    public String getAuthToken() { return authToken.get(); }
+    public void setAuthToken(String value) { authToken.set(value); }
 
     // Upload
     public ObjectProperty<UploadDetail> uploadDetailProperty() { return uploadDetail; }

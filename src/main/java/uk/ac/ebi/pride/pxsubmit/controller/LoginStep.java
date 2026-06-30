@@ -7,6 +7,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.TextAlignment;
 
 import java.util.regex.Pattern;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
@@ -25,6 +26,21 @@ public class LoginStep extends AbstractWizardStep {
     private uk.ac.ebi.pride.pxsubmit.service.AuthService currentAuth;
     private boolean authenticated = false;
 
+    private static final String ERROR_STYLE =
+        "-fx-text-fill: #842029; "
+            + "-fx-background-color: #f8d7da; "
+            + "-fx-border-color: #f5c2c7; "
+            + "-fx-border-radius: 4; "
+            + "-fx-background-radius: 4; "
+            + "-fx-padding: 10 12;";
+    private static final String NOTICE_STYLE =
+        "-fx-text-fill: #0f5132; "
+            + "-fx-background-color: #d1e7dd; "
+            + "-fx-border-color: #badbcc; "
+            + "-fx-border-radius: 4; "
+            + "-fx-background-radius: 4; "
+            + "-fx-padding: 10 12; "
+            + "-fx-font-weight: bold;";
     private static final Pattern EMAIL_PATTERN =
         Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
 
@@ -69,7 +85,14 @@ public class LoginStep extends AbstractWizardStep {
 
         // Error label
         errorLabel = new Label();
-        errorLabel.setStyle("-fx-text-fill: #dc3545;");
+        errorLabel.setWrapText(true);
+        errorLabel.setTextAlignment(TextAlignment.CENTER);
+        errorLabel.setAlignment(Pos.CENTER);
+        errorLabel.setMaxWidth(420);
+        errorLabel.setPrefWidth(420);
+        errorLabel.setMinHeight(Control.USE_PREF_SIZE);
+        errorLabel.setLineSpacing(2);
+        errorLabel.setStyle(ERROR_STYLE);
         errorLabel.setVisible(false);
         errorLabel.setManaged(false);
 
@@ -184,7 +207,7 @@ public class LoginStep extends AbstractWizardStep {
 
     private void showTestModeNotice() {
         errorLabel.setText("Test Mode: Login not required. Click 'Next' to continue.");
-        errorLabel.setStyle("-fx-text-fill: #28a745; -fx-font-weight: bold;");
+        errorLabel.setStyle(NOTICE_STYLE);
         errorLabel.setVisible(true);
         errorLabel.setManaged(true);
     }
@@ -240,8 +263,19 @@ public class LoginStep extends AbstractWizardStep {
         currentAuth.setOnSucceeded(evt -> {
             hideProgress();
             try {
-                uk.ac.ebi.pride.archive.submission.model.user.ContactDetail contact = currentAuth.getValue();
+                uk.ac.ebi.pride.pxsubmit.service.AuthService.AuthenticationResult authResult = currentAuth.getValue();
                 model.setLoggedIn(true);
+                model.setAuthToken(null);
+                uk.ac.ebi.pride.archive.submission.model.user.ContactDetail contact =
+                    authResult != null ? authResult.getContactDetail() : null;
+
+                uk.ac.ebi.pride.data.model.Contact submitter =
+                    model.getSubmission().getProjectMetaData().getSubmitterContact();
+                if (submitter == null) {
+                    submitter = new uk.ac.ebi.pride.data.model.Contact();
+                    model.getSubmission().getProjectMetaData().setSubmitterContact(submitter);
+                }
+
                 if (contact != null) {
                     // Build submitter name from first + last name
                     String submitterName = "";
@@ -249,19 +283,14 @@ public class LoginStep extends AbstractWizardStep {
                     if (contact.getLastName() != null) submitterName += " " + contact.getLastName();
                     submitterName = submitterName.trim();
 
-                    // Set submitter contact on the Submission object
-                    uk.ac.ebi.pride.data.model.Contact submitter =
-                        model.getSubmission().getProjectMetaData().getSubmitterContact();
-                    if (submitter == null) {
-                        submitter = new uk.ac.ebi.pride.data.model.Contact();
-                        model.getSubmission().getProjectMetaData().setSubmitterContact(submitter);
-                    }
                     submitter.setName(submitterName);
-                    submitter.setEmail(contact.getEmail());
+                    submitter.setEmail(contact.getEmail() != null ? contact.getEmail() : username);
                     submitter.setAffiliation(contact.getAffiliation());
-                    submitter.setUserName(username);
-                    submitter.setPassword(passwordField.getText().toCharArray());
+                } else {
+                    submitter.setEmail(username);
                 }
+                submitter.setUserName(username);
+                submitter.setPassword(passwordField.getText().toCharArray());
                 logger.info("Authentication succeeded for user: {}", username);
                 authenticated = true;
 
@@ -312,6 +341,7 @@ public class LoginStep extends AbstractWizardStep {
 
     private void showError(String message) {
         errorLabel.setText(message);
+        errorLabel.setStyle(ERROR_STYLE);
         errorLabel.setVisible(true);
         errorLabel.setManaged(true);
     }

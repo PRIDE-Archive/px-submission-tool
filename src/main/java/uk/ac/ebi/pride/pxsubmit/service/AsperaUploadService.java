@@ -35,13 +35,17 @@ import java.util.concurrent.atomic.AtomicLong;
 public class AsperaUploadService extends AbstractUploadService {
 
     // Configuration constants
-    private static final long TRANSFER_TIMEOUT_MS = 60 * 60 * 1000; // 60 minutes
-    private static final long PROGRESS_TIMEOUT_MS = 30 * 60 * 1000;  // 30 minutes
+    private static final long PROGRESS_TIMEOUT_MS = 30 * 60 * 1000;  // 30 minutes (stall detection)
     private static final int MAX_RETRIES = 3;
     private static final int TCP_PORT = 33001;
     private static final int UDP_PORT = 33001;
     private static final int TARGET_RATE_KBPS = 100000; // 100 Mbps
     private static final int MIN_RATE_KBPS = 100;
+
+    // Maximum number of parallel Aspera sessions. Files are split roughly evenly
+    // across this many sessions to speed up many-file uploads while staying well
+    // below the connection count that previously exhausted client resources.
+    private static final int MAX_PARALLEL_SESSIONS = 6;
 
     // Aspera-specific properties
     private final String ascpPath;
@@ -49,8 +53,9 @@ public class AsperaUploadService extends AbstractUploadService {
     private final DoubleProperty overallProgress = new SimpleDoubleProperty(0);
     private final Map<String, FileTransferStat> activeFileStats = new ConcurrentHashMap<>();
 
-    // Pause/resume support
-    private volatile String currentTransferId;
+    // Pause/resume support (tracks active parallel session transfer IDs)
+    private final java.util.Set<String> activeTransferIds = ConcurrentHashMap.newKeySet();
+    private final Object pauseLock = new Object();
     private volatile boolean paused = false;
 
     public AsperaUploadService(List<DataFile> files, UploadDetail uploadDetail, String ascpPath) {
@@ -68,37 +73,71 @@ public class AsperaUploadService extends AbstractUploadService {
     public DoubleProperty overallProgressProperty() { return overallProgress; }
 
     /**
-     * Pause the Aspera transfer by setting the target rate to 0.
+     * Pause the Aspera transfer by stopping active sessions. Resume starts new
+     * sessions for unfinished files; Aspera's resume mode continues partial files.
      */
     public void pause() {
-        if (currentTransferId != null && !paused) {
-            try {
-                FaspManager.getSingleton().setRate(currentTransferId, 0, 0, Policy.FIXED);
-                paused = true;
-                logger.info("Aspera transfer paused");
-            } catch (Exception e) {
-                logger.warn("Failed to pause Aspera transfer: {}", e.getMessage());
+        synchronized (pauseLock) {
+            if (paused) {
+                return;
             }
+            paused = true;
         }
+        Platform.runLater(() -> statusMessage.set("Upload paused"));
+        Thread.startVirtualThread(this::stopActiveTransfersForPause);
+        logger.info("Aspera transfer pause requested");
     }
 
     /**
-     * Resume a paused Aspera transfer by restoring the target rate.
+     * Resume a paused Aspera transfer. The running task will start new sessions
+     * for files that were not completed before pause.
      */
     public void resume() {
-        if (currentTransferId != null && paused) {
-            try {
-                FaspManager.getSingleton().setRate(currentTransferId, TARGET_RATE_KBPS, MIN_RATE_KBPS, Policy.FAIR);
-                paused = false;
-                logger.info("Aspera transfer resumed");
-            } catch (Exception e) {
-                logger.warn("Failed to resume Aspera transfer: {}", e.getMessage());
+        synchronized (pauseLock) {
+            if (!paused) {
+                return;
             }
+            paused = false;
+            pauseLock.notifyAll();
         }
+        Platform.runLater(() -> statusMessage.set("Transfer in progress..."));
+        logger.info("Aspera transfer resume requested");
     }
 
     public boolean isPaused() {
         return paused;
+    }
+
+    private void applyCurrentPauseState(String transferId) {
+        if (paused) {
+            stopTransferForPause(transferId);
+        }
+    }
+
+    private void stopActiveTransfersForPause() {
+        for (String transferId : activeTransferIds) {
+            stopTransferForPause(transferId);
+        }
+    }
+
+    private void stopTransferForPause(String transferId) {
+        if (transferId == null || transferId.isBlank()) {
+            return;
+        }
+
+        try {
+            FaspManager.getSingleton().stopTransfer(transferId);
+            logger.info("Stopped Aspera transfer {} for pause", transferId);
+        } catch (Exception stopException) {
+            logger.warn("Failed to stop Aspera transfer {} for pause: {}", transferId, stopException.getMessage());
+            try {
+                FaspManager.getSingleton().cancelTransfer(transferId);
+                logger.info("Cancelled Aspera transfer {} for pause", transferId);
+            } catch (Exception cancelException) {
+                logger.warn("Failed to cancel Aspera transfer {} for pause: {}",
+                    transferId, cancelException.getMessage());
+            }
+        }
     }
 
     /**
@@ -106,14 +145,21 @@ public class AsperaUploadService extends AbstractUploadService {
      */
     private class AsperaUploadTask extends Task<UploadResult> implements TransferListener {
 
-        private final CountDownLatch transferComplete = new CountDownLatch(1);
-        private final AtomicBoolean transferSuccess = new AtomicBoolean(false);
         private final AtomicBoolean transferTimedOut = new AtomicBoolean(false);
         private final AtomicLong lastProgressTime = new AtomicLong(System.currentTimeMillis());
         private final AtomicLong transferStartTime = new AtomicLong(0);
 
+        // Aggregated counters across all parallel sessions
+        private final java.util.concurrent.atomic.AtomicInteger finishedFileCount =
+                new java.util.concurrent.atomic.AtomicInteger(0);
+        private final java.util.concurrent.atomic.AtomicInteger failedFileCount =
+                new java.util.concurrent.atomic.AtomicInteger(0);
+        // Latest cumulative bytes transferred per session id (summed for overall progress)
+        private final Map<String, Long> sessionTransferredBytes = new ConcurrentHashMap<>();
+
         private volatile String errorMessage = null;
-        private int finishedFileCount = 0;
+        private volatile CountDownLatch sessionCompleteLatch;
+        private volatile int totalFilesToTransfer = 0;
 
         @Override
         protected UploadResult call() throws Exception {
@@ -147,28 +193,42 @@ public class AsperaUploadService extends AbstractUploadService {
 
                 // Convert DataFiles to Files
                 List<File> filesToUpload = prepareFiles();
+                totalFilesToTransfer = filesToUpload.size();
 
-                // Start transfer
-                startTransfer(filesToUpload);
+                if (filesToUpload.isEmpty()) {
+                    return UploadResult.asperaResult(false, 0, files.size(), "No readable files to upload");
+                }
 
-                // Start monitoring thread
-                startMonitoring();
+                if (isCancelled()) {
+                    return UploadResult.asperaResult(false, 0, filesToUpload.size(), "Transfer cancelled");
+                }
 
-                // Wait for transfer to complete
-                boolean completed = transferComplete.await(TRANSFER_TIMEOUT_MS + 60000, TimeUnit.MILLISECONDS);
+                // Transfer files using several parallel Aspera sessions (a few ascp
+                // processes, each one SSH control connection) to speed up many-file
+                // uploads while staying well below the connection count that
+                // previously exhausted client resources.
+                boolean completedNormally = transferInParallel(filesToUpload);
+
+                int done = finishedFileCount.get();
+                int failed = failedFileCount.get();
 
                 UploadResult result;
-                if (!completed || transferTimedOut.get()) {
+                if (transferTimedOut.get()) {
                     AsperaUploadService.this.log("Transfer timed out");
-                    result = UploadResult.asperaResult(false, finishedFileCount, files.size() - finishedFileCount,
-                            "Transfer timed out");
-                } else if (transferSuccess.get()) {
+                    result = UploadResult.asperaResult(false, done,
+                            totalFilesToTransfer - done, "Transfer timed out");
+                } else if (completedNormally && failed == 0 && errorMessage == null) {
+                    // Success is based on the absence of failures/errors rather than an
+                    // exact completed-count match, because files already present on the
+                    // server are reported as SKIPPED (still a success for our purposes).
                     AsperaUploadService.this.log("Aspera upload completed successfully!");
                     result = UploadResult.asperaResult(true, files.size(), 0, null);
                 } else {
-                    AsperaUploadService.this.log("Aspera upload failed: " + errorMessage);
-                    result = UploadResult.asperaResult(false, finishedFileCount, files.size() - finishedFileCount,
-                            errorMessage);
+                    String msg = errorMessage != null ? errorMessage
+                            : (failed + " file(s) failed to upload");
+                    AsperaUploadService.this.log("Aspera upload failed: " + msg);
+                    result = UploadResult.asperaResult(false, done,
+                            totalFilesToTransfer - done, msg);
                 }
 
                 // Complete statistics and log summary
@@ -189,8 +249,10 @@ public class AsperaUploadService extends AbstractUploadService {
                     StatisticsLogger.logSessionSummary(transferStatistics);
                 }
 
-                return UploadResult.asperaResult(false, finishedFileCount, files.size() - finishedFileCount,
-                        e.getMessage());
+                return UploadResult.asperaResult(false, finishedFileCount.get(),
+                        files.size() - finishedFileCount.get(), e.getMessage());
+            } finally {
+                releaseAllSessions();
             }
         }
 
@@ -214,8 +276,7 @@ public class AsperaUploadService extends AbstractUploadService {
             logger.info("Using Aspera binary: {}", ascpPath);
             Environment.setFasp2ScpPath(ascpPath);
 
-            FaspManager faspManager = FaspManager.getSingleton();
-            faspManager.addListener(this);
+            FaspManager.getSingleton();
 
             AsperaUploadService.this.log("Aspera initialized successfully");
         }
@@ -239,17 +300,164 @@ public class AsperaUploadService extends AbstractUploadService {
             return preparedFiles;
         }
 
-        private void startTransfer(List<File> transferFiles) throws IOException, FaspManagerException {
-            if (transferFiles.isEmpty()) {
-                throw new IOException("No files to transfer");
+        /**
+         * Split files into up to {@link #MAX_PARALLEL_SESSIONS} groups and transfer
+         * each group in its own Aspera session concurrently, then wait for all to finish.
+         *
+         * @return true if all sessions ended on their own (SESSION_STOP/SESSION_ERROR),
+         *         false if cancelled or stalled/timed out.
+         */
+        private boolean transferInParallel(List<File> filesToUpload)
+                throws IOException, FaspManagerException, InterruptedException {
+            transferTimedOut.set(false);
+            transferStartTime.set(0);
+            lastProgressTime.set(System.currentTimeMillis());
+            errorMessage = null;
+            finishedFileCount.set(0);
+            failedFileCount.set(0);
+
+            Platform.runLater(() -> {
+                currentFileNameProperty().set("");
+                currentFileProgressProperty().set(0);
+            });
+
+            List<File> remainingFiles = new ArrayList<>(filesToUpload);
+            while (!remainingFiles.isEmpty()) {
+                waitWhilePaused();
+                if (isCancelled()) {
+                    errorMessage = "Transfer cancelled";
+                    return false;
+                }
+
+                errorMessage = null;
+                sessionTransferredBytes.clear();
+                List<List<File>> groups = partition(remainingFiles, MAX_PARALLEL_SESSIONS);
+                sessionCompleteLatch = new CountDownLatch(groups.size());
+
+                AsperaUploadService.this.log("Uploading " + remainingFiles.size() + " remaining file(s) across "
+                        + groups.size() + " parallel session(s)");
+                updateStatus("Uploading " + remainingFiles.size() + " remaining file(s)...");
+
+                for (List<File> group : groups) {
+                    startSession(group);
+                }
+                startMonitoring(sessionCompleteLatch, "sessions");
+
+                boolean sessionsFinished = waitForCompletion();
+                remainingFiles = remainingFiles(filesToUpload);
+
+                if (isCancelled()) {
+                    errorMessage = "Transfer cancelled";
+                    return false;
+                }
+                if (transferTimedOut.get()) {
+                    return false;
+                }
+                if (paused) {
+                    AsperaUploadService.this.log("Aspera upload paused. Waiting to resume...");
+                    continue;
+                }
+                if (!sessionsFinished) {
+                    return false;
+                }
+                if (errorMessage != null) {
+                    return false;
+                }
+                if (!remainingFiles.isEmpty()) {
+                    errorMessage = "Aspera session ended before all files were uploaded";
+                    return false;
+                }
             }
 
+            return true;
+        }
+
+        /**
+         * Distribute files round-robin into at most {@code maxGroups} groups so the
+         * counts are as even as possible.
+         */
+        private List<List<File>> partition(List<File> filesToUpload, int maxGroups) {
+            int groupCount = Math.min(maxGroups, filesToUpload.size());
+            List<List<File>> groups = new ArrayList<>();
+            for (int i = 0; i < groupCount; i++) {
+                groups.add(new ArrayList<>());
+            }
+            for (int i = 0; i < filesToUpload.size(); i++) {
+                groups.get(i % groupCount).add(filesToUpload.get(i));
+            }
+            return groups;
+        }
+
+        private List<File> remainingFiles(List<File> originalFiles) {
+            List<File> remaining = new ArrayList<>();
+            for (File file : originalFiles) {
+                if (file != null && activeFileStats.containsKey(file.getName())) {
+                    remaining.add(file);
+                }
+            }
+            return remaining;
+        }
+
+        private void waitWhilePaused() throws InterruptedException {
+            if (!paused) {
+                return;
+            }
+
+            AsperaUploadService.this.log("Upload paused");
+            updateStatus("Upload paused");
+            synchronized (pauseLock) {
+                while (paused && !isCancelled()) {
+                    lastProgressTime.set(System.currentTimeMillis());
+                    pauseLock.wait(500);
+                }
+            }
+            if (!isCancelled()) {
+                AsperaUploadService.this.log("Upload resumed");
+                updateStatus("Transfer in progress...");
+            }
+        }
+
+        /**
+         * Wait for all sessions to complete, polling so we can react to cancellation
+         * and detect a stalled transfer (no progress across all sessions) without
+         * capping legitimately long transfers.
+         */
+        private boolean waitForCompletion() throws InterruptedException {
+            while (!sessionCompleteLatch.await(1, TimeUnit.SECONDS)) {
+                if (isCancelled()) {
+                    errorMessage = "Transfer cancelled";
+                    cancelAllSessions();
+                    return false;
+                }
+
+                if (paused) {
+                    lastProgressTime.set(System.currentTimeMillis());
+                    continue;
+                }
+
+                long started = transferStartTime.get();
+                long sinceProgress = System.currentTimeMillis() - lastProgressTime.get();
+                if (started > 0 && sinceProgress > PROGRESS_TIMEOUT_MS) {
+                    transferTimedOut.set(true);
+                    errorMessage = "Transfer stalled: no progress for "
+                            + (PROGRESS_TIMEOUT_MS / 60000) + " minutes";
+                    AsperaUploadService.this.log(errorMessage);
+                    cancelAllSessions();
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        private void startSession(List<File> groupFiles) throws IOException, FaspManagerException {
             DropBoxDetail dropBox = uploadDetail.getDropBox();
 
             LocalLocation localFiles = new LocalLocation();
-            for (File file : transferFiles) {
-                if (!file.exists() || !file.canRead()) continue;
-                localFiles.addPath(file.getAbsolutePath());
+            for (File transferFile : groupFiles) {
+                if (!transferFile.exists() || !transferFile.canRead()) {
+                    throw new IOException("File is not readable: " + transferFile.getAbsolutePath());
+                }
+                localFiles.addPath(transferFile.getAbsolutePath(), transferFile.getName());
             }
 
             String username = dropBox.getUserName();
@@ -264,13 +472,14 @@ public class AsperaUploadService extends AbstractUploadService {
             int attempt = 0;
             while (attempt < MAX_RETRIES) {
                 try {
-                    String transferId = FaspManager.getSingleton().startTransfer(order);
-                    currentTransferId = transferId;
-                    log("Transfer started with ID: " + transferId);
+                    String transferId = FaspManager.getSingleton().startTransfer(order, this);
+                    activeTransferIds.add(transferId);
+                    applyCurrentPauseState(transferId);
+                    log("Session started with ID " + transferId + " for " + groupFiles.size() + " file(s)");
                     return;
                 } catch (Exception e) {
                     attempt++;
-                    log("Transfer attempt failed (" + attempt + "): " + e.getMessage());
+                    log("Session start attempt failed (" + attempt + "): " + e.getMessage());
                     if (attempt >= MAX_RETRIES) {
                         throw e;
                     }
@@ -281,6 +490,31 @@ public class AsperaUploadService extends AbstractUploadService {
                     }
                 }
             }
+        }
+
+        private void cancelAllSessions() {
+            for (String transferId : activeTransferIds) {
+                try {
+                    FaspManager.getSingleton().cancelTransfer(transferId);
+                } catch (Exception e) {
+                    logger.warn("Failed to cancel Aspera transfer {}: {}", transferId, e.getMessage());
+                }
+            }
+        }
+
+        /**
+         * Release every Aspera session/resource for this upload so file descriptors,
+         * sockets and ascp subprocesses are not leaked across uploads.
+         */
+        private void releaseAllSessions() {
+            for (String transferId : activeTransferIds) {
+                try {
+                    FaspManager.getSingleton().stopTransfer(transferId);
+                } catch (Exception e) {
+                    logger.debug("stopTransfer on finished session {}: {}", transferId, e.getMessage());
+                }
+            }
+            activeTransferIds.clear();
         }
 
 
@@ -309,14 +543,18 @@ public class AsperaUploadService extends AbstractUploadService {
             return params;
         }
 
-        private void startMonitoring() {
+        private void startMonitoring(CountDownLatch transferLatch, String fileName) {
             Thread monitorThread = new Thread(() -> {
                 try {
-                    while (!transferComplete.await(60, TimeUnit.SECONDS)) {
+                    while (!transferLatch.await(60, TimeUnit.SECONDS)) {
                         long now = System.currentTimeMillis();
 
                         long startTime = transferStartTime.get();
                         long lastProgress = lastProgressTime.get();
+
+                        if (paused) {
+                            continue;
+                        }
 
                         if (startTime <= 0 || lastProgress <= 0) {
                             continue;
@@ -327,11 +565,11 @@ public class AsperaUploadService extends AbstractUploadService {
 
                         // Only logging — NEVER kill transfer
                         if (sinceProgress > 15 * 60 * 1000) { // 15 min
-                            logger.warn("Slow transfer: no progress for {} min", sinceProgress / 60000);
+                            logger.warn("Slow transfer for {}: no progress for {} min", fileName, sinceProgress / 60000);
                         }
 
                         if (sinceStart > 6 * 60 * 60 * 1000) { // 6 hours
-                            logger.info("Long running transfer: {} hours", sinceStart / (1000 * 60 * 60));
+                            logger.info("Long running transfer for {}: {} hours", fileName, sinceStart / (1000 * 60 * 60));
                         }
                     }
                 } catch (InterruptedException e) {
@@ -359,77 +597,75 @@ public class AsperaUploadService extends AbstractUploadService {
 
                 case SESSION_START:
                     AsperaUploadService.this.log("Transfer session started");
-                    updateStatus("Transfer in progress...");
+                    if (stats != null) {
+                        logger.info("Aspera session started: {}", describeSession(stats));
+                        rememberSessionIds(stats);
+                        applyCurrentPauseState(stats.getSessionId());
+                        applyCurrentPauseState(stats.getXferId() != null ? stats.getXferId().toString() : null);
+                    }
+                    updateStatus(paused ? "Upload paused" : "Transfer in progress...");
+                    transferStartTime.compareAndSet(0, now);
                     lastProgressTime.set(System.currentTimeMillis());
                     break;
 
                 case PROGRESS:
                     lastProgressTime.set(System.currentTimeMillis());
                     if (stats != null) {
-                        int completed = (int) stats.getFilesComplete();
-                        long transferred = stats.getTotalTransferredBytes();
-
-                        // Estimate per-file progress from byte data
-                        long completedFilesBytes = 0;
-                        for (int i = 0; i < Math.min(completed, files.size()); i++) {
-                            if (files.get(i).getFile() != null) {
-                                completedFilesBytes += files.get(i).getFile().length();
-                            }
+                        // Each PROGRESS event reports the cumulative bytes for ITS session.
+                        // Track per-session and sum across all sessions for overall progress.
+                        if (stats.getSessionId() != null) {
+                            sessionTransferredBytes.put(stats.getSessionId(), stats.getTotalTransferredBytes());
                         }
-                        long currentFileTransferred = transferred - completedFilesBytes;
-                        long currentFileSize = (completed < files.size() && files.get(completed).getFile() != null)
-                                ? files.get(completed).getFile().length() : 0;
-                        double fileProg = (currentFileSize > 0)
-                                ? Math.min(1.0, (double) currentFileTransferred / currentFileSize) : 0;
-                        double finalFileProg = fileProg;
+                        long transferred = sessionTransferredBytes.values().stream()
+                                .mapToLong(Long::longValue).sum();
+                        long totalBytes = totalBytesProperty().get();
+
+                        String currentName = fileInfo != null ? extractFileName(fileInfo.getName()) : null;
+                        double fileProg = 0;
+                        if (fileInfo != null && fileInfo.getSizeBytes() > 0) {
+                            fileProg = Math.min(1.0, (double) fileInfo.getWrittenBytes() / fileInfo.getSizeBytes());
+                        }
+                        final double finalFileProg = fileProg;
+                        final int done = finishedFileCount.get();
 
                         Platform.runLater(() -> {
-                            uploadedFilesProperty().set(completed);
+                            uploadedFilesProperty().set(done);
                             uploadedBytesProperty().set(transferred);
+                            if (currentName != null) {
+                                currentFileNameProperty().set(currentName);
+                            }
                             currentFileProgressProperty().set(finalFileProg);
 
-                            double progress = totalFilesProperty().get() > 0 ?
-                                    (double) completed / totalFilesProperty().get() : 0;
-                            overallProgress.set(progress);
+                            double progress = totalBytes > 0 ? (double) transferred / totalBytes : 0;
+                            overallProgress.set(Math.min(1.0, progress));
                         });
 
                         updateStatus(String.format("Uploading: %d/%d files (%.1f%%)",
-                                completed, totalFilesProperty().get(), (double) completed / totalFilesProperty().get() * 100));
+                                done, totalFilesProperty().get(),
+                                totalBytes > 0 ? (double) transferred / totalBytes * 100 : 0));
                     }
                     break;
 
                 case FILE_STOP:
-                    if (fileInfo != null && fileInfo.getState() == FileState.FINISHED) {
-                        finishedFileCount++;
-                        logger.info("Completed file: {}", fileInfo.getName());
+                    if (fileInfo != null
+                            && (fileInfo.getState() == FileState.FINISHED
+                                || fileInfo.getState() == FileState.SKIPPED)) {
+                        markFileCompleted(extractFileName(fileInfo.getName()));
+                    }
+                    break;
 
-                        if (finishedFileCount >= files.size()) {
-                            transferSuccess.set(true);
-                            transferComplete.countDown();
-                            String fileName = extractFileName(fileInfo.getName());
-                            AsperaUploadService.this.log("Completed: " + fileName);
-
-                            // Track file completion in statistics
-                            FileTransferStat fileStat = activeFileStats.get(fileName);
-                            if (transferStatistics != null && fileStat != null) {
-                                long fileSize = fileStat.getFileSize();
-                                transferStatistics.completeFile(fileName, fileSize);
-                                StatisticsLogger.logFileComplete(fileStat);
-                                activeFileStats.remove(fileName);
-                            }
-
-                            Platform.runLater(() -> {
-                                uploadedFilesProperty().set(finishedFileCount);
-                                currentFileNameProperty().set(fileName);
-
-                                double progress = (double) finishedFileCount / totalFilesProperty().get();
-                                overallProgress.set(progress);
-                            });           }
+                case FILE_SKIP:
+                    // File already present on the server (e.g. from a previous attempt);
+                    // treat as completed so it does not count as a failure.
+                    if (fileInfo != null) {
+                        markFileCompleted(extractFileName(fileInfo.getName()));
                     }
                     break;
 
                 case SESSION_STOP:
-                    AsperaUploadService.this.log("Transfer session completed");
+                    AsperaUploadService.this.log(paused
+                            ? "Transfer session stopped for pause"
+                            : "Transfer session completed");
 
                     // Log session stop event
                     if (transferStatistics != null) {
@@ -440,16 +676,23 @@ public class AsperaUploadService extends AbstractUploadService {
                         );
                     }
 
-                    transferSuccess.set(true);
-                    transferComplete.countDown();
+                    signalSessionComplete();
                     break;
 
                 case FILE_ERROR:
+                    if (paused) {
+                        if (fileInfo != null) {
+                            AsperaUploadService.this.log("File transfer stopped for pause: "
+                                    + extractFileName(fileInfo.getName()));
+                        }
+                        break;
+                    }
                     if (fileInfo != null) {
                         String errorFile = extractFileName(fileInfo.getName());
-                        String error = fileInfo.getErrDescription();
+                        String error = describeFileError(fileInfo);
                         AsperaUploadService.this.log("File error: " + errorFile + " - " + error);
                         errorMessage = "Failed to upload " + errorFile + ": " + error;
+                        failedFileCount.incrementAndGet();
 
                         // Track file failure in statistics
                         FileTransferStat failedFileStat = activeFileStats.get(errorFile);
@@ -464,25 +707,161 @@ public class AsperaUploadService extends AbstractUploadService {
                     break;
 
                 case SESSION_ERROR:
-                    AsperaUploadService.this.log("Session error: " + event.getDescription());
-                    errorMessage = "Aspera session error: " + event.getDescription();
+                    if (paused) {
+                        AsperaUploadService.this.log("Transfer session stopped for pause");
+                        signalSessionComplete();
+                        break;
+                    }
+                    String sessionError = describeSessionError(event, stats, fileInfo);
+                    logger.error("Aspera session error: {}", sessionError);
+                    AsperaUploadService.this.log("Session error: " + sessionError);
+                    errorMessage = "Aspera session error: " + sessionError;
 
                     // Log session error event
                     if (transferStatistics != null) {
                         StatisticsLogger.logEvent(
                                 transferStatistics.getSessionId(),
                                 "SESSION_ERROR",
-                                event.getDescription()
+                                sessionError
                         );
                     }
 
-                    transferComplete.countDown();
+                    signalSessionComplete();
                     break;
 
                 default:
                     logger.debug("Unhandled event: {}", event);
             }
         }
+
+        /**
+         * Mark a single file (identified by name) as completed within the session.
+         * Called once per file from FILE_STOP events.
+         */
+        private void markFileCompleted(String fileName) {
+            if (fileName == null) {
+                return;
+            }
+
+            // Remove returns null if this file was already completed or is unknown,
+            // which guards against double-counting.
+            FileTransferStat fileStat = activeFileStats.remove(fileName);
+            if (fileStat == null) {
+                return;
+            }
+
+            int done = finishedFileCount.incrementAndGet();
+
+            logger.info("Completed file: {} ({}/{})", fileName, done, totalFilesToTransfer);
+            AsperaUploadService.this.log("Completed: " + fileName
+                    + " (" + done + "/" + totalFilesToTransfer + ")");
+
+            if (transferStatistics != null) {
+                transferStatistics.completeFile(fileName, fileStat.getFileSize());
+                StatisticsLogger.logFileComplete(fileStat);
+            }
+
+            Platform.runLater(() -> {
+                uploadedFilesProperty().set(done);
+                currentFileNameProperty().set(fileName);
+                currentFileProgressProperty().set(1.0);
+            });
+        }
+
+        private void signalSessionComplete() {
+            CountDownLatch latch = sessionCompleteLatch;
+            if (latch != null) {
+                latch.countDown();
+            }
+        }
+
+        private void rememberSessionIds(SessionStats stats) {
+            if (stats == null) {
+                return;
+            }
+            if (stats.getSessionId() != null && !stats.getSessionId().isBlank()) {
+                activeTransferIds.add(stats.getSessionId());
+            }
+            if (stats.getXferId() != null) {
+                activeTransferIds.add(stats.getXferId().toString());
+            }
+        }
+
+        private String describeSessionError(TransferEvent event, SessionStats stats, FileInfo fileInfo) {
+            List<String> details = new ArrayList<>();
+            appendDetail(details, "event", event != null ? event.getDescription() : null);
+
+            if (stats != null) {
+                appendDetail(details, "errorCode", stats.getErrorCode() != 0 ? stats.getErrorCode() : null);
+                appendDetail(details, "errorDescription", stats.getErrorDescription());
+                appendDetail(details, "state", stats.getState());
+                appendDetail(details, "sessionId", stats.getSessionId());
+                appendDetail(details, "xferId", stats.getXferId());
+                appendDetail(details, "host", stats.getHost());
+                appendDetail(details, "user", stats.getUser());
+                appendDetail(details, "destination", stats.getDestPath());
+                appendDetail(details, "sources", joinPaths(stats.getSourcePaths()));
+                appendDetail(details, "transfers",
+                        "attempted=" + stats.getTransfersAttempted()
+                                + ", passed=" + stats.getTransfersPassed()
+                                + ", failed=" + stats.getTransfersFailed()
+                                + ", skipped=" + stats.getTransfersSkipped());
+                appendDetail(details, "files",
+                        "complete=" + stats.getFilesComplete()
+                                + ", failed=" + stats.getFilesFailed()
+                                + ", skipped=" + stats.getFilesSkipped());
+                appendDetail(details, "bytes",
+                        stats.getTotalTransferredBytes() + "/" + stats.getPreCalcTotalBytes());
+                appendDetail(details, "udpPort", stats.getUdpPort() != 0 ? stats.getUdpPort() : null);
+            }
+
+            if (fileInfo != null) {
+                appendDetail(details, "file", describeFileError(fileInfo));
+            }
+
+            return details.isEmpty() ? "Session error" : String.join("; ", details);
+        }
+
+        private String describeSession(SessionStats stats) {
+            List<String> details = new ArrayList<>();
+            appendDetail(details, "sessionId", stats.getSessionId());
+            appendDetail(details, "xferId", stats.getXferId());
+            appendDetail(details, "host", stats.getHost());
+            appendDetail(details, "destination", stats.getDestPath());
+            appendDetail(details, "sources", joinPaths(stats.getSourcePaths()));
+            appendDetail(details, "udpPort", stats.getUdpPort() != 0 ? stats.getUdpPort() : null);
+            return details.isEmpty() ? "no session details" : String.join("; ", details);
+        }
+
+        private String describeFileError(FileInfo fileInfo) {
+            List<String> details = new ArrayList<>();
+            appendDetail(details, "name", fileInfo.getName());
+            appendDetail(details, "state", fileInfo.getState());
+            appendDetail(details, "errorCode", fileInfo.getErrCode() != 0 ? fileInfo.getErrCode() : null);
+            appendDetail(details, "errorDescription", fileInfo.getErrDescription());
+            appendDetail(details, "writtenBytes", fileInfo.getWrittenBytes());
+            appendDetail(details, "sizeBytes", fileInfo.getSizeBytes());
+            return details.isEmpty() ? "unknown file error" : String.join("; ", details);
+        }
+
+        private String joinPaths(String[] paths) {
+            if (paths == null || paths.length == 0) {
+                return null;
+            }
+            return String.join(", ", paths);
+        }
+
+        private void appendDetail(List<String> details, String label, Object value) {
+            if (value == null) {
+                return;
+            }
+            String text = value.toString();
+            if (text.trim().isEmpty()) {
+                return;
+            }
+            details.add(label + "=" + text);
+        }
+
         private String extractFileName(String path) {
             if (path == null) return "unknown";
             String[] parts = path.split("[/\\\\]");

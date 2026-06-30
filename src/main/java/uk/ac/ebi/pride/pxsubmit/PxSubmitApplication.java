@@ -154,14 +154,9 @@ public class PxSubmitApplication extends Application {
             stage.show();
             logger.info("Application window displayed");
 
-            // Check for upload checkpoint (crash recovery)
-            if (UploadCheckpointManager.exists()) {
-                UploadCheckpoint checkpoint = UploadCheckpointManager.load();
-                if (checkpoint != null) {
-                    showResumeDialog(checkpoint);
-                    return;
-                }
-            }
+            // Resume-after-interrupted-upload is temporarily disabled.
+            // The checkpoint resume flow is hidden for now, so always start fresh.
+            // (Checkpoint detection/dialog intentionally skipped.)
 
             // Start wizard normally
             wizardController.start();

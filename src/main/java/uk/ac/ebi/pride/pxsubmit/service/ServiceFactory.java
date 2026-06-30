@@ -45,8 +45,8 @@ public class ServiceFactory {
         return new ValidationService(files, type);
     }
 
-    public PrideCommonsFileValidationService createPrideCommonsFileValidationService() {
-        return new PrideCommonsFileValidationService();
+    public WebSubIncomingFileValidationService createWebSubIncomingFileValidationService() {
+        return new WebSubIncomingFileValidationService();
     }
 
     public SdrfParserService createSdrfParserService(File sdrfFile) {

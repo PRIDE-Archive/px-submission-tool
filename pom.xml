@@ -286,12 +286,6 @@
              root of one flat JAR; instead the build unpacks them under natives/<platform>/
              and the Launcher loads the matching set at runtime. See the <profiles> section
              and the maven-dependency-plugin unpack execution. -->
-        <dependency>
-            <groupId>uk.ac.ebi.pride.submissions</groupId>
-            <artifactId>pride-submissions-commons</artifactId>
-            <version>1.0.15-SNAPSHOT</version>
-        </dependency>
-
     </dependencies>
 
     <build>

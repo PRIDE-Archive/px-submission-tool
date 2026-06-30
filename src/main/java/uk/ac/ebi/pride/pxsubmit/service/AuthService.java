@@ -14,6 +14,7 @@ import uk.ac.ebi.pride.pxsubmit.config.AppConfig;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.util.Locale;
 
 /**
  * Service for PRIDE authentication.
@@ -25,8 +26,8 @@ import java.net.Proxy;
  * authService.setCredentials("user@example.com", "password");
  *
  * authService.setOnSucceeded(e -> {
- *     ContactDetail contact = authService.getValue();
- *     if (contact != null) {
+ *     AuthService.AuthenticationResult result = authService.getValue();
+ *     if (result != null) {
  *         // Login successful
  *     }
  * });
@@ -38,9 +39,12 @@ import java.net.Proxy;
  * authService.start();
  * </pre>
  */
-public class AuthService extends Service<ContactDetail> {
+public class AuthService extends Service<AuthService.AuthenticationResult> {
 
     private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
+    static final String PENDING_INCOMING_TICKET_MESSAGE =
+        "You have a pending unprocessed submission. Please wait until your previous submission gets processed. "
+            + "Some tickets might take 1-3 days to process.";
 
     private final AppConfig config;
     private String username;
@@ -59,14 +63,14 @@ public class AuthService extends Service<ContactDetail> {
     }
 
     @Override
-    protected Task<ContactDetail> createTask() {
+    protected Task<AuthenticationResult> createTask() {
         return new AuthTask(username, password);
     }
 
     /**
      * Authentication task that runs in background
      */
-    private class AuthTask extends Task<ContactDetail> {
+    private class AuthTask extends Task<AuthenticationResult> {
 
         private final String taskUsername;
         private final String taskPassword;
@@ -77,11 +81,10 @@ public class AuthService extends Service<ContactDetail> {
         }
 
         @Override
-        protected ContactDetail call() throws Exception {
+        protected AuthenticationResult call() throws Exception {
             updateMessage("Authenticating...");
 
             String loginUrl = config.getUserLoginUrl();
-            String toolVersion = config.getToolVersion();
 
             logger.debug("Starting authentication for user: {}", taskUsername);
             logger.debug("Login URL: {}", loginUrl);
@@ -92,21 +95,19 @@ public class AuthService extends Service<ContactDetail> {
                 // Prepare headers
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
-//                headers.add("version", toolVersion);
-                headers.add("version", "v2.11.3");
-
+                headers.add("version", config.getToolVersion());
 
                 // Prepare credentials payload using a Map for proper JSON serialization
                 java.util.Map<String, String> credentials = new java.util.LinkedHashMap<>();
                 credentials.put("username", taskUsername);
                 credentials.put("password", taskPassword);
+                logger.info("PRIDE user login request payload: {}", redactPassword(credentials));
 
                 HttpEntity<java.util.Map<String, String>> entity = new HttpEntity<>(credentials, headers);
 
                 updateMessage("Contacting PRIDE server...");
 
 
-                // Make login request
                 ResponseEntity<ContactDetail> response = restTemplate.exchange(
                     loginUrl,
                     HttpMethod.POST,
@@ -115,7 +116,6 @@ public class AuthService extends Service<ContactDetail> {
                 );
 
                 ContactDetail contactDetail = response.getBody();
-
                 if (contactDetail == null) {
                     logger.error("Login succeeded but returned null ContactDetail");
                     throw new AuthenticationException("Login failed: Invalid server response");
@@ -124,7 +124,7 @@ public class AuthService extends Service<ContactDetail> {
                 logger.debug("Authentication successful for user: {}", taskUsername);
                 updateMessage("Login successful");
 
-                return contactDetail;
+                return new AuthenticationResult(null, null, contactDetail);
 
             } catch (ResourceAccessException e) {
                 logger.error("Network error during authentication: {}", e.getMessage());
@@ -137,20 +137,15 @@ public class AuthService extends Service<ContactDetail> {
                     e.getStatusCode(), e.getMessage());
 
                 // Extract the server's error message from the response body
-                String serverMessage = e.getResponseBodyAsString();
-                // Clean up quoted strings like "Invalid Password!" → Invalid Password!
-                if (serverMessage != null) {
-                    serverMessage = serverMessage.trim();
-                    if (serverMessage.startsWith("\"") && serverMessage.endsWith("\"")) {
-                        serverMessage = serverMessage.substring(1, serverMessage.length() - 1);
-                    }
-                    // Strip HTTP status prefix like "400 : " or "404 : "
-                    if (serverMessage.matches("^\\d{3}\\s*:\\s*.*")) {
-                        serverMessage = serverMessage.replaceFirst("^\\d{3}\\s*:\\s*", "").trim();
-                        if (serverMessage.startsWith("\"") && serverMessage.endsWith("\"")) {
-                            serverMessage = serverMessage.substring(1, serverMessage.length() - 1);
-                        }
-                    }
+                String serverMessage = cleanServerMessage(firstNonBlank(
+                    e.getResponseBodyAsString(),
+                    e.getMessage()
+                ));
+
+                if (isPendingIncomingTicketMessage(serverMessage)) {
+                    logger.warn("Login blocked for user {} because an incoming ticket is still pending: {}",
+                        taskUsername, serverMessage);
+                    throw new AuthenticationException(PENDING_INCOMING_TICKET_MESSAGE, e);
                 }
 
                 if (serverMessage != null && !serverMessage.isEmpty()) {
@@ -189,6 +184,93 @@ public class AuthService extends Service<ContactDetail> {
             }
 
             return restTemplate;
+        }
+
+    }
+
+    private static java.util.Map<String, String> redactPassword(java.util.Map<String, String> payload) {
+        java.util.Map<String, String> safePayload = new java.util.LinkedHashMap<>(payload);
+        if (safePayload.containsKey("password")) {
+            safePayload.put("password", "****");
+        }
+        return safePayload;
+    }
+
+    static boolean isPendingIncomingTicketMessage(String message) {
+        if (message == null || message.isBlank()) {
+            return false;
+        }
+
+        String normalized = message.toLowerCase(Locale.ROOT)
+            .replace('-', ' ')
+            .replace('_', ' ');
+        String compact = normalized.replaceAll("[^a-z0-9]", "");
+
+        if (compact.contains("nopendingincomingticket")
+            || compact.contains("noincomingticketpending")
+            || compact.contains("nopendingunprocessedsubmission")) {
+            return false;
+        }
+
+        return normalized.contains("incoming ticket pending")
+            || normalized.contains("pending incoming ticket")
+            || compact.contains("pendingincomingticket")
+            || compact.contains("incomingticketpending")
+            || compact.contains("pendingunprocessedsubmission")
+            || compact.contains("alreadyinprogressticket")
+            || compact.contains("alreadyaninprogressticket")
+            || compact.contains("alreadyhaveaninprogressticket")
+            || (compact.contains("already") && compact.contains("inprogressticket"));
+    }
+
+    private static String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private static String cleanServerMessage(String message) {
+        if (message == null) {
+            return null;
+        }
+
+        String cleaned = message.trim();
+        if (cleaned.startsWith("\"") && cleaned.endsWith("\"")) {
+            cleaned = cleaned.substring(1, cleaned.length() - 1);
+        }
+        if (cleaned.matches("^\\d{3}\\s*:\\s*.*")) {
+            cleaned = cleaned.replaceFirst("^\\d{3}\\s*:\\s*", "").trim();
+            if (cleaned.startsWith("\"") && cleaned.endsWith("\"")) {
+                cleaned = cleaned.substring(1, cleaned.length() - 1);
+            }
+        }
+        return cleaned;
+    }
+
+    public static class AuthenticationResult {
+        private final String token;
+        private final String info;
+        private final ContactDetail contactDetail;
+
+        public AuthenticationResult(String token, String info, ContactDetail contactDetail) {
+            this.token = token;
+            this.info = info;
+            this.contactDetail = contactDetail;
+        }
+
+        public String getToken() {
+            return token;
+        }
+
+        public String getInfo() {
+            return info;
+        }
+
+        public ContactDetail getContactDetail() {
+            return contactDetail;
         }
     }
 

@@ -15,13 +15,11 @@ import javafx.stage.Stage;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
-import uk.ac.ebi.pride.pxsubmit.service.PrideCommonsFileValidationService;
 import uk.ac.ebi.pride.pxsubmit.model.SdrfValidationTracker;
 import uk.ac.ebi.pride.pxsubmit.service.SdrfParserService;
 import uk.ac.ebi.pride.pxsubmit.service.SdrfValidationService;
 import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
-import uk.ac.ebi.pride.pxsubmit.service.ValidationService;
-import uk.ac.ebi.pride.submissions.commons.exceptions.SubValidationException;
+import uk.ac.ebi.pride.pxsubmit.service.WebSubIncomingFileValidationService;
 import uk.ac.ebi.pride.pxsubmit.util.FileNameValidator;
 import uk.ac.ebi.pride.pxsubmit.util.FileTypeDetector;
 import uk.ac.ebi.pride.pxsubmit.view.component.FileClassificationPanel;
@@ -63,11 +61,11 @@ public class FileSelectionStep extends AbstractWizardStep {
     private ProgressBar validationProgress;
     private Label validationStatus;
 
-    /** Absolute file path → PRIDE commons validation passed (table status column). */
+    /** Absolute file path → incoming-file validation passed (table status column). */
     private final Map<String, Boolean> prideValidationByPath = new HashMap<>();
 
-    private final PrideCommonsFileValidationService prideFileValidationService =
-            ServiceFactory.getInstance().createPrideCommonsFileValidationService();
+    private final WebSubIncomingFileValidationService webSubIncomingFileValidationService =
+            ServiceFactory.getInstance().createWebSubIncomingFileValidationService();
     private final SdrfValidationService sdrfValidationService =
             ServiceFactory.getInstance().createSdrfValidationService();
 
@@ -207,14 +205,12 @@ public class FileSelectionStep extends AbstractWizardStep {
         });
 
         ensureSdrfTemplatesLoaded();
-        preloadPrideValidationRules();
         updateSummary();
     }
 
     @Override
     protected void onStepEntering() {
         ensureSdrfTemplatesLoaded();
-        preloadPrideValidationRules();
         updateSummary();
     }
 
@@ -232,7 +228,7 @@ public class FileSelectionStep extends AbstractWizardStep {
             return false;
         }
 
-        if (!runPrideCommonsFileValidation()) {
+        if (!runWebSubIncomingFileValidation()) {
             updateSummary();
             return false;
         }
@@ -699,66 +695,6 @@ public class FileSelectionStep extends AbstractWizardStep {
     }
 
     /**
-     * Validate all files
-     */
-    private void validateFiles() {
-        if (model.getFiles().isEmpty()) {
-            validationStatus.setText("No files to validate");
-            return;
-        }
-
-        ValidationService validationService = ServiceFactory.getInstance().createValidationService(
-            model.getFiles(), model.getSubmissionType());
-
-        validationProgress.setVisible(true);
-        validationProgress.progressProperty().bind(validationService.progressProperty());
-        validationStatus.textProperty().bind(validationService.messageProperty());
-        if (wizardController != null) wizardController.showGlobalProgress();
-
-        validationService.setOnSucceeded(e -> {
-            ValidationService.ValidationResult result = validationService.getValue();
-            Platform.runLater(() -> {
-                validationProgress.setVisible(false);
-                validationProgress.progressProperty().unbind();
-                validationStatus.textProperty().unbind();
-                if (wizardController != null) wizardController.hideGlobalProgress();
-
-                if (result.isValid()) {
-                    validationStatus.setText("Validation passed!");
-                    validationStatus.setStyle("-fx-text-fill: #28a745;");
-                } else {
-                    validationStatus.setText("Validation failed: " + result.getErrors().size() + " error(s)");
-                    validationStatus.setStyle("-fx-text-fill: #dc3545;");
-
-                    // Show errors in dialog
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Validation Errors");
-                    alert.setHeaderText("The following errors were found:");
-                    alert.setContentText(result.getErrorSummary());
-                    alert.showAndWait();
-                }
-
-                if (result.hasWarnings()) {
-                    logger.warn("Validation warnings: {}", result.getWarningSummary());
-                }
-            });
-        });
-
-        validationService.setOnFailed(e -> {
-            Platform.runLater(() -> {
-                validationProgress.setVisible(false);
-                validationProgress.progressProperty().unbind();
-                validationStatus.textProperty().unbind();
-                if (wizardController != null) wizardController.hideGlobalProgress();
-                validationStatus.setText("Validation error: " + e.getSource().getException().getMessage());
-                validationStatus.setStyle("-fx-text-fill: #dc3545;");
-            });
-        });
-
-        validationService.start();
-    }
-
-    /**
      * Update the summary label, classification panel, and validation feedback
      */
     private void updateSummary() {
@@ -847,21 +783,25 @@ public class FileSelectionStep extends AbstractWizardStep {
         }
     }
 
-    /** Preloads templates from the validator API in the background. */
-    private void preloadPrideValidationRules() {
-        Thread.startVirtualThread(() -> {
-            try {
-                prideFileValidationService.preloadConfig();
-            } catch (SubValidationException e) {
-                logger.warn("Could not preload PRIDE submission validation rules: {}", e.getMessage());
-            }
-        });
-    }
-
     /**
-     * Runs pride-submissions-commons validation when the user clicks Next (modal progress dialog).
+     * Runs web-submissions incoming-file validation when the user clicks Next (modal progress dialog).
      */
-    private boolean runPrideCommonsFileValidation() {
+    private boolean runWebSubIncomingFileValidation() {
+        if (model.isTrainingMode()) {
+            applyPrideValidationToTable(buildAllSelectedFilesValidMap());
+            return true;
+        }
+
+        String username = model.getUserName();
+        String password = model.getPassword();
+        if (username == null || username.isBlank() || password == null || password.isBlank()) {
+            String message = "Missing login credentials. Please log in again before validating files.";
+            validationFeedback.clear();
+            validationFeedback.addError(message);
+            showError("File Validation Failed", message);
+            return false;
+        }
+
         AtomicBoolean passed = new AtomicBoolean(false);
         AtomicReference<String> failureMessage = new AtomicReference<>();
 
@@ -875,7 +815,7 @@ public class FileSelectionStep extends AbstractWizardStep {
         progressBox.setPadding(new Insets(20));
         progressBox.setStyle("-fx-background-color: white;");
 
-        Label messageLabel = new Label("Checking files against PRIDE submission rules...");
+        Label messageLabel = new Label("Checking files with the web submissions validation service...");
         messageLabel.setWrapText(true);
         messageLabel.setStyle("-fx-font-size: 13px;");
 
@@ -887,27 +827,32 @@ public class FileSelectionStep extends AbstractWizardStep {
 
         Thread.startVirtualThread(() -> {
             try {
-                PrideCommonsFileValidationService.ValidationResult result =
-                        prideFileValidationService.validate(new ArrayList<>(model.getFiles()));
+                Platform.runLater(() ->
+                    messageLabel.setText("Authenticating with the web submissions validation service..."));
+                String token = webSubIncomingFileValidationService.authenticate(username, password);
+                Platform.runLater(() ->
+                    messageLabel.setText("Checking files with the web submissions validation service..."));
+                WebSubIncomingFileValidationService.ValidationResult result =
+                        webSubIncomingFileValidationService.validate(new ArrayList<>(model.getFiles()), token);
                 Platform.runLater(() -> {
-                    applyPrideValidationResult(result);
+                    applyWebSubIncomingFileValidationResult(result);
                     passed.set(result.valid());
                     if (!result.valid()) {
                         failureMessage.set(result.formattedDetails());
                     }
                     progressStage.close();
                 });
-            } catch (SubValidationException e) {
-                logger.error("PRIDE commons file validation failed", e);
+            } catch (WebSubIncomingFileValidationService.ValidationException e) {
+                logger.error("Web submissions file validation failed", e);
                 Platform.runLater(() -> {
                     validationFeedback.clear();
-                    validationFeedback.addError("Could not load PRIDE validation rules: " + e.getMessage());
+                    validationFeedback.addError("File validation failed: " + e.getMessage());
                     validationFeedback.addInfo("Check your network connection and try again.");
                     failureMessage.set(e.getMessage());
                     progressStage.close();
                 });
             } catch (Exception e) {
-                logger.error("Unexpected error during PRIDE file validation", e);
+                logger.error("Unexpected error during web submissions file validation", e);
                 Platform.runLater(() -> {
                     validationFeedback.addError("Validation error: " + e.getMessage());
                     failureMessage.set(e.getMessage());
@@ -924,7 +869,7 @@ public class FileSelectionStep extends AbstractWizardStep {
         return passed.get();
     }
 
-    private void applyPrideValidationResult(PrideCommonsFileValidationService.ValidationResult result) {
+    private void applyWebSubIncomingFileValidationResult(WebSubIncomingFileValidationService.ValidationResult result) {
         applyPrideValidationToTable(result.fileValidByPath());
         validationFeedback.clear();
         if (result.valid()) {
@@ -946,6 +891,16 @@ public class FileSelectionStep extends AbstractWizardStep {
             validationStatus.setText("");
             validationStatus.setStyle("-fx-text-fill: #666;");
         }
+    }
+
+    private Map<String, Boolean> buildAllSelectedFilesValidMap() {
+        Map<String, Boolean> results = new HashMap<>();
+        for (DataFile file : model.getFiles()) {
+            if (file.getFile() != null) {
+                results.put(file.getFile().getAbsolutePath(), true);
+            }
+        }
+        return results;
     }
 
     private void ensureSdrfTemplatesLoaded() {

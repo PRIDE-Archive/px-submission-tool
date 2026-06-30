@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
-import uk.ac.ebi.pride.pxsubmit.service.ApiService;
 import uk.ac.ebi.pride.pxsubmit.service.ChecksumService;
 import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
 import uk.ac.ebi.pride.pxsubmit.util.FileTypeDetector;
@@ -51,7 +50,6 @@ public class ChecksumComputationStep extends AbstractWizardStep {
     private final BooleanProperty computing = new SimpleBooleanProperty(false);
     private final BooleanProperty completed = new SimpleBooleanProperty(false);
     private ChecksumService checksumService;
-    private ApiService apiService;
     private final Map<String, FileChecksumRow> fileRowMap = new ConcurrentHashMap<>();
     private final List<FileChecksumRow> allRows = new ArrayList<>();
     private ProjectFileType activeTypeFilter;
@@ -256,81 +254,6 @@ public class ChecksumComputationStep extends AbstractWizardStep {
         // Auto-start computation
         logger.info("Starting checksum computation automatically");
         Platform.runLater(this::startComputation);
-    }
-
-    @Override
-    protected void onStepLeaving() {
-        if (apiService != null) {
-            apiService.shutdown();
-            apiService = null;
-        }
-    }
-
-    private void checkAsperaAvailabilityBeforeUpload() {
-        if (model.isTrainingMode()) {
-            model.setAsperaAvailable(true);
-            model.setAsperaAvailabilityMessage(null);
-            model.setAsperaAvailabilityChecking(false);
-            Platform.runLater(this::navigateToUploadStep);
-            return;
-        }
-
-        if (model.getAsperaAvailable() != null && !model.isAsperaAvailabilityChecking()) {
-            Platform.runLater(this::navigateToUploadStep);
-            return;
-        }
-
-        if (model.isAsperaAvailabilityChecking()) {
-            return;
-        }
-
-        model.setAsperaAvailable(null);
-        model.setAsperaAvailabilityMessage(null);
-        model.setAsperaAvailabilityChecking(true);
-        if (wizardController != null) {
-            wizardController.setNavigationEnabled(false);
-            wizardController.showGlobalProgress();
-        }
-
-        if (apiService != null) {
-            apiService.shutdown();
-        }
-
-        ApiService availabilityService = ServiceFactory.getInstance()
-            .createApiService(model.getUserName(), model.getPassword());
-        apiService = availabilityService;
-
-        availabilityService.isAsperaAvailable()
-            .thenAccept(available -> Platform.runLater(() -> {
-                String message = available ? null :
-                    "Aspera upload is currently unavailable from the submission service. FTP will be selected automatically on the upload page.";
-                model.setAsperaAvailable(available);
-                model.setAsperaAvailabilityMessage(message);
-                model.setAsperaAvailabilityChecking(false);
-                navigateToUploadStep();
-            }))
-            .exceptionally(ex -> {
-                logger.warn("Aspera availability check failed during checksum step", ex);
-                Platform.runLater(() -> {
-                    String message = "Unable to confirm Aspera availability right now. FTP will be selected automatically on the upload page.";
-                    model.setAsperaAvailable(false);
-                    model.setAsperaAvailabilityMessage(message);
-                    model.setAsperaAvailabilityChecking(false);
-                    navigateToUploadStep();
-                });
-                return null;
-            })
-            .whenComplete((result, error) -> availabilityService.shutdown());
-    }
-
-    private void navigateToUploadStep() {
-        if (wizardController != null) {
-            wizardController.hideGlobalProgress();
-            wizardController.setNavigationEnabled(true);
-            if (wizardController.getCurrentStep() == this) {
-                wizardController.goToNextStep();
-            }
-        }
     }
 
     private void populateFileTable() {
@@ -605,23 +528,11 @@ public class ChecksumComputationStep extends AbstractWizardStep {
             return false;
         }
 
-        if (model.isTrainingMode()) {
-            model.setAsperaAvailable(true);
-            model.setAsperaAvailabilityMessage(null);
-            model.setAsperaAvailabilityChecking(false);
-            return true;
-        }
-
-        if (model.getAsperaAvailable() != null && !model.isAsperaAvailabilityChecking()) {
-            return true;
-        }
-
-        if (model.isAsperaAvailabilityChecking()) {
-            return false;
-        }
-
-        checkAsperaAvailabilityBeforeUpload();
-        return false;
+        model.setAsperaAvailable(true);
+        model.setAsperaAvailabilityMessage(null);
+        model.setAsperaAvailabilityChecking(false);
+        logger.info("Skipping Aspera availability check before upload; Aspera and FTP remain enabled");
+        return true;
     }
 
     @Override

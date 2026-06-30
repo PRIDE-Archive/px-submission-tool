@@ -9,6 +9,11 @@ px.submission.tool.height = 750
 # url for retrieving pride user details
 px.user.login.url=https://www.proteomexchange.org/archive-submission-ws/user/login
 
+# urls for web submissions authentication and incoming file validation
+px.web.submissions.base.url=http://WEB_SUBMISSIONS_HOST/ws
+px.web.submissions.login.url=http://WEB_SUBMISSIONS_HOST/ws/web-submissions/login
+px.web.submissions.validate.incoming.files.url=http://WEB_SUBMISSIONS_HOST/ws/web-submissions/validate-incoming-files
+
 # url for retrieving pride Project Files details
 px.submission.ws.base.url=https://www.proteomexchange.org/archive-submission-ws/
 
