@@ -511,7 +511,16 @@ public class AsperaUploadService extends AbstractUploadService {
                 try {
                     FaspManager.getSingleton().stopTransfer(transferId);
                 } catch (Exception e) {
-                    logger.debug("stopTransfer on finished session {}: {}", transferId, e.getMessage());
+                    // A finished session throwing here is expected; but if stopTransfer
+                    // genuinely failed, escalate to cancelTransfer so the FASP session,
+                    // sockets and ascp subprocess are not left lingering.
+                    logger.debug("stopTransfer on session {} failed ({}); attempting cancelTransfer",
+                            transferId, e.getMessage());
+                    try {
+                        FaspManager.getSingleton().cancelTransfer(transferId);
+                    } catch (Exception cancelEx) {
+                        logger.warn("Failed to release Aspera session {}: {}", transferId, cancelEx.getMessage());
+                    }
                 }
             }
             activeTransferIds.clear();
