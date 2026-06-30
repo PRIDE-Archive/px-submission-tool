@@ -280,6 +280,8 @@ public class SampleMetadataStep extends AbstractWizardStep {
         }
 
         if (notApplicableTerm != null) {
+            targetField.addMutuallyExclusiveTerm(notApplicableTerm);
+
             String naBase =
                 "-fx-font-size: 11px; " +
                 "-fx-padding: 2 8; " +
@@ -301,8 +303,9 @@ public class SampleMetadataStep extends AbstractWizardStep {
             Label naChip = new Label(notApplicableTerm.getName());
             naChip.setStyle(naBase);
             naChip.setTooltip(new Tooltip(
-                "Mark as not applicable to this dataset (" + notApplicableTerm.getAccession() + ").\n"
-                + "This replaces any other selections in this field."));
+                "Select " + notApplicableTerm.getName() + " for this dataset ("
+                + notApplicableTerm.getAccession() + ").\n"
+                + "Remove it before adding other selections in this field."));
             naChip.setOnMouseEntered(e -> naChip.setStyle(naHover));
             naChip.setOnMouseExited(e -> naChip.setStyle(naBase));
             naChip.setOnMouseClicked(e -> targetField.selectExclusive(notApplicableTerm));
@@ -480,7 +483,7 @@ public class SampleMetadataStep extends AbstractWizardStep {
         // Populate modifications
         if (!data.modifications().isEmpty()) {
             modificationField.setSelectedTerms(data.modifications().stream().toList());
-            for (CvParam mod : data.modifications()) {
+            for (CvParam mod : modificationField.getSelectedTerms()) {
                 model.addModification(mod);
             }
         }

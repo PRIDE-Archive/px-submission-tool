@@ -10,15 +10,17 @@ import javafx.geometry.Pos;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.*;
-import javafx.util.Duration;
 import uk.ac.ebi.pride.data.model.CvParam;
 import uk.ac.ebi.pride.pxsubmit.service.OlsService;
 import uk.ac.ebi.pride.pxsubmit.service.OlsService.OlsOntology;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
@@ -62,6 +64,7 @@ public class OlsAutocomplete extends VBox {
     // Data
     private final ObservableList<CvParam> selectedTerms = FXCollections.observableArrayList();
     private final ObservableList<CvParam> suggestions = FXCollections.observableArrayList();
+    private final Set<String> mutuallyExclusiveTermAccessions = new HashSet<>();
     private List<CvParam> commonTerms;
 
     // State
@@ -72,6 +75,7 @@ public class OlsAutocomplete extends VBox {
     // Debounce timer
     private Timer debounceTimer;
     private static final long DEBOUNCE_DELAY = 300; // ms
+    private boolean showingExclusiveSelectionMessage;
 
     // Callbacks
     private Consumer<CvParam> onTermSelected;
@@ -243,9 +247,10 @@ public class OlsAutocomplete extends VBox {
             }
         });
 
-        // Update chips when selectedTerms change
+        // Update chips and input availability when selectedTerms change
         selectedTerms.addListener((javafx.collections.ListChangeListener.Change<? extends CvParam> c) -> {
             updateChips();
+            updateExclusiveSelectionState();
         });
     }
 
@@ -313,7 +318,7 @@ public class OlsAutocomplete extends VBox {
 
         // Check if already selected
         boolean alreadySelected = selectedTerms.stream()
-                .anyMatch(t -> t.getAccession().equals(term.getAccession()));
+                .anyMatch(t -> java.util.Objects.equals(t.getAccession(), term.getAccession()));
 
         if (alreadySelected) {
             hideSuggestions();
@@ -321,8 +326,15 @@ public class OlsAutocomplete extends VBox {
             return;
         }
 
-        if (!multiSelect.get()) {
-            selectedTerms.clear();
+        CvParam selectedExclusiveTerm = getSelectedMutuallyExclusiveTerm();
+        if (selectedExclusiveTerm != null && !isMutuallyExclusiveTerm(term)) {
+            showExclusiveSelectionMessage(selectedExclusiveTerm);
+            clearSearchFieldSafely();
+            return;
+        }
+
+        if (isMutuallyExclusiveTerm(term) || !multiSelect.get()) {
+            removeAllSelectedTerms();
         }
 
         selectedTerms.add(term);
@@ -358,6 +370,12 @@ public class OlsAutocomplete extends VBox {
         selectedTerms.remove(term);
         if (onTermRemoved != null) {
             onTermRemoved.accept(term);
+        }
+    }
+
+    private void removeAllSelectedTerms() {
+        for (CvParam selectedTerm : new ArrayList<>(selectedTerms)) {
+            removeTerm(selectedTerm);
         }
     }
 
@@ -406,6 +424,7 @@ public class OlsAutocomplete extends VBox {
     private void hideSuggestions() {
         suggestionsPopup.setVisible(false);
         suggestionsPopup.setManaged(false);
+        showingExclusiveSelectionMessage = false;
         suggestions.clear();
         setSuggestionListVisible(false);
         hideIssueLink();
@@ -424,6 +443,41 @@ public class OlsAutocomplete extends VBox {
     private void hideIssueLink() {
         issueLink.setVisible(false);
         issueLink.setManaged(false);
+    }
+
+    private void showExclusiveSelectionMessage(CvParam exclusiveTerm) {
+        showSuggestions();
+        showingExclusiveSelectionMessage = true;
+        statusLabel.setText("Remove \"" + exclusiveTerm.getName() + "\" before selecting another term.");
+        statusLabel.setVisible(true);
+        statusLabel.setManaged(true);
+        setSuggestionListVisible(false);
+        hideIssueLink();
+    }
+
+    private boolean isMutuallyExclusiveTerm(CvParam term) {
+        return term != null
+                && term.getAccession() != null
+                && mutuallyExclusiveTermAccessions.contains(term.getAccession());
+    }
+
+    private CvParam getSelectedMutuallyExclusiveTerm() {
+        return selectedTerms.stream()
+                .filter(this::isMutuallyExclusiveTerm)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private void updateExclusiveSelectionState() {
+        boolean blocked = getSelectedMutuallyExclusiveTerm() != null;
+        searchField.setEditable(!blocked);
+        searchField.setDisable(blocked);
+        if (blocked) {
+            clearSearchFieldSafely();
+            hideSuggestions();
+        } else if (showingExclusiveSelectionMessage) {
+            hideSuggestions();
+        }
     }
 
     private void openIssueLink() {
@@ -472,7 +526,13 @@ public class OlsAutocomplete extends VBox {
      * Set selected terms
      */
     public void setSelectedTerms(List<CvParam> terms) {
-        selectedTerms.setAll(terms);
+        if (terms == null) {
+            selectedTerms.clear();
+        } else {
+            selectedTerms.setAll(terms);
+        }
+        enforceMutuallyExclusiveSelection();
+        updateExclusiveSelectionState();
     }
 
     /**
@@ -546,6 +606,48 @@ public class OlsAutocomplete extends VBox {
     }
 
     /**
+     * Mark a term as mutually exclusive with every other selection in this
+     * field. When selected, it clears existing selections and blocks additional
+     * terms until the user removes it.
+     */
+    public void addMutuallyExclusiveTerm(CvParam term) {
+        if (term == null || term.getAccession() == null || term.getAccession().isBlank()) {
+            return;
+        }
+        mutuallyExclusiveTermAccessions.add(term.getAccession());
+        enforceMutuallyExclusiveSelection();
+        updateExclusiveSelectionState();
+    }
+
+    /**
+     * Replace the complete set of mutually exclusive terms for this field.
+     */
+    public void setMutuallyExclusiveTerms(Collection<CvParam> terms) {
+        mutuallyExclusiveTermAccessions.clear();
+        if (terms != null) {
+            for (CvParam term : terms) {
+                if (term != null && term.getAccession() != null && !term.getAccession().isBlank()) {
+                    mutuallyExclusiveTermAccessions.add(term.getAccession());
+                }
+            }
+        }
+        enforceMutuallyExclusiveSelection();
+        updateExclusiveSelectionState();
+    }
+
+    private void enforceMutuallyExclusiveSelection() {
+        CvParam exclusiveTerm = getSelectedMutuallyExclusiveTerm();
+        if (exclusiveTerm == null || selectedTerms.size() <= 1) {
+            return;
+        }
+        for (CvParam selectedTerm : new ArrayList<>(selectedTerms)) {
+            if (selectedTerm != exclusiveTerm) {
+                removeTerm(selectedTerm);
+            }
+        }
+    }
+
+    /**
      * Get the ontology this component searches
      */
     public OlsOntology getOntology() {
@@ -577,9 +679,7 @@ public class OlsAutocomplete extends VBox {
         if (term == null) {
             return;
         }
-        for (CvParam existing : new java.util.ArrayList<>(selectedTerms)) {
-            removeTerm(existing);
-        }
+        removeAllSelectedTerms();
         selectTerm(term);
     }
 

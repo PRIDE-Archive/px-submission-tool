@@ -1,6 +1,8 @@
 package uk.ac.ebi.pride.pxsubmit.controller;
 
 import javafx.application.Platform;
+import javafx.beans.property.BooleanProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -15,13 +17,11 @@ import javafx.stage.Stage;
 import uk.ac.ebi.pride.archive.dataprovider.file.ProjectFileType;
 import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
-import uk.ac.ebi.pride.pxsubmit.model.SdrfValidationTracker;
 import uk.ac.ebi.pride.pxsubmit.service.SdrfParserService;
 import uk.ac.ebi.pride.pxsubmit.service.SdrfValidationService;
 import uk.ac.ebi.pride.pxsubmit.service.ServiceFactory;
 import uk.ac.ebi.pride.pxsubmit.service.WebSubIncomingFileValidationService;
 import uk.ac.ebi.pride.pxsubmit.util.FileNameValidator;
-import uk.ac.ebi.pride.pxsubmit.util.FileTypeDetector;
 import uk.ac.ebi.pride.pxsubmit.view.component.FileClassificationPanel;
 import uk.ac.ebi.pride.pxsubmit.view.component.FileTableView;
 import uk.ac.ebi.pride.pxsubmit.view.component.ValidationFeedback;
@@ -44,7 +44,7 @@ import java.util.stream.Collectors;
 
 /**
  * Step for selecting and categorizing submission files.
- * Features drag-drop support and automatic file type detection.
+ * Features drag-drop support and API-backed file type validation.
  */
 public class FileSelectionStep extends AbstractWizardStep {
 
@@ -60,9 +60,14 @@ public class FileSelectionStep extends AbstractWizardStep {
     private Button removeSelectedButton;
     private ProgressBar validationProgress;
     private Label validationStatus;
+    private final BooleanProperty validationActionVisible = new SimpleBooleanProperty(false);
+    private final BooleanProperty validationActionEnabled = new SimpleBooleanProperty(false);
 
     /** Absolute file path → incoming-file validation passed (table status column). */
     private final Map<String, Boolean> prideValidationByPath = new HashMap<>();
+    /** Absolute file path → file type/category returned by incoming-file validation. */
+    private final Map<String, String> responseFileTypeByPath = new HashMap<>();
+    private boolean incomingFileValidationPassed;
 
     private final WebSubIncomingFileValidationService webSubIncomingFileValidationService =
             ServiceFactory.getInstance().createWebSubIncomingFileValidationService();
@@ -93,7 +98,7 @@ public class FileSelectionStep extends AbstractWizardStep {
 
         Label instructionLabel = new Label(
             "Add files using the buttons below or drag and drop files into the table. " +
-            "File types will be automatically detected but you can change them manually.");
+            "Click Validate Files to check them and apply the file types returned by the service.");
         instructionLabel.setWrapText(true);
         instructionLabel.setStyle("-fx-text-fill: #666; -fx-font-size: 11px;");
 
@@ -118,7 +123,9 @@ public class FileSelectionStep extends AbstractWizardStep {
         // File classification panel
         classificationPanel = new FileClassificationPanel();
         classificationPanel.setShowDetails(true);
-        classificationPanel.setShowWarnings(true);
+        classificationPanel.setShowWarnings(false);
+        classificationPanel.setVisible(false);
+        classificationPanel.setManaged(false);
         classificationPanel.setOnTypeSelected((type, files) -> {
             // Filter table to show only files of this type
             fileTable.filterByType(type);
@@ -132,14 +139,14 @@ public class FileSelectionStep extends AbstractWizardStep {
         fileTable.setDataFiles(model.getFiles());
         fileTable.setOnFilesDropped(this::addFilesFromDrop);
         fileTable.setOnFileRemoved(this::removeFile);
-        fileTable.setOnFileTypeChanged(this::onFileTypeChanged);
         fileTable.setChecksumLookup(df -> model.getChecksum(df));
         fileTable.setPrideValidationLookup(this::lookupPrideValidationForTable);
         fileTable.setSdrfValidationLookup(this::lookupSdrfValidationForTable);
+        fileTable.setResponseFileTypeLookup(this::lookupResponseFileTypeForTable);
 
         // Enable remove button when selection changes
         fileTable.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-            removeSelectedButton.setDisable(fileTable.getSelectionModel().isEmpty());
+            updateFileActionButtons();
         });
 
         // Search field right above the table, aligned right
@@ -199,6 +206,8 @@ public class FileSelectionStep extends AbstractWizardStep {
         // Update summary when files change
         model.getFiles().addListener((javafx.collections.ListChangeListener.Change<? extends DataFile> c) -> {
             updateSummary();
+            syncValidationStatusWithCurrentFiles();
+            updateFileActionButtons();
             if (wizardController != null) {
                 wizardController.refreshStepIndicator();
             }
@@ -206,6 +215,7 @@ public class FileSelectionStep extends AbstractWizardStep {
 
         ensureSdrfTemplatesLoaded();
         updateSummary();
+        updateFileActionButtons();
     }
 
     @Override
@@ -216,7 +226,6 @@ public class FileSelectionStep extends AbstractWizardStep {
 
     @Override
     public boolean validate() {
-        classificationPanel.setFiles(model.getFiles());
         List<File> invalidNamedFiles = getFilesWithInvalidSubmissionNames();
         if (!invalidNamedFiles.isEmpty()) {
             updateSummary();
@@ -224,17 +233,48 @@ public class FileSelectionStep extends AbstractWizardStep {
             return false;
         }
 
-        if (model.getFiles().isEmpty() || !classificationPanel.hasAllMandatoryFiles()) {
+        if (model.getFiles().isEmpty()) {
             return false;
         }
 
-        if (!runWebSubIncomingFileValidation()) {
-            updateSummary();
+        if (!hasCurrentSuccessfulIncomingFileValidation()) {
+            validationFeedback.clear();
+            validationFeedback.addInfo("Validate files before continuing.");
             return false;
         }
 
         updateSummary();
         return true;
+    }
+
+    public BooleanProperty validationActionEnabledProperty() {
+        return validationActionEnabled;
+    }
+
+    public BooleanProperty validationActionVisibleProperty() {
+        return validationActionVisible;
+    }
+
+    public boolean validateUploadedFiles() {
+        List<File> invalidNamedFiles = getFilesWithInvalidSubmissionNames();
+        if (!invalidNamedFiles.isEmpty()) {
+            updateSummary();
+            showInvalidFileNamesWarning("Invalid File Names", invalidNamedFiles);
+            return false;
+        }
+
+        if (model.getFiles().isEmpty()) {
+            validationFeedback.clear();
+            validationFeedback.addError("Add files before validation.");
+            return false;
+        }
+
+        if (!requiresIncomingFileValidation()) {
+            updateSummary();
+            return true;
+        }
+
+        return runWebSubIncomingFileValidation();
     }
 
     /** Refreshes file table SDRF status icons after validation on the SDRF step. */
@@ -604,7 +644,9 @@ public class FileSelectionStep extends AbstractWizardStep {
                 if (!exists) {
                     DataFile dataFile = new DataFile();
                     dataFile.setFile(file);
-                    dataFile.setFileType(detectFileType(file));
+                    if (SdrfParserService.isSdrfFile(file)) {
+                        dataFile.setFileType(ProjectFileType.EXPERIMENTAL_DESIGN);
+                    }
                     model.addFile(dataFile);
                     logger.debug("Added file: {} (type: {})", file.getName(), dataFile.getFileType());
                     addedCount++;
@@ -614,10 +656,11 @@ public class FileSelectionStep extends AbstractWizardStep {
 
         if (addedCount > 0) {
             logger.info("Added {} file(s) to submission", addedCount);
+            syncValidationStatusWithCurrentFiles();
         }
 
         updateSummary();
-        syncValidationStatusWithCurrentFiles();
+        updateFileActionButtons();
     }
 
     /**
@@ -639,28 +682,6 @@ public class FileSelectionStep extends AbstractWizardStep {
     }
 
     /**
-     * Detect file type using FileTypeDetector
-     */
-    private ProjectFileType detectFileType(File file) {
-        try {
-            return FileTypeDetector.detectFileType(file);
-        } catch (Exception e) {
-            // Handle files without extensions or other detection errors
-            logger.warn("Could not detect file type for: {} - {}", file.getName(), e.getMessage());
-            System.err.println("Warning: Could not detect file type for: " + file.getName() + " - " + e.getMessage());
-
-            // For files without extensions, try to infer from name
-            String name = file.getName().toLowerCase();
-            if (name.equals("readme") || name.equals("license") || name.equals("changelog")) {
-                return ProjectFileType.OTHER;
-            }
-
-            // Default to OTHER for unknown files
-            return ProjectFileType.OTHER;
-        }
-    }
-
-    /**
      * Remove selected files
      */
     private void removeSelected() {
@@ -672,8 +693,9 @@ public class FileSelectionStep extends AbstractWizardStep {
             model.removeFile(file);
         }
         fileTable.getSelectionModel().clearSelection();
-        updateSummary();
         syncValidationStatusWithCurrentFiles();
+        updateSummary();
+        updateFileActionButtons();
     }
 
     /**
@@ -681,114 +703,70 @@ public class FileSelectionStep extends AbstractWizardStep {
      */
     private void removeFile(DataFile file) {
         model.removeFile(file);
-        updateSummary();
         syncValidationStatusWithCurrentFiles();
-    }
-
-    /**
-     * Handle file type change
-     */
-    private void onFileTypeChanged(DataFile file) {
-        logger.debug("File type changed for {}: {}", file.getFileName(), file.getFileType());
         updateSummary();
-        syncValidationStatusWithCurrentFiles();
+        updateFileActionButtons();
     }
 
     /**
      * Update the summary label, classification panel, and validation feedback
      */
     private void updateSummary() {
-        // Update classification panel
-        classificationPanel.setFiles(model.getFiles());
+        refreshFileClassificationVisibility();
 
-        // Clear and update validation feedback
         validationFeedback.clear();
 
-        List<File> sdrfFiles = getSdrfFiles();
-        boolean hasSdrf = !sdrfFiles.isEmpty();
         List<File> invalidNamedFiles = getFilesWithInvalidSubmissionNames();
         boolean hasInvalidFileNames = !invalidNamedFiles.isEmpty();
         int total = model.getFiles().size();
-        SdrfValidationTracker sdrfTracker = model.getSdrfValidation();
-        boolean sdrfValidationPassed = sdrfTracker.allMarkedPassed(sdrfFiles);
-
-        setValid(classificationPanel.hasAllMandatoryFiles() && !hasInvalidFileNames);
+        boolean requiresIncomingValidation = requiresIncomingFileValidation();
+        boolean hasValidatedCurrentFiles = hasCurrentSuccessfulIncomingFileValidation();
 
         if (total == 0) {
             summaryLabel.setText("No files added - drag and drop files or use the buttons above");
             summaryLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #666;");
-            validationFeedback.addInfo("Add your RAW files (mandatory) and analysis outputs to proceed");
+            validationFeedback.addInfo("Add files to continue");
+            refreshFileStepState();
             return;
         }
 
-        // Count file types
-        long rawCount = model.getFiles().stream()
-            .filter(f -> f.getFileType() == ProjectFileType.RAW).count();
-        long analysisCount = model.getFiles().stream()
-            .filter(f -> f.getFileType() == ProjectFileType.SEARCH).count();
-        long resultCount = model.getFiles().stream()
-            .filter(f -> f.getFileType() == ProjectFileType.RESULT).count();
-        boolean hasFasta = model.getFiles().stream()
-            .anyMatch(f -> FileTypeDetector.isFastaFile(f.getFile()));
-
         if (hasInvalidFileNames) {
+            summaryLabel.setText(total + " files added - invalid file names");
+            summaryLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #dc3545;");
             validationFeedback.addError(createInvalidFileNameSummary(invalidNamedFiles));
+            refreshFileStepState();
+            return;
         }
 
-        // File requirement validation
-        if (rawCount == 0) {
-            validationFeedback.addError("RAW files are required - add your instrument output files (.raw, .wiff, .d, .mzML)");
-        }
-
-        if (analysisCount == 0 && resultCount == 0) {
-            validationFeedback.addWarning("No analysis files detected - consider adding search engine outputs");
-        }
-
-        if (!hasFasta) {
-            validationFeedback.addInfo("Recommended: Add a FASTA database for sequence validation");
-        }
-
-        if (hasSdrf) {
-            validationFeedback.addInfo("SDRF/experimental design file included - metadata will be auto-populated");
-            if (!sdrfValidationPassed && sdrfTracker.hasAnyFailed(sdrfFiles)) {
-                validationFeedback.addError(
-                        "SDRF validation failed for one or more files - fix errors on the SDRF Validation step");
-            } else if (!sdrfValidationPassed) {
-                validationFeedback.addInfo("Continue to the SDRF Validation step to validate your file(s)");
-            } else {
-                validationFeedback.addInfo("SDRF validation passed");
-            }
-        }
-
-        // Success messages
-        if (rawCount > 0) {
-            validationFeedback.addInfo(rawCount + " RAW file(s) detected");
-        }
-
-        // Show validation status based on mandatory files
-        if (classificationPanel.hasAllMandatoryFiles()) {
-            if (hasInvalidFileNames) {
-                summaryLabel.setText(total + " files added - invalid file names");
-                summaryLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #dc3545;");
-            } else {
-                summaryLabel.setText(total + " files ready for submission");
-                summaryLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #28a745;");
-            }
-            if (!validationFeedback.hasErrors()) {
-                validationFeedback.addInfo("All mandatory files present - you can proceed to the next step");
-            }
+        if (!requiresIncomingValidation) {
+            summaryLabel.setText(total + " SDRF file(s) added");
+            summaryLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #28a745;");
+            validationFeedback.addInfo("SDRF files do not need incoming file validation - you can proceed");
+        } else if (hasValidatedCurrentFiles) {
+            summaryLabel.setText(total + " files validated");
+            summaryLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #28a745;");
+            validationFeedback.addInfo("File validation passed - you can proceed to the next step");
         } else {
-            summaryLabel.setText(total + " files added - missing mandatory files");
-            summaryLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #ffc107;");
+            summaryLabel.setText(total + " files added - validation required");
+            summaryLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #666;");
+            validationFeedback.addInfo("Click Validate Files before continuing");
         }
+
+        refreshFileStepState();
     }
 
     /**
-     * Runs web-submissions incoming-file validation when the user clicks Next (modal progress dialog).
+     * Runs web-submissions incoming-file validation from the footer Validate Files button.
      */
     private boolean runWebSubIncomingFileValidation() {
+        List<DataFile> filesToValidate = getFilesRequiringIncomingValidation();
+        if (filesToValidate.isEmpty()) {
+            updateSummary();
+            return true;
+        }
+
         if (model.isTrainingMode()) {
-            applyPrideValidationToTable(buildAllSelectedFilesValidMap());
+            applyPrideValidationToTable(buildFilesValidMap(filesToValidate), buildCurrentFileTypeMap(filesToValidate), true);
             return true;
         }
 
@@ -833,7 +811,7 @@ public class FileSelectionStep extends AbstractWizardStep {
                 Platform.runLater(() ->
                     messageLabel.setText("Checking files with the web submissions validation service..."));
                 WebSubIncomingFileValidationService.ValidationResult result =
-                        webSubIncomingFileValidationService.validate(new ArrayList<>(model.getFiles()), token);
+                        webSubIncomingFileValidationService.validate(new ArrayList<>(filesToValidate), token);
                 Platform.runLater(() -> {
                     applyWebSubIncomingFileValidationResult(result);
                     passed.set(result.valid());
@@ -870,9 +848,14 @@ public class FileSelectionStep extends AbstractWizardStep {
     }
 
     private void applyWebSubIncomingFileValidationResult(WebSubIncomingFileValidationService.ValidationResult result) {
-        applyPrideValidationToTable(result.fileValidByPath());
+        applyPrideValidationToTable(result.fileValidByPath(), result.fileTypeByPath(), result.valid());
         validationFeedback.clear();
         if (result.valid()) {
+            if (result.summaryMessage() != null && !result.summaryMessage().isBlank()) {
+                validationFeedback.addInfo(result.summaryMessage());
+            } else {
+                validationFeedback.addInfo("File validation passed.");
+            }
             for (String warning : result.warnings()) {
                 validationFeedback.addWarning(warning);
             }
@@ -893,11 +876,21 @@ public class FileSelectionStep extends AbstractWizardStep {
         }
     }
 
-    private Map<String, Boolean> buildAllSelectedFilesValidMap() {
+    private Map<String, Boolean> buildFilesValidMap(List<DataFile> files) {
         Map<String, Boolean> results = new HashMap<>();
-        for (DataFile file : model.getFiles()) {
+        for (DataFile file : files) {
             if (file.getFile() != null) {
                 results.put(file.getFile().getAbsolutePath(), true);
+            }
+        }
+        return results;
+    }
+
+    private Map<String, String> buildCurrentFileTypeMap(List<DataFile> files) {
+        Map<String, String> results = new HashMap<>();
+        for (DataFile file : files) {
+            if (file.getFile() != null && file.getFileType() != null) {
+                results.put(file.getFile().getAbsolutePath(), file.getFileType().name());
             }
         }
         return results;
@@ -922,16 +915,87 @@ public class FileSelectionStep extends AbstractWizardStep {
             }
         }
         prideValidationByPath.keySet().removeIf(path -> !currentPaths.contains(path));
+        responseFileTypeByPath.keySet().removeIf(path -> !currentPaths.contains(path));
         model.getSdrfValidation().syncFileSet(getSdrfFiles());
         fileTable.refreshValidationStatus();
     }
 
-    private void applyPrideValidationToTable(Map<String, Boolean> resultsByPath) {
+    private void applyPrideValidationToTable(Map<String, Boolean> resultsByPath, Map<String, String> responseFileTypesByPath,
+                                             boolean validationPassed) {
         prideValidationByPath.clear();
+        incomingFileValidationPassed = validationPassed;
         if (resultsByPath != null) {
             prideValidationByPath.putAll(resultsByPath);
         }
+        responseFileTypeByPath.clear();
+        if (responseFileTypesByPath != null) {
+            responseFileTypeByPath.putAll(responseFileTypesByPath);
+            applyResponseFileTypesToModel(responseFileTypesByPath);
+        }
+        refreshFileClassificationVisibility();
+        refreshFileStepState();
         fileTable.refreshValidationStatus();
+    }
+
+    private void refreshFileClassificationVisibility() {
+        List<DataFile> categorizedFiles = model.getFiles().stream()
+            .filter(dataFile -> dataFile.getFile() != null
+                && dataFile.getFileType() != null
+                && responseFileTypeByPath.containsKey(dataFile.getFile().getAbsolutePath()))
+            .collect(Collectors.toList());
+        boolean showClassification = !categorizedFiles.isEmpty();
+        classificationPanel.setVisible(showClassification);
+        classificationPanel.setManaged(showClassification);
+        if (showClassification) {
+            classificationPanel.setFiles(categorizedFiles);
+        } else {
+            classificationPanel.setFiles(List.of());
+            fileTable.filterByType(null);
+        }
+    }
+
+    private void refreshFileStepState() {
+        boolean hasFiles = !model.getFiles().isEmpty();
+        boolean hasInvalidFileNames = !getFilesWithInvalidSubmissionNames().isEmpty();
+        boolean requiresIncomingValidation = hasFiles && requiresIncomingFileValidation();
+        validationActionVisible.set(requiresIncomingValidation);
+        validationActionEnabled.set(requiresIncomingValidation && !hasInvalidFileNames);
+        setValid(hasFiles && !hasInvalidFileNames && hasCurrentSuccessfulIncomingFileValidation());
+    }
+
+    private void applyResponseFileTypesToModel(Map<String, String> responseFileTypesByPath) {
+        for (DataFile dataFile : model.getFiles()) {
+            if (dataFile.getFile() == null) {
+                continue;
+            }
+            String responseFileType = responseFileTypesByPath.get(dataFile.getFile().getAbsolutePath());
+            ProjectFileType projectFileType = toProjectFileType(responseFileType);
+            if (projectFileType != null) {
+                dataFile.setFileType(projectFileType);
+            }
+        }
+    }
+
+    private ProjectFileType toProjectFileType(String responseFileType) {
+        if (responseFileType == null || responseFileType.isBlank()) {
+            return null;
+        }
+        String normalized = responseFileType.trim()
+            .toUpperCase(java.util.Locale.ROOT)
+            .replace('-', '_')
+            .replace(' ', '_');
+        return switch (normalized) {
+            case "STANDARD", "STANDARD_FILE", "STANDARD_FILE_FORMAT", "STANDARD_FILE_FORMATS" -> ProjectFileType.RESULT;
+            case "ANALYSIS", "ANALYSIS_FILE", "ANALYSIS_FILES", "SEARCH_ENGINE_OUTPUT" -> ProjectFileType.SEARCH;
+            case "SDRF", "EXPERIMENTAL_DESIGN", "SAMPLE_METADATA" -> ProjectFileType.EXPERIMENTAL_DESIGN;
+            default -> {
+                try {
+                    yield ProjectFileType.valueOf(normalized);
+                } catch (IllegalArgumentException e) {
+                    yield null;
+                }
+            }
+        };
     }
 
     private Boolean lookupPrideValidationForTable(DataFile dataFile) {
@@ -939,6 +1003,13 @@ public class FileSelectionStep extends AbstractWizardStep {
             return null;
         }
         return prideValidationByPath.get(dataFile.getFile().getAbsolutePath());
+    }
+
+    private String lookupResponseFileTypeForTable(DataFile dataFile) {
+        if (dataFile == null || dataFile.getFile() == null) {
+            return null;
+        }
+        return responseFileTypeByPath.get(dataFile.getFile().getAbsolutePath());
     }
 
     private Boolean lookupSdrfValidationForTable(DataFile dataFile) {
@@ -950,6 +1021,51 @@ public class FileSelectionStep extends AbstractWizardStep {
             return null;
         }
         return model.getSdrfValidation().lookup(dataFile.getFile().getAbsolutePath());
+    }
+
+    private boolean hasCurrentSuccessfulIncomingFileValidation() {
+        List<DataFile> filesToValidate = getFilesRequiringIncomingValidation();
+        if (filesToValidate.isEmpty()) {
+            return !model.getFiles().isEmpty();
+        }
+        if (!incomingFileValidationPassed) {
+            return false;
+        }
+        for (DataFile dataFile : filesToValidate) {
+            if (dataFile.getFile() == null) {
+                return false;
+            }
+            if (!Boolean.TRUE.equals(prideValidationByPath.get(dataFile.getFile().getAbsolutePath()))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean requiresIncomingFileValidation() {
+        return !getFilesRequiringIncomingValidation().isEmpty();
+    }
+
+    private List<DataFile> getFilesRequiringIncomingValidation() {
+        return model.getFiles().stream()
+            .filter(dataFile -> dataFile.getFile() != null)
+            .filter(dataFile -> !isSdrfDataFile(dataFile))
+            .collect(Collectors.toList());
+    }
+
+    private boolean isSdrfDataFile(DataFile dataFile) {
+        if (dataFile == null || dataFile.getFile() == null) {
+            return false;
+        }
+        return dataFile.getFileType() == ProjectFileType.EXPERIMENTAL_DESIGN
+            || SdrfParserService.isSdrfFile(dataFile.getFile());
+    }
+
+    private void updateFileActionButtons() {
+        if (removeSelectedButton != null && fileTable != null) {
+            removeSelectedButton.setDisable(fileTable.getSelectionModel().isEmpty());
+        }
+        refreshFileStepState();
     }
 
     private List<File> getFilesWithInvalidSubmissionNames() {

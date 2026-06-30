@@ -368,16 +368,19 @@ public class WebSubIncomingFileValidationService {
         List<String> errors,
         List<String> warnings,
         String summaryMessage,
-        Map<String, Boolean> fileValidByPath
+        Map<String, Boolean> fileValidByPath,
+        Map<String, String> fileTypeByPath
     ) {
 
         public static ValidationResult from(ValidationResponse response, List<DataFile> files) {
             List<String> errors = new ArrayList<>();
             List<String> warnings = new ArrayList<>();
             Map<String, Boolean> fileValidByPath = buildFileValidityMap(files);
+            Map<String, String> fileTypeByPath = new LinkedHashMap<>();
 
             addResponseMessage(response, errors, warnings);
-            addProcessedFiles(response.getProcessedFiles(), files, fileValidByPath, errors, warnings);
+            addProcessedFiles(response.getProcessedFiles(), files, fileValidByPath, fileTypeByPath, errors, warnings);
+            addResponseFileTypes(response.getFiles(), files, fileTypeByPath);
             addUnprocessedFiles(response.getUnprocessedFiles(), errors);
 
             boolean finished = Boolean.TRUE.equals(response.getFinished())
@@ -400,7 +403,8 @@ public class WebSubIncomingFileValidationService {
                 List.copyOf(errors),
                 List.copyOf(warnings),
                 summary,
-                Map.copyOf(fileValidByPath)
+                Map.copyOf(fileValidByPath),
+                Map.copyOf(fileTypeByPath)
             );
         }
 
@@ -410,6 +414,7 @@ public class WebSubIncomingFileValidationService {
                 List.copyOf(errors),
                 List.of(),
                 errors.isEmpty() ? "Validation failed." : errors.get(0),
+                Map.of(),
                 Map.of()
             );
         }
@@ -462,6 +467,7 @@ public class WebSubIncomingFileValidationService {
             List<FileTransferEntry> processedFiles,
             List<DataFile> files,
             Map<String, Boolean> fileValidByPath,
+            Map<String, String> fileTypeByPath,
             List<String> errors,
             List<String> warnings
         ) {
@@ -473,6 +479,10 @@ public class WebSubIncomingFileValidationService {
                 String path = resolveAbsolutePath(files, entry);
                 if (path != null) {
                     fileValidByPath.put(path, fileValid);
+                    String responseFileType = entry.responseFileType();
+                    if (!isBlank(responseFileType)) {
+                        fileTypeByPath.put(path, responseFileType);
+                    }
                 }
 
                 String severity = entry.progressSeverity();
@@ -490,6 +500,23 @@ public class WebSubIncomingFileValidationService {
             }
             for (FileTransferEntry entry : unprocessedFiles) {
                 errors.add("Validation did not process file: " + entry.displayName());
+            }
+        }
+
+        private static void addResponseFileTypes(
+            Map<String, FileTransferEntry> responseFiles,
+            List<DataFile> files,
+            Map<String, String> fileTypeByPath
+        ) {
+            if (responseFiles == null || responseFiles.isEmpty()) {
+                return;
+            }
+            for (FileTransferEntry entry : responseFiles.values()) {
+                String path = resolveAbsolutePath(files, entry);
+                String responseFileType = entry.responseFileType();
+                if (path != null && !isBlank(responseFileType)) {
+                    fileTypeByPath.putIfAbsent(path, responseFileType);
+                }
             }
         }
 
@@ -715,6 +742,10 @@ public class WebSubIncomingFileValidationService {
 
         public String displayName() {
             return firstNonBlank(name, path, id, "file");
+        }
+
+        public String responseFileType() {
+            return firstNonBlank(category, progress != null ? progress.getRawFileFormatId() : null);
         }
 
         public String getId() {

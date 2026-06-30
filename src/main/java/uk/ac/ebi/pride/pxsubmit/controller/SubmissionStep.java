@@ -813,7 +813,90 @@ public class SubmissionStep extends AbstractWizardStep {
             statusBox.getChildren().add(
                 new Label("You will receive a confirmation email shortly.")
             );
+
+            statusBox.getChildren().add(createFeedbackPanel());
         });
+    }
+
+    private VBox createFeedbackPanel() {
+        VBox panel = new VBox(10);
+        panel.setAlignment(Pos.CENTER_LEFT);
+        panel.setMaxWidth(560);
+        panel.setStyle(
+            "-fx-background-color: #ffffff; " +
+            "-fx-border-color: #dee2e6; " +
+            "-fx-border-radius: 6; " +
+            "-fx-background-radius: 6; " +
+            "-fx-padding: 14;");
+
+        Label title = new Label("Feedback");
+        title.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+
+        Label prompt = new Label("How was your submission experience?");
+        prompt.setStyle("-fx-text-fill: #555;");
+
+        HBox ratingRow = new HBox(8);
+        ratingRow.setAlignment(Pos.CENTER_LEFT);
+        ToggleGroup ratingGroup = new ToggleGroup();
+        String[] ratingLabels = {"Very bad", "Bad", "Ok", "Good", "Very good"};
+
+        for (int i = 0; i < ratingLabels.length; i++) {
+            int rating = i + 1;
+            ToggleButton ratingButton = new ToggleButton("★".repeat(rating) + "\n" + ratingLabels[i]);
+            ratingButton.setToggleGroup(ratingGroup);
+            ratingButton.setUserData(rating);
+            ratingButton.setMinWidth(92);
+            ratingButton.setTooltip(new Tooltip(rating + " star - " + ratingLabels[i]));
+            ratingRow.getChildren().add(ratingButton);
+        }
+
+        TextArea commentArea = new TextArea();
+        commentArea.setPromptText("Add a comment");
+        commentArea.setWrapText(true);
+        commentArea.setPrefRowCount(3);
+        commentArea.setMaxWidth(Double.MAX_VALUE);
+
+        Label feedbackStatus = new Label();
+        feedbackStatus.setVisible(false);
+        feedbackStatus.setManaged(false);
+
+        Button submitButton = new Button("Submit Feedback");
+        submitButton.setDisable(true);
+        submitButton.setStyle("-fx-background-color: #0066cc; -fx-text-fill: white;");
+
+        ratingGroup.selectedToggleProperty().addListener((obs, oldToggle, selectedToggle) ->
+            submitButton.setDisable(selectedToggle == null));
+
+        submitButton.setOnAction(event -> {
+            Toggle selectedToggle = ratingGroup.getSelectedToggle();
+            if (selectedToggle == null) {
+                return;
+            }
+
+            int rating = (Integer) selectedToggle.getUserData();
+            String label = ratingLabels[rating - 1];
+            String comment = commentArea.getText() != null ? commentArea.getText().trim() : "";
+
+            logger.info("User feedback submitted: rating={}/5 ({}) comment={}", rating, label, comment);
+            addLog("Feedback submitted: " + rating + "/5 - " + label);
+            if (!comment.isBlank()) {
+                addLog("Feedback comment: " + comment);
+            }
+
+            feedbackStatus.setText("Thanks for your feedback!");
+            feedbackStatus.setStyle("-fx-text-fill: #28a745; -fx-font-weight: bold;");
+            feedbackStatus.setVisible(true);
+            feedbackStatus.setManaged(true);
+            submitButton.setDisable(true);
+            commentArea.setDisable(true);
+            ratingRow.getChildren().forEach(node -> node.setDisable(true));
+        });
+
+        HBox actionRow = new HBox(10, submitButton, feedbackStatus);
+        actionRow.setAlignment(Pos.CENTER_LEFT);
+
+        panel.getChildren().addAll(title, prompt, ratingRow, commentArea, actionRow);
+        return panel;
     }
 
     private void cancelUpload() {

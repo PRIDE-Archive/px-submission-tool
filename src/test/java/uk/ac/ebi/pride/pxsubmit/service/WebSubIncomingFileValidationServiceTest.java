@@ -47,6 +47,27 @@ class WebSubIncomingFileValidationServiceTest {
     }
 
     @Test
+    void responseWithCategoryAddsFileTypeByPath() throws Exception {
+        Path file = Files.writeString(tempDir.resolve("sample.raw"), "content");
+        DataFile dataFile = new DataFile();
+        dataFile.setFile(file.toFile());
+
+        FileTransferEntry entry = new FileTransferEntry();
+        entry.setName(file.getFileName().toString());
+        entry.setCategory("RAW");
+
+        ValidationResponse response = new ValidationResponse();
+        response.setFinished(true);
+        response.setState("FINISHED");
+        response.setProcessedFiles(List.of(entry));
+
+        ValidationResult result = ValidationResult.from(response, List.of(dataFile));
+
+        assertThat(result.valid()).isTrue();
+        assertThat(result.fileTypeByPath()).containsEntry(file.toFile().getAbsolutePath(), "RAW");
+    }
+
+    @Test
     void responseWithWarningKeepsValidationPassing() throws Exception {
         Path file = Files.writeString(tempDir.resolve("ok.raw"), "content");
         DataFile dataFile = new DataFile();

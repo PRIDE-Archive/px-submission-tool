@@ -245,7 +245,7 @@ public class WelcomeStep extends AbstractWizardStep {
         accountBox.setAlignment(Pos.CENTER_LEFT);
         Label accountCheckIcon = new Label("\u2022");
         accountCheckIcon.setStyle("-fx-font-size: 14px; -fx-text-fill: #333;");
-        Label accountText = new Label("I have a PRIDE account -");
+        Label accountText = new Label(" I have a PRIDE account -");
         Hyperlink registerLink = new Hyperlink("register here");
         registerLink.setPadding(new Insets(0));
         registerLink.setOnAction(e -> openUrl("https://www.ebi.ac.uk/pride/register"));

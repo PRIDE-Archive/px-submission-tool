@@ -167,6 +167,17 @@
                 </tooltip>
             </Button>
 
+            <!-- Step-specific Validate Button -->
+            <Button fx:id="validateButton"
+                    text="Validate"
+                    styleClass="next-button"
+                    visible="false"
+                    managed="false">
+                <tooltip>
+                    <Tooltip text="Validate the current step"/>
+                </tooltip>
+            </Button>
+
             <!-- Next Button -->
             <Button fx:id="nextButton"
                     text="Next"

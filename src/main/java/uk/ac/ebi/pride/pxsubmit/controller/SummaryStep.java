@@ -12,6 +12,7 @@ import uk.ac.ebi.pride.data.model.DataFile;
 import uk.ac.ebi.pride.data.io.SubmissionFileWriter;
 import uk.ac.ebi.pride.pxsubmit.config.AppConfig;
 import uk.ac.ebi.pride.pxsubmit.model.SubmissionModel;
+import uk.ac.ebi.pride.pxsubmit.service.SdrfParserService;
 import uk.ac.ebi.pride.pxsubmit.util.FileTypeDetector;
 import uk.ac.ebi.pride.pxsubmit.view.component.FileClassificationPanel;
 import uk.ac.ebi.pride.pxsubmit.view.component.ValidationFeedback;
@@ -66,6 +67,7 @@ public class SummaryStep extends AbstractWizardStep {
     protected void onStepEntering() {
         // Sync model properties to the Submission object before building summary.
         model.syncMetadataToSubmission();
+        ensureFileTypes(model);
 
         // Rebuild summary each time we enter
         buildSummary();
@@ -374,7 +376,7 @@ public class SummaryStep extends AbstractWizardStep {
         typeCol.setCellValueFactory(param -> {
             ProjectFileType ft = param.getValue().getFileType();
             return new javafx.beans.property.SimpleStringProperty(
-                ft != null ? FileTypeDetector.getDisplayName(ft) : "Other");
+                ft != null ? ft.name() : ProjectFileType.OTHER.name());
         });
         typeCol.setPrefWidth(150);
 
@@ -567,6 +569,7 @@ public class SummaryStep extends AbstractWizardStep {
      * Matches the format used by the old Swing tool on master branch.
      */
     public static void writeSubmissionPxFile(SubmissionModel model, File file) throws Exception {
+        ensureFileTypes(model);
         SubmissionFileWriter.write(model.getSubmission(), file);
 
         // Append lab head ORCID and country (not supported by Contact model, so we add as COM lines)
@@ -575,6 +578,26 @@ public class SummaryStep extends AbstractWizardStep {
 
         // Append tool version and metadata
         appendToolMetadata(file);
+    }
+
+    private static void ensureFileTypes(SubmissionModel model) {
+        for (DataFile dataFile : model.getFiles()) {
+            if (dataFile.getFileType() == null) {
+                dataFile.setFileType(resolveExportFileType(dataFile));
+            }
+        }
+    }
+
+    private static ProjectFileType resolveExportFileType(DataFile dataFile) {
+        if (dataFile == null) {
+            return ProjectFileType.OTHER;
+        }
+        File file = dataFile.getFile();
+        if (file != null && SdrfParserService.isSdrfFile(file)) {
+            return ProjectFileType.EXPERIMENTAL_DESIGN;
+        }
+        ProjectFileType detectedType = FileTypeDetector.detectFileType(dataFile);
+        return detectedType != null ? detectedType : ProjectFileType.OTHER;
     }
 
     /**

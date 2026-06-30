@@ -10,7 +10,6 @@ import javafx.collections.transformation.SortedList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.ComboBoxTableCell;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
@@ -38,7 +37,7 @@ import java.util.function.Predicate;
  *
  * Features:
  * - Virtualized rendering for performance
- * - File type selection via ComboBox
+ * - File type display from incoming-file validation
  * - Validation status indicators
  * - Remove button per row
  * - Drag-and-drop file addition
@@ -70,7 +69,6 @@ public class FileTableView extends TableView<DataFile> {
     // Event handlers
     private Consumer<List<File>> onFilesDropped;
     private Consumer<DataFile> onFileRemoved;
-    private Consumer<DataFile> onFileTypeChanged;
 
     // Master list and filtered/paginated views
     private ObservableList<DataFile> masterList;
@@ -87,6 +85,9 @@ public class FileTableView extends TableView<DataFile> {
     /** SDRF validation: {@code true} passed, {@code false} failed, {@code null} not validated / not SDRF. */
     private Function<DataFile, Boolean> sdrfValidationLookup;
 
+    /** File type/category returned by the incoming-file validation API. */
+    private Function<DataFile, String> responseFileTypeLookup;
+
     // Pagination state
     private final BooleanProperty paginationEnabled = new SimpleBooleanProperty(false);
     private final IntegerProperty currentPage = new SimpleIntegerProperty(0);
@@ -98,7 +99,7 @@ public class FileTableView extends TableView<DataFile> {
     private TableColumn<DataFile, String> nameColumn;
     private TableColumn<DataFile, String> pathColumn;
     private TableColumn<DataFile, Long> sizeColumn;
-    private TableColumn<DataFile, ProjectFileType> typeColumn;
+    private TableColumn<DataFile, String> typeColumn;
     private TableColumn<DataFile, DataFile> statusColumn;
     private TableColumn<DataFile, DataFile> actionsColumn;
 
@@ -113,8 +114,7 @@ public class FileTableView extends TableView<DataFile> {
         // Multi-select
         getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
 
-        // Editable for type column
-        setEditable(true);
+        setEditable(false);
 
         // Fill available width
         setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
@@ -159,23 +159,17 @@ public class FileTableView extends TableView<DataFile> {
         sizeColumn.setMinWidth(80);
         sizeColumn.setStyle("-fx-alignment: CENTER-RIGHT;");
 
-        // Type column (editable)
+        // Type column (populated after incoming-file validation)
         typeColumn = new TableColumn<>("Type");
-        typeColumn.setCellValueFactory(param ->
-            new ReadOnlyObjectWrapper<>(param.getValue().getFileType()));
-        typeColumn.setCellFactory(ComboBoxTableCell.forTableColumn(ProjectFileType.values()));
-        typeColumn.setOnEditCommit(event -> {
-            DataFile dataFile = event.getRowValue();
-            ProjectFileType newType = event.getNewValue();
-            dataFile.setFileType(newType);
-            logger.debug("Changed file type for {}: {}", dataFile.getFileName(), newType);
-            if (onFileTypeChanged != null) {
-                onFileTypeChanged.accept(dataFile);
-            }
+        typeColumn.setCellValueFactory(param -> {
+            DataFile dataFile = param.getValue();
+            String responseType = responseFileTypeLookup != null ? responseFileTypeLookup.apply(dataFile) : null;
+            return new ReadOnlyObjectWrapper<>(responseType != null ? responseType : "");
         });
+        typeColumn.setCellFactory(col -> new TypeCell());
         typeColumn.setPrefWidth(150);
         typeColumn.setMinWidth(120);
-        typeColumn.setEditable(true);
+        typeColumn.setEditable(false);
 
         // Status column
         statusColumn = new TableColumn<>("Status");
@@ -306,21 +300,9 @@ public class FileTableView extends TableView<DataFile> {
                 return;
             }
 
-            File file = dataFile.getFile();
             setGraphic(null);
-            if (file == null || !file.exists()) {
-                setStyle("-fx-text-fill: #dc3545;");
-                setText("!");
-                setTooltip(new Tooltip("File not found"));
-            } else if (!file.canRead()) {
-                setStyle("-fx-text-fill: #ffc107;");
-                setText("!");
-                setTooltip(new Tooltip("File not readable"));
-            } else {
-                setStyle("-fx-text-fill: #28a745;");
-                setText("\u2713");
-                setTooltip(new Tooltip("File OK"));
-            }
+            setText(null);
+            setTooltip(null);
         }
     }
 
@@ -338,6 +320,23 @@ public class FileTableView extends TableView<DataFile> {
         label.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 12px;");
         pane.getChildren().add(label);
         return pane;
+    }
+
+    /**
+     * Cell for displaying file type/category from validation API.
+     */
+    private static class TypeCell extends TableCell<DataFile, String> {
+        @Override
+        protected void updateItem(String fileType, boolean empty) {
+            super.updateItem(fileType, empty);
+            if (empty || fileType == null || fileType.isBlank()) {
+                setText(null);
+                setTooltip(null);
+            } else {
+                setText(fileType);
+                setTooltip(new Tooltip("File type returned by validation service"));
+            }
+        }
     }
 
     /**
@@ -387,10 +386,6 @@ public class FileTableView extends TableView<DataFile> {
         this.onFileRemoved = handler;
     }
 
-    public void setOnFileTypeChanged(Consumer<DataFile> handler) {
-        this.onFileTypeChanged = handler;
-    }
-
     /**
      * Set a function to look up checksums for files (used in search filtering).
      */
@@ -412,6 +407,14 @@ public class FileTableView extends TableView<DataFile> {
      */
     public void setSdrfValidationLookup(Function<DataFile, Boolean> lookup) {
         this.sdrfValidationLookup = lookup;
+        refresh();
+    }
+
+    /**
+     * Lookup response file type/category returned by incoming-file validation.
+     */
+    public void setResponseFileTypeLookup(Function<DataFile, String> lookup) {
+        this.responseFileTypeLookup = lookup;
         refresh();
     }
 
@@ -548,8 +551,11 @@ public class FileTableView extends TableView<DataFile> {
             if (file.getFilePath() != null && file.getFilePath().toLowerCase().contains(lowerText)) {
                 return true;
             }
-            if (file.getFileType() != null && file.getFileType().name().toLowerCase().contains(lowerText)) {
-                return true;
+            if (responseFileTypeLookup != null) {
+                String responseType = responseFileTypeLookup.apply(file);
+                if (responseType != null && responseType.toLowerCase().contains(lowerText)) {
+                    return true;
+                }
             }
             if (checksumLookup != null) {
                 String checksum = checksumLookup.apply(file);

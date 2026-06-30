@@ -172,6 +172,35 @@ public class SdrfValidationStep extends AbstractWizardStep {
         notifyFileSelectionStep();
     }
 
+    public void resetForNewLogin() {
+        if (templatesField != null) {
+            templatesField.setSelectedItems(List.of());
+            templatesField.getSearchField().clear();
+        }
+        if (skipOntologyCheck != null) {
+            skipOntologyCheck.setSelected(false);
+        }
+        if (useOlsCacheOnlyCheck != null) {
+            useOlsCacheOnlyCheck.setSelected(true);
+            useOlsCacheOnlyCheck.setDisable(false);
+        }
+        if (statusLabel != null) {
+            statusLabel.setText("Choose template(s) and click Validate SDRF.");
+            statusLabel.setStyle("-fx-text-fill: #555;");
+        }
+        if (resultSummary != null) {
+            resultSummary.setText("No validation result yet.");
+            resultSummary.setStyle("-fx-text-fill: #555;");
+        }
+        if (issuesArea != null) {
+            issuesArea.clear();
+        }
+        if (validateButton != null) {
+            validateButton.setDisable(false);
+        }
+        setValid(false);
+    }
+
     @Override
     public boolean validate() {
         List<File> sdrfFiles = sdrfValidationService.findSdrfFiles(model.getFiles());

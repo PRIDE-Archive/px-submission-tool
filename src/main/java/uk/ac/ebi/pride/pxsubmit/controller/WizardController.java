@@ -67,6 +67,7 @@ public class WizardController implements Initializable {
     @FXML private Button helpButton;
     @FXML private Button cancelButton;
     @FXML private Button backButton;
+    @FXML private Button validateButton;
     @FXML private Button nextButton;
 
     // Model
@@ -181,6 +182,10 @@ public class WizardController implements Initializable {
         // Set button actions
         cancelButton.setOnAction(e -> handleCancel());
         backButton.setOnAction(e -> handleBack());
+        if (validateButton != null) {
+            validateButton.setOnAction(e -> handleValidate());
+            hideValidateButton();
+        }
         nextButton.setOnAction(e -> handleNext());
         helpButton.setOnAction(e -> handleHelp());
 
@@ -197,6 +202,8 @@ public class WizardController implements Initializable {
                     newStep::getNextButtonText,
                     newStep.validProperty()
                 ));
+
+                configureValidateButton(newStep);
             }
         });
     }
@@ -280,6 +287,10 @@ public class WizardController implements Initializable {
      * Navigate to a specific step by index
      */
     public void goToStep(int index) {
+        goToStep(index, true);
+    }
+
+    private void goToStep(int index, boolean callCurrentStepLeaving) {
         if (index < 0 || index >= steps.size()) {
             logger.warn("Invalid step index: {}", index);
             return;
@@ -299,7 +310,7 @@ public class WizardController implements Initializable {
         WizardStep newStep = steps.get(index);
 
         // Call lifecycle method on old step
-        if (oldStep != null) {
+        if (oldStep != null && callCurrentStepLeaving) {
             oldStep.onLeaving();
         }
 
@@ -320,9 +331,13 @@ public class WizardController implements Initializable {
      * Navigate to a step by ID
      */
     public void goToStep(String stepId) {
+        goToStep(stepId, true);
+    }
+
+    private void goToStep(String stepId, boolean callCurrentStepLeaving) {
         for (int i = 0; i < steps.size(); i++) {
             if (steps.get(i).getId().equals(stepId)) {
-                goToStep(i);
+                goToStep(i, callCurrentStepLeaving);
                 return;
             }
         }
@@ -389,14 +404,33 @@ public class WizardController implements Initializable {
     }
 
     /**
+     * Handle step-specific Validate button.
+     */
+    private void handleValidate() {
+        WizardStep step = currentStep.get();
+        if (step instanceof FileSelectionStep fileSelectionStep) {
+            fileSelectionStep.validateUploadedFiles();
+        }
+    }
+
+    /**
      * Handle Logout button - clear credentials and navigate back to login step
      */
     private void handleLogout() {
         logger.info("Logout requested");
-        model.setLoggedIn(false);
-        model.setPassword((char[]) null);
-        model.setAuthToken(null);
-        goToStep("login");
+        String email = model.getUserName();
+        model.reset();
+        model.setUserName(email);
+        resetSdrfValidationStepForNewLogin();
+        goToStep("login", false);
+    }
+
+    private void resetSdrfValidationStepForNewLogin() {
+        getStep("sdrf-validation").ifPresent(step -> {
+            if (step instanceof SdrfValidationStep sdrfValidationStep) {
+                sdrfValidationStep.resetForNewLogin();
+            }
+        });
     }
 
     /**
@@ -407,6 +441,39 @@ public class WizardController implements Initializable {
         if (onHelpHandler != null) {
             onHelpHandler.run();
         }
+    }
+
+    private void configureValidateButton(WizardStep step) {
+        if (validateButton == null) {
+            return;
+        }
+
+        validateButton.disableProperty().unbind();
+        if (step instanceof FileSelectionStep fileSelectionStep) {
+            validateButton.setText("Validate Files");
+            validateButton.visibleProperty().unbind();
+            validateButton.managedProperty().unbind();
+            validateButton.visibleProperty().bind(fileSelectionStep.validationActionVisibleProperty());
+            validateButton.managedProperty().bind(fileSelectionStep.validationActionVisibleProperty());
+            validateButton.disableProperty().bind(
+                    fileSelectionStep.validationActionVisibleProperty().not()
+                            .or(fileSelectionStep.validationActionEnabledProperty().not())
+            );
+        } else {
+            hideValidateButton();
+        }
+    }
+
+    private void hideValidateButton() {
+        if (validateButton == null) {
+            return;
+        }
+        validateButton.disableProperty().unbind();
+        validateButton.visibleProperty().unbind();
+        validateButton.managedProperty().unbind();
+        validateButton.setVisible(false);
+        validateButton.setManaged(false);
+        validateButton.setDisable(true);
     }
 
     /**
@@ -671,14 +738,20 @@ public class WizardController implements Initializable {
             nextButton.setDisable(true);
             backButton.disableProperty().unbind();
             backButton.setDisable(true);
+            if (validateButton != null) {
+                validateButton.disableProperty().unbind();
+                validateButton.setDisable(true);
+            }
             cancelButton.setDisable(true);
         } else {
             // Re-bind to current step's valid property
             WizardStep step = currentStep.get();
             if (step != null) {
                 nextButton.disableProperty().bind(step.validProperty().not());
+                configureValidateButton(step);
             } else {
                 nextButton.setDisable(false);
+                hideValidateButton();
             }
             backButton.disableProperty().bind(canGoBack.not());
             cancelButton.setDisable(false);
