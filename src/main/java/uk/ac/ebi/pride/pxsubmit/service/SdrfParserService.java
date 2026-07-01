@@ -372,7 +372,8 @@ public class SdrfParserService extends Service<SdrfParserService.SdrfData> {
         }
 
         // Check first line for SDRF-like headers
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8))) {
             String firstLine = reader.readLine();
             if (firstLine != null) {
                 String lower = firstLine.toLowerCase();

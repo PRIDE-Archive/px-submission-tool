@@ -15,6 +15,13 @@ import java.nio.file.*;
  *
  * All writes are atomic: data is written to a .tmp file first,
  * then renamed to the target file.
+ *
+ * All public file operations are {@code static synchronized} on this class so
+ * that the load-modify-save performed by {@link #markFileUploaded(String)} is
+ * atomic with respect to every other reader/writer. Without this, concurrent
+ * upload workers (which call {@code markFileUploaded} as each file completes)
+ * could race with {@code save()}/{@code load()} callers, share the single
+ * temp file, and lose entries from the checkpoint.
  */
 public class UploadCheckpointManager {
 
@@ -32,7 +39,7 @@ public class UploadCheckpointManager {
     /**
      * Save checkpoint atomically (write to .tmp, rename).
      */
-    public static void save(UploadCheckpoint checkpoint) {
+    public static synchronized void save(UploadCheckpoint checkpoint) {
         try {
             Files.createDirectories(CHECKPOINT_DIR);
             Path tmpFile = CHECKPOINT_DIR.resolve(CHECKPOINT_TMP);
@@ -50,7 +57,7 @@ public class UploadCheckpointManager {
     /**
      * Load checkpoint from disk. Returns null if not found or unreadable.
      */
-    public static UploadCheckpoint load() {
+    public static synchronized UploadCheckpoint load() {
         Path file = CHECKPOINT_DIR.resolve(CHECKPOINT_FILE);
         if (!Files.exists(file)) {
             return null;
@@ -66,7 +73,7 @@ public class UploadCheckpointManager {
     /**
      * Delete the checkpoint file.
      */
-    public static void delete() {
+    public static synchronized void delete() {
         try {
             Path file = CHECKPOINT_DIR.resolve(CHECKPOINT_FILE);
             Files.deleteIfExists(file);
@@ -80,7 +87,7 @@ public class UploadCheckpointManager {
     /**
      * Check if a checkpoint file exists.
      */
-    public static boolean exists() {
+    public static synchronized boolean exists() {
         return Files.exists(CHECKPOINT_DIR.resolve(CHECKPOINT_FILE));
     }
 

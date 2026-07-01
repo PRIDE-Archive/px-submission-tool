@@ -57,6 +57,8 @@ public class ChecksumService extends Service<Map<DataFile, String>> {
 
     // Bounded LRU cache of already calculated checksums (file path -> checksum)
     private static final int MAX_CACHE_SIZE = 500;
+    /** Upper bound for reading checksum.txt fully into memory (see validateChecksumFileCoverage). */
+    private static final long MAX_CHECKSUM_FILE_BYTES = 50L * 1024 * 1024;
     private static final Map<String, String> checksumCache = Collections.synchronizedMap(
         new LinkedHashMap<String, String>(16, 0.75f, true) {
             @Override
@@ -299,6 +301,15 @@ public class ChecksumService extends Service<Map<DataFile, String>> {
 
         if (checksumFile == null || !checksumFile.isFile()) {
             errors.add("checksum.txt was not created.");
+            return new ChecksumValidationResult(List.copyOf(errors));
+        }
+
+        // Guard against reading an unexpectedly huge checksum file fully into
+        // memory. A real checksum.txt has one short line per upload file; 50 MB
+        // is far beyond any legitimate manifest and indicates a corrupt/wrong file.
+        if (checksumFile.length() > MAX_CHECKSUM_FILE_BYTES) {
+            errors.add("checksum.txt is unexpectedly large (" +
+                    (checksumFile.length() / (1024 * 1024)) + " MB) and was not validated.");
             return new ChecksumValidationResult(List.copyOf(errors));
         }
 

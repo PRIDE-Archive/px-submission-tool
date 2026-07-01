@@ -607,9 +607,15 @@ public class FtpUploadService extends AbstractUploadService {
         private long getRemoteFileSize(FTPClient ftp, String fileName) throws IOException {
             if (ftp.sendCommand("SIZE", fileName) == FTPReply.FILE_STATUS) {
                 String reply = ftp.getReplyString();
-                String[] parts = reply.split(" ");
+                // Expected: "213 <size>". A non-standard or multi-line reply must not
+                // abort the upload, so a non-numeric token degrades to "size unknown".
+                String[] parts = reply.trim().split("\\s+");
                 if (parts.length >= 2) {
-                    return Long.parseLong(parts[1].trim());
+                    try {
+                        return Long.parseLong(parts[1].trim());
+                    } catch (NumberFormatException e) {
+                        logger.warn("Could not parse FTP SIZE reply for {}: '{}'", fileName, reply.trim());
+                    }
                 }
             }
             return -1;

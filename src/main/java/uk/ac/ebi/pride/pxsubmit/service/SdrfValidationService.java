@@ -29,6 +29,14 @@ public class SdrfValidationService {
 
     private static final Logger logger = LoggerFactory.getLogger(SdrfValidationService.class);
 
+    /**
+     * Upper bound on the SDRF file size we will read fully into memory before
+     * POSTing to the validator. SDRF is tab-separated metadata and is normally
+     * a few KB to a few MB; this cap (50 MB) prevents a malformed or accidental
+     * giant file from exhausting the heap and crashing the application.
+     */
+    private static final long MAX_SDRF_FILE_BYTES = 50L * 1024 * 1024;
+
     private volatile CompletableFuture<List<String>> templatesLoadFuture;
     private List<String> templateNames = new ArrayList<>();
 
@@ -162,6 +170,17 @@ public class SdrfValidationService {
 
     private ValidationOutcome validateFileSync(File file, SdrfValidationOptions options) {
         try {
+            long fileLength = file.length();
+            if (fileLength > MAX_SDRF_FILE_BYTES) {
+                return new ValidationOutcome(
+                        false,
+                        List.of(file.getName() + ": File is too large to validate ("
+                                + (fileLength / (1024 * 1024)) + " MB, limit "
+                                + (MAX_SDRF_FILE_BYTES / (1024 * 1024)) + " MB). "
+                                + "This does not look like a valid SDRF file."),
+                        List.of()
+                );
+            }
             String boundary = "----SdrfBoundary" + System.currentTimeMillis();
             byte[] fileBytes = Files.readAllBytes(file.toPath());
             byte[] body = buildMultipartBody(boundary, file.getName(), fileBytes);

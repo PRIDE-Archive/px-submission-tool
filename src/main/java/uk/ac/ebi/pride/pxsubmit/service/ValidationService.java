@@ -17,12 +17,14 @@ import uk.ac.ebi.pride.data.validation.SubmissionValidator;
 import uk.ac.ebi.pride.data.validation.ValidationMessage;
 import uk.ac.ebi.pride.data.validation.ValidationReport;
 
-import java.io.BufferedReader;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamConstants;
+import javax.xml.stream.XMLStreamReader;
+import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -62,8 +64,21 @@ public class ValidationService extends Service<ValidationService.ValidationResul
     // mzIdentML version patterns
     private static final String MZIDENTML_VERSION_1_1 = "1.1.0";
     private static final String MZIDENTML_VERSION_1_2 = "1.2.0";
-    private static final Pattern MZIDENTML_SPECTRA_DATA_PATTERN =
-        Pattern.compile("^[^<]*<SpectraData[^>]*location=\"([^\"]+)\"[^>]*>.*$");
+
+    /**
+     * Shared StAX factory hardened against XXE (no DTDs, no external entities).
+     * mzIdentML is parsed as a stream so multi-line/pretty-printed elements are
+     * handled correctly and large files are never loaded into memory.
+     */
+    private static final XMLInputFactory XML_INPUT_FACTORY = createHardenedXmlInputFactory();
+
+    private static XMLInputFactory createHardenedXmlInputFactory() {
+        XMLInputFactory factory = XMLInputFactory.newFactory();
+        factory.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+        factory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+        factory.setProperty(XMLInputFactory.IS_COALESCING, false);
+        return factory;
+    }
 
     private final ObservableList<DataFile> files;
     private final SubmissionTypeConstants submissionType;
@@ -351,47 +366,66 @@ public class ValidationService extends Service<ValidationService.ValidationResul
         }
 
         private boolean validateMzIdentMLVersion(DataFile file) {
-            try (BufferedReader reader = new BufferedReader(new FileReader(file.getFile()))) {
-                String line;
-                int lineCount = 0;
-                while ((line = reader.readLine()) != null && lineCount < 50) {
-                    if (line.contains("version=\"" + MZIDENTML_VERSION_1_1 + "\"") ||
-                        line.contains("version=\"" + MZIDENTML_VERSION_1_2 + "\"")) {
-                        return true;
+            XMLStreamReader xml = null;
+            try (InputStream in = new BufferedInputStream(new FileInputStream(file.getFile()))) {
+                xml = XML_INPUT_FACTORY.createXMLStreamReader(in);
+                while (xml.hasNext()) {
+                    if (xml.next() == XMLStreamConstants.START_ELEMENT
+                            && "MzIdentML".equals(xml.getLocalName())) {
+                        String version = xml.getAttributeValue(null, "version");
+                        if (version == null) {
+                            // Root element has no version attribute; nothing to validate against.
+                            return true;
+                        }
+                        return MZIDENTML_VERSION_1_1.equals(version)
+                                || MZIDENTML_VERSION_1_2.equals(version);
                     }
-                    if (line.contains("version=\"")) {
-                        // Found version but not supported
-                        return false;
-                    }
-                    lineCount++;
                 }
             } catch (Exception e) {
                 logger.warn("Could not validate mzIdentML version for: {}", file.getFileName(), e);
+            } finally {
+                closeQuietly(xml);
             }
-            return true; // Assume valid if we can't detect
+            return true; // Assume valid if we cannot detect a version
         }
 
         private Set<String> extractMzIdentMLPeakListReferences(DataFile file) {
             Set<String> references = new HashSet<>();
-            try (BufferedReader reader = new BufferedReader(new FileReader(file.getFile()))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    Matcher matcher = MZIDENTML_SPECTRA_DATA_PATTERN.matcher(line);
-                    if (matcher.matches()) {
-                        String location = matcher.group(1);
-                        // Extract filename from path/URL
-                        String fileName = location.substring(
-                            Math.max(location.lastIndexOf('/'), location.lastIndexOf('\\')) + 1);
-                        references.add(fileName);
-                    }
-                    if (line.contains("</Inputs>")) {
-                        break; // SpectraData is in Inputs section
+            XMLStreamReader xml = null;
+            try (InputStream in = new BufferedInputStream(new FileInputStream(file.getFile()))) {
+                xml = XML_INPUT_FACTORY.createXMLStreamReader(in);
+                while (xml.hasNext()) {
+                    int event = xml.next();
+                    if (event == XMLStreamConstants.START_ELEMENT
+                            && "SpectraData".equals(xml.getLocalName())) {
+                        String location = xml.getAttributeValue(null, "location");
+                        if (location != null && !location.isEmpty()) {
+                            // Extract filename from path/URL (handle both separators)
+                            String fileName = location.substring(
+                                Math.max(location.lastIndexOf('/'), location.lastIndexOf('\\')) + 1);
+                            references.add(fileName);
+                        }
+                    } else if (event == XMLStreamConstants.END_ELEMENT
+                            && "Inputs".equals(xml.getLocalName())) {
+                        break; // SpectraData is declared within the Inputs section
                     }
                 }
             } catch (Exception e) {
                 logger.warn("Could not extract peak list references from: {}", file.getFileName(), e);
+            } finally {
+                closeQuietly(xml);
             }
             return references;
+        }
+
+        private void closeQuietly(XMLStreamReader xml) {
+            if (xml != null) {
+                try {
+                    xml.close();
+                } catch (Exception ignored) {
+                    // best-effort close
+                }
+            }
         }
 
         private boolean hasFileWithName(String fileName) {
