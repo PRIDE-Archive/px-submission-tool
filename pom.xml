@@ -239,7 +239,7 @@
         <dependency>
             <groupId>org.apache.avro</groupId>
             <artifactId>avro</artifactId>
-            <version>1.11.4</version>
+            <version>1.11.5</version>
         </dependency>
 
         <!-- Logging: logback 1.4.x compatible with SLF4J 2.x -->
